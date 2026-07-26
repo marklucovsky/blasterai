@@ -1,6 +1,6 @@
 name: Single Word Mode Demo
 description: Tidepools...
-scene: "Vocab"   # ensure Tide Pools (sample scene is loaded)
+scene: "Vocab"   # the hand-built "Vocab" sample scene (not bundled); resolves by slug/name
 mode: word
 audio: on
 tileWait: .human

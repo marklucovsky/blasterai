@@ -12,7 +12,9 @@ import Foundation
 /// step is a pure function we can unit-test without instantiating SwiftUI.
 struct OnboardingInputs {
     var role: DeviceRole
-    var deviceName: String
+    /// The owner's display name, credited when this device shares content.
+    /// Captured (skippably) only in caregiver setup; empty for patient setup.
+    var authorName: String
     /// `true` when a real `ChildProfile` should be created/updated.
     /// Patient onboarding sets this; Caregiver onboarding leaves it false
     /// and the Sandbox profile (auto-seeded by `ProfileMigration`) serves
@@ -49,7 +51,7 @@ enum OnboardingCommit {
         // 1. DeviceProfile — upsert.
         let device = DeviceProfileStore.ensure(context: context)
         device.role = inputs.role
-        device.displayName = inputs.deviceName.trimmingCharacters(in: .whitespaces)
+        device.authorName = inputs.authorName.trimmingCharacters(in: .whitespaces)
         // Patient devices are *always* gated; therapists opt in later from
         // Admin → Device. Personal devices stay ungated.
         if inputs.role == .patient {

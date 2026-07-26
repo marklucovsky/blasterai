@@ -103,6 +103,10 @@ struct claudeBlastApp: App {
             try? container.mainContext.save()
         }
 
+        // Stamp decentralized identity onto any pre-identity scenes so existing
+        // installs show provenance + bind scripts by stable id. Idempotent.
+        SceneIdentityBackfill.run(context: container.mainContext)
+
         // Move any prior UserDefaults-stored API key into the Keychain on
         // the first launch after upgrade. Idempotent; no-op on fresh installs.
         OpenAIKeyVault.migrateFromUserDefaultsIfNeeded()

@@ -166,7 +166,9 @@ struct TileScriptView: View {
     private var recordSection: some View {
         Section {
             Button {
-                recorder.startRecording(sceneName: activeScene?.name ?? "")
+                // Bind the recording to the scene's stable id (not its mutable
+                // name), so a shared script resolves to the intended scene.
+                recorder.startRecording(sceneName: activeScene?.scriptReference ?? "")
             } label: {
                 HStack {
                     Circle()
@@ -240,10 +242,21 @@ struct TileScriptView: View {
         }
     }
 
+    /// Turn a scene reference (a qualified `sceneID`, a slug, or a bare name)
+    /// into something human for a miss message: e.g. `…/potty-training` → "Potty Training".
+    private static func humanizeSceneRef(_ ref: String) -> String {
+        let slug = ref.split(separator: "/").last.map(String.init) ?? ref
+        let words = slug.split(separator: "-").map { $0.prefix(1).uppercased() + $0.dropFirst() }
+        return words.isEmpty ? ref : words.joined(separator: " ")
+    }
+
     private func validationMessage(_ result: TileScriptValidator.Result?) -> String {
         guard let result else { return "" }
         if let scene = result.missingScene {
-            return "The scene \u{201C}\(scene)\u{201D} isn't on this device. Create it (or change the script's scene), then try again."
+            // Explicit + actionable instead of silently running against whatever
+            // scene is active: the script binds by stable id, so a miss means the
+            // exact scene it was recorded against isn't loaded here.
+            return "This demo needs the \u{201C}\(Self.humanizeSceneRef(scene))\u{201D} scene, which isn't loaded on this device. Import that scene (the sender can share it), then try again."
         }
         var parts: [String] = []
         if !result.missingTiles.isEmpty {

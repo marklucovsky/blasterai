@@ -63,6 +63,13 @@ enum SceneExporter {
             name: scene.name,
             description: scene.descriptionText,
             homePageKey: scene.homePageKey,
+            // Decentralized identity rides inside the file. Empty strings become
+            // nil so a legacy/unstamped scene exports cleanly (import falls back
+            // to name). `receivedLabel` is local-only and deliberately not sent.
+            id: scene.sceneID.isEmpty ? nil : scene.sceneID,
+            slug: scene.slug.isEmpty ? nil : scene.slug,
+            sceneVersion: scene.sceneVersion.isEmpty ? nil : scene.sceneVersion,
+            authorName: scene.authorName.isEmpty ? nil : scene.authorName,
             tiles: exportTiles.isEmpty ? nil : exportTiles,
             pages: exportPages
         )

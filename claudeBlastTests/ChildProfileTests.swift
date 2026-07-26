@@ -187,11 +187,11 @@ struct ChildProfileTests {
 
         let first = DeviceProfileStore.ensure(context: ctx)
         first.role = .caregiver
-        first.displayName = "Dr. Yalcin"
+        first.authorName = "Dr. Yalcin"
 
         let second = DeviceProfileStore.ensure(context: ctx)
         #expect(second.role == .caregiver)
-        #expect(second.displayName == "Dr. Yalcin")
+        #expect(second.authorName == "Dr. Yalcin")
 
         let count = try ctx.fetch(FetchDescriptor<DeviceProfile>()).count
         #expect(count == 1)
@@ -203,15 +203,17 @@ struct ChildProfileTests {
 
         // Simulate two devices both seeding a row (would happen on a CloudKit
         // race even though we explicitly disable sync — defensive).
-        let early = DeviceProfile(role: .caregiver, displayName: "Early")
+        let early = DeviceProfile(role: .caregiver)
+        early.authorName = "Early"
         early.createdAt = date(2026, 1, 1)
         ctx.insert(early)
-        let late = DeviceProfile(role: .caregiver, displayName: "Late")
+        let late = DeviceProfile(role: .caregiver)
+        late.authorName = "Late"
         late.createdAt = date(2026, 6, 1)
         ctx.insert(late)
 
         let kept = DeviceProfileStore.ensure(context: ctx)
-        #expect(kept.displayName == "Early")
+        #expect(kept.authorName == "Early")
         #expect(try ctx.fetch(FetchDescriptor<DeviceProfile>()).count == 1)
     }
 

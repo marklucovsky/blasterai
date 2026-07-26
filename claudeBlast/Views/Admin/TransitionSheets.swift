@@ -25,7 +25,6 @@ struct PatientTransitionSheet: View {
     @Query(filter: #Predicate<ChildProfile> { !$0.isSystem },
            sort: \ChildProfile.displayName) private var realPatients: [ChildProfile]
 
-    @State private var deviceName: String
     @State private var selectedPatientID: String = ""
     @State private var pinInput: String = ""
     @State private var pinConfirm: String = ""
@@ -48,18 +47,12 @@ struct PatientTransitionSheet: View {
         case confirm
     }
 
-    /// Seeded synchronously from `suggestedName` so the field shows real
-    /// editable text on the first render. Setting `@State` from `.onAppear`
-    /// causes a one-frame empty flash that reads as "this is placeholder
-    /// text" — and stays that way if the suggestion happens to be empty.
     init(device: DeviceProfile,
-         suggestedName: String,
          onConfirm: @escaping () -> Void,
          onCancel: @escaping () -> Void) {
         self.device = device
         self.onConfirm = onConfirm
         self.onCancel = onCancel
-        self._deviceName = State(initialValue: suggestedName)
     }
 
     enum KeyChoice: String, CaseIterable, Identifiable {
@@ -216,7 +209,6 @@ struct PatientTransitionSheet: View {
         case .patient:
             return !realPatients.isEmpty
                 && !selectedPatientID.isEmpty
-                && !deviceName.trimmingCharacters(in: .whitespaces).isEmpty
         case .pin:
             return PINAuth.isValidPINShape(pinInput) && pinInput == pinConfirm
         case .apiKey:
@@ -252,16 +244,6 @@ struct PatientTransitionSheet: View {
                 Text("Whose Device Is This?")
             } footer: {
                 Text("Pick the child this device will belong to. Their profile drives the voice and AI prompts after the switch.")
-            }
-
-            Section {
-                TextField("Patient's \(UIDevice.current.model)", text: $deviceName)
-                    .textInputAutocapitalization(.words)
-                    .autocorrectionDisabled()
-            } header: {
-                Text("Device Name")
-            } footer: {
-                Text("Shown when AirDropping scenes from this device.")
             }
         }
     }
@@ -354,12 +336,6 @@ struct PatientTransitionSheet: View {
             guard let hash = PINAuth.hash(pin: pinInput, salt: salt) else { return }
             device.adminPINSalt = salt
             device.adminPINHash = hash
-        }
-
-        // Device name (preserve existing if user cleared it)
-        let trimmedName = deviceName.trimmingCharacters(in: .whitespaces)
-        if !trimmedName.isEmpty {
-            device.displayName = trimmedName
         }
 
         // Role + Face ID

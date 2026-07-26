@@ -60,34 +60,6 @@ extension AdminView {
         }
     }
 
-    /// Pick the best string to seed `PatientTransitionSheet`'s device-name
-    /// field with. Order of preference:
-    /// 1. Active child profile's name → "{name}'s iPhone/iPad"
-    /// 2. Any non-Legacy child profile (most-recently-created) — covers the
-    ///    therapist-just-created-Aubrey-but-didn't-activate-her case.
-    /// 3. The existing device.displayName (preserves the therapist's setup).
-    /// 4. "Patient's iPhone/iPad" as a final fallback so the field is never
-    ///    empty — an empty value collapses to the placeholder and looks like
-    ///    the form is broken.
-    func suggestedPatientDeviceName(device: DeviceProfile) -> String {
-        let model = UIDevice.current.model
-        if let active = profileResolver.active,
-           !active.displayName.isEmpty,
-           active.displayName != "Legacy" {
-            return "\(active.displayName)'s \(model)"
-        }
-        if let named = childProfiles
-            .filter({ !$0.displayName.isEmpty && $0.displayName != "Legacy" })
-            .sorted(by: { $0.createdAt > $1.createdAt })
-            .first {
-            return "\(named.displayName)'s \(model)"
-        }
-        if !device.displayName.isEmpty {
-            return device.displayName
-        }
-        return "Patient's \(model)"
-    }
-
     func profileRow(_ profile: ChildProfile) -> some View {
         Button {
             profileResolver.setActive(id: profile.id)

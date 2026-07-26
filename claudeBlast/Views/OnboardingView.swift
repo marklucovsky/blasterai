@@ -22,7 +22,7 @@ struct OnboardingView: View {
     // Step machine -----------------------------------------------------------
 
     private enum Step: Int, CaseIterable {
-        case welcome, role, deviceName, childProfile, apiKey, icloud, pinSetup, done
+        case welcome, role, authorName, childProfile, apiKey, icloud, pinSetup, done
     }
 
     @State private var step: Step = .welcome
@@ -30,7 +30,7 @@ struct OnboardingView: View {
     // Collected answers ------------------------------------------------------
 
     @State private var role: DeviceRole = .patient
-    @State private var deviceName: String = ""
+    @State private var authorName: String = ""
 
     @State private var childName: String = ""
     @State private var childAgeYears: Int = 5
@@ -85,7 +85,7 @@ struct OnboardingView: View {
                     switch step {
                     case .welcome:       welcomeStep
                     case .role:          roleStep
-                    case .deviceName:    deviceNameStep
+                    case .authorName:    authorNameStep
                     case .childProfile:  childProfileStep
                     case .apiKey:        apiKeyStep
                     case .icloud:        icloudStep
@@ -106,13 +106,9 @@ struct OnboardingView: View {
         }
         .onAppear(perform: prefillFromExistingProfileIfAny)
         .onChange(of: step) { _, newStep in
-            // First time the user lands on the device-name step with an
-            // empty field, seed it with the role's suggested name so
-            // Continue is enabled out of the gate. The user can accept,
-            // edit, or wipe and retype.
-            if newStep == .deviceName && deviceName.isEmpty {
-                deviceName = deviceNamePlaceholder
-            }
+            // Author name is optional/deferrable — no auto-fill; an empty field
+            // is fine (Continue stays enabled).
+            _ = newStep
         }
     }
 
@@ -128,6 +124,11 @@ struct OnboardingView: View {
 
     private func isStepVisible(_ s: Step) -> Bool {
         switch s {
+        case .authorName:
+            // Attribution only matters for sharing — unlikely on a patient-only
+            // device — so we ask only in caregiver setup. Patient-device
+            // caregivers can still set it later in Admin → Scenes.
+            return role == .caregiver
         case .childProfile:
             // Only Patient mode needs a real child profile up front.
             // Caregiver mode uses the Sandbox profile until the user adds
@@ -278,27 +279,20 @@ struct OnboardingView: View {
         .buttonStyle(.plain)
     }
 
-    private var deviceNameStep: some View {
+    private var authorNameStep: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Name this device")
+            Text("Your name")
                 .font(.title.bold())
-            Text("Used for AirDrop attribution when sharing scenes.")
+            Text("Credited when you share scenes, pages, or vocabulary packs you make — e.g. \u{201C}by Dr. Yalcin.\u{201D}")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-            TextField(deviceNamePlaceholder, text: $deviceName)
+            TextField("Dr. Yalcin", text: $authorName)
                 .textFieldStyle(.roundedBorder)
                 .textInputAutocapitalization(.words)
                 .autocorrectionDisabled()
-        }
-    }
-
-    private var deviceNamePlaceholder: String {
-        // "iPad" vs "iPhone" comes from UIDevice — the placeholder reads
-        // right whether the user is on a tablet or repurposing an iPhone.
-        let model = UIDevice.current.model
-        switch role {
-        case .patient:   return "Sammy's \(model)"
-        case .caregiver: return "Dr. Yalcin's \(model)"
+            Text("Optional — skip for now and set it anytime in Admin → Scenes, before you first share.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -560,7 +554,7 @@ struct OnboardingView: View {
         switch step {
         case .welcome:      return true
         case .role:         return true
-        case .deviceName:   return !deviceName.trimmingCharacters(in: .whitespaces).isEmpty
+        case .authorName:   return true   // optional / deferrable
         case .childProfile: return !childName.trimmingCharacters(in: .whitespaces).isEmpty
         case .apiKey:       return true
         case .icloud:       return true
@@ -629,7 +623,7 @@ struct OnboardingView: View {
 
         // Pre-fill the device display name too if we can recover it.
         if let device = DeviceProfileStore.current(context: modelContext) {
-            if !device.displayName.isEmpty { deviceName = device.displayName }
+            if !device.authorName.isEmpty { authorName = device.authorName }
         }
     }
 
@@ -638,7 +632,7 @@ struct OnboardingView: View {
     private func commitAndFinish() {
         let inputs = OnboardingInputs(
             role: role,
-            deviceName: deviceName,
+            authorName: authorName,
             createChild: role == .patient && !skipChildProfile,
             childName: childName,
             childBirthday: childBirthday,

@@ -7,6 +7,7 @@
 
 import SwiftData
 import Foundation
+import CryptoKit
 
 @Model
 final class BlasterScene {
@@ -33,6 +34,99 @@ final class BlasterScene {
     /// affordance — only a scene with a systemSceneKey can be force-refreshed
     /// from the bundle.
     var systemSceneKey: String = ""
+
+    // MARK: - Decentralized identity (see SceneIdentity)
+
+    /// Qualified id `"<authority>/<slug>"` — the author's self-generated id for
+    /// user scenes, `scenes.blasterai.app` for first-party. Stable across renames
+    /// and the primary key for TileScript resolution + import dedupe. Empty on
+    /// legacy scenes predating this field → they resolve by name (back-compat).
+    var sceneID: String = ""
+    /// Short slug (UI + TileScript), derived from the name at stamp time.
+    var slug: String = ""
+    /// Semantic version for import dedupe (bumped on an edit-and-reshare).
+    var sceneVersion: String = ""
+    /// The author's self-asserted display name, carried in from an import.
+    /// May be empty. Shown as "by <authorName>" provenance.
+    var authorName: String = ""
+    /// Local-only label the receiver assigns when an import has no `authorName`
+    /// ("from Greta") — like naming a contact. Never travels back out.
+    var receivedLabel: String = ""
+
+    /// `contentHash` captured at import time. On a later re-import of the same
+    /// `sceneID`, `contentHash != importedContentHash` means the receiver edited
+    /// their copy — so an incoming update must not silently overwrite it. Empty
+    /// for scenes not created via import (or imported before this field existed).
+    var importedContentHash: String = ""
+
+    /// Stable fingerprint of the scene's user-visible content (name + home page +
+    /// pages). Used only to detect local edits vs. the imported baseline.
+    var contentHash: String {
+        var hasher = SHA256()
+        hasher.update(data: Data(name.utf8))
+        hasher.update(data: Data(homePageKey.utf8))
+        hasher.update(data: pagesData)
+        return hasher.finalize().map { String(format: "%02x", $0) }.joined()
+    }
+
+    /// Provenance to show in lists: the author's name, else the local tag, else "".
+    var authorDisplay: String { authorName.isEmpty ? receivedLabel : authorName }
+
+    /// How first-party (BlasterAI-shipped) content is credited in the UI.
+    static let firstPartyAuthorDisplay = "BlasterAI"
+
+    /// True for scenes BlasterAI ships — built-ins (bootstrapped, `systemSceneKey`)
+    /// and bundled starters (id under the `scenes.blasterai.app` authority).
+    var isFirstParty: Bool {
+        !systemSceneKey.isEmpty || sceneID.hasPrefix(SceneIdentity.firstPartyAuthority + "/")
+    }
+
+    /// True once the local user has edited this scene away from its pristine
+    /// baseline (the bundled or imported content it started as). Only meaningful
+    /// when a baseline was captured — user-authored-from-scratch scenes have none.
+    var isLocallyModified: Bool {
+        !importedContentHash.isEmpty && contentHash != importedContentHash
+    }
+
+    /// Provenance line for the scenes list: "by BlasterAI", "by Greta",
+    /// "by BlasterAI, modified locally", etc. Empty when there's nothing to say.
+    /// Display fallbacks (display-only — stored `authorName` stays empty so
+    /// exports never carry a fabricated author).
+    static let unknownAuthorDisplay = "Unknown"   // others, unnamed
+    static let selfAuthorDisplay = "Me"           // mine, unnamed
+
+    /// How the scene got onto this device (persists with the scene) — drives the
+    /// list's provenance dot + label:
+    /// - `.firstParty` — BlasterAI-shipped (a built-in or bundled starter);
+    /// - `.imported` — arrived as a shared `.blasterscene` file (`isImported`),
+    ///   *regardless of who originally authored it*;
+    /// - `.local` — authored on this device, living in the user's iCloud.
+    enum Provenance { case firstParty, local, imported }
+
+    var provenance: Provenance {
+        if isFirstParty { return .firstParty }
+        return isImported ? .imported : .local
+    }
+
+    /// Attribution label: "by BlasterAI" / "by Mark" / "by Greta" / "by Me"
+    /// (local, unnamed) / "by Unknown" (imported, unnamed), plus ", modified
+    /// locally" once edited past the baseline. The dot color conveys origin;
+    /// this text conveys authorship.
+    var attribution: String {
+        let who: String
+        switch provenance {
+        case .firstParty: who = Self.firstPartyAuthorDisplay
+        case .local:      who = authorDisplay.isEmpty ? Self.selfAuthorDisplay : authorDisplay
+        case .imported:   who = authorDisplay.isEmpty ? Self.unknownAuthorDisplay : authorDisplay
+        }
+        return isLocallyModified ? "by \(who), modified locally" : "by \(who)"
+    }
+
+    /// The most-specific, rename-proof value to write into a TileScript's
+    /// `scene:` field — the stable `sceneID` when present, else the name
+    /// (back-compat for legacy scenes). Resolved at playback via the id→slug→name
+    /// ladder, so a shared script binds to the intended scene, not "whatever's active".
+    var scriptReference: String { sceneID.isEmpty ? name : sceneID }
 
     /// Human-readable provenance shown once in the editor right after creation:
     /// "⚡ Served from cache" for an unedited bundled starter, or
@@ -66,6 +160,28 @@ final class BlasterScene {
         self.homePageKey = homePageKey
         self.isDefault = isDefault
         self.isActive = isActive
+    }
+
+    // MARK: - Identity
+
+    /// Idempotently stamp a decentralized identity for a user-authored scene.
+    /// No-op once `sceneID` is set. `authorID` is the device's self-generated id.
+    func ensureIdentity(authorID: String, authorName: String = "") {
+        guard sceneID.isEmpty else { return }
+        let s = SceneIdentity.slug(from: name)
+        slug = s
+        sceneID = SceneIdentity.id(authority: authorID, slug: s)
+        if sceneVersion.isEmpty { sceneVersion = "1.0.0" }
+        if self.authorName.isEmpty { self.authorName = authorName }
+    }
+
+    /// Stamp a first-party identity for a bundled system scene (keyed by
+    /// `systemSceneKey`). No-op for non-system scenes.
+    func markFirstPartyIdentity() {
+        guard !systemSceneKey.isEmpty else { return }
+        slug = systemSceneKey
+        sceneID = SceneIdentity.id(authority: SceneIdentity.firstPartyAuthority, slug: systemSceneKey)
+        if sceneVersion.isEmpty { sceneVersion = "1.0.0" }
     }
 
     // MARK: - Page mutations (helpers for editor views)
@@ -164,6 +280,11 @@ final class BlasterScene {
             isActive: false
         )
         copy.pages = source.pages  // deep copy via Codable round-trip in the setter
+        // A duplicate is a new, locally-owned scene: give it a fresh identity
+        // under this device's author id (sceneID starts empty → ensureIdentity
+        // mints a new one from the duplicate's name).
+        copy.ensureIdentity(authorID: DeviceProfileStore.ensureAuthorID(context: context),
+                            authorName: DeviceProfileStore.authorName(context: context))
         context.insert(copy)
         return copy
     }

@@ -67,13 +67,24 @@ struct ExportableScene: Codable {
     let name: String
     let description: String
     let homePageKey: String
+    /// Decentralized scene identity — travels with the file so file-based
+    /// sharing needs no registry. Optional for back-compat with pre-identity
+    /// exports (import falls back to name).
+    var id: String? = nil
+    var slug: String? = nil
+    /// Scene content version (distinct from the envelope `version` = file format).
+    var sceneVersion: String? = nil
+    /// The author's self-asserted display name ("by Greta"). May be absent.
+    var authorName: String? = nil
     var tiles: [ExportableTile]?
     let pages: [ExportablePage]
 
     enum CodingKeys: String, CodingKey {
         case type = "@type"
         case comment = "_comment"
-        case version, name, description, homePageKey, tiles, pages
+        case version, name, description, homePageKey
+        case id, slug, sceneVersion, authorName
+        case tiles, pages
     }
 }
 

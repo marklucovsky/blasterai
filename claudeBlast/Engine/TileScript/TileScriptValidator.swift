@@ -28,11 +28,16 @@ enum TileScriptValidator {
 
     /// Resolve a script's `scene` value to a concrete scene: the `<default>`
     /// sentinel → the `isDefault` scene; nil value → the currently active scene;
-    /// otherwise an exact name match.
+    /// otherwise a resolution ladder **sceneID → slug → displayName**. The ladder
+    /// makes a shared script bind to the intended (e.g. Greta's) scene by its
+    /// stable id even if locally renamed, while older name-only references — and
+    /// hand-authored scripts — still resolve by name.
     static func resolveScene(_ value: String?, in scenes: [BlasterScene]) -> BlasterScene? {
         guard let value else { return scenes.first { $0.isActive } }
         if value == defaultSceneSentinel { return scenes.first { $0.isDefault } }
-        return scenes.first { $0.name == value }
+        return scenes.first { $0.sceneID == value }
+            ?? scenes.first { !$0.slug.isEmpty && $0.slug == value }
+            ?? scenes.first { $0.name == value }
     }
 
     static func validate(_ script: TileScript, context: ModelContext) -> Result {
@@ -43,7 +48,7 @@ enum TileScriptValidator {
         // problem — report it and skip page checks (they'd all spuriously fail).
         var missingScene: String?
         if let declared = script.scene, declared != defaultSceneSentinel,
-           !scenes.contains(where: { $0.name == declared }) {
+           resolveScene(declared, in: scenes) == nil {
             missingScene = declared
         }
 
