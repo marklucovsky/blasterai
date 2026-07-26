@@ -28,7 +28,6 @@ extension AdminView {
             if let device = deviceProfiles.first {
                 PatientTransitionSheet(
                     device: device,
-                    suggestedName: suggestedPatientDeviceName(device: device),
                     onConfirm: {
                         pendingPatientTransition = false
                         displayedRole = device.role
@@ -77,7 +76,6 @@ extension AdminView {
     var deviceSection: some View {
         if let device = deviceProfiles.first {
             Section("Device") {
-                LabeledContent("Name", value: device.displayName.isEmpty ? "—" : device.displayName)
                 Picker("Role", selection: $displayedRole) {
                     ForEach(DeviceRole.allCases, id: \.self) { r in
                         Text(r.displayName).tag(r)

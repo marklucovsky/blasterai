@@ -34,6 +34,13 @@ struct SceneImportSheet: View {
     /// Per-collision choice: true = take the shared image, false = keep yours.
     @State private var useShared: [String: Bool] = [:]
 
+    /// Conflict detected before writing (an update to a locally-edited scene).
+    @State private var conflict: SceneImporter.SceneImportConflict = .none
+    /// The resolution actually applied — for the result banner's wording.
+    @State private var lastResolution: SceneImporter.SceneImportResolution?
+    /// Receiver's local "from …" tag for an import that carried no author.
+    @State private var receiverLabel: String = ""
+
     var body: some View {
         NavigationStack {
             Group {
@@ -115,17 +122,48 @@ struct SceneImportSheet: View {
 
             if let result = importResult {
                 importResultBanner(result)
+            } else {
+                importActions()
             }
-
-            Button(action: performImport) {
-                Label("Import Scene", systemImage: "square.and.arrow.down")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .disabled(importResult != nil)
-            .padding()
         }
+    }
+
+    /// Bottom action area: a single Import button, or — when this file updates a
+    /// scene the receiver has locally edited — a keep-mine / take-update /
+    /// keep-both prompt.
+    @ViewBuilder
+    private func importActions() -> some View {
+        VStack(spacing: 10) {
+            if case .modifiedExisting(let name) = conflict {
+                VStack(alignment: .leading, spacing: 3) {
+                    Label("You've edited your copy of \u{201C}\(name)\u{201D}",
+                          systemImage: "exclamationmark.triangle.fill")
+                        .font(.subheadline).foregroundStyle(.orange)
+                    Text("This file is a newer version. Choose what to do with your edited copy:")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Button { performImport(resolution: .keepBoth) } label: {
+                    Label("Keep Both", systemImage: "plus.square.on.square").frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent).controlSize(.large)
+                Button(role: .destructive) { performImport(resolution: .takeUpdate) } label: {
+                    Label("Replace Mine with the Update", systemImage: "arrow.down.circle").frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered).controlSize(.large)
+                Button { performImport(resolution: .keepMine) } label: {
+                    Label("Keep Mine (skip the update)", systemImage: "hand.raised").frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered).controlSize(.large)
+            } else {
+                Button { performImport() } label: {
+                    Label("Import Scene", systemImage: "square.and.arrow.down").frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent).controlSize(.large)
+            }
+        }
+        .padding()
     }
 
     /// Horizontal strip of word thumbnails (shared image or letter placeholder).
@@ -198,8 +236,12 @@ struct SceneImportSheet: View {
     @ViewBuilder
     private func importResultBanner(_ result: SceneImporter.ImportResult) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Label("Imported", systemImage: "checkmark.circle.fill")
+            Label(bannerTitle(result), systemImage: "checkmark.circle.fill")
                 .foregroundStyle(.green).font(.headline)
+            if result.wasUpdate {
+                Text("This scene was already on your device (matched by id) — refreshed in place, not duplicated.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             if result.newTileCount > 0 {
                 Text("\(result.newTileCount) new word\(result.newTileCount == 1 ? "" : "s") added").font(.caption)
             }
@@ -210,7 +252,22 @@ struct SceneImportSheet: View {
                 Text("\(result.skippedKeys.count) tile(s) not found: \(result.skippedKeys.joined(separator: ", "))")
                     .font(.caption).foregroundStyle(.orange)
             }
-            Button("Done") { onDismiss() }.buttonStyle(.bordered).padding(.top, 4)
+            // The file carried no author — let the receiver tag who it's from
+            // ("from Greta"), like naming a contact. Optional; saved on Done too.
+            if result.needsReceiverLabel {
+                Divider().padding(.vertical, 2)
+                Text("This scene didn't include an author. Tag who it's from (optional):")
+                    .font(.caption).foregroundStyle(.secondary)
+                TextField("e.g. from Greta", text: $receiverLabel)
+                    .textFieldStyle(.roundedBorder)
+                    .textInputAutocapitalization(.words)
+                    .onSubmit { saveReceiverLabel(result.scene) }
+            }
+            Button("Done") {
+                if result.needsReceiverLabel { saveReceiverLabel(result.scene) }
+                onDismiss()
+            }
+            .buttonStyle(.bordered).padding(.top, 4)
         }
         .padding()
         .background(RoundedRectangle(cornerRadius: 12).fill(.green.opacity(0.1)))
@@ -231,6 +288,9 @@ struct SceneImportSheet: View {
             let data = try Data(contentsOf: url)
             let scene = try SceneImporter.preview(data)
             preview = scene
+            // Detect (without writing) whether this updates a scene the receiver
+            // has locally edited — so we can prompt instead of clobbering.
+            conflict = SceneImporter.conflict(for: data, context: modelContext)
 
             let deviceTiles = (try? modelContext.fetch(FetchDescriptor<TileModel>())) ?? []
             let analysis = SceneImporter.analyze(scene, deviceTiles: deviceTiles)
@@ -250,7 +310,7 @@ struct SceneImportSheet: View {
         }
     }
 
-    private func performImport() {
+    private func performImport(resolution: SceneImporter.SceneImportResolution? = nil) {
         let hasAccess = url.startAccessingSecurityScopedResource()
         defer { if hasAccess { url.stopAccessingSecurityScopedResource() } }
         do {
@@ -259,12 +319,27 @@ struct SceneImportSheet: View {
             let result = try SceneImporter.importJSON(
                 data, context: modelContext,
                 sourceURL: url.scheme == "https" ? url.absoluteString : "",
-                acceptedImageCollisions: accepted)
+                acceptedImageCollisions: accepted,
+                resolution: resolution)
             // Re-render any tiles whose image was filled or replaced.
             for key in result.imageUpdatedKeys { resolver.invalidatePhoto(for: key) }
+            lastResolution = resolution
             importResult = result
         } catch {
             self.error = error.localizedDescription
         }
+    }
+
+    private func bannerTitle(_ result: SceneImporter.ImportResult) -> String {
+        switch lastResolution {
+        case .keepMine: return "Kept Your Version"
+        case .keepBoth: return "Imported as a Copy"
+        default:        return result.wasUpdate ? "Updated" : "Imported"
+        }
+    }
+
+    private func saveReceiverLabel(_ scene: BlasterScene) {
+        scene.receivedLabel = receiverLabel.trimmingCharacters(in: .whitespacesAndNewlines)
+        try? modelContext.save()
     }
 }

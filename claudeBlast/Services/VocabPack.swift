@@ -16,7 +16,7 @@ struct VocabPackWord: Decodable, Hashable {
 }
 
 struct VocabPack: Identifiable, Decodable, Hashable {
-    /// Namespaced, globally-unique id, e.g. "vocab.blaster.app/space".
+    /// Namespaced, globally-unique id, e.g. "packs.blasterai.app/space".
     let id: String
     let slug: String
     let displayName: String

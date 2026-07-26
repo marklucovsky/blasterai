@@ -13,6 +13,7 @@ extension AdminView {
     var scenesTab: some View {
         NavigationStack {
             List {
+                AuthorNameField()
                 scenesSection
                 newSceneSection
                 importSceneSection
@@ -199,6 +200,8 @@ extension AdminView {
 
     func createBlankScene(name: String) {
         let scene = BlasterScene(name: name.isEmpty ? "New Scene" : name)
+        scene.ensureIdentity(authorID: DeviceProfileStore.ensureAuthorID(context: modelContext),
+                             authorName: DeviceProfileStore.authorName(context: modelContext))
         modelContext.insert(scene)
         navigateToNewScene = scene
     }
@@ -213,6 +216,17 @@ extension AdminView {
 
     func exportScene(_ scene: BlasterScene) {
         do {
+            // Ensure the shared file carries identity + provenance: stamp an id if
+            // this scene predates identity, and fill the author name for a scene
+            // THIS device authored (never overwrite an imported scene's author).
+            let authorID = DeviceProfileStore.ensureAuthorID(context: modelContext)
+            let authorName = DeviceProfileStore.authorName(context: modelContext)
+            scene.ensureIdentity(authorID: authorID, authorName: authorName)
+            if scene.authorName.isEmpty, !authorName.isEmpty, scene.sceneID.hasPrefix(authorID + "/") {
+                scene.authorName = authorName
+            }
+            try? modelContext.save()
+
             let tileLookup = Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
             let data = try SceneExporter.exportJSON(scene,
                                                     defaultTileKeys: defaultTileKeys,

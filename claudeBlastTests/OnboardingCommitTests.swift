@@ -40,7 +40,7 @@ struct OnboardingCommitTests {
                                pin: String? = "1234") -> OnboardingInputs {
         OnboardingInputs(
             role: .patient,
-            deviceName: "  Sammy's iPad  ",
+            authorName: "  Sammy  ",
             createChild: true,
             childName: name,
             childBirthday: ChildProfile.synthesizeBirthday(age: age, asOf: date(2026, 6, 4)),
@@ -138,7 +138,7 @@ struct OnboardingCommitTests {
         #expect(devices.count == 1)
         let device = devices[0]
         #expect(device.role == .patient)
-        #expect(device.displayName == "Sammy's iPad") // whitespace trimmed
+        #expect(device.authorName == "Sammy") // whitespace trimmed
         #expect(device.requireFaceIDForAdmin == true)
         #expect(device.onboardingCompleted == true)
 

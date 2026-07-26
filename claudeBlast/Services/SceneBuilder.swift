@@ -57,6 +57,8 @@ enum SceneBuilder {
                 return PageSpec(key: genPage.key, tiles: tiles)
             }
 
+            scene.ensureIdentity(authorID: DeviceProfileStore.ensureAuthorID(context: context),
+                                 authorName: DeviceProfileStore.authorName(context: context))
             context.insert(scene)
         }
 

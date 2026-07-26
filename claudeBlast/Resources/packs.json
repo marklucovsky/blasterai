@@ -1,44 +1,44 @@
 [
   {
-    "id": "vocab.blaster.app/farm",
+    "id": "packs.blasterai.app/farm",
     "slug": "farm",
     "displayName": "Farm",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "file": "pack_farm"
   },
   {
-    "id": "vocab.blaster.app/tidepools",
+    "id": "packs.blasterai.app/tidepools",
     "slug": "tidepools",
     "displayName": "Tide Pools",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "file": "pack_tidepools"
   },
   {
-    "id": "vocab.blaster.app/mealtime",
+    "id": "packs.blasterai.app/mealtime",
     "slug": "mealtime",
     "displayName": "Mealtime",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "file": "pack_mealtime"
   },
   {
-    "id": "vocab.blaster.app/space",
+    "id": "packs.blasterai.app/space",
     "slug": "space",
     "displayName": "Space",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "file": "pack_space"
   },
   {
-    "id": "vocab.blaster.app/dinosaurs",
+    "id": "packs.blasterai.app/dinosaurs",
     "slug": "dinosaurs",
     "displayName": "Dinosaurs",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "file": "pack_dinosaurs"
   },
   {
-    "id": "vocab.blaster.app/vehicles",
+    "id": "packs.blasterai.app/vehicles",
     "slug": "vehicles",
     "displayName": "Vehicles",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "file": "pack_vehicles"
   }
 ]

@@ -20,7 +20,6 @@ final class DeviceProfile {
     /// Legacy "personal" / "therapist" values from earlier worktree builds
     /// are migrated to "caregiver" by `ProfileMigration`.
     var roleRaw: String = DeviceRole.caregiver.rawValue
-    var displayName: String = ""
     /// Patient devices: always true (forced at onboarding). Caregiver
     /// devices: false by default; the therapist can opt in.
     var requireFaceIDForAdmin: Bool = false
@@ -32,15 +31,25 @@ final class DeviceProfile {
     var createdAt: Date = Date.now
     var modifiedAt: Date = Date.now
 
+    /// Stable, self-generated author identity for scenes this device authors —
+    /// the "phone number". Minted lazily (empty until first needed) by
+    /// `DeviceProfileStore.ensureAuthorID`; never synced. Two authors' scenes of
+    /// the same name are distinguished by this, with no central registry.
+    var authorID: String = ""
+    /// The device owner's optional display name — the one identity the app
+    /// captures. Credited when this device shares scenes, pages, or vocabulary
+    /// packs it creates ("by Greta"); travels inside exported files. May stay
+    /// empty; captured (skippably) at caregiver setup or set later in Scenes.
+    var authorName: String = ""
+
     var role: DeviceRole {
         get { DeviceRole.fromRawValue(roleRaw) }
         set { roleRaw = newValue.rawValue; modifiedAt = .now }
     }
 
-    init(role: DeviceRole = .caregiver, displayName: String = "",
+    init(role: DeviceRole = .caregiver,
          requireFaceIDForAdmin: Bool = false, onboardingCompleted: Bool = false) {
         self.roleRaw = role.rawValue
-        self.displayName = displayName
         self.requireFaceIDForAdmin = requireFaceIDForAdmin
         self.onboardingCompleted = onboardingCompleted
     }

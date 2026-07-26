@@ -393,11 +393,11 @@ private struct PageGeneratorSheet: View {
     private let aiExamples: [AIPageExample] = [
         AIPageExample(name: "space", title: "Space adventure",
             goal: "Outer space and space travel — rockets, planets, the moon, stars, astronauts, and aliens.",
-            packId: "vocab.blaster.app/space",
+            packId: "packs.blasterai.app/space",
             demoKey: "spacesuit", demoClass: "object", demoName: "Spacesuit"),
         AIPageExample(name: "vehicles", title: "Things that go",
             goal: "Vehicles that go — cars, trucks, buses, trains, planes and boats, plus emergency vehicles like fire trucks, ambulances, and police cars.",
-            packId: "vocab.blaster.app/vehicles",
+            packId: "packs.blasterai.app/vehicles",
             demoKey: "scooter", demoClass: "object", demoName: "Scooter"),
     ]
 

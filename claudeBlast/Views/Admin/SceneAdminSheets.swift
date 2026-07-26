@@ -9,6 +9,61 @@ import SwiftUI
 import SwiftData
 import UIKit
 
+/// Set the device's optional author display name — the "contact name" that
+/// travels with scenes this device creates + shares ("by Greta"). Async and
+/// skippable: never captured at onboarding. Setting it backfills scenes this
+/// device already authored so they immediately show the name.
+struct AuthorNameField: View {
+    @Environment(\.modelContext) private var modelContext
+    @State private var name: String = ""
+    @State private var loaded = false
+
+    var body: some View {
+        Section {
+            TextField("Your name (optional)", text: $name)
+                .textInputAutocapitalization(.words)
+                .onSubmit(commit)
+        } header: {
+            Text("Author")
+        } footer: {
+            Text("Optional. Scenes you create and share are labeled \u{201C}by \(name.isEmpty ? "you" : name)\u{201D} so others know who made them. Set or change it anytime.")
+        }
+        .onAppear {
+            guard !loaded else { return }
+            name = DeviceProfileStore.current(context: modelContext)?.authorName ?? ""
+            loaded = true
+        }
+        // Persist as the user types so nothing is lost if they navigate away
+        // without pressing return; the full commit (trim + backfill + save)
+        // also runs on submit and when the field leaves the screen.
+        .onChange(of: name) { _, newValue in
+            guard loaded else { return }
+            let profile = DeviceProfileStore.ensure(context: modelContext)
+            profile.authorName = newValue
+            profile.modifiedAt = .now
+        }
+        .onDisappear(perform: commit)
+    }
+
+    private func commit() {
+        guard loaded else { return }
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed != name { name = trimmed }
+        let profile = DeviceProfileStore.ensure(context: modelContext)
+        profile.authorName = trimmed
+        profile.modifiedAt = .now
+        // Backfill onto scenes THIS device authored (sceneID under our author id)
+        // that don't already carry a name — so existing ones reflect it at once.
+        let prefix = DeviceProfileStore.ensureAuthorID(context: modelContext) + "/"
+        if let scenes = try? modelContext.fetch(FetchDescriptor<BlasterScene>()) {
+            for s in scenes where s.authorName.isEmpty && s.sceneID.hasPrefix(prefix) {
+                s.authorName = trimmed
+            }
+        }
+        try? modelContext.save()
+    }
+}
+
 struct SceneRow: View {
     let scene: BlasterScene
     var updateAvailable: Bool = false
@@ -20,6 +75,15 @@ struct SceneRow: View {
     /// newer bundled version is available.
     private var showUpdateButton: Bool { isSystemScene && updateAvailable && onUpdate != nil }
 
+    /// Provenance dot color: BlasterAI = purple, local = green, imported = orange.
+    private var provenanceColor: Color {
+        switch scene.provenance {
+        case .firstParty: return .purple
+        case .local:      return .green
+        case .imported:   return .orange
+        }
+    }
+
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
@@ -28,9 +92,6 @@ struct SceneRow: View {
                         .font(.headline)
                     if scene.isDefault {
                         badge("Default", .blue)
-                    }
-                    if isSystemScene {
-                        badge("System", .purple)
                     }
                     if showUpdateButton {
                         // Inline next to the System badge — a tappable badge
@@ -52,13 +113,22 @@ struct SceneRow: View {
                         }
                         .buttonStyle(.plain)
                     }
-                    if scene.isImported {
-                        badge("Imported", .orange)
-                    }
                 }
                 Text("\(scene.pages.count) pages · \(scene.lastModified, style: .date)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                // Provenance dot (purple=BlasterAI, green=mine, orange=others) +
+                // attribution + stable slug — replaces the System/Imported badges.
+                HStack(spacing: 5) {
+                    Circle().fill(provenanceColor).frame(width: 7, height: 7)
+                    Text(scene.attribution)
+                    if !scene.slug.isEmpty {
+                        Text("·")
+                        Text(scene.slug).monospaced()
+                    }
+                }
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
                 if isSystemScene {
                     Text("Built-in scene — defined by the app. Updates ship with new versions.")
                         .font(.caption)

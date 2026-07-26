@@ -42,8 +42,7 @@ enum DeviceProfileStore {
         } catch {
             // Fall through to create.
         }
-        let placeholder = DeviceProfile(role: .caregiver, displayName: "",
-                                        onboardingCompleted: false)
+        let placeholder = DeviceProfile(role: .caregiver, onboardingCompleted: false)
         context.insert(placeholder)
         return placeholder
     }
@@ -52,5 +51,23 @@ enum DeviceProfileStore {
     /// hasn't run yet AND `ensure` hasn't been called.
     static func current(context: ModelContext) -> DeviceProfile? {
         (try? context.fetch(FetchDescriptor<DeviceProfile>()))?.first
+    }
+
+    /// The device's self-generated author id — the "phone number" that
+    /// namespaces scenes this device authors. Minted + persisted on first use;
+    /// stable thereafter. Zero onboarding friction (never captured up front).
+    @discardableResult
+    static func ensureAuthorID(context: ModelContext) -> String {
+        let profile = ensure(context: context)
+        if profile.authorID.isEmpty {
+            profile.authorID = UUID().uuidString.lowercased()
+            profile.modifiedAt = .now
+        }
+        return profile.authorID
+    }
+
+    /// The author's optional self-asserted display name ("" if unset).
+    static func authorName(context: ModelContext) -> String {
+        current(context: context)?.authorName ?? ""
     }
 }

@@ -150,6 +150,12 @@ enum BootstrapLoader {
         let startTime = CFAbsoluteTimeGetCurrent()
 
         let emptyScene = BlasterScene(name: "Empty", isDefault: true, isActive: true)
+        // First-party identity without a systemSceneKey (Empty is not bundle-backed,
+        // so it must not gain the force-refresh affordance).
+        emptyScene.slug = "empty"
+        emptyScene.sceneID = SceneIdentity.id(authority: SceneIdentity.firstPartyAuthority, slug: "empty")
+        emptyScene.sceneVersion = "1.0.0"
+        emptyScene.importedContentHash = emptyScene.contentHash   // pristine baseline
 
         guard let vocabularyUrl = Bundle.main.url(forResource: "vocabulary", withExtension: "json") else {
             print("Failed to locate vocabulary.json in bundle.")
@@ -223,7 +229,9 @@ enum BootstrapLoader {
             // Stable key so CloudKitDedupReconciler can collapse duplicate
             // All-Tiles scenes produced by multi-device bootstrap.
             allTilesScene.systemSceneKey = "all_tiles"
+            allTilesScene.markFirstPartyIdentity()
             allTilesScene.pages = [allTilesPage]
+            allTilesScene.importedContentHash = allTilesScene.contentHash   // pristine baseline
 
             // ----- persist -----
             // BlasterScene.pages is now an inline JSON-encoded attribute, so
@@ -271,7 +279,9 @@ enum BootstrapLoader {
             isActive: materialized.isDefault
         )
         scene.systemSceneKey = materialized.key
+        scene.markFirstPartyIdentity()
         scene.pages = materialized.pages
+        scene.importedContentHash = scene.contentHash   // pristine baseline
         return scene
     }
 
