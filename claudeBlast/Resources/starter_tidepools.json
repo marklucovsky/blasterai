@@ -11,12 +11,12 @@
   "tiles": [
     {
       "key": "crab",
-      "wordClass": "object",
+      "wordClass": "animal",
       "displayName": "Crab"
     },
     {
       "key": "starfish",
-      "wordClass": "object",
+      "wordClass": "animal",
       "displayName": "Starfish"
     },
     {
@@ -26,22 +26,22 @@
     },
     {
       "key": "seaweed",
-      "wordClass": "object",
+      "wordClass": "plant",
       "displayName": "Seaweed"
     },
     {
       "key": "fish",
-      "wordClass": "object",
+      "wordClass": "animal",
       "displayName": "Fish"
     },
     {
       "key": "snail",
-      "wordClass": "object",
+      "wordClass": "animal",
       "displayName": "Snail"
     },
     {
       "key": "anemone",
-      "wordClass": "object",
+      "wordClass": "animal",
       "displayName": "Anemone"
     }
   ],

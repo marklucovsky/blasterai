@@ -54,7 +54,7 @@ enum SceneNavigation {
         CoreCategory(pageKey: "people", iconKey: "people",
                      wordClasses: ["people"], crossLinks: []),
         CoreCategory(pageKey: "food", iconKey: "food",
-                     wordClasses: ["food", "meals", "fruit", "veggie", "snacks"], crossLinks: ["drinks"]),
+                     wordClasses: ["food"], crossLinks: ["drinks"]),
         CoreCategory(pageKey: "drinks", iconKey: "drinks",
                      wordClasses: ["drinks"], crossLinks: ["food"]),
         CoreCategory(pageKey: "body_health", iconKey: "body_health",

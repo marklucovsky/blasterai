@@ -44,9 +44,7 @@ struct TileSuggestionService {
 
         3. NEW WORDS — A NEW word must be a COMMON, CONCRETE thing with a single clear visual (an \
         animal, object, food, place, or person). NEVER make abstract concepts, feelings, or actions \
-        into new words — those must come from existing vocabulary. Choose the wordClass by what the \
-        thing IS: "places" is ONLY a location the child goes to; a portable object/tool/vehicle is \
-        "object"; animals use "animal"; foods use food/fruit/veggie/snacks; people/roles use "people". \
+        into new words — those must come from existing vocabulary. \(VocabularyClasses.classSelectionGuidance) \
         Declare each new word ONCE in "newWords" with its "displayName" and "wordClass" (one of: \
         \(VocabularyClasses.caregiverSelectable.map(\.name).joined(separator: ", "))).
 

@@ -129,8 +129,7 @@ struct PageGeneratorService {
         - A NEW word must be a COMMON, CONCRETE thing with a single clear visual (an animal, object, \
           food, place, or person). Declare each new word ONCE in "newWords" with "displayName" and \
           "wordClass" (one of: \(VocabularyClasses.caregiverSelectable.map(\.name).joined(separator: ", "))), \
-          then reference it by the same "key". Choose wordClass by what the thing IS: "places" is ONLY a \
-          location you go to — for a physical object, tool, or vehicle use "object".
+          then reference it by the same "key". \(VocabularyClasses.classSelectionGuidance)
         - Put every tile on the SINGLE page (isAudible=true, empty link); no navigation tiles.
         - Aim for 8–24 tiles.
 

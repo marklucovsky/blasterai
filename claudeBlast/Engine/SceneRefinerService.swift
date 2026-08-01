@@ -108,8 +108,7 @@ struct SceneRefinerService {
           top-level "newWords" array with "displayName" and "wordClass" (one of: \
           \(VocabularyClasses.caregiverSelectable.map(\.name).joined(separator: ", "))); reference it \
           by the same key. Concrete nouns only.
-        - Choose wordClass by what the thing IS: "places" is ONLY a location you go to — for a physical \
-          object, tool, vehicle, or piece of equipment use "object".
+        - \(VocabularyClasses.classSelectionGuidance)
         - Put every topical tile on a SINGLE page; no navigation tiles.
 
         Return ONLY valid JSON matching this schema exactly — no markdown, no prose. Each tile MUST be \

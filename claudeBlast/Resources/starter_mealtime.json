@@ -11,7 +11,7 @@
   "tiles": [
     {
       "key": "spaghetti",
-      "wordClass": "meals",
+      "wordClass": "food",
       "displayName": "Spaghetti"
     },
     {

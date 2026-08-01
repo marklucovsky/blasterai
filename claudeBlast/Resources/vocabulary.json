@@ -872,7 +872,7 @@
   },
   {
     "key": "chocolate",
-    "wordClass": "snacks"
+    "wordClass": "food"
   },
   {
     "key": "water",
@@ -900,195 +900,195 @@
   },
   {
     "key": "crackers",
-    "wordClass": "snacks"
+    "wordClass": "food"
   },
   {
     "key": "cookie",
-    "wordClass": "snacks"
+    "wordClass": "food"
   },
   {
     "key": "fruit_snack",
-    "wordClass": "snacks"
+    "wordClass": "food"
   },
   {
     "key": "pudding",
-    "wordClass": "snacks"
+    "wordClass": "food"
   },
   {
     "key": "applesauce",
-    "wordClass": "snacks"
+    "wordClass": "food"
   },
   {
     "key": "yogurt",
-    "wordClass": "snacks"
+    "wordClass": "food"
   },
   {
     "key": "popcorn",
-    "wordClass": "snacks"
+    "wordClass": "food"
   },
   {
     "key": "chips",
-    "wordClass": "snacks"
+    "wordClass": "food"
   },
   {
     "key": "meals",
-    "wordClass": "meals"
+    "wordClass": "food"
   },
   {
     "key": "sandwich",
-    "wordClass": "meals"
+    "wordClass": "food"
   },
   {
     "key": "macaroni",
-    "wordClass": "meals"
+    "wordClass": "food"
   },
   {
     "key": "pizza",
-    "wordClass": "meals"
+    "wordClass": "food"
   },
   {
     "key": "hamburger",
-    "wordClass": "meals"
+    "wordClass": "food"
   },
   {
     "key": "fries",
-    "wordClass": "meals"
+    "wordClass": "food"
   },
   {
     "key": "hot_dog",
-    "wordClass": "meals"
+    "wordClass": "food"
   },
   {
     "key": "nuggets",
-    "wordClass": "meals"
+    "wordClass": "food"
   },
   {
     "key": "salad",
-    "wordClass": "meals"
+    "wordClass": "food"
   },
   {
     "key": "soup",
-    "wordClass": "meals"
+    "wordClass": "food"
   },
   {
     "key": "cereal",
-    "wordClass": "meals"
+    "wordClass": "food"
   },
   {
     "key": "oatmeal",
-    "wordClass": "meals"
+    "wordClass": "food"
   },
   {
     "key": "toast",
-    "wordClass": "meals"
+    "wordClass": "food"
   },
   {
     "key": "eggs",
-    "wordClass": "meals"
+    "wordClass": "food"
   },
   {
     "key": "pancakes",
-    "wordClass": "meals"
+    "wordClass": "food"
   },
   {
     "key": "syrup",
-    "wordClass": "meals"
+    "wordClass": "food"
   },
   {
     "key": "peanut_butter",
-    "wordClass": "meals"
+    "wordClass": "food"
   },
   {
     "key": "jelly",
-    "wordClass": "meals"
+    "wordClass": "food"
   },
   {
     "key": "sausage",
-    "wordClass": "meals"
+    "wordClass": "food"
   },
   {
     "key": "cheese",
-    "wordClass": "meals"
+    "wordClass": "food"
   },
   {
     "key": "fruit",
-    "wordClass": "fruit"
+    "wordClass": "food"
   },
   {
     "key": "apple",
-    "wordClass": "fruit"
+    "wordClass": "food"
   },
   {
     "key": "banana",
-    "wordClass": "fruit"
+    "wordClass": "food"
   },
   {
     "key": "blueberries",
-    "wordClass": "fruit"
+    "wordClass": "food"
   },
   {
     "key": "orange",
-    "wordClass": "fruit"
+    "wordClass": "food"
   },
   {
     "key": "cherry",
-    "wordClass": "fruit"
+    "wordClass": "food"
   },
   {
     "key": "grapes",
-    "wordClass": "fruit"
+    "wordClass": "food"
   },
   {
     "key": "lemon",
-    "wordClass": "fruit"
+    "wordClass": "food"
   },
   {
     "key": "strawberry",
-    "wordClass": "fruit"
+    "wordClass": "food"
   },
   {
     "key": "pear",
-    "wordClass": "fruit"
+    "wordClass": "food"
   },
   {
     "key": "veggie",
-    "wordClass": "veggie"
+    "wordClass": "food"
   },
   {
     "key": "broccoli",
-    "wordClass": "veggie"
+    "wordClass": "food"
   },
   {
     "key": "carrot",
-    "wordClass": "veggie"
+    "wordClass": "food"
   },
   {
     "key": "corn",
-    "wordClass": "veggie"
+    "wordClass": "food"
   },
   {
     "key": "cucumber",
-    "wordClass": "veggie"
+    "wordClass": "food"
   },
   {
     "key": "green_beans",
-    "wordClass": "veggie"
+    "wordClass": "food"
   },
   {
     "key": "pepper",
-    "wordClass": "veggie"
+    "wordClass": "food"
   },
   {
     "key": "lettuce",
-    "wordClass": "veggie"
+    "wordClass": "food"
   },
   {
     "key": "tomato",
-    "wordClass": "veggie"
+    "wordClass": "food"
   },
   {
     "key": "potato",
-    "wordClass": "veggie"
+    "wordClass": "food"
   },
   {
     "key": "shape",
