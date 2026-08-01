@@ -18,17 +18,13 @@ import SwiftData
 import Foundation
 @testable import claudeBlast
 
+extension SerialTests {
 @MainActor
 @Suite(.serialized)
 struct SceneIdentityTests {
 
     private func makeContext() throws -> ModelContext {
-        let schema = Schema([
-            TileModel.self, SentenceCache.self, BlasterScene.self, MetricEvent.self,
-            RecordedScript.self, DeviceProfile.self,
-        ])
-        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-        return try ModelContainer(for: schema, configurations: [config]).mainContext
+        return TestStore.freshContext()
     }
 
     /// Create + insert a scene (never container-less).
@@ -314,4 +310,5 @@ struct SceneIdentityTests {
         #expect(second.wasUpdate)
         #expect(!second.needsReceiverLabel)               // refresh, not a new scene → no prompt
     }
+}
 }

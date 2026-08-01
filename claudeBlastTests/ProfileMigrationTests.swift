@@ -10,19 +10,13 @@ import SwiftData
 import Foundation
 @testable import claudeBlast
 
+extension SerialTests {
 @MainActor
+@Suite(.serialized)
 struct ProfileMigrationTests {
 
     private func makeContainer() throws -> ModelContainer {
-        let schema = Schema([
-            TileModel.self,
-            SentenceCache.self, BlasterScene.self, MetricEvent.self,
-            RecordedScript.self, LoggedUtterance.self,
-            ChildProfile.self,
-            DeviceProfile.self,
-        ])
-        let cfg = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-        return try ModelContainer(for: schema, configurations: [cfg])
+        return TestStore.freshContainer()
     }
 
     /// Isolated UserDefaults so writes from one test don't leak into another.
@@ -224,4 +218,5 @@ struct ProfileMigrationTests {
         let fetched = try ctx.fetch(FetchDescriptor<DeviceProfile>())[0]
         #expect(fetched.roleRaw == "caregiver")
     }
+}
 }

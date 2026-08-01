@@ -10,17 +10,13 @@ import SwiftData
 import Foundation
 @testable import claudeBlast
 
+extension SerialTests {
 @MainActor
+@Suite(.serialized)
 struct SceneExportImportTests {
 
     private func makeTestContainer() throws -> ModelContainer {
-        let schema = Schema([
-            TileModel.self,
-            SentenceCache.self, BlasterScene.self, MetricEvent.self,
-            RecordedScript.self,
-        ])
-        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-        return try ModelContainer(for: schema, configurations: [config])
+        return TestStore.freshContainer()
     }
 
     /// Build a minimal scene with known tiles for testing.
@@ -383,4 +379,5 @@ struct SceneExportImportTests {
         #expect(result.scene.pages.count == scene.pages.count)
         #expect(result.skippedKeys.isEmpty)
     }
+}
 }

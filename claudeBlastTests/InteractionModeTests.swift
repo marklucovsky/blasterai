@@ -12,16 +12,13 @@ import SwiftData
 import Foundation
 @testable import claudeBlast
 
+extension SerialTests {
 @MainActor
+@Suite(.serialized)
 struct InteractionModeTests {
 
     private func makeContainer() throws -> ModelContainer {
-        let schema = Schema([
-            TileModel.self, SentenceCache.self, BlasterScene.self, MetricEvent.self,
-            RecordedScript.self, LoggedUtterance.self, ChildProfile.self, DeviceProfile.self,
-        ])
-        let cfg = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-        return try ModelContainer(for: schema, configurations: [cfg])
+        return TestStore.freshContainer()
     }
 
     /// Run `body` with an engine wired to a resolver whose active profile uses
@@ -86,11 +83,16 @@ struct InteractionModeTests {
     @Test func singleWordMode_allowsDuplicates() throws {
         try withEngine(mode: .singleWord) { engine in
             let dad = TileModel(key: "dad", wordClass: "people")
+            let mom = TileModel(key: "mom", wordClass: "people")
+            // Single-word mode allows the same word to appear again — but only
+            // NON-consecutively. Consecutive re-taps intentionally mash-to-escalate
+            // (bump the escalation counter, no new strip tile — see
+            // SentenceEngine.appendSpokenWord), so dad→mom→dad yields a 3-tile
+            // strip with "dad" twice, while dad→dad→dad would yield one tile.
             engine.addTile(dad)
+            engine.addTile(mom)
             engine.addTile(dad)
-            engine.addTile(dad)
-            #expect(engine.spokenStrip.count == 3)
-            #expect(engine.spokenStrip.allSatisfy { $0.key == "dad" })
+            #expect(engine.spokenStrip.map(\.key) == ["dad", "mom", "dad"])
         }
     }
 
@@ -164,4 +166,5 @@ struct InteractionModeTests {
             try await Task.sleep(for: .milliseconds(5))
         }
     }
+}
 }

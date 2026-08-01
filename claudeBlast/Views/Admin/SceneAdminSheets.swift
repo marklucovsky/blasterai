@@ -355,6 +355,23 @@ struct SceneGeneratorSheet: View {
                     }
                 }
 
+                Section {
+                    NavigationLink {
+                        SceneFromCollectionsView(allTiles: allTiles) { scene in
+                            onAccept(scene)
+                            dismiss()
+                        }
+                    } label: {
+                        Label("Build from collections", systemImage: "square.stack.3d.up.fill")
+                    }
+                    .disabled(isGenerating)
+                } header: {
+                    Text("No AI — combine packs & classes")
+                } footer: {
+                    Text("Pick vocabulary packs and word classes; each becomes a page, with a home screen linking them. Instant, no key needed.")
+                        .font(.caption)
+                }
+
                 if let error = generationError {
                     Section {
                         Text(error)

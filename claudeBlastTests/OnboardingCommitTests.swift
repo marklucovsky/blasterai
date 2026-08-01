@@ -10,19 +10,13 @@ import SwiftData
 import Foundation
 @testable import claudeBlast
 
+extension SerialTests {
 @MainActor
+@Suite(.serialized)
 struct OnboardingCommitTests {
 
     private func makeContainer() throws -> ModelContainer {
-        let schema = Schema([
-            TileModel.self,
-            SentenceCache.self, BlasterScene.self, MetricEvent.self,
-            RecordedScript.self, LoggedUtterance.self,
-            ChildProfile.self,
-            DeviceProfile.self,
-        ])
-        let cfg = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-        return try ModelContainer(for: schema, configurations: [cfg])
+        return TestStore.freshContainer()
     }
 
     private func isolatedDefaults() -> UserDefaults {
@@ -278,4 +272,5 @@ struct OnboardingCommitTests {
         #expect(kids.count == 1)
         #expect(kids[0].displayName == "Aubrey 2")
     }
+}
 }

@@ -147,7 +147,9 @@ extension AdminView {
         // Snapshot the current Core-First into a duplicate before applying
         // the bundled overwrite, so the caregiver always has a recovery path.
         if duplicateFirst, let source = sceneToUpdate {
-            _ = BlasterScene.duplicate(of: source, in: modelContext)
+            _ = BlasterScene.duplicate(of: source, in: modelContext,
+                                       authorID: DeviceProfileStore.ensureAuthorID(context: modelContext),
+                                       authorName: DeviceProfileStore.authorName(context: modelContext))
             try? modelContext.save()
         }
 
@@ -158,7 +160,9 @@ extension AdminView {
     }
 
     func duplicateScene(_ scene: BlasterScene) {
-        _ = BlasterScene.duplicate(of: scene, in: modelContext)
+        _ = BlasterScene.duplicate(of: scene, in: modelContext,
+                                   authorID: DeviceProfileStore.ensureAuthorID(context: modelContext),
+                                   authorName: DeviceProfileStore.authorName(context: modelContext))
         try? modelContext.save()
     }
 

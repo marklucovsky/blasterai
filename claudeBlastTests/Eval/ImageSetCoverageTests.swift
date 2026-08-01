@@ -28,18 +28,14 @@ struct ImageSetCoverageTests {
         return entries.map(\.key)
     }
 
-    /// Known, tracked gaps in otherwise-shippable sets, pending a dedicated
-    /// POLISH worktree. ARASAAC is missing art for 9 recently-added tiles; the
-    /// decision (2026-06-20) is to fill them with our own replacements there,
-    /// not to demote ARASAAC. Until then they render via the Playful-3D master
-    /// backfill. The test allows exactly these and fails on any NEW gap, so the
-    /// allowlist shrinks to empty when the polish work lands.
-    private static let knownIncompleteShippable: [String: Set<String>] = [
-        ImageSetID.arasaac.rawValue: [
-            "basketball", "goldfish_cracker", "graham_cracker", "popsicle",
-            "pretzel", "slide", "snack", "snack_bar", "tricycle",
-        ],
-    ]
+    /// Known, tracked gaps in otherwise-shippable sets. Currently empty:
+    /// ARASAAC was the only set with tracked gaps, and as of 2026-07-28 it is
+    /// demoted to legacy/non-shippable (see `ImageSetID.isShippable`) — an
+    /// external corpus we never generate against, so it permanently lags the
+    /// vocabulary. It's excluded from the coverage bar entirely rather than
+    /// allowlisted. The map stays for any future shippable set that needs a
+    /// temporary tracked-gap window; the test fails on any NEW gap.
+    private static let knownIncompleteShippable: [String: Set<String>] = [:]
 
     /// Every distinct tile key introduced by a bundled pack/starter scene
     /// (starter_*.json, pack_*.json). These are the "extension" words beyond core
