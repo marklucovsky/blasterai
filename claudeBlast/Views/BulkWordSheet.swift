@@ -15,30 +15,23 @@
 import SwiftUI
 import SwiftData
 
-struct BulkWordSheet: View {
-    let existingTiles: [TileModel]
-    /// Called with the created (or reused) tiles to place on the page.
-    let onCommit: ([TileModel]) -> Void
-
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var modelContext
-
-    @State private var text = ""
-
-    private struct ParsedWord: Hashable {
-        let word: String
-        let wordClass: String
-        let displayName: String
+/// Shared parser for the `key, class[, Display Name]` CSV format used by both the
+/// bulk-word sheet and the tile picker's editable selection list. One word per
+/// line; blank / '#' lines ignored; a word needs ≥2 non-empty columns
+/// (key, class), an optional 3rd column overrides the display name.
+enum BulkWordParser {
+    struct Word: Hashable {
+        let key: String         // column 0 (raw; caller normalizes)
+        let wordClass: String   // column 1, lowercased
+        let displayName: String // column 2, else the key
     }
 
-    /// Recognized classes (for a subtle "unknown class" hint; unknown still works).
-    private var knownClasses: Set<String> {
-        Set(VocabularyClasses.caregiverSelectable.map(\.name))
-    }
+    /// Recognized caregiver classes — an unknown class still parses (creation
+    /// falls back); this only drives the "unknown class" hint.
+    static let knownClasses: Set<String> = Set(VocabularyClasses.caregiverSelectable.map(\.name))
 
-    /// (parsed words, skipped raw lines).
-    private var parseResult: (words: [ParsedWord], skipped: [String]) {
-        var words: [ParsedWord] = []
+    static func parse(_ text: String) -> (words: [Word], skipped: [String]) {
+        var words: [Word] = []
         var skipped: [String] = []
         for rawLine in text.components(separatedBy: .newlines) {
             let line = rawLine.trimmingCharacters(in: .whitespaces)
@@ -49,12 +42,28 @@ struct BulkWordSheet: View {
                 skipped.append(line)
                 continue
             }
-            let word = cols[0]
+            let key = cols[0]
             let wordClass = cols[1].lowercased()
-            let displayName = (cols.count >= 3 && !cols[2].isEmpty) ? cols[2] : word
-            words.append(ParsedWord(word: word, wordClass: wordClass, displayName: displayName))
+            let displayName = (cols.count >= 3 && !cols[2].isEmpty) ? cols[2] : key
+            words.append(Word(key: key, wordClass: wordClass, displayName: displayName))
         }
         return (words, skipped)
+    }
+}
+
+struct BulkWordSheet: View {
+    let existingTiles: [TileModel]
+    /// Called with the created (or reused) tiles to place on the page.
+    let onCommit: ([TileModel]) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+
+    @State private var text = ""
+
+    private var knownClasses: Set<String> { BulkWordParser.knownClasses }
+    private var parseResult: (words: [BulkWordParser.Word], skipped: [String]) {
+        BulkWordParser.parse(text)
     }
 
     var body: some View {
@@ -149,7 +158,7 @@ struct BulkWordSheet: View {
         var keys = Set(existingTiles.map(\.key))
         var created: [TileModel] = []
         for w in parseResult.words {
-            let base = TileModel.normalizeKey(w.word)
+            let base = TileModel.normalizeKey(w.key)
             guard !base.isEmpty else { continue }
             // Same key + same class already exists → reuse it (place, don't dup).
             if let existing = existingTiles.first(where: { $0.key == base && $0.wordClass == w.wordClass }) {

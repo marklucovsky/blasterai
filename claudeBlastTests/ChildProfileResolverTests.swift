@@ -10,19 +10,13 @@ import SwiftData
 import Foundation
 @testable import claudeBlast
 
+extension SerialTests {
 @MainActor
+@Suite(.serialized)
 struct ChildProfileResolverTests {
 
     private func makeContainer() throws -> ModelContainer {
-        let schema = Schema([
-            TileModel.self,
-            SentenceCache.self, BlasterScene.self, MetricEvent.self,
-            RecordedScript.self, LoggedUtterance.self,
-            ChildProfile.self,
-            DeviceProfile.self,
-        ])
-        let cfg = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-        return try ModelContainer(for: schema, configurations: [cfg])
+        return TestStore.freshContainer()
     }
 
     private func date(_ y: Int, _ m: Int, _ d: Int) -> Date {
@@ -191,4 +185,5 @@ struct ChildProfileResolverTests {
         resolver.refresh()
         #expect(resolver.active?.displayName == "B")
     }
+}
 }

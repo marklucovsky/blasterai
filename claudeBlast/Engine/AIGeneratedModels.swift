@@ -113,7 +113,8 @@ extension GeneratedTile {
 struct GeneratedPage: Codable {
     /// Unique key for this page (snake_case, lowercase).
     let key: String
-    let tiles: [GeneratedTile]
+    /// `var` so the page preview can prune/reorder before Accept.
+    var tiles: [GeneratedTile]
 }
 
 /// A full scene suggested by AI.
@@ -207,9 +208,10 @@ struct GeneratedPageResponse: Codable {
 
 /// Result returned by PageGeneratorService — a primary page plus optional sub-pages.
 struct GeneratedPageResult {
-    let primaryPage: GeneratedPage
+    /// `var` so the page preview can prune/reorder tiles before Accept.
+    var primaryPage: GeneratedPage
     /// Sub-pages referenced by nav tiles in the primary page.
-    let subPages: [GeneratedPage]
+    var subPages: [GeneratedPage]
 
     /// Tile keys for the primary page (for pre-selecting in TilePickerView Edit path).
     var primaryTileKeys: Set<String> {

@@ -149,6 +149,13 @@ struct PageGeneratorService {
         You are a specialist in AAC (Augmentative and Alternative Communication) for non-verbal children. \
         Given a goal and vocabulary, select tiles for a single focused page.
 
+        WORLD INFERENCE — From the goal, brainstorm the common, concrete things a child would actually \
+        SEE or DO for it: objects, animals, foods, places, people-roles, plus the core action or \
+        describing words at the heart of it. Include the obvious items even when the goal did NOT name \
+        them (e.g. potty training implies toilet, potty, pee, poop, wipe, flush, wash, dry, underwear). \
+        Pull the FULL relevant set, not just a couple — reuse an existing key where one fits and declare \
+        the rest as new words.
+
         You may optionally include navigation tiles that link to new sub-pages when the vocabulary genuinely \
         spans two distinct contexts (e.g. general emotions + detailed feelings). Keep navigation to a minimum — \
         prefer a flat page for focused, single-topic goals.

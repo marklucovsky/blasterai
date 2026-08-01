@@ -12,16 +12,13 @@ import SwiftData
 import Foundation
 @testable import claudeBlast
 
+extension SerialTests {
 @MainActor
+@Suite(.serialized)
 struct CacheEvictionTests {
 
     private func makeTestContainer() throws -> ModelContainer {
-        let schema = Schema([
-            TileModel.self,
-            SentenceCache.self, BlasterScene.self, MetricEvent.self
-        ])
-        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-        return try ModelContainer(for: schema, configurations: [config])
+        return TestStore.freshContainer()
     }
 
     private func tiles(_ keys: String...) -> [TileSelection] {
@@ -173,4 +170,5 @@ struct CacheEvictionTests {
         #expect(entry?.sentence == "I want to go home.")       // base sentence unchanged
         #expect(entry?.hitCount == 3)                          // 2 recordHits + 1 lookup
     }
+}
 }

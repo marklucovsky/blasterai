@@ -68,19 +68,5 @@ enum PackInstaller {
     }
 }
 
-/// Builds page tiles from a source selector. Today: a pack. The shape leaves room
-/// for `.wordClass` / `.keys` sources and a pluggable ordering pass later.
-enum PageExpander {
-    enum Source: Hashable { case pack(String) }
-    enum Order { case declared }
-
-    /// Resolve a source to its ordered tile entries (audible terminal tiles).
-    /// Does NOT install — callers install on accept. Returns nil for unknown packs.
-    static func tiles(for source: Source, order: Order = .declared) -> [TileEntry]? {
-        switch source {
-        case .pack(let id):
-            guard let pack = PackCatalog.pack(id: id) else { return nil }
-            return pack.words.map { TileEntry(key: $0.key, link: "", isAudible: true) }
-        }
-    }
-}
+// Note: page-tile production for packs / copied pages / class & key sets now
+// lives in `CollectionSource` (Services/CollectionSource.swift).

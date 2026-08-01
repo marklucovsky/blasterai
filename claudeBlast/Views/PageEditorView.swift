@@ -26,23 +26,74 @@ struct PageEditorView: View {
     @State private var editingTileKey: String? = nil
     @State private var pickerInitialKeys: Set<String> = []
 
-    /// Key currently hovered as a drop target (drives the highlight ring).
-    @State private var dropTarget: String? = nil
-
-    // Undo/redo: snapshots of the page's tile array (reorder / add / remove).
+    // Undo/redo: snapshots of the page's tile array (reorder / add / remove / bulk).
     // Deep enough to not think about; snapshots are tiny so the memory is moot.
     @State private var undoStack: [[TileEntry]] = []
     @State private var redoStack: [[TileEntry]] = []
     @State private var prePickerSnapshot: [TileEntry]? = nil
     private let maxUndoDepth = 25
 
-    private let columns = [GridItem(.adaptive(minimum: 84, maximum: 112), spacing: 10)]
+    /// Multi-select mode toggle. Lives here so it sits in the nav bar; the grid
+    /// editor (`TileGridEditor`) owns the actual selection set.
+    @State private var isSelecting = false
 
     private var tileLookup: [String: TileModel] {
         Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
     }
     private var pageIndex: Int? { scene.pages.firstIndex { $0.key == pageKey } }
     private var page: PageSpec? { scene.pages.first { $0.key == pageKey } }
+
+    /// The page's tiles as an editable binding: each assignment records one undo
+    /// snapshot and persists, so the grid editor's bulk/reorder ops are each a
+    /// single undoable step.
+    private var tilesBinding: Binding<[TileEntry]> {
+        Binding(
+            get: { page?.tiles ?? [] },
+            set: { newTiles in
+                guard let idx = pageIndex else { return }
+                recordUndo(page?.tiles ?? [])
+                var pages = scene.pages
+                pages[idx].tiles = newTiles
+                scene.pages = pages
+                try? modelContext.save()
+            }
+        )
+    }
+
+    private var isHome: Bool { scene.homePageKey == pageKey }
+
+    /// The home-page control lives here (not the nav bar) so it has room for a
+    /// full, non-truncating label and never crowds Select/＋ out of reach in
+    /// portrait. Filled blue when this page is the scene's home; tap to toggle.
+    private var pageHeader: some View {
+        HStack(spacing: 10) {
+            Button { toggleHome() } label: {
+                Label(isHome ? "Home Page" : "Set as Home",
+                      systemImage: isHome ? "house.fill" : "house")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(isHome ? Color.blue : Color.secondary)
+            }
+            .buttonStyle(.plain)
+            Spacer()
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(.bar)
+    }
+
+    /// Toggle this page as the scene's home. A scene keeps exactly one home, so
+    /// toggling OFF hands home back to the conventional "home"-keyed page if one
+    /// exists, otherwise the first other page in the list. A sole page stays home.
+    private func toggleHome() {
+        if isHome {
+            if let next = scene.homeKeyAfterTogglingOffCurrent() {
+                scene.homePageKey = next
+            }
+        } else {
+            scene.homePageKey = pageKey
+        }
+        try? modelContext.save()
+    }
 
     var body: some View {
         Group {
@@ -55,17 +106,22 @@ struct PageEditorView: View {
                     Button("Add Tiles") { openPicker() }
                         .buttonStyle(.borderedProminent)
                 }
-            } else if let page {
-                ScrollView {
-                    LazyVGrid(columns: columns, spacing: 10) {
-                        ForEach(page.tiles, id: \.key) { entry in
+            } else if page != nil {
+                VStack(spacing: 0) {
+                    pageHeader
+                    TileGridEditor(
+                        tiles: tilesBinding,
+                        isSelecting: $isSelecting,
+                        wordClassOf: { tileLookup[$0]?.wordClass },
+                        showAddCell: true,
+                        onAdd: { openPicker() },
+                        onTapTile: { editingTileKey = $0 },
+                        cell: { entry in
                             if let tile = tileLookup[entry.key] {
-                                cell(entry: entry, tile: tile)
+                                PageTileCell(tile: tile, link: entry.link)
                             }
                         }
-                        addCell
-                    }
-                    .padding(16)
+                    )
                 }
             } else {
                 ContentUnavailableView("Page not found", systemImage: "questionmark.folder")
@@ -80,8 +136,15 @@ struct PageEditorView: View {
                 Button { redo() } label: { Image(systemName: "arrow.uturn.forward") }
                     .disabled(redoStack.isEmpty)
             }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button { openPicker() } label: { Image(systemName: "plus") }
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                if isSelecting {
+                    Button("Done") { isSelecting = false }
+                } else {
+                    if page.map({ !$0.tiles.isEmpty }) == true {
+                        Button { isSelecting = true } label: { Image(systemName: "checkmark.circle") }
+                    }
+                    Button { openPicker() } label: { Image(systemName: "plus") }
+                }
             }
         }
         .sheet(isPresented: $isPickingTiles, onDismiss: pickerDismissed) {
@@ -97,91 +160,6 @@ struct PageEditorView: View {
             prePickerSnapshot = page?.tiles ?? []
             isPickingTiles = true
         }
-    }
-
-    // MARK: - Cells
-
-    @ViewBuilder
-    private func cell(entry: TileEntry, tile: TileModel) -> some View {
-        let key = entry.key
-        PageTileCell(tile: tile, link: entry.link)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(Color.accentColor, lineWidth: dropTarget == key ? 3 : 0)
-            )
-            .contentShape(RoundedRectangle(cornerRadius: 12))
-            .onTapGesture { editingTileKey = key }
-            // .draggable (SwiftUI-native) reliably arbitrates drag vs. scroll and,
-            // unlike .onDrag, fires no late system drop haptic — so the synchronous
-            // drop haptic below stands alone and on time. No custom lift haptic:
-            // .draggable exposes no drag-start hook and a simultaneous long-press
-            // breaks its drag; the system lift is imperceptible. Default preview
-            // snapshots the in-context cell, so no TileImageResolver crash.
-            .draggable(key)
-            .dropDestination(for: String.self) { items, _ in
-                guard let moved = items.first else { return false }
-                impact(.light)                                   // drop — on time; .draggable adds no system double
-                // Defer the model mutation out of the drop callback — mutating the
-                // SwiftData array synchronously here re-enters the view update.
-                Task { @MainActor in moveTile(moved, before: key) }
-                return true
-            } isTargeted: { targeted in
-                dropTarget = targeted ? key : (dropTarget == key ? nil : dropTarget)
-            }
-    }
-
-    private var addCell: some View {
-        Button { openPicker() } label: {
-            VStack(spacing: 3) {
-                RoundedRectangle(cornerRadius: 10)
-                    .strokeBorder(style: StrokeStyle(lineWidth: 2, dash: [6]))
-                    .foregroundStyle(.tertiary)
-                    .aspectRatio(1, contentMode: .fit)
-                    .overlay(Image(systemName: "plus").font(.title2).foregroundStyle(.secondary))
-                Text("Add").font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
-            }
-        }
-        .buttonStyle(.plain)
-        .dropDestination(for: String.self) { items, _ in   // drop on "+" → move to end
-            guard let moved = items.first else { return false }
-            impact(.light)
-            Task { @MainActor in moveTileToEnd(moved) }
-            return true
-        }
-    }
-
-    // MARK: - Reorder (native drag-and-drop)
-
-    /// Move `movedKey` so it sits just before `targetKey`. One undo step.
-    private func moveTile(_ movedKey: String, before targetKey: String) {
-        guard movedKey != targetKey, let idx = pageIndex, let page else { dropTarget = nil; return }
-        var tiles = page.tiles
-        guard let from = tiles.firstIndex(where: { $0.key == movedKey }) else { dropTarget = nil; return }
-        recordUndo(tiles)
-        let item = tiles.remove(at: from)
-        let insertAt = tiles.firstIndex(where: { $0.key == targetKey }) ?? tiles.count
-        tiles.insert(item, at: insertAt)
-        var pages = scene.pages
-        pages[idx].tiles = tiles
-        scene.pages = pages
-        try? modelContext.save()
-        dropTarget = nil
-    }
-
-    private func moveTileToEnd(_ movedKey: String) {
-        guard let idx = pageIndex, let page else { return }
-        var tiles = page.tiles
-        guard let from = tiles.firstIndex(where: { $0.key == movedKey }) else { return }
-        recordUndo(tiles)
-        tiles.append(tiles.remove(at: from))
-        var pages = scene.pages
-        pages[idx].tiles = tiles
-        scene.pages = pages
-        try? modelContext.save()
-    }
-
-    private func impact(_ style: UIImpactFeedbackGenerator.FeedbackStyle) {
-        UIImpactFeedbackGenerator(style: style).impactOccurred()
     }
 
     // MARK: - Add / Remove

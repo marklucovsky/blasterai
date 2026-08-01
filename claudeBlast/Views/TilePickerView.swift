@@ -16,16 +16,38 @@ struct TilePickerView: View {
     @Environment(\.dismiss) private var dismiss
 
     @Query(sort: \TileModel.key) private var allTiles: [TileModel]
+    /// All scenes — source for the "From a page…" tile-source picker.
+    @Query private var allScenes: [BlasterScene]
 
     @State private var selectedKeys: Set<String> = []
+    /// When set, the grid is filtered to these tile keys (in page order): the
+    /// word tiles of a page picked via "From a page…". `nil` = no page source.
+    @State private var pageSourceKeys: [String]? = nil
+    @State private var pageSourceLabel = ""
     @State private var searchText = ""
     @State private var selectedWordClass = "all"
     @State private var suggestionGoal = ""
     @State private var isSuggesting = false
     @State private var suggestionError: String? = nil
+    /// Note surfaced after a suggestion adds new vocabulary words.
+    @State private var newWordsNote: String? = nil
+    /// New-word keys materialized during this picker session. Any that don't end
+    /// up on a page are rolled back on dismiss (suggested-then-cancelled), so the
+    /// vocabulary doesn't accrete orphan AI words.
+    @State private var sessionNewWordKeys: Set<String> = []
     @State private var showAddWord = false
     @State private var showBulkWord = false
-    @Environment(\.isSearching) private var isSearching
+    @FocusState private var searchFocused: Bool
+
+    // P3: editable `key, class[, Display]` list bound to the selection. Tapping
+    // tiles fills it in; editing it reconciles back into `selectedKeys` (new words
+    // materialized). Two-way with a focus guard so taps never clobber typing.
+    @State private var listExpanded = false
+    @State private var selectionText = ""
+    @FocusState private var listFocused: Bool
+    /// class/display for words materialized from the list, so the list renders
+    /// them correctly even before the `@Query` for `allTiles` refreshes.
+    @State private var sessionNewWords: [String: BulkWordParser.Word] = [:]
 
     private var apiKey: String {
         OpenAIKeyVault.currentKey() ?? ""
@@ -65,11 +87,28 @@ struct TilePickerView: View {
         return wc
     }
 
+    private func matchesSearch(_ tile: TileModel) -> Bool {
+        searchText.isEmpty
+            || tile.displayName.localizedCaseInsensitiveContains(searchText)
+            || tile.key.localizedCaseInsensitiveContains(searchText)
+    }
+
     private var filteredTiles: [TileModel] {
+        // A "From a page…" source takes over the grid: exactly that page's word
+        // tiles, in page order, narrowed by search.
+        if let pageSourceKeys {
+            let byKey = Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
+            return pageSourceKeys.compactMap { key in
+                guard let tile = byKey[key], matchesSearch(tile) else { return nil }
+                return tile
+            }
+        }
         let packKeySet: Set<String>? = selectedWordClass.hasPrefix("pack:")
             ? packKeys(String(selectedWordClass.dropFirst("pack:".count))) : nil
         return allTiles.filter { tile in
-            if existingKeys.contains(tile.key) { return false }
+            // On-page tiles are NOT excluded — they render marked "on page" in the
+            // grid (see pickerCell), so a search like "Golde" that matches an
+            // already-added "Golden Retriever" shows it instead of an empty state.
             if let packKeySet {
                 if !packKeySet.contains(tile.key) { return false }
             } else if selectedWordClass != "all" && tile.wordClass != selectedWordClass {
@@ -84,10 +123,84 @@ struct TilePickerView: View {
         }
     }
 
+    /// Grid tiles that can actually be selected — on-page ones show for context
+    /// but are locked, so a "select all" must skip them.
+    private var selectableFilteredKeys: [String] {
+        filteredTiles.compactMap { existingKeys.contains($0.key) ? nil : $0.key }
+    }
+    private var allFilteredSelected: Bool {
+        let keys = selectableFilteredKeys
+        return !keys.isEmpty && keys.allSatisfy { selectedKeys.contains($0) }
+    }
+    /// Offer the select-all accelerator only when a class/pack/page/search filter
+    /// is narrowing the grid — never a one-tap "select all 480" on the full list.
+    private var showSelectAllBar: Bool {
+        (selectedWordClass != "all" || !trimmedSearch.isEmpty || pageSourceKeys != nil)
+            && !selectableFilteredKeys.isEmpty
+    }
+
+    private func toggleSelectAllFiltered() {
+        let keys = selectableFilteredKeys
+        if allFilteredSelected {
+            selectedKeys.subtract(keys)
+        } else {
+            for k in keys { selectKey(k) }
+        }
+    }
+
+    /// Scenes with at least one page — the "From a page…" menu's sources.
+    private var pageSourceScenes: [BlasterScene] {
+        allScenes.filter { !$0.pages.isEmpty }
+    }
+
+    /// Filter the grid to `page`'s word tiles (structural links/navigation
+    /// dropped), replacing any class/pack chip filter.
+    private func selectPageSource(_ scene: BlasterScene, _ page: PageSpec) {
+        let byKey = Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
+        pageSourceKeys = page.tiles.compactMap { entry in
+            guard let t = byKey[entry.key],
+                  t.wordClass != PageLink.wordClass, t.wordClass != "navigation" else { return nil }
+            return t.key
+        }
+        pageSourceLabel = "\(scene.name.isEmpty ? "Scene" : scene.name) · \(page.key)"
+        selectedWordClass = "all"
+    }
+
+    private func clearPageSource() {
+        pageSourceKeys = nil
+        pageSourceLabel = ""
+    }
+
     private let columns = [GridItem(.adaptive(minimum: 72, maximum: 96))]
+
+    private var trimmedSearch: String { searchText.trimmingCharacters(in: .whitespaces) }
+
+    /// Does ANY tile match the search (same `contains` rule the grid uses)?
+    private var searchHasTileMatch: Bool {
+        let q = trimmedSearch
+        guard !q.isEmpty else { return true }
+        return allTiles.contains {
+            $0.displayName.localizedCaseInsensitiveContains(q)
+            || $0.key.localizedCaseInsensitiveContains(q)
+        }
+    }
+
+    /// The search names a brand-new word (no tile matches at all) — drives the
+    /// full-height "add new word" takeover, all filter/AI chrome collapsed.
+    /// Because it's `contains`-based, typing a longer non-matching string flips it
+    /// exactly ONCE (when the grid truly empties): no flicker, no debounce, no
+    /// "no match" intermediary. Exit is implicit (edit/clear) or explicit (Cancel).
+    private var isAddingNewWord: Bool { !trimmedSearch.isEmpty && !searchHasTileMatch }
 
     var body: some View {
         NavigationStack {
+            VStack(spacing: 0) {
+            searchField
+            Group {
+              if isAddingNewWord {
+                newWordInlineView(trimmedSearch)
+                    .transition(.opacity)
+              } else {
             ScrollView {
                 suggestionBar
                     .padding(.horizontal)
@@ -98,13 +211,54 @@ struct TilePickerView: View {
                 wordClassFilter
                     .padding(.vertical, 8)
 
-                Button { showBulkWord = true } label: {
-                    Label("Paste a word list", systemImage: "list.bullet.clipboard")
-                        .font(.caption)
+                HStack(spacing: 8) {
+                    Button { showBulkWord = true } label: {
+                        Label("Paste a word list", systemImage: "list.bullet.clipboard")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.bordered)
+
+                    if !pageSourceScenes.isEmpty {
+                        Menu {
+                            ForEach(pageSourceScenes, id: \.persistentModelID) { scene in
+                                Menu(scene.name.isEmpty ? "Untitled scene" : scene.name) {
+                                    ForEach(scene.pages, id: \.key) { page in
+                                        Button {
+                                            selectPageSource(scene, page)
+                                        } label: {
+                                            Text(page.key == scene.homePageKey ? "\(page.key) — Home" : page.key)
+                                        }
+                                    }
+                                }
+                            }
+                        } label: {
+                            Label("From a page…", systemImage: "doc.on.doc")
+                                .font(.caption)
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                    Spacer()
                 }
-                .buttonStyle(.bordered)
                 .padding(.horizontal)
                 .padding(.bottom, 4)
+
+                if pageSourceKeys != nil {
+                    HStack(spacing: 6) {
+                        Image(systemName: "doc.on.doc").font(.caption2)
+                        Text(pageSourceLabel).font(.caption).lineLimit(1)
+                        Button { clearPageSource() } label: {
+                            Image(systemName: "xmark.circle.fill")
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    .background(Capsule().fill(Color.blue.opacity(0.12)))
+                    .foregroundStyle(.blue)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal)
+                    .padding(.bottom, 4)
+                }
 
                 // When a search has matches the grid shows them, which otherwise
                 // hides the "create" path — so an existing word (any class, with
@@ -112,6 +266,20 @@ struct TilePickerView: View {
                 // filter to empty the grid. Surface create here too.
                 if !searchText.trimmingCharacters(in: .whitespaces).isEmpty && !filteredTiles.isEmpty {
                     addWordBanner
+                }
+
+                if showSelectAllBar {
+                    HStack {
+                        Text("\(selectableFilteredKeys.count) tile\(selectableFilteredKeys.count == 1 ? "" : "s")")
+                            .font(.caption).foregroundStyle(.secondary)
+                        Spacer()
+                        Button(allFilteredSelected ? "Deselect All" : "Select All") {
+                            toggleSelectAllFiltered()
+                        }
+                        .font(.caption.weight(.semibold))
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 4)
                 }
 
                 if filteredTiles.isEmpty {
@@ -127,20 +295,33 @@ struct TilePickerView: View {
                     .padding(.bottom)
                 }
             }
-            .searchable(text: $searchText, prompt: "Search tiles")
+              }
+            }
+            .animation(.easeInOut(duration: 0.15), value: isAddingNewWord)
+            }
+            .safeAreaInset(edge: .bottom) { selectionPanel }
+            .onChange(of: selectedKeys) { _, _ in
+                if !listFocused { regenerateSelectionText() }
+            }
+            .onChange(of: listFocused) { _, focused in
+                if !focused { applySelectionText() }
+            }
+            .onChange(of: listExpanded) { _, expanded in
+                if expanded, !listFocused { regenerateSelectionText() }
+            }
             .sheet(isPresented: $showAddWord) {
                 AddWordSheet(
                     initialWord: searchText,
                     existingTiles: allTiles,
                     defaultWordClass: addWordDefaultClass
                 ) { tile in
-                    placeTileOnPage(tile.key)
+                    selectKey(tile.key)
                     searchText = ""
                 }
             }
             .sheet(isPresented: $showBulkWord) {
                 BulkWordSheet(existingTiles: allTiles) { tiles in
-                    for tile in tiles { placeTileOnPage(tile.key) }
+                    for tile in tiles { selectKey(tile.key) }
                 }
             }
             .onAppear {
@@ -151,24 +332,47 @@ struct TilePickerView: View {
             .navigationTitle("Add Tiles")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                // While search is active, hide these — the searchable's own Cancel
-                // exits search mode cleanly. Showing two "cancel"-style buttons
-                // at once creates confusion about which discards selections.
-                if !isSearching {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button(selectedKeys.isEmpty ? "Dismiss" : "Discard") { dismiss() }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(selectedKeys.isEmpty ? "Dismiss" : "Discard") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Add \(selectedKeys.count)") {
+                        addSelectedTiles()
+                        dismiss()
                     }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Add \(selectedKeys.count)") {
-                            addSelectedTiles()
-                            dismiss()
-                        }
-                        .disabled(selectedKeys.isEmpty)
-                    }
+                    .disabled(selectedKeys.isEmpty)
                 }
             }
+            .onDisappear { pruneUnusedNewWords() }
         }
     }
+
+    /// Plain, fully-controlled search field — replaces `.searchable`, whose
+    /// inactive state renders collapsed/occluded inside this sheet on iOS 26.
+    private var searchField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+            TextField("Search or add a word", text: $searchText)
+                .focused($searchFocused)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+                .submitLabel(.search)
+            if !searchText.isEmpty {
+                Button { searchText = "" } label: {
+                    Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(RoundedRectangle(cornerRadius: 12).fill(Color(.tertiarySystemFill)))
+        .padding(.horizontal)
+        .padding(.top, 12)
+        .padding(.bottom, 4)
+    }
+
 
     /// Always-available "create" affordance shown above the grid during an
     /// active search. Routes to the New Word sheet (which disables any classes
@@ -215,22 +419,93 @@ struct TilePickerView: View {
                 $0.key == normalized || $0.displayName.caseInsensitiveCompare(trimmed) == .orderedSame
             }
             if matches.isEmpty {
+                // A true no-match is the add-word takeover (isAddingNewWord), so we
+                // only get here when a tile matches but the filter / on-page state
+                // hides it.
                 ContentUnavailableView {
-                    Label("No match for “\(trimmed)”", systemImage: "magnifyingglass")
+                    Label("Nothing here for “\(trimmed)”", systemImage: "line.3.horizontal.decrease.circle")
                 } description: {
-                    Text("Add it as a new word in your vocabulary.")
-                } actions: {
-                    Button {
-                        showAddWord = true
-                    } label: {
-                        Label("Add “\(trimmed)” as a new word", systemImage: "plus.circle.fill")
-                    }
-                    .buttonStyle(.borderedProminent)
+                    Text("A match exists but the current class/pack filter hides it — set the filter to All.")
                 }
             } else {
                 existingWordView(trimmed, matches)
             }
         }
+    }
+
+    /// Search found nothing — add `word` as a new tile inline: the word is already
+    /// known, so we only need its class. Tapping a type materializes the word
+    /// (artless, isSystem=false — the bulk art pass fills art) and stages it into
+    /// the selection. The heavy New Word sheet stays as a "more options" escape
+    /// hatch for a photo or a same-name different-type homograph.
+    @ViewBuilder
+    private func newWordInlineView(_ word: String) -> some View {
+        VStack(spacing: 0) {
+            HStack {
+                Label("Add “\(word)”", systemImage: "plus.circle.fill")
+                    .font(.headline)
+                Spacer()
+                Button("Cancel") { searchText = "" }
+                    .font(.subheadline)
+            }
+            .padding(.horizontal, 16).padding(.vertical, 12)
+            Divider()
+
+            ScrollView {
+                VStack(spacing: 14) {
+                    Text("Pick a type — the word is added now and gets art from the batch pass.")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.top, 14).padding(.horizontal)
+
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 108), spacing: 8)], spacing: 8) {
+                        ForEach(VocabularyClasses.caregiverSelectable, id: \.name) { cls in
+                            Button { addNewWordInline(word, wordClass: cls.name) } label: {
+                                HStack(spacing: 6) {
+                                    Circle().fill(cls.color).frame(width: 9, height: 9)
+                                    Text(cls.label).font(.subheadline).lineLimit(1)
+                                    Spacer(minLength: 0)
+                                }
+                                .padding(.horizontal, 12).padding(.vertical, 12)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(RoundedRectangle(cornerRadius: 12).fill(.quaternary))
+                                .contentShape(RoundedRectangle(cornerRadius: 12))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal)
+
+                    Button { showAddWord = true } label: {
+                        Label("More options (photo, different type)…", systemImage: "ellipsis.circle")
+                            .font(.subheadline)
+                    }
+                    .buttonStyle(.bordered)
+                    .padding(.top, 2)
+                }
+                .padding(.bottom, 20)
+            }
+        }
+    }
+
+    /// Materialize `word` with `wordClass` (through the shared choke point, tracked
+    /// for rollback) and stage it into the selection; clears the search.
+    private func addNewWordInline(_ word: String, wordClass: String) {
+        let key = TileModel.normalizeKey(word)
+        guard !key.isEmpty else { return }
+        var lookup = tileLookup
+        if lookup[key] == nil {
+            let created = SceneBuilder.materializeNewWords(
+                [GeneratedNewWord(key: key, displayName: word, wordClass: wordClass)],
+                into: modelContext, existing: &lookup)
+            if !created.isEmpty { try? modelContext.save() }
+            sessionNewWordKeys.formUnion(created)
+            for k in created {
+                sessionNewWords[k] = BulkWordParser.Word(key: k, wordClass: wordClass, displayName: word)
+            }
+        }
+        selectKey(key)
+        searchText = ""
     }
 
     /// The searched word already exists. Show which classes it exists as (and
@@ -259,8 +534,8 @@ struct TilePickerView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         } else {
-                            Button("Add to page") {
-                                placeTileOnPage(tile.key)
+                            Button("Add") {
+                                selectKey(tile.key)
                                 searchText = ""
                             }
                             .font(.caption)
@@ -282,13 +557,13 @@ struct TilePickerView: View {
         .frame(maxWidth: 440)
     }
 
-    private func placeTileOnPage(_ key: String) {
-        var pages = scene.pages
-        guard let idx = pages.firstIndex(where: { $0.key == pageKey }) else { return }
-        guard !pages[idx].tiles.contains(where: { $0.key == key }) else { return }
-        pages[idx].tiles.append(pageEntry(for: key))
-        scene.pages = pages
-        try? modelContext.save()
+    /// Stage a tile into the picker's selection — the single commit path — rather
+    /// than dropping it on the page immediately. So hand-created (New Word),
+    /// pasted (Bulk), and quick-added tiles all flow through the same
+    /// refine / reorder / Selected-list surface and commit together on "Add".
+    private func selectKey(_ key: String) {
+        guard !existingKeys.contains(key) else { return }
+        selectedKeys.insert(key)
     }
 
     /// A tile placement. A page_link tile drops as a SILENT link to its target
@@ -313,6 +588,7 @@ struct TilePickerView: View {
                         let isOn = selectedWordClass == value
                         Button {
                             selectedWordClass = isOn ? "all" : value
+                            clearPageSource()
                         } label: {
                             HStack(spacing: 5) {
                                 Image(systemName: "shippingbox.fill").font(.caption2)
@@ -339,6 +615,7 @@ struct TilePickerView: View {
                 ForEach(wordClasses, id: \.self) { wc in
                     Button {
                         selectedWordClass = wc
+                        clearPageSource()
                     } label: {
                         Text(classLabel(wc))
                             .font(.caption)
@@ -362,8 +639,10 @@ struct TilePickerView: View {
 
     @ViewBuilder
     private func pickerCell(_ tile: TileModel) -> some View {
+        let onPage = existingKeys.contains(tile.key)
         let isSelected = selectedKeys.contains(tile.key)
         Button {
+            if onPage { return }   // already on the page — shown for context, not selectable
             if isSelected { selectedKeys.remove(tile.key) }
             else { selectedKeys.insert(tile.key) }
         } label: {
@@ -377,8 +656,14 @@ struct TilePickerView: View {
                             .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 3)
                     )
                     .shadow(color: .black.opacity(0.1), radius: 2, y: 1)
+                    .opacity(onPage ? 0.45 : 1)
 
-                    if isSelected {
+                    if onPage {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.white, Color.secondary)
+                            .offset(x: 4, y: -4)
+                    } else if isSelected {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.caption)
                             .foregroundStyle(.white, Color.accentColor)
@@ -389,7 +674,7 @@ struct TilePickerView: View {
                 Text(tile.displayName)
                     .font(.system(size: 10, weight: .medium))
                     .lineLimit(1)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(onPage ? .tertiary : .secondary)
                     .frame(maxWidth: .infinity)
             }
         }
@@ -428,6 +713,12 @@ struct TilePickerView: View {
                     .foregroundStyle(.red)
             }
 
+            if let note = newWordsNote {
+                Label(note, systemImage: "sparkles")
+                    .font(.caption)
+                    .foregroundStyle(.tint)
+            }
+
             if apiKey.isEmpty {
                 Text("Add an OpenAI API key in Admin to enable AI suggestions.")
                     .font(.caption)
@@ -441,19 +732,197 @@ struct TilePickerView: View {
         guard !goal.isEmpty, !apiKey.isEmpty else { return }
         isSuggesting = true
         suggestionError = nil
+        newWordsNote = nil
         let service = TileSuggestionService(apiKey: apiKey)
         let tiles = allTiles  // capture before async hop
         Task {
             do {
-                let keys = try await service.suggest(goal: goal, allTiles: tiles)
-                selectedKeys = selectedKeys.union(keys.subtracting(existingKeys))
+                let result = try await service.suggest(goal: goal, allTiles: tiles)
+                // Materialize proposed new words as artless caregiver tiles so they
+                // can be selected here and are picked up by the batch art pass —
+                // the same path scene/page generation uses. @Query refreshes the
+                // grid to include them.
+                var lookup = Dictionary(tiles.map { ($0.key, $0) }, uniquingKeysWith: { a, _ in a })
+                let created = SceneBuilder.materializeNewWords(result.newWords,
+                                                               into: modelContext, existing: &lookup)
+                if !created.isEmpty { try? modelContext.save() }
+                sessionNewWordKeys.formUnion(created)
+                let picks = result.existingKeys.union(Set(created))
+                selectedKeys = selectedKeys.union(picks.subtracting(existingKeys))
                 // Clear the word class filter so suggested tiles are all visible
                 selectedWordClass = "all"
+                if !created.isEmpty {
+                    newWordsNote = "Added \(created.count) new word\(created.count == 1 ? "" : "s"): "
+                        + created.sorted().joined(separator: ", ")
+                }
             } catch {
                 suggestionError = error.localizedDescription
             }
             isSuggesting = false
         }
+    }
+
+    // MARK: - Editable selection list (P3)
+
+    private var tileLookup: [String: TileModel] {
+        Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { a, _ in a })
+    }
+
+    /// Bottom panel: the live, editable `key, class[, Display]` list bound to the
+    /// selection. Tapping tiles fills it in; editing it (on blur / Apply)
+    /// reconciles back into `selectedKeys`, materializing brand-new words.
+    private var selectionPanel: some View {
+        VStack(spacing: 0) {
+            Button {
+                if listFocused { listFocused = false }
+                withAnimation(.easeInOut(duration: 0.15)) { listExpanded.toggle() }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "list.bullet.rectangle.portrait")
+                    Text("Selected \(selectedKeys.count)")
+                        .contentTransition(.numericText())
+                    Spacer()
+                    Image(systemName: listExpanded ? "chevron.down" : "chevron.up").font(.caption)
+                }
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.primary)
+                .padding(.horizontal, 14).padding(.vertical, 10)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            if listExpanded {
+                Divider()
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Edit or paste `key, class` lines — new words are created. Tapping tiles above adds here.")
+                        .font(.caption2).foregroundStyle(.secondary)
+                    classPaletteRow
+                    TextEditor(text: $selectionText)
+                        .font(.system(.caption, design: .monospaced))
+                        .frame(minHeight: 84, maxHeight: 150)
+                        .focused($listFocused)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .padding(6)
+                        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.quaternary))
+                    HStack {
+                        if let hint = selectionListHint {
+                            Label(hint, systemImage: "exclamationmark.triangle")
+                                .font(.caption2).foregroundStyle(.orange)
+                        }
+                        Spacer()
+                        if listFocused {
+                            Button("Apply") { listFocused = false }
+                                .font(.caption).buttonStyle(.borderedProminent).controlSize(.small)
+                        }
+                    }
+                }
+                .padding(.horizontal, 14).padding(.vertical, 8)
+            }
+        }
+        .background(.bar)
+    }
+
+    /// Tap-to-insert class palette for the list editor (mirrors the Paste sheet).
+    private var classPaletteRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(VocabularyClasses.caregiverSelectable, id: \.name) { cls in
+                    Button { insertClassIntoSelection(cls.name) } label: {
+                        Text(cls.name)
+                            .font(.caption2.weight(.medium))
+                            .padding(.horizontal, 9).padding(.vertical, 4)
+                            .background(Capsule().fill(cls.color.opacity(0.28)))
+                            .foregroundStyle(.primary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.vertical, 1)
+        }
+    }
+
+    /// Append a class to the list text, mending the separator (after a bare
+    /// "rocket" → "rocket, object") — same behavior as the Paste sheet's palette.
+    private func insertClassIntoSelection(_ name: String) {
+        if selectionText.isEmpty || selectionText.hasSuffix("\n") || selectionText.hasSuffix(", ") {
+            selectionText += name
+        } else if selectionText.hasSuffix(",") {
+            selectionText += " \(name)"
+        } else {
+            selectionText += ", \(name)"
+        }
+    }
+
+    /// Non-fatal warnings about the current list text (unknown class / bad lines).
+    private var selectionListHint: String? {
+        let parsed = BulkWordParser.parse(selectionText)
+        let unknown = Set(parsed.words.map(\.wordClass)).subtracting(BulkWordParser.knownClasses)
+        if !unknown.isEmpty {
+            return "Unknown class: \(unknown.sorted().joined(separator: ", ")) — added with a neutral color."
+        }
+        if !parsed.skipped.isEmpty {
+            return "\(parsed.skipped.count) line(s) need `key, class`."
+        }
+        return nil
+    }
+
+    private func csvLine(key: String, wordClass: String, displayName: String) -> String {
+        let plain = key.replacingOccurrences(of: "_", with: " ")
+        return displayName.lowercased() == plain.lowercased()
+            ? "\(key), \(wordClass)"
+            : "\(key), \(wordClass), \(displayName)"
+    }
+
+    /// Render the selection as `key, class[, Display]` lines.
+    private func regenerateSelectionText() {
+        let lookup = tileLookup
+        selectionText = selectedKeys.sorted().compactMap { key -> String? in
+            if let t = lookup[key] { return csvLine(key: key, wordClass: t.wordClass, displayName: t.displayName) }
+            if let w = sessionNewWords[key] { return csvLine(key: key, wordClass: w.wordClass, displayName: w.displayName) }
+            return nil
+        }.joined(separator: "\n")
+    }
+
+    /// Reconcile edited list → selection: existing words are selected; brand-new
+    /// words are materialized (artless, isSystem=false) through the shared choke
+    /// point and tracked for rollback (identical to the suggest path).
+    private func applySelectionText() {
+        var lookup = tileLookup
+        var newSelection = Set<String>()
+        var toMaterialize: [GeneratedNewWord] = []
+        for w in BulkWordParser.parse(selectionText).words {
+            let key = TileModel.normalizeKey(w.key)
+            guard !key.isEmpty else { continue }
+            if lookup[key] != nil {
+                newSelection.insert(key)
+            } else {
+                toMaterialize.append(GeneratedNewWord(key: key, displayName: w.displayName, wordClass: w.wordClass))
+                sessionNewWords[key] = BulkWordParser.Word(key: key, wordClass: w.wordClass, displayName: w.displayName)
+                newSelection.insert(key)
+            }
+        }
+        let created = SceneBuilder.materializeNewWords(toMaterialize, into: modelContext, existing: &lookup)
+        if !created.isEmpty { try? modelContext.save() }
+        sessionNewWordKeys.formUnion(created)
+        selectedKeys = newSelection.subtracting(existingKeys)
+        regenerateSelectionText()
+    }
+
+    /// Roll back new words this session materialized that didn't end up on any
+    /// page — i.e. suggested, then the picker was dismissed or those tiles were
+    /// deselected before Add. Runs on the picker's disappearance, after any Add
+    /// has committed, so genuinely-used new words are kept.
+    private func pruneUnusedNewWords() {
+        guard !sessionNewWordKeys.isEmpty else { return }
+        let used = Set(scene.pages.flatMap { $0.tiles.map(\.key) })
+        let orphans = sessionNewWordKeys.subtracting(used)
+        sessionNewWordKeys.removeAll()
+        guard !orphans.isEmpty else { return }
+        for tile in allTiles where orphans.contains(tile.key) {
+            modelContext.delete(tile)
+        }
+        try? modelContext.save()
     }
 
     private func addSelectedTiles() {
@@ -467,9 +936,10 @@ struct TilePickerView: View {
         guard !keysToAdd.isEmpty else { return }
         var pages = scene.pages
         guard let idx = pages.firstIndex(where: { $0.key == pageKey }) else { return }
-        for key in keysToAdd {
-            pages[idx].tiles.append(pageEntry(for: key))
-        }
+        // Insert at the FRONT (next to the slot-0 add cell) so just-added tiles are
+        // immediately visible on a long page rather than buried at the end. The
+        // bulk-move tools make repositioning a group easy afterward.
+        pages[idx].tiles.insert(contentsOf: keysToAdd.map { pageEntry(for: $0) }, at: 0)
         scene.pages = pages
         try? modelContext.save()
     }

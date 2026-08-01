@@ -11,6 +11,27 @@
 import SwiftData
 
 enum SceneBuilder {
+    /// Materialize proposed NEW words (declared `displayName` + `wordClass`, not
+    /// yet in vocabulary) as caregiver-owned, artless `TileModel`s
+    /// (`isSystem = false`) so they can be added like any existing tile and are
+    /// picked up by the scene-wide "generate art for new words" pass. Skips words
+    /// already present in `existing`. Returns the keys actually created.
+    @discardableResult
+    static func materializeNewWords(_ newWords: [GeneratedNewWord],
+                                    into context: ModelContext,
+                                    existing: inout [String: TileModel]) -> [String] {
+        var created: [String] = []
+        for nw in newWords where existing[nw.key] == nil
+            && !nw.displayName.isEmpty && !nw.wordClass.isEmpty {
+            let tile = TileModel(key: nw.key, value: nw.displayName, wordClass: nw.wordClass)
+            tile.isSystem = false
+            context.insert(tile)
+            existing[nw.key] = tile
+            created.append(nw.key)
+        }
+        return created
+    }
+
     /// Build a BlasterScene from AI output, insert it into `context`, and return it.
     /// Proposed NEW words (tiles carrying displayName + wordClass that aren't in
     /// `tileLookup`) are materialized as caregiver TileModels (isSystem=false)

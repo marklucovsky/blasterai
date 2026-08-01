@@ -12,16 +12,13 @@ import SwiftData
 import Foundation
 @testable import claudeBlast
 
+extension SerialTests {
 @MainActor
+@Suite(.serialized)
 struct claudeBlastTests {
 
     private func makeTestContainer() throws -> ModelContainer {
-        let schema = Schema([
-            TileModel.self,
-            SentenceCache.self, BlasterScene.self, MetricEvent.self
-        ])
-        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-        return try ModelContainer(for: schema, configurations: [config])
+        return TestStore.freshContainer()
     }
 
     @Test func tileModelKeyNormalization() throws {
@@ -203,7 +200,7 @@ struct claudeBlastTests {
         source.pages = [PageSpec(key: "home", tiles: [TileEntry(key: "eat")])]
         context.insert(source)
 
-        let copy = BlasterScene.duplicate(of: source, in: context)
+        let copy = BlasterScene.duplicate(of: source, in: context, authorID: "test-author", authorName: "Tester")
         #expect(copy.name == "duplicate-of:Core-First")
         #expect(copy.descriptionText.hasPrefix("duplicated from Core-First::"))
         #expect(copy.homePageKey == "home")
@@ -225,15 +222,15 @@ struct claudeBlastTests {
         context.insert(source)
         try context.save()
 
-        let first = BlasterScene.duplicate(of: source, in: context)
+        let first = BlasterScene.duplicate(of: source, in: context, authorID: "test-author", authorName: "Tester")
         try context.save()
         #expect(first.name == "duplicate-of:Core-First")
 
-        let second = BlasterScene.duplicate(of: source, in: context)
+        let second = BlasterScene.duplicate(of: source, in: context, authorID: "test-author", authorName: "Tester")
         try context.save()
         #expect(second.name == "duplicate-of:Core-First-2")
 
-        let third = BlasterScene.duplicate(of: source, in: context)
+        let third = BlasterScene.duplicate(of: source, in: context, authorID: "test-author", authorName: "Tester")
         try context.save()
         #expect(third.name == "duplicate-of:Core-First-3")
     }
@@ -286,4 +283,5 @@ struct claudeBlastTests {
         #expect(scene.pages.first?.key == "therapy_page")
         #expect(scene.homePageKey == "therapy_page")
     }
+}
 }

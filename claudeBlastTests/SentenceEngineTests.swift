@@ -10,16 +10,13 @@ import SwiftData
 import Foundation
 @testable import claudeBlast
 
+extension SerialTests {
 @MainActor
+@Suite(.serialized)
 struct SentenceEngineTests {
 
     private func makeTestContainer() throws -> ModelContainer {
-        let schema = Schema([
-            TileModel.self,
-            SentenceCache.self, BlasterScene.self, MetricEvent.self
-        ])
-        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-        return try ModelContainer(for: schema, configurations: [config])
+        return TestStore.freshContainer()
     }
 
     // MARK: - SentencePromptBuilder
@@ -253,4 +250,5 @@ struct SentenceEngineTests {
         #expect(a == b)
         #expect(a != c)
     }
+}
 }

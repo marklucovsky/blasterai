@@ -16,7 +16,9 @@ import SwiftData
 import Foundation
 @testable import claudeBlast
 
+extension SerialTests {
 @MainActor
+@Suite(.serialized)
 struct CloudKitDedupReconcilerTests {
 
     /// Return the CONTAINER (not just its context): the caller must retain it for
@@ -25,14 +27,7 @@ struct CloudKitDedupReconcilerTests {
     /// isn't supported by an in-memory store. The reconciler fetches it via `try?`,
     /// so it no-ops when the model isn't registered.
     private func makeContainer() throws -> ModelContainer {
-        let schema = Schema([
-            TileModel.self,
-            SentenceCache.self, BlasterScene.self, MetricEvent.self,
-            RecordedScript.self, LoggedUtterance.self,
-            ChildProfile.self, DeviceProfile.self,
-        ])
-        let cfg = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-        return try ModelContainer(for: schema, configurations: [cfg])
+        return TestStore.freshContainer()
     }
 
     private func tile(_ key: String, id: String, isSystem: Bool = true,
@@ -262,4 +257,5 @@ struct CloudKitDedupReconcilerTests {
         #expect(first == 3)    // 2 tile dupes + 1 scene dupe
         #expect(second == 0)   // already converged
     }
+}
 }

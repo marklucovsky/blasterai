@@ -64,11 +64,17 @@ enum ImageSetID: String, CaseIterable, Identifiable {
     ///
     /// High Contrast is currently incomplete (~20 vocabulary gaps) and is
     /// pending a full review + regen pass before it can ship.
+    ///
+    /// ARASAAC is a **legacy/historical** external set: it's a fixed public
+    /// corpus we never generate against (`generationTargets` excludes it), so it
+    /// permanently lags as the vocabulary grows (e.g. no "chocolate"). We don't
+    /// ship it — it stays a DEBUG-only reference that open-source users can
+    /// backfill themselves. It is therefore not held to the coverage bar.
     var isShippable: Bool {
         switch self {
         case .playful3D:    return true   // master set — full coverage, reviewed
         case .classic:      return true   // complete clean-room ARASAAC-style set
-        case .arasaac:      return true   // complete legacy reference set
+        case .arasaac:      return false  // legacy external reference — dev-only, not shipped
         case .highContrast: return false  // pending full review + regen
         }
     }

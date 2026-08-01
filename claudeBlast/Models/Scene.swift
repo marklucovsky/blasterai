@@ -219,6 +219,55 @@ final class BlasterScene {
         pages.first { $0.key == key }
     }
 
+    /// Remove every tile whose key is in `keys` from page `pageKey` (bulk delete).
+    func removeTiles(withKeys keys: Set<String>, fromPage pageKey: String) {
+        guard !keys.isEmpty else { return }
+        var pages = self.pages
+        guard let idx = pages.firstIndex(where: { $0.key == pageKey }) else { return }
+        pages[idx].tiles.removeAll { keys.contains($0.key) }
+        self.pages = pages
+    }
+
+    /// Move the tiles whose keys are in `keys` to the front or end of page
+    /// `pageKey`, preserving their existing relative order (bulk reorder).
+    func moveTiles(withKeys keys: Set<String>, toFront: Bool, inPage pageKey: String) {
+        guard !keys.isEmpty else { return }
+        var pages = self.pages
+        guard let idx = pages.firstIndex(where: { $0.key == pageKey }) else { return }
+        let moving = pages[idx].tiles.filter { keys.contains($0.key) }
+        let rest = pages[idx].tiles.filter { !keys.contains($0.key) }
+        pages[idx].tiles = toFront ? moving + rest : rest + moving
+        self.pages = pages
+    }
+
+    /// Duplicate page `pageKey` within this scene under a fresh, de-duped key
+    /// (`<key>_2`, `_3`, …). Same-scene structural copy — tiles are value types,
+    /// so the copy is independent; no link placement. Returns the new key.
+    @discardableResult
+    func duplicatePage(_ pageKey: String) -> String? {
+        var pages = self.pages
+        guard let src = pages.first(where: { $0.key == pageKey }) else { return nil }
+        let existing = Set(pages.map(\.key))
+        var n = 2
+        var candidate = "\(pageKey)_\(n)"
+        while existing.contains(candidate) { n += 1; candidate = "\(pageKey)_\(n)" }
+        pages.append(PageSpec(key: candidate, tiles: src.tiles))
+        self.pages = pages
+        return candidate
+    }
+
+    /// The key that should become home when the current home page is toggled off.
+    /// Prefer a page keyed "home" (unless the current home IS that page — then
+    /// don't get stuck on it), otherwise the first other page in the list.
+    /// `nil` when there is no other page (a sole page stays home).
+    func homeKeyAfterTogglingOffCurrent() -> String? {
+        let current = homePageKey
+        if let named = pages.first(where: { $0.key == "home" && $0.key != current })?.key {
+            return named
+        }
+        return pages.first(where: { $0.key != current })?.key
+    }
+
     /// Activate this scene, deactivating any other active scene in the context.
     func activate(context: ModelContext) throws {
         let allScenes = try context.fetch(FetchDescriptor<BlasterScene>())
@@ -256,8 +305,14 @@ final class BlasterScene {
     ///   copies; they're not protected by the force-refresh path and won't
     ///   be touched by bundled updates.
     /// - pages: deep copy of the source's PageSpec list.
+    /// - authorID / authorName: the duplicating device's identity, resolved by
+    ///   the caller (`DeviceProfileStore.ensureAuthorID` / `.authorName`). Passed
+    ///   in rather than fetched here so this model method stays free of any store
+    ///   dependency — `DeviceProfile` lives in a separate schema-split config, and
+    ///   inserting one from an arbitrary context is what made this untestable.
     @discardableResult
-    static func duplicate(of source: BlasterScene, in context: ModelContext) -> BlasterScene {
+    static func duplicate(of source: BlasterScene, in context: ModelContext,
+                          authorID: String, authorName: String) -> BlasterScene {
         let baseName = "duplicate-of:\(source.name)"
         let existingNames: Set<String> = (try? context.fetch(FetchDescriptor<BlasterScene>()))
             .map { Set($0.map(\.name)) } ?? []
@@ -283,8 +338,7 @@ final class BlasterScene {
         // A duplicate is a new, locally-owned scene: give it a fresh identity
         // under this device's author id (sceneID starts empty → ensureIdentity
         // mints a new one from the duplicate's name).
-        copy.ensureIdentity(authorID: DeviceProfileStore.ensureAuthorID(context: context),
-                            authorName: DeviceProfileStore.authorName(context: context))
+        copy.ensureIdentity(authorID: authorID, authorName: authorName)
         context.insert(copy)
         return copy
     }

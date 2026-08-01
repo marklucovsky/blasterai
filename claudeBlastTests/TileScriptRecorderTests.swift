@@ -19,17 +19,13 @@ import Foundation
 /// - `*play*`     → recorder.recordPlay()  (user taps Play on an unlocked group)
 /// - `*replay*`   → recorder.recordReplay() (user taps Play on a locked group or history chip)
 /// - `*done*`     → engine.commitActiveAndStartNew() (user taps Done OR auto-Done fires)
+extension SerialTests {
 @MainActor
+@Suite(.serialized)
 struct TileScriptRecorderTests {
 
     private func makeTestContainer() throws -> ModelContainer {
-        let schema = Schema([
-            TileModel.self,
-            SentenceCache.self, BlasterScene.self, MetricEvent.self,
-            RecordedScript.self,
-        ])
-        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-        return try ModelContainer(for: schema, configurations: [config])
+        return TestStore.freshContainer()
     }
 
     /// Parse a DSL string and drive the recorder + engine.
@@ -319,4 +315,5 @@ struct TileScriptRecorderTests {
         #expect(rows[0].isReplay == false)
         #expect(rows[1].isReplay == true)
     }
+}
 }
