@@ -7,37 +7,37 @@
   "words": [
     {
       "key": "dinosaur",
-      "wordClass": "object",
+      "wordClass": "animal",
       "displayName": "Dinosaur"
     },
     {
       "key": "trex",
-      "wordClass": "object",
+      "wordClass": "animal",
       "displayName": "T-Rex"
     },
     {
       "key": "triceratops",
-      "wordClass": "object",
+      "wordClass": "animal",
       "displayName": "Triceratops"
     },
     {
       "key": "stegosaurus",
-      "wordClass": "object",
+      "wordClass": "animal",
       "displayName": "Stegosaurus"
     },
     {
       "key": "pterodactyl",
-      "wordClass": "object",
+      "wordClass": "animal",
       "displayName": "Pterodactyl"
     },
     {
       "key": "brontosaurus",
-      "wordClass": "object",
+      "wordClass": "animal",
       "displayName": "Brontosaurus"
     },
     {
       "key": "raptor",
-      "wordClass": "object",
+      "wordClass": "animal",
       "displayName": "Raptor"
     },
     {

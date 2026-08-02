@@ -87,7 +87,7 @@
       "tiles": [
         {"link": "home", "to": "<home>", "audible": false},
         {"link": "drinks", "to": "drinks", "audible": false},
-        {"class": ["food", "meals", "fruit", "veggie", "snacks"]}
+        {"class": ["food"]}
       ]
     },
     {

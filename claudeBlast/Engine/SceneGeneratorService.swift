@@ -119,10 +119,7 @@ struct SceneGeneratorService {
         - A NEW word must be a COMMON, CONCRETE thing with a single clear visual (an animal, object, \
           food, place, or person). NEVER make abstract concepts, feelings, or actions into new words \
           — those must come from existing vocabulary.
-        - Choose the wordClass by what the thing IS: "places" is ONLY a location or destination the \
-          child goes to (station, park, barn, store) — NEVER a portable object. For a physical object, \
-          tool, vehicle, instrument, or piece of equipment (handcuffs, badge, hose, ladder, tractor), \
-          use "object". Animals use "animal"; foods use food/fruit/veggie/snacks; people/roles use "people".
+        - \(VocabularyClasses.classSelectionGuidance)
         - Declare every new word ONCE in the top-level "newWords" array with its "displayName" \
           and "wordClass" (one of: \(VocabularyClasses.caregiverSelectable.map(\.name).joined(separator: ", "))), \
           then reference it by the same "key" in page tiles. Every page-tile key MUST be either \

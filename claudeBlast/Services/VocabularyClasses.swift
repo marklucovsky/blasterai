@@ -44,11 +44,13 @@ enum VocabularyClasses {
         VocabularyClass(name: "describe", color: .green,                                    isCaregiverSelectable: true),
         VocabularyClass(name: "feeling",  color: Color(red: 0.96, green: 0.42, blue: 0.55), isCaregiverSelectable: true),
         VocabularyClass(name: "social",   color: .pink,                                     isCaregiverSelectable: true),
+        // `food` absorbs the former meals/fruit/veggie/snacks buckets (2026-08).
+        // Those sub-splits were arbitrary from the LLM's view (the class string is
+        // injected into the sentence prompt) and only ever served scene-builder
+        // collection filtering — the wrong customer. The word itself ("carrot",
+        // "cookie") already tells the model what it is; the sub-class did not.
         VocabularyClass(name: "food",     color: .red,                                      isCaregiverSelectable: true),
-        VocabularyClass(name: "meals",    color: .red,                                      isCaregiverSelectable: true),
-        VocabularyClass(name: "fruit",    color: .red,                                      isCaregiverSelectable: true),
-        VocabularyClass(name: "veggie",   color: .red,                                      isCaregiverSelectable: true),
-        VocabularyClass(name: "snacks",   color: .red,                                      isCaregiverSelectable: true),
+        VocabularyClass(name: "plant",    color: Color(red: 0.5, green: 0.62, blue: 0.28),  isCaregiverSelectable: true),
         VocabularyClass(name: "drinks",   color: .cyan,                                     isCaregiverSelectable: true),
         VocabularyClass(name: "places",   color: .blue,                                     isCaregiverSelectable: true),
         VocabularyClass(name: "weather",  color: Color(red: 0.3, green: 0.6, blue: 0.9),    isCaregiverSelectable: true),
@@ -74,6 +76,20 @@ enum VocabularyClasses {
         // caregiver-creatable — pages mint these themselves.
         VocabularyClass(name: "page_link",  color: Color(red: 0.4, green: 0.45, blue: 0.85),  isCaregiverSelectable: false),
     ]
+
+    /// Shared, tightened rule for how the AI should pick a `wordClass` for a NEW
+    /// word. Centralized here so the scene / page / tile / refiner generators all
+    /// speak with one voice and can't drift. `object` is deliberately framed as a
+    /// LAST resort: it was over-used as a dumping ground (whole packs of animals
+    /// and plants leaked into it), which pollutes the class hint the LLM sees.
+    static let classSelectionGuidance =
+        "Choose the wordClass by what the thing IS. \"places\" is ONLY a location the child goes to " +
+        "(park, barn, store) — never a portable thing. Any living creature — pet, farm animal, sea " +
+        "creature, bug, or dinosaur — is \"animal\". A growing thing — tree, flower, seaweed, hay — is " +
+        "\"plant\". Anything edible is \"food\"; a beverage is \"drinks\". A person or role is \"people\". " +
+        "Use \"object\" ONLY as a last resort, for a man-made tool, vehicle, instrument, or piece of " +
+        "equipment (ladder, tractor, car, hose) that fits no more specific class — always prefer " +
+        "animal / plant / food / places / people first."
 
     private static let byName: [String: VocabularyClass] =
         Dictionary(uniqueKeysWithValues: all.map { ($0.name, $0) })

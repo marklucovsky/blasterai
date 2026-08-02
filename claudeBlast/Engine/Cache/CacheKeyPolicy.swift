@@ -32,7 +32,7 @@ enum CacheKeyPolicy {
     /// sentence. Entries stamped with a different `versionToken` are swept:
     /// automatically at launch (`evictStale`) and on demand from Admin
     /// (`pruneStaleVersions`), regardless of TTL.
-    nonisolated static let promptVersion = 1
+    nonisolated static let promptVersion = 2   // v2: food-subclass collapse + object/animal/plant retag (2026-08)
 
     /// Stamped onto each cache entry (`SentenceCache.keyVersion`) and embedded in
     /// the key. Excludes grade + word class on purpose — those are legitimate

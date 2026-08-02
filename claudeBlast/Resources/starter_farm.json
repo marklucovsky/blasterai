@@ -11,32 +11,32 @@
   "tiles": [
     {
       "key": "cow",
-      "wordClass": "object",
+      "wordClass": "animal",
       "displayName": "Cow"
     },
     {
       "key": "pig",
-      "wordClass": "object",
+      "wordClass": "animal",
       "displayName": "Pig"
     },
     {
       "key": "horse",
-      "wordClass": "object",
+      "wordClass": "animal",
       "displayName": "Horse"
     },
     {
       "key": "chicken",
-      "wordClass": "object",
+      "wordClass": "animal",
       "displayName": "Chicken"
     },
     {
       "key": "sheep",
-      "wordClass": "object",
+      "wordClass": "animal",
       "displayName": "Sheep"
     },
     {
       "key": "rooster",
-      "wordClass": "object",
+      "wordClass": "animal",
       "displayName": "Rooster"
     },
     {
@@ -56,12 +56,12 @@
     },
     {
       "key": "egg",
-      "wordClass": "object",
+      "wordClass": "food",
       "displayName": "Egg"
     },
     {
       "key": "hay",
-      "wordClass": "object",
+      "wordClass": "plant",
       "displayName": "Hay"
     }
   ],

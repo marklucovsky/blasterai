@@ -48,9 +48,9 @@ enum EvalCases {
     static let sentences: [SentenceEvalCase] = [
         .init("mom_hungry", [("mom", "mom", "people"), ("hungry", "hungry", "feeling")],
               probe: "self-centered request framing"),
-        .init("eat_pizza", [("eat", "eat", "actions"), ("pizza", "pizza", "meals")],
+        .init("eat_pizza", [("eat", "eat", "actions"), ("pizza", "pizza", "food")],
               probe: "simple want"),
-        .init("mom_eat_pizza", [("mom", "mom", "people"), ("eat", "eat", "actions"), ("pizza", "pizza", "meals")],
+        .init("mom_eat_pizza", [("mom", "mom", "people"), ("eat", "eat", "actions"), ("pizza", "pizza", "food")],
               probe: "three-tile request"),
         .init("tired_bed", [("tired", "tired", "feeling"), ("bed", "bed", "places")],
               probe: "feeling + place"),
