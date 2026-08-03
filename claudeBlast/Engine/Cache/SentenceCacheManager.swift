@@ -102,6 +102,64 @@ final class SentenceCacheManager {
         }
     }
 
+    // MARK: - Content-safety purge (unconditional)
+
+    /// Purge every cached sentence whose tile combination INCLUDES `tileKey`.
+    /// Unlike eviction (`evictStale`/`pruneStaleVersions`), this is UNCONDITIONAL:
+    /// it deletes even pinned + caregiver-curated entries. A word pulled for
+    /// content-safety (a disallowed term) must stop being spoken regardless of how
+    /// it was cached. Uses per-object deletes, so removals propagate through
+    /// CloudKit to the child's other devices — the opposite of the local-only
+    /// `BootstrapLoader.wipeAllData`. Returns the number deleted.
+    ///
+    /// This is the companion to `TileModel.isRetired`: retiring a word for safety
+    /// wires through here so a later un-retire can't resurrect a stale sentence.
+    @discardableResult
+    func invalidate(containingTileKey tileKey: String) -> Int {
+        let doomed = allEntries().filter { $0.tileKeys.contains(tileKey) }
+        for entry in doomed { context.delete(entry) }
+        Self.logger.info("""
+        invalidate(containingTileKey): key=\(tileKey, privacy: .public) \
+        removed=\(doomed.count, privacy: .public)
+        """)
+        return doomed.count
+    }
+
+    /// Purge every cached sentence that used a tile of `wordClass`. The class is
+    /// folded into the cache key as `key:class` pairs (see `CacheKeyPolicy`), so we
+    /// match on that. Same unconditional semantics as
+    /// `invalidate(containingTileKey:)` — deletes pinned/curated entries too, and
+    /// propagates through CloudKit. Used when a whole class is retired or a
+    /// reclassification should stop serving old-meaning sentences. Returns the
+    /// number deleted.
+    @discardableResult
+    func invalidate(wordClass: String) -> Int {
+        let doomed = allEntries().filter { entry in
+            Self.classes(in: entry.cacheKey).contains(wordClass)
+        }
+        for entry in doomed { context.delete(entry) }
+        Self.logger.info("""
+        invalidate(wordClass): class=\(wordClass, privacy: .public) \
+        removed=\(doomed.count, privacy: .public)
+        """)
+        return doomed.count
+    }
+
+    /// Extract the set of word classes encoded in a cache key. Key shape:
+    /// `<model>/v<n>/g<grade>#key1:class1,key2:class2` — we take the segment after
+    /// `#`, split on `,`, and read the class after each pair's last `:`.
+    nonisolated static func classes(in cacheKey: String) -> Set<String> {
+        guard let hash = cacheKey.firstIndex(of: "#") else { return [] }
+        let pairs = cacheKey[cacheKey.index(after: hash)...]
+        var result = Set<String>()
+        for pair in pairs.split(separator: ",") {
+            if let colon = pair.lastIndex(of: ":") {
+                result.insert(String(pair[pair.index(after: colon)...]))
+            }
+        }
+        return result
+    }
+
     /// Launch-time sweep. Deletes unpinned entries that are stale (a mismatched
     /// `keyVersion` from a model/prompt-version change) or expired (unused for
     /// longer than `maxAge`), then LRU-evicts any unpinned overflow above
