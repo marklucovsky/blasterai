@@ -170,5 +170,50 @@ struct CacheEvictionTests {
         #expect(entry?.sentence == "I want to go home.")       // base sentence unchanged
         #expect(entry?.hitCount == 3)                          // 2 recordHits + 1 lookup
     }
+
+    // MARK: - Content-safety purge (unconditional invalidate)
+
+    private func classed(_ pairs: (String, String)...) -> [TileSelection] {
+        pairs.map { TileSelection(key: $0.0, value: $0.0, wordClass: $0.1) }
+    }
+
+    @Test func classesParsesPairsFromCacheKey() {
+        let key = CacheKeyPolicy.key(for: classed(("carrot", "food"), ("pony", "animal")), grade: 3)
+        #expect(SentenceCacheManager.classes(in: key) == ["food", "animal"])
+        #expect(SentenceCacheManager.classes(in: "no-hash-here").isEmpty)
+    }
+
+    @Test func invalidateByTileKeyPurgesEvenPinned() throws {
+        let container = try makeTestContainer()
+        let ctx = container.mainContext
+        let cache = SentenceCacheManager(modelContext: ctx)
+
+        cache.store(tiles: classed(("carrot", "food")), grade: 2, sentence: "I want a carrot.")
+        cache.store(tiles: classed(("carrot", "food"), ("eat", "actions")), grade: 2, sentence: "Eat the carrot.")
+        cache.store(tiles: classed(("apple", "food")), grade: 2, sentence: "I want an apple.")
+        // Even a pinned/curated entry must be purged for a content-safety pull.
+        cache.allEntries().forEach { $0.isPinned = true }
+
+        let removed = cache.invalidate(containingTileKey: "carrot")
+        #expect(removed == 2)
+        let survivors = Set(cache.allEntries().flatMap { $0.tileKeys })
+        #expect(!survivors.contains("carrot"))
+        #expect(survivors.contains("apple"))
+    }
+
+    @Test func invalidateByWordClassPurgesMatching() throws {
+        let container = try makeTestContainer()
+        let ctx = container.mainContext
+        let cache = SentenceCacheManager(modelContext: ctx)
+
+        cache.store(tiles: classed(("carrot", "food")), grade: 2, sentence: "I want a carrot.")
+        cache.store(tiles: classed(("pony", "animal")), grade: 2, sentence: "Look, a pony.")
+        cache.store(tiles: classed(("run", "actions"), ("pony", "animal")), grade: 2, sentence: "The pony runs.")
+
+        let removed = cache.invalidate(wordClass: "animal")
+        #expect(removed == 2)                                   // both entries touching an animal tile
+        #expect(cache.allEntries().count == 1)
+        #expect(cache.allEntries().first?.tileKeys == ["carrot"])
+    }
 }
 }

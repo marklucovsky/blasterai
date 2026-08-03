@@ -37,6 +37,17 @@ final class TileModel: Identifiable {
     /// shape as `ChildProfile.isSystem`).
     var isSystem: Bool = false
 
+    /// Reversible retirement (hide) — the default removal path for a word a
+    /// caregiver no longer wants surfaced (e.g. a term a school disallows). A
+    /// retired tile is hidden from pickers/grids and must not be added to new
+    /// pages, but the record survives so CloudKit sync stays additive and history
+    /// (`LoggedUtterance.tileKeys`, `MetricEvent`) can still render it. Un-retiring
+    /// restores it. Hard delete remains a separate, explicit destructive path.
+    /// Retiring for safety also purges the word's cached sentences
+    /// (`SentenceCacheManager.invalidate(containingTileKey:)`) so a later un-retire
+    /// can't resurrect a stale sentence. Defaulted Bool → clean CloudKit migration.
+    var isRetired: Bool = false
+
     var userImage: UIImage? {
         guard let userImageData else { return nil }
         return UIImage(data: userImageData)
