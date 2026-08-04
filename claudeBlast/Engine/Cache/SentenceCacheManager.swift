@@ -81,6 +81,94 @@ final class SentenceCacheManager {
         }
     }
 
+    // MARK: - Durable caregiver overrides (refine / hand-type / suppress)
+
+    static func stableKey(for tiles: [TileSelection], childID: String?) -> String {
+        CacheKeyPolicy.stableKey(for: tiles, childID: childID)
+    }
+
+    /// The durable caregiver override for this tile combination, if any. Matched
+    /// on the version-INDEPENDENT `stableKey`, so it outlives model/prompt/grade/
+    /// class changes (unlike `lookup`, which keys on the versioned `cacheKey`).
+    /// Returns hand-typed, suppressed, or accepted-refine entries — a hand-edit or
+    /// suppress outranks an accepted refine. Checked BEFORE `lookup` in the engine.
+    func overrideLookup(tiles: [TileSelection], childID: String?) -> SentenceCache? {
+        fetchOverrides(tiles: tiles, childID: childID).sorted {
+            $0.overrideRank != $1.overrideRank ? $0.overrideRank > $1.overrideRank
+                                               : $0.lastUsed > $1.lastUsed
+        }.first
+    }
+
+    /// Durable override rows for a combination + child, matched on the version-
+    /// independent stableKey. Shared by `overrideLookup` (picks the winner) and
+    /// `clearOverride` (clears them all).
+    private func fetchOverrides(tiles: [TileSelection], childID: String?) -> [SentenceCache] {
+        let sk = Self.stableKey(for: tiles, childID: childID)
+        let descriptor = FetchDescriptor<SentenceCache>(predicate: #Predicate { $0.stableKey == sk })
+        return ((try? context.fetch(descriptor)) ?? []).filter(\.isOverride)
+    }
+
+    /// Find-or-create the entry for this combination (by versioned `cacheKey`),
+    /// so an override upserts onto any existing cached sentence rather than
+    /// duplicating it.
+    private func entry(for tiles: [TileSelection], grade: Int, childID: String?) -> SentenceCache {
+        let key = Self.cacheKey(for: tiles, grade: grade)
+        var descriptor = FetchDescriptor<SentenceCache>(predicate: #Predicate { $0.cacheKey == key })
+        descriptor.fetchLimit = 1
+        if let existing = try? context.fetch(descriptor).first { return existing }
+        let created = SentenceCache(tiles: tiles, grade: grade, sentence: "", childID: childID)
+        context.insert(created)
+        return created
+    }
+
+    /// Store a caregiver HAND-TYPED sentence as a durable, version-independent
+    /// override — pinned (eviction-exempt) and authoritative. Served for this
+    /// combination regardless of what the model would generate.
+    func setHandTyped(tiles: [TileSelection], grade: Int, sentence: String, childID: String?) {
+        let e = entry(for: tiles, grade: grade, childID: childID)
+        e.sentence = sentence
+        e.isCaregiverEdited = true
+        e.isSuppressed = false
+        e.isPinned = true
+        e.keyVersion = CacheKeyPolicy.versionToken
+        e.lastUsed = .now
+    }
+
+    /// SUPPRESS a tile combination: the cached sentence is never served or
+    /// re-stored as canonical; the engine regenerates live each time. Durable +
+    /// pinned so a bad answer can't come back after eviction. Reversible.
+    func setSuppressed(tiles: [TileSelection], grade: Int, childID: String?) {
+        let e = entry(for: tiles, grade: grade, childID: childID)
+        e.isSuppressed = true
+        e.isCaregiverEdited = false
+        e.isPinned = true
+        e.lastUsed = .now
+    }
+
+    /// Record an ACCEPTED refine/try-again result: the fresh sentence becomes a
+    /// pinned, TTL-immune, version-independent override. Repeated refines reaffirm
+    /// the same entry. `unsuppresses` so a re-refine of a suppressed combo restores
+    /// a served sentence.
+    func setAcceptedRefine(tiles: [TileSelection], grade: Int, sentence: String, childID: String?) {
+        let e = entry(for: tiles, grade: grade, childID: childID)
+        e.sentence = sentence
+        e.caregiverAccepted = true
+        e.isSuppressed = false
+        e.isPinned = true
+        e.keyVersion = CacheKeyPolicy.versionToken
+        e.lastUsed = .now
+    }
+
+    /// Clear all override intent for a combination (restore normal AI caching).
+    func clearOverride(tiles: [TileSelection], childID: String?) {
+        for e in fetchOverrides(tiles: tiles, childID: childID) {
+            e.isCaregiverEdited = false
+            e.isSuppressed = false
+            e.caregiverAccepted = false
+            e.isPinned = false
+        }
+    }
+
     /// Fetch all cache entries, sorted by most recently used.
     func allEntries() -> [SentenceCache] {
         let descriptor = FetchDescriptor<SentenceCache>(

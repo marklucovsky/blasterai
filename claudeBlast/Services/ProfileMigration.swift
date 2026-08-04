@@ -12,6 +12,15 @@ import Foundation
 /// it from Admin → Profiles, but the row is always identified by `isSystem`.
 let kSandboxProfileDefaultName = "Sandbox"
 
+/// Stable, SHARED id for the Sandbox profile — fixed, not a random UUID. The
+/// Sandbox is auto-seeded independently on every device, so a random id would
+/// give each device a different `childID`; anything keyed on the active child
+/// (durable-override `stableKey`, `SentenceCache.childID`, `LoggedUtterance`)
+/// would then only line up cross-device by luck of CloudKit dedup. A fixed id
+/// makes the Sandbox's childID identical everywhere by construction, so caregiver
+/// overrides sync correctly on the profile caregivers actually test on.
+let kSandboxProfileID = "system.sandbox"
+
 /// One-shot migration that runs after `BootstrapLoader` at app launch.
 ///
 /// Three jobs:
@@ -98,6 +107,7 @@ enum ProfileMigration {
             isActive: !anyRealActive,
             isSystem: true
         )
+        sandbox.id = kSandboxProfileID   // stable across devices (see constant)
         context.insert(sandbox)
     }
 
