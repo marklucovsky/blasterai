@@ -150,7 +150,22 @@ final class SentenceEngine {
 
     // MARK: - Internal state
 
-    private var debounceTask: Task<Void, Never>?
+    /// The idle / auto-advance timeline (pulse → Done attention → auto-Done). Owns
+    /// ONLY idle timing — never an in-flight request — so re-arming it can't cancel
+    /// a generation. Paired with `generationTask` below; keeping them on separate
+    /// handles is what removes the "cancelling the timer cancels the request" bug.
+    private var idleTask: Task<Void, Never>?
+    /// The in-flight sentence generation, if any. Cancelled only when a newer
+    /// request supersedes it or the active group is cleared — never by idle timing.
+    private var generationTask: Task<Void, Never>?
+
+    /// Launch a generation, superseding any prior request and stopping idle timing.
+    /// The generation's own completion re-arms the idle timers (via `generate`).
+    private func launchGeneration(_ operation: @escaping () async -> Void) {
+        idleTask?.cancel()
+        generationTask?.cancel()
+        generationTask = Task { await operation() }
+    }
     /// Number of consecutive replays / repeats on the current active group.
     /// Resets when the user starts a new selection. Surfaced to the UI as
     /// the escalation counter next to the play button's replay badge.
@@ -202,6 +217,9 @@ final class SentenceEngine {
     /// locked group transitions to `.unlockedEditable` (its sentence is now
     /// stale) and the idle timers restart. At cap the tap is ignored.
     func addTile(_ tile: TileModel) {
+        // A grid tap resumes normal flow — clears any lingering edit-pause left by
+        // a bubble long-press the caregiver dismissed without acting.
+        caregiverEditing = false
         if interactionMode == .singleWord {
             appendSpokenWord(tile)
             return
@@ -230,6 +248,7 @@ final class SentenceEngine {
         }
 
         activeGroup.tiles.append(selection)
+        refreshActiveSuppressed()   // re-detect a suppressed combo as it's rebuilt
         cacheManager?.logEvent(subjectType: "tile", subjectKey: tile.key, eventType: .selected)
         scheduleGeneration()
     }
@@ -315,14 +334,15 @@ final class SentenceEngine {
 
         let wasLocked = activeGroup.state == .locked
         activeGroup.tiles.remove(at: index)
+        refreshActiveSuppressed()   // combo changed → may no longer be suppressed
 
         if wasLocked {
             activeGroup.state = .unlockedEditable
         }
 
         if activeGroup.tiles.isEmpty {
-            debounceTask?.cancel()
-            debounceTask = nil
+            idleTask?.cancel()
+            generationTask?.cancel()
             activeGroup.sentence = nil
             activeGroup.state = .building
             comparisonSentence = nil
@@ -342,17 +362,120 @@ final class SentenceEngine {
         guard activeGroup.tiles.count >= 2 else { return }
         guard activeGroup.state != .locked else { return }
 
-        debounceTask?.cancel()
         isWaiting = true
         isIdleNudge = false
         isDoneNudge = false
 
         let tilesSnapshot = activeGroup.tiles
         let repetition = updateRepetitionState(for: tilesSnapshot)
-        debounceTask = Task { [weak self] in
-            guard let self else { return }
-            await self.generate(tiles: tilesSnapshot, repetition: repetition)
+        launchGeneration { [weak self] in
+            await self?.generate(tiles: tilesSnapshot, repetition: repetition)
         }
+    }
+
+    // MARK: - Caregiver refinement (refine / hand-type / suppress)
+
+    /// True while the caregiver is interacting with the sentence bubble (long-press
+    /// menu open, or a refine / hand-type sheet up). Pauses auto-advance so the
+    /// idle pulse + auto-Done timeout can't clear the tray and lose the tiles or
+    /// the original sentence a refine/hand-type depends on — or the text being typed.
+    private var caregiverEditing = false
+
+    /// Pause auto-advance (call when the bubble long-press / edit sheet opens).
+    /// Only stops idle timing; an in-flight generation (`generationTask`) is
+    /// untouched.
+    func beginCaregiverEdit() {
+        caregiverEditing = true
+        idleTask?.cancel()
+        isIdleNudge = false
+        isDoneNudge = false
+    }
+
+    /// Resume auto-advance (call when the caregiver finishes / the sheet dismisses).
+    /// `startIdleTimers` only touches `idleTask`, so this can no longer cancel an
+    /// in-flight refine/un-suppress; and it self-guards on `isThinking`, so if a
+    /// generation is running the timers simply re-arm when it completes.
+    func endCaregiverEdit() {
+        caregiverEditing = false
+        startIdleTimers()
+    }
+
+    /// Refine: regenerate the active sentence with a caregiver `instruction`
+    /// (e.g. "make it shorter", "she's asking, not telling") plus the sentence
+    /// they're reacting to, so the model revises rather than blindly rerolls.
+    /// Bypasses cache/override, and keeps the fresh result as a durable (pinned)
+    /// accepted-refine override. An empty instruction is a plain try-again.
+    func refineActive(instruction: String) {
+        let tiles = activeGroup.tiles
+        guard tiles.count >= 2 else { return }
+        let original = activeGroup.sentence
+        isThinking = true
+        isIdleNudge = false
+        isDoneNudge = false
+        launchGeneration { [weak self] in
+            await self?.generate(tiles: tiles, repetition: 0, refine: true,
+                                 refineInstruction: instruction, originalSentence: original)
+        }
+    }
+
+    /// Replace the active sentence with a caregiver-typed one and store it as a
+    /// durable, authoritative override for this tile combination + child.
+    func handTypeActive(_ text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let tiles = activeGroup.tiles
+        guard !trimmed.isEmpty, !tiles.isEmpty else { return }
+        cacheManager?.setHandTyped(tiles: tiles, grade: currentGrade, sentence: trimmed,
+                                   childID: profileResolver?.activeChildID)
+        activeGroup.sentence = trimmed
+        activeGroup.state = .locked
+        onSentenceReady?(trimmed)
+        speak(trimmed)
+        startIdleTimers()
+    }
+
+    /// True when the active tile combination is a caregiver-suppressed (blocked)
+    /// set — the tray shows a muted bubble that long-presses to un-suppress.
+    /// CACHED: recomputed only on combo/override changes (`refreshActiveSuppressed`),
+    /// never on render, so the tray view doesn't fetch SwiftData every frame.
+    private(set) var activeIsSuppressed = false
+
+    /// Recompute `activeIsSuppressed` from the current combo + override store.
+    /// Called whenever the active tiles or their override state change.
+    private func refreshActiveSuppressed() {
+        activeIsSuppressed = !activeGroup.tiles.isEmpty
+            && cacheManager?.overrideLookup(tiles: activeGroup.tiles,
+                                            childID: profileResolver?.activeChildID)?.isSuppressed == true
+    }
+
+    /// Un-suppress the active combination: clear the block and regenerate a fresh
+    /// sentence so the caregiver immediately sees it restored.
+    func unsuppressActive() {
+        let tiles = activeGroup.tiles
+        guard !tiles.isEmpty else { return }
+        cacheManager?.clearOverride(tiles: tiles, childID: profileResolver?.activeChildID)
+        activeIsSuppressed = false
+        isThinking = true
+        isIdleNudge = false
+        launchGeneration { [weak self] in
+            await self?.generate(tiles: tiles, repetition: 0)
+        }
+    }
+
+    /// Suppress the active tile combination: a HARD BLOCK — this set never speaks
+    /// a generated sentence again (it shows the tiles only). Drops any matching
+    /// history bubble so a suppressed set can't be replayed, and clears the active
+    /// sentence. Reversible via a later refine/hand-type (or the admin manager).
+    func suppressActive() {
+        let tiles = activeGroup.tiles
+        guard !tiles.isEmpty else { return }
+        cacheManager?.setSuppressed(tiles: tiles, grade: currentGrade,
+                                    childID: profileResolver?.activeChildID)
+        speechSynthesizer.stop()
+        let keys = Set(tiles.map(\.key))
+        groupHistory.removeAll { Set($0.tiles.map(\.key)) == keys }
+        activeGroup.sentence = nil
+        activeGroup.state = .locked
+        activeIsSuppressed = true
     }
 
     /// Clear the active group (no history change). Used by scene switching, the bubble's "×"
@@ -360,9 +483,10 @@ final class SentenceEngine {
     /// finalize the row.
     func clearSelection() {
         onWillClear?(activeGroup.sentence)
-        debounceTask?.cancel()
-        debounceTask = nil
+        idleTask?.cancel()
+        generationTask?.cancel()
         activeGroup = TileGroup()
+        activeIsSuppressed = false
         comparisonSentence = nil
         isThinking = false
         isWaiting = false
@@ -410,9 +534,8 @@ final class SentenceEngine {
         // it at its top; the redundant assignment is harmless.
         isThinking = true
         isIdleNudge = false
-        Task { [weak self] in
-            guard let self else { return }
-            await self.generate(tiles: tilesSnapshot, repetition: repetition)
+        launchGeneration { [weak self] in
+            await self?.generate(tiles: tilesSnapshot, repetition: repetition)
         }
     }
 
@@ -455,12 +578,33 @@ final class SentenceEngine {
         guard let index = groupHistory.firstIndex(where: { $0.id == id }) else { return }
         var target = groupHistory.remove(at: index)
 
-        if let sentence = target.sentence {
+        // Re-resolve against durable overrides so a hand-typed / accepted edit — or
+        // a suppression — applied AFTER this group was closed is honored on replay,
+        // instead of speaking the stale stored snapshot.
+        let override = cacheManager?.overrideLookup(tiles: target.tiles,
+                                                    childID: profileResolver?.activeChildID)
+        let suppressed = override?.isSuppressed == true
+        activeIsSuppressed = suppressed
+        if suppressed {
+            // Suppressed set: reopen for editing, show tiles only, say nothing.
+            target.sentence = nil
+            target.state = .unlockedEditable
+            activeGroup = target
+            startIdleTimers()
+            return
+        }
+
+        if let sentence = override?.sentence ?? target.sentence {
             // Reopening a group with a sentence is equivalent to a fresh Play: lock the group
             // and speak it. The startIdleTimers task below will see state == .locked, skip the
             // play-button pulse (no nag — the user just heard it), and fire the Done attention
             // ramp + auto-Done as if the user had just tapped Play. Adding a new tile later
             // unlocks and clears the sentence as usual via addTile().
+            if let override {
+                override.hitCount += 1
+                override.lastUsed = .now
+            }
+            target.sentence = sentence
             target.state = .locked
             activeGroup = target
             speak(sentence)
@@ -493,6 +637,7 @@ final class SentenceEngine {
         // Fallback: synthesize an active group from the legacy entry.
         clearSelection()
         activeGroup.tiles = entry.tiles
+        refreshActiveSuppressed()   // tiles set directly — keep the cached flag honest
         activeGroup.sentence = entry.sentence
         activeGroup.state = .unlockedEditable
         speak(entry.sentence)
@@ -515,16 +660,19 @@ final class SentenceEngine {
     /// sentence so the history chip and conversation context both have text to show.
     private func flushActiveToHistory(allowWithoutSentence: Bool = false) {
         onWillClear?(activeGroup.sentence)
-        debounceTask?.cancel()
-        debounceTask = nil
+        idleTask?.cancel()
+        generationTask?.cancel()
         isIdleNudge = false
         isDoneNudge = false
 
         // 2+ tiles only. A single tile is ephemeral (spoken on tap; the ✕ /
         // auto-clear discard it) and must never land in history — otherwise a
         // recalled single word reopens as a locked group and loses its
-        // cancel-✕ behavior. Empty groups are likewise never flushed.
-        let shouldFlush = activeGroup.tiles.count >= 2
+        // cancel-✕ behavior. Empty groups are likewise never flushed. A
+        // suppressed combination is a hard block and must never enter history.
+        // `activeIsSuppressed` is kept current on every tile/override change, so
+        // read the cached flag rather than re-fetching the override store here.
+        let shouldFlush = activeGroup.tiles.count >= 2 && !activeIsSuppressed
             && (activeGroup.sentence != nil || allowWithoutSentence)
 
         if shouldFlush {
@@ -589,7 +737,8 @@ final class SentenceEngine {
     }
 
     private func scheduleGeneration() {
-        debounceTask?.cancel()
+        idleTask?.cancel()
+        generationTask?.cancel()
         activeGroup.sentence = nil
         comparisonSentence = nil
         isThinking = false
@@ -613,9 +762,8 @@ final class SentenceEngine {
             isWaiting = true
             let tilesSnapshot = activeGroup.tiles
             let repetition = updateRepetitionState(for: tilesSnapshot)
-            debounceTask = Task { [weak self] in
-                guard let self else { return }
-                await self.generate(tiles: tilesSnapshot, repetition: repetition)
+            launchGeneration { [weak self] in
+                await self?.generate(tiles: tilesSnapshot, repetition: repetition)
             }
         } else {
             // Pre-cap: do NOT auto-generate. Run the two-stage idle timer (pulse → auto-Done).
@@ -641,7 +789,12 @@ final class SentenceEngine {
     private static let doneAttentionLead: Duration = .seconds(5)
 
     private func startIdleTimers() {
-        debounceTask?.cancel()
+        idleTask?.cancel()
+        // Never auto-advance while the caregiver is editing the bubble (a timeout
+        // must not clear the tray from under a refine/hand-type), nor while a
+        // generation is in flight (idle timing is meaningless mid-request — the
+        // request re-arms the timers when it finishes).
+        guard !caregiverEditing, !isThinking else { return }
         // Runs for a single tile (cancel-✕ pulse + auto-clear) as well as 2+
         // tiles (play pulse + auto-Done). Empty groups have no timeline.
         guard activeGroup.tiles.count >= 1 else { return }
@@ -649,7 +802,7 @@ final class SentenceEngine {
 
         let pulseWait = idleDebounceDuration
         let autoDoneWait = autoDoneDuration
-        debounceTask = Task { [weak self] in
+        idleTask = Task { [weak self] in
             // Stage 1: primary-button pulse (play for 2+ tiles, cancel-✕ for a
             // single tile). Skipped once a group locks (it's already been spoken).
             do { try await Task.sleep(for: pulseWait) } catch { return }
@@ -691,19 +844,57 @@ final class SentenceEngine {
         }
     }
 
-    private func generate(tiles: [TileSelection], repetition: Int) async {
+    private func generate(tiles: [TileSelection], repetition: Int, refine: Bool = false,
+                          refineInstruction: String? = nil, originalSentence: String? = nil) async {
         isWaiting = false
         isThinking = true
         isIdleNudge = false
         isDoneNudge = false
+
+        // One override lookup, matched on the version-independent stableKey so it
+        // outlives prompt/model/grade/class changes. `refine` forces a fresh
+        // instruction-guided regeneration, so it ignores overrides entirely.
+        let childID = profileResolver?.activeChildID
+        let override = refine ? nil : cacheManager?.overrideLookup(tiles: tiles, childID: childID)
+
+        // SUPPRESSED is a HARD BLOCK on EVERY path — escalation/replay included.
+        // (Deliberately NOT gated on repetition==0: re-tapping a suppressed set
+        // counts as a repeat, which must still stay silent, never escalate.)
+        if let override, override.isSuppressed {
+            guard tiles == activeGroup.tiles else { isThinking = false; return }
+            Self.logger.info("generate: source=override.suppressed (blocked)")
+            activeIsSuppressed = true
+            activeGroup.sentence = nil          // show the tiles, say nothing
+            activeGroup.state = .locked
+            isThinking = false
+            startIdleTimers()
+            return
+        }
+        activeIsSuppressed = false   // reaching here means this combo isn't blocked
 
         // Escalation: still count the hit even though we bypass the cached sentence
         if repetition > 0 {
             cacheManager?.recordHit(tiles: tiles, grade: currentGrade)
         }
 
-        // Cache lookup (skip for replay/escalation requests)
-        if repetition == 0, let cached = cacheManager?.lookup(tiles: tiles, grade: currentGrade) {
+        // Durable hand-typed / accepted-refine override — served on first play.
+        if repetition == 0, let override {
+            guard tiles == activeGroup.tiles else { isThinking = false; return }
+            override.hitCount += 1
+            override.lastUsed = .now
+            let src = override.isCaregiverEdited ? "override.handTyped" : "override.refine"
+            Self.logger.info("generate: source=\(src) sentence=\"\(override.sentence)\"")
+            activeGroup.sentence = override.sentence
+            activeGroup.state = .locked
+            onSentenceReady?(override.sentence)
+            speak(override.sentence)
+            isThinking = false
+            startIdleTimers()
+            return
+        }
+
+        // Cache lookup (skip for replay/escalation/refine)
+        if repetition == 0, !refine, let cached = cacheManager?.lookup(tiles: tiles, grade: currentGrade) {
             guard tiles == activeGroup.tiles else {
                 isThinking = false
                 return
@@ -732,7 +923,20 @@ final class SentenceEngine {
         var promptBuilder = SentencePromptBuilder(ageGradeLevel: grade)
         promptBuilder.repetitionCount = repetition
         promptBuilder.conversationContext = conversationHistory
-        let systemPrompt = promptBuilder.buildSystemPrompt()
+        var systemPrompt = promptBuilder.buildSystemPrompt()
+        // Instruction-guided refine (mirrors the tile-art refine flow): feed the
+        // caregiver's suggestion plus the sentence they're reacting to, so the
+        // model revises rather than blindly rerolls. An empty instruction is a
+        // plain "try again".
+        if refine, let instruction = refineInstruction,
+           !instruction.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            systemPrompt.append(PromptMessage(role: .system, content: """
+            The caregiver reviewed your previous sentence for these tiles and wants it revised. \
+            Previous sentence: "\(originalSentence ?? "")". Caregiver's instruction: "\(instruction)". \
+            Produce ONE revised sentence for the same tiles that follows the instruction and stays \
+            age-appropriate. Return only the sentence.
+            """))
+        }
         let userPrompt = promptBuilder.formatUserPrompt(tiles: tiles)
 
         // Fire comparison provider in parallel when enabled
@@ -748,6 +952,12 @@ final class SentenceEngine {
         var contextWithPrior = conversationHistory
         if repetition > 0, let prior = activeGroup.sentence {
             contextWithPrior.append(prior)
+        }
+        // Refine: give the model the sentence it's revising as its prior turn, so
+        // the instruction in the system prompt has an explicit target to rework.
+        if refine, let original = originalSentence,
+           !original.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            contextWithPrior.append(original)
         }
         let context = contextWithPrior + [userPrompt]
         let apiStart = ContinuousClock.now
@@ -773,8 +983,13 @@ final class SentenceEngine {
             let elapsed = apiStart.duration(to: .now)
 
             if repetition == 0 {
-                cacheManager?.store(tiles: tiles, grade: grade, sentence: result.text,
-                                    childID: profileResolver?.activeChildID)
+                if refine {
+                    // Keep the fresh result as a durable, pinned accepted-refine override.
+                    cacheManager?.setAcceptedRefine(tiles: tiles, grade: grade,
+                                                    sentence: result.text, childID: childID)
+                } else {
+                    cacheManager?.store(tiles: tiles, grade: grade, sentence: result.text, childID: childID)
+                }
                 let usedKey = SentenceCacheManager.cacheKey(for: tiles, grade: grade)
                 cacheManager?.logEvent(subjectType: "sentence", subjectKey: usedKey, eventType: .used)
             }
@@ -817,8 +1032,24 @@ final class SentenceEngine {
                 isThinking = false
                 return
             }
-            activeGroup.sentence = nil
             comparisonSentence = nil
+            // Never destroy a sentence that's already on screen when a request
+            // fails. Generation never overwrites `activeGroup.sentence` until it
+            // succeeds, so a refine or a replay (escalation) that fails simply
+            // keeps the sentence it was working from — a harmless offline no-op,
+            // NOT a blanked `.locked` limbo. Only a fresh generation (no sentence
+            // yet) drops back to editable so Play can be retried.
+            if let sentence = activeGroup.sentence {
+                // A failed REPLAY couldn't reach the model to escalate, but the
+                // user tapped to hear it — repeat the existing sentence unchanged
+                // so there's still audible feedback (just not louder/escalated).
+                if repetition > 0 { speak(sentence) }
+            } else {
+                activeGroup.state = .unlockedEditable
+            }
+            isThinking = false
+            startIdleTimers()   // recover auto-advance after the failure
+            return
         }
 
         isThinking = false

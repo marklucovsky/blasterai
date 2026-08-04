@@ -117,6 +117,12 @@ struct SentenceTrayView: View {
         !engine.activeGroup.tiles.isEmpty
     }
 
+    // Caregiver editor sheets (refine / hand-type override of a generated sentence).
+    @State private var editSheet: TrayEditSheet?
+    @State private var handTypeDraft = ""
+    @State private var refineDraft = ""
+    @State private var showBubbleActions = false
+
     // MARK: - Body
 
     var body: some View {
@@ -131,6 +137,32 @@ struct SentenceTrayView: View {
                 .fill(Color(.systemGray6))
         )
         .padding(.horizontal)
+        .sheet(item: $editSheet) { sheet in
+            switch sheet {
+            case .refine:
+                RefineSheet(originalSentence: engine.activeGroup.sentence ?? "",
+                            instruction: $refineDraft) { engine.refineActive(instruction: $0) }
+            case .handType:
+                HandTypeSheet(text: $handTypeDraft) { engine.handTypeActive($0) }
+            }
+        }
+        .confirmationDialog("Sentence", isPresented: $showBubbleActions, titleVisibility: .visible) {
+            BubbleActionButtons(
+                isSuppressed: engine.activeIsSuppressed,
+                onRefine: { refineDraft = ""; editSheet = .refine },
+                onHandType: { handTypeDraft = engine.activeGroup.sentence ?? ""; editSheet = .handType },
+                onSuppress: { engine.suppressActive() },
+                onUnsuppress: { engine.unsuppressActive() },
+                onCancel: {}
+            )
+        }
+        // Pause auto-advance whenever the action sheet or an edit sheet is up, and
+        // resume the instant BOTH close. Derived from presentation state (not from
+        // begin/end calls in each action closure) so it stays correct even when the
+        // OS tears down a sheet on backgrounding without firing its dismiss handler.
+        .onChange(of: showBubbleActions || editSheet != nil) { _, editing in
+            editing ? engine.beginCaregiverEdit() : engine.endCaregiverEdit()
+        }
     }
 
     // MARK: - Top row
@@ -145,7 +177,9 @@ struct SentenceTrayView: View {
                 sentence: engine.activeGroup.sentence,
                 isThinking: engine.isThinking,
                 onTileTap: onTileTap,
-                onExpandSentence: onExpandSentence
+                onExpandSentence: onExpandSentence,
+                onBubbleLongPress: { showBubbleActions = true },
+                isSuppressed: engine.activeIsSuppressed
             )
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -259,6 +293,11 @@ private struct ActiveTrayCard: View {
     let isThinking: Bool
     let onTileTap: (Int) -> Void
     let onExpandSentence: () -> Void
+    /// Long-press the sentence / muted bubble to open the caregiver action sheet
+    /// (refine · hand-type · suppress / un-suppress). Fired as the press completes.
+    let onBubbleLongPress: () -> Void
+    /// True when this combination is suppressed (shows a muted bubble instead).
+    let isSuppressed: Bool
 
     var body: some View {
         HStack(alignment: .center, spacing: 10) {
@@ -284,8 +323,12 @@ private struct ActiveTrayCard: View {
                 .fixedSize(horizontal: true, vertical: false)
                 .animation(.easeInOut(duration: 0.18), value: tiles.count)
 
-                if let sentence = sentence {
+                if isSuppressed {
+                    IPadMutedBubble()
+                        .onLongPressGesture(minimumDuration: 0.4, perform: onBubbleLongPress)
+                } else if let sentence = sentence {
                     IPadSentenceBubble(text: sentence, onExpand: onExpandSentence)
+                        .onLongPressGesture(minimumDuration: 0.4, perform: onBubbleLongPress)
                 } else if isThinking {
                     IPadThinkingBubble()
                 } else {
@@ -309,37 +352,185 @@ private struct IPadSentenceBubble: View {
     let onExpand: () -> Void
 
     var body: some View {
-        Button(action: onExpand) {
-            HStack(alignment: .top, spacing: 8) {
-                Text(text)
-                    .font(.title3.weight(.regular).italic())
-                    .foregroundStyle(.primary)
-                    .lineLimit(3)
-                    .truncationMode(.tail)
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                Image(systemName: "arrow.up.left.and.arrow.down.right")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 2)
-            }
-            .padding(.leading, 20)
-            .padding(.trailing, 14)
-            .padding(.vertical, 12)
-            .background(
-                LeftTailBubble(cornerRadius: 14, tailWidth: 10, tailHeight: 16)
-                    .fill(Color(.tertiarySystemFill))
-            )
-            .overlay(
-                LeftTailBubble(cornerRadius: 14, tailWidth: 10, tailHeight: 16)
-                    .stroke(Color.primary.opacity(0.07), lineWidth: 0.5)
-            )
-            .contentShape(LeftTailBubble(cornerRadius: 14, tailWidth: 10, tailHeight: 16))
+        HStack(alignment: .top, spacing: 8) {
+            Text(text)
+                .font(.title3.weight(.regular).italic())
+                .foregroundStyle(.primary)
+                .lineLimit(3)
+                .truncationMode(.tail)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Image(systemName: "arrow.up.left.and.arrow.down.right")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .padding(.top, 2)
         }
-        .buttonStyle(.plain)
+        .padding(.leading, 20)
+        .padding(.trailing, 14)
+        .padding(.vertical, 12)
+        .background(
+            LeftTailBubble(cornerRadius: 14, tailWidth: 10, tailHeight: 16)
+                .fill(Color(.tertiarySystemFill))
+        )
+        .overlay(
+            LeftTailBubble(cornerRadius: 14, tailWidth: 10, tailHeight: 16)
+                .stroke(Color.primary.opacity(0.07), lineWidth: 0.5)
+        )
+        .contentShape(LeftTailBubble(cornerRadius: 14, tailWidth: 10, tailHeight: 16))
+        // Plain view (not a Button) so the long-press gesture on the parent card
+        // isn't swallowed; a tap still expands the sentence popover.
+        .onTapGesture { onExpand() }
         .accessibilityLabel("Sentence")
         .accessibilityValue(text)
         .accessibilityHint("Expand sentence")
+    }
+}
+
+/// Muted-state bubble for a suppressed combination: signals that this set is
+/// intentionally blocked (not broken), and long-presses to un-suppress.
+private struct IPadMutedBubble: View {
+    var body: some View {
+        HStack(alignment: .center, spacing: 8) {
+            Image(systemName: "speaker.slash.fill")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.secondary)
+            Text("Muted — long-press to restore")
+                .font(.callout.italic())
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.leading, 20)
+        .padding(.trailing, 14)
+        .padding(.vertical, 14)
+        .background(
+            LeftTailBubble(cornerRadius: 14, tailWidth: 10, tailHeight: 16)
+                .fill(Color(.tertiarySystemFill))
+        )
+        .contentShape(LeftTailBubble(cornerRadius: 14, tailWidth: 10, tailHeight: 16))
+        .accessibilityLabel("Muted sentence")
+        .accessibilityHint("Long-press to un-suppress")
+    }
+}
+
+/// The caregiver action sheet raised by long-pressing the sentence bubble.
+/// Presented as a `confirmationDialog` (not a `.contextMenu`, which misbehaves in
+/// the tray hierarchy on iOS 26 and gave no reliable "opened" hook to pause the
+/// auto-Done timer). A normal sentence offers refine / hand-type / suppress; a
+/// suppressed (muted) combination offers un-suppress / hand-type. Shared by both
+/// trays. Every action either opens a sheet (which resumes on dismiss) or resumes
+/// the timer itself via its closure.
+struct BubbleActionButtons: View {
+    let isSuppressed: Bool
+    let onRefine: () -> Void
+    let onHandType: () -> Void
+    let onSuppress: () -> Void
+    let onUnsuppress: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        if isSuppressed {
+            Button("Un-suppress", action: onUnsuppress)
+            Button("Hand-Type Sentence", action: onHandType)
+        } else {
+            Button("Refine / Try Again", action: onRefine)
+            Button("Hand-Type Sentence", action: onHandType)
+            Button("Suppress This", role: .destructive, action: onSuppress)
+        }
+        Button("Cancel", role: .cancel, action: onCancel)
+    }
+}
+
+/// Which caregiver editor is presented over the tray. One enum-driven sheet
+/// avoids two `.sheet(isPresented:)` modifiers racing on the same view.
+enum TrayEditSheet: Identifiable {
+    case refine, handType
+    var id: Int { hashValue }
+}
+
+/// Instruction-guided refine, mirroring the tile-art refine flow: the caregiver
+/// sees the sentence they're reacting to and tells the AI how to change it. An
+/// empty instruction is a plain try-again.
+struct RefineSheet: View {
+    let originalSentence: String
+    @Binding var instruction: String
+    let onSubmit: (String) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Current sentence")
+                    .font(.caption).foregroundStyle(.secondary)
+                Text("“\(originalSentence)”")
+                    .font(.title3.italic())
+                    .foregroundStyle(.primary)
+                Text("Tell the AI how to improve it — e.g. “make it shorter”, “she's asking, not telling”. Leave blank to just try again.")
+                    .font(.footnote).foregroundStyle(.secondary)
+                    .padding(.top, 4)
+                TextField("How should it change?", text: $instruction, axis: .vertical)
+                    .lineLimit(2...4)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.title3)
+                    .focused($focused)
+                Spacer()
+            }
+            .padding()
+            .navigationTitle("Refine Sentence")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Refine") { onSubmit(instruction); dismiss() }
+                }
+            }
+            .onAppear { focused = true }
+        }
+    }
+}
+
+/// Caregiver editor for hand-typing the exact sentence a tile combination should
+/// speak. Prefilled with the current AI sentence so it reads as an edit, not a
+/// blank slate. Saving stores a durable, authoritative override that outlives
+/// model/prompt changes.
+struct HandTypeSheet: View {
+    @Binding var text: String
+    let onSave: (String) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @FocusState private var focused: Bool
+
+    private var isEmpty: Bool {
+        text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("This exact sentence will be spoken whenever these tiles are selected, replacing the AI sentence. It stays even if the app's model or prompts change.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                TextEditor(text: $text)
+                    .font(.title3)
+                    .focused($focused)
+                    .frame(minHeight: 120)
+                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.secondary.opacity(0.3)))
+                Spacer()
+            }
+            .padding()
+            .navigationTitle("Hand-Type Sentence")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { onSave(text); dismiss() }
+                        .disabled(isEmpty)
+                }
+            }
+            .onAppear { focused = true }
+        }
     }
 }
 

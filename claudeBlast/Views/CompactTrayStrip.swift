@@ -48,6 +48,12 @@ struct CompactTrayStrip: View {
     let isHistoryShown: Bool
     let isFavoritesShown: Bool
 
+    // Caregiver editor sheets (refine / hand-type override of a generated sentence).
+    @State private var editSheet: TrayEditSheet?
+    @State private var handTypeDraft = ""
+    @State private var refineDraft = ""
+    @State private var showBubbleActions = false
+
     var body: some View {
         VStack(spacing: 5) {
             HStack(alignment: .center, spacing: 8) {
@@ -56,7 +62,9 @@ struct CompactTrayStrip: View {
                     sentence: engine.activeGroup.sentence,
                     isThinking: engine.isThinking,
                     onTileTap: onTileTap,
-                    onExpandSentence: onShowSentence
+                    onExpandSentence: onShowSentence,
+                    onBubbleLongPress: { showBubbleActions = true },
+                    isSuppressed: engine.activeIsSuppressed
                 )
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -105,6 +113,31 @@ struct CompactTrayStrip: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 4)
+        .sheet(item: $editSheet) { sheet in
+            switch sheet {
+            case .refine:
+                RefineSheet(originalSentence: engine.activeGroup.sentence ?? "",
+                            instruction: $refineDraft) { engine.refineActive(instruction: $0) }
+            case .handType:
+                HandTypeSheet(text: $handTypeDraft) { engine.handTypeActive($0) }
+            }
+        }
+        .confirmationDialog("Sentence", isPresented: $showBubbleActions, titleVisibility: .visible) {
+            BubbleActionButtons(
+                isSuppressed: engine.activeIsSuppressed,
+                onRefine: { refineDraft = ""; editSheet = .refine },
+                onHandType: { handTypeDraft = engine.activeGroup.sentence ?? ""; editSheet = .handType },
+                onSuppress: { engine.suppressActive() },
+                onUnsuppress: { engine.unsuppressActive() },
+                onCancel: {}
+            )
+        }
+        // Pause auto-advance while the action/edit sheet is up; resume when both
+        // close. Derived from presentation state so it self-corrects even when the
+        // OS tears down a sheet on backgrounding without a dismiss callback.
+        .onChange(of: showBubbleActions || editSheet != nil) { _, editing in
+            editing ? engine.beginCaregiverEdit() : engine.endCaregiverEdit()
+        }
         .animation(.easeInOut(duration: 0.22), value: engine.groupHistory.first?.id)
         .animation(.easeInOut(duration: 0.22), value: engine.activeGroup.sentence)
         .animation(.easeInOut(duration: 0.22), value: isHistoryShown)
@@ -170,6 +203,10 @@ private struct ActiveCard: View {
     let isThinking: Bool
     let onTileTap: (Int) -> Void
     let onExpandSentence: () -> Void
+    /// Long-press the sentence / muted bubble to open the caregiver action sheet.
+    let onBubbleLongPress: () -> Void
+    /// True when this combination is suppressed (shows a muted bubble instead).
+    let isSuppressed: Bool
 
     var body: some View {
         HStack(spacing: 6) {
@@ -181,9 +218,14 @@ private struct ActiveCard: View {
                     .padding(.horizontal, 8)
             } else {
                 ChipsRow(tiles: tiles, onTap: onTileTap)
-                if let sentence = sentence {
+                if isSuppressed {
+                    CompactMutedBubble()
+                        .layoutPriority(1)
+                        .onLongPressGesture(minimumDuration: 0.4, perform: onBubbleLongPress)
+                } else if let sentence = sentence {
                     SentenceBubble(text: sentence, onExpand: onExpandSentence)
                         .layoutPriority(1)
+                        .onLongPressGesture(minimumDuration: 0.4, perform: onBubbleLongPress)
                 } else if isThinking {
                     ThinkingBubble()
                         .layoutPriority(1)
@@ -245,37 +287,59 @@ private struct SentenceBubble: View {
     let onExpand: () -> Void
 
     var body: some View {
-        Button(action: onExpand) {
-            HStack(alignment: .top, spacing: 6) {
-                Text(text)
-                    .font(.system(size: 12, weight: .regular).italic())
-                    .foregroundStyle(.primary)
-                    .lineLimit(3)
-                    .truncationMode(.tail)
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                Image(systemName: "arrow.up.left.and.arrow.down.right")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 1)
-            }
-            .padding(.leading, 12)
-            .padding(.trailing, 8)
-            .padding(.vertical, 6)
-            .background(
-                LeftTailBubble()
-                    .fill(Color(.tertiarySystemFill))
-            )
-            .overlay(
-                LeftTailBubble()
-                    .stroke(Color.primary.opacity(0.07), lineWidth: 0.5)
-            )
-            .contentShape(LeftTailBubble())
+        HStack(alignment: .top, spacing: 6) {
+            Text(text)
+                .font(.system(size: 12, weight: .regular).italic())
+                .foregroundStyle(.primary)
+                .lineLimit(3)
+                .truncationMode(.tail)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Image(systemName: "arrow.up.left.and.arrow.down.right")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .padding(.top, 1)
         }
-        .buttonStyle(.plain)
+        .padding(.leading, 12)
+        .padding(.trailing, 8)
+        .padding(.vertical, 6)
+        .background(
+            LeftTailBubble()
+                .fill(Color(.tertiarySystemFill))
+        )
+        .overlay(
+            LeftTailBubble()
+                .stroke(Color.primary.opacity(0.07), lineWidth: 0.5)
+        )
+        .contentShape(LeftTailBubble())
+        // Plain view (not a Button) so the parent card's long-press isn't swallowed.
+        .onTapGesture { onExpand() }
         .accessibilityLabel("Sentence")
         .accessibilityValue(text)
         .accessibilityHint("Expand sentence")
+    }
+}
+
+/// Muted-state bubble for a suppressed combination — signals the set is
+/// intentionally blocked (not broken) and long-presses to un-suppress.
+private struct CompactMutedBubble: View {
+    var body: some View {
+        HStack(spacing: 5) {
+            Image(systemName: "speaker.slash.fill")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.secondary)
+            Text("Muted")
+                .font(.system(size: 12).italic())
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.leading, 12)
+        .padding(.trailing, 8)
+        .padding(.vertical, 8)
+        .background(LeftTailBubble().fill(Color(.tertiarySystemFill)))
+        .contentShape(LeftTailBubble())
+        .accessibilityLabel("Muted sentence")
+        .accessibilityHint("Long-press to un-suppress")
     }
 }
 

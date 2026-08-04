@@ -62,4 +62,17 @@ enum CacheKeyPolicy {
             .joined(separator: ",")
         return "\(versionToken)/g\(grade)#\(pairs)"
     }
+
+    /// Version-INDEPENDENT identity for a tile combination + child. Unlike `key`,
+    /// this excludes the model, prompt version, grade, and word class — it is just
+    /// the sorted, deduplicated tile keys plus the child. Durable caregiver
+    /// overrides (hand-typed / suppressed / accepted-refine sentences) are matched
+    /// on this so they OUTLIVE a model swap, a `promptVersion` bump, a grade
+    /// change, or a reclassification — the things that intentionally rotate `key`
+    /// and strand ordinary cache entries. A caregiver's correction is about *the
+    /// words the child picked*, not the machinery that generated the sentence.
+    nonisolated static func stableKey(for tiles: [TileSelection], childID: String?) -> String {
+        let keys = Set(tiles.map(\.key)).sorted().joined(separator: ",")
+        return "\(keys)|\(childID ?? "")"
+    }
 }

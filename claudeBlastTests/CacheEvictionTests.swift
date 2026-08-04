@@ -215,5 +215,73 @@ struct CacheEvictionTests {
         #expect(cache.allEntries().count == 1)
         #expect(cache.allEntries().first?.tileKeys == ["carrot"])
     }
+
+    // MARK: - Durable caregiver overrides (refine / hand-type / suppress)
+
+    @Test func handTypedOverrideIsFoundVersionIndependently() throws {
+        let container = try makeTestContainer()
+        let cache = SentenceCacheManager(modelContext: container.mainContext)
+        let t = classed(("mom", "people"), ("juice", "drinks"))
+
+        cache.setHandTyped(tiles: t, grade: 2, sentence: "Mom, may I have juice please?", childID: "kid1")
+
+        // Found by the override path for the same child, regardless of grade
+        // (grade is in cacheKey but NOT in stableKey).
+        let o2 = cache.overrideLookup(tiles: t, childID: "kid1")
+        let o5 = cache.overrideLookup(tiles: t, childID: "kid1")   // grade-agnostic
+        #expect(o2?.sentence == "Mom, may I have juice please?")
+        #expect(o2?.isCaregiverEdited == true)
+        #expect(o2?.isPinned == true)
+        #expect(o5 != nil)
+        // A different child does not see it.
+        #expect(cache.overrideLookup(tiles: t, childID: "kid2") == nil)
+        // Normal (version+grade-dependent) lookup at a different grade misses it,
+        // proving the override path is what makes it durable.
+        #expect(cache.lookup(tiles: t, grade: 5) == nil)
+    }
+
+    @Test func overrideSurvivesStaleVersionSweep() throws {
+        let container = try makeTestContainer()
+        let cache = SentenceCacheManager(modelContext: container.mainContext)
+        let t = classed(("go", "actions"), ("park", "places"))
+        cache.setHandTyped(tiles: t, grade: 2, sentence: "Let's go to the park!", childID: "kid1")
+        // Simulate a prompt-version bump having stamped the entry as stale.
+        cache.allEntries().forEach { $0.keyVersion = "old/v0" }
+
+        #expect(cache.pruneStaleVersions() == 0)               // pinned override exempt
+        #expect(cache.overrideLookup(tiles: t, childID: "kid1")?.sentence == "Let's go to the park!")
+    }
+
+    @Test func suppressBlocksAndAcceptedRefineIsDurable() throws {
+        let container = try makeTestContainer()
+        let cache = SentenceCacheManager(modelContext: container.mainContext)
+        let t = classed(("no", "social"))
+
+        cache.setSuppressed(tiles: t, grade: 2, childID: "kid1")
+        #expect(cache.overrideLookup(tiles: t, childID: "kid1")?.isSuppressed == true)
+
+        // A re-refine restores a served sentence and outranks nothing else here.
+        cache.setAcceptedRefine(tiles: t, grade: 2, sentence: "No thank you.", childID: "kid1")
+        let o = cache.overrideLookup(tiles: t, childID: "kid1")
+        #expect(o?.isSuppressed == false)
+        #expect(o?.caregiverAccepted == true)
+        #expect(o?.sentence == "No thank you.")
+        #expect(cache.allEntries().count == 1)                 // same entry, upserted
+    }
+
+    @Test func handEditOutranksAcceptedRefineAndClearRestores() throws {
+        let container = try makeTestContainer()
+        let cache = SentenceCacheManager(modelContext: container.mainContext)
+        let t = classed(("more", "core"))
+
+        cache.setAcceptedRefine(tiles: t, grade: 2, sentence: "I want more.", childID: "kid1")
+        cache.setHandTyped(tiles: t, grade: 2, sentence: "More, please!", childID: "kid1")
+        // Same entry upserts, so edited wins on the single record.
+        #expect(cache.overrideLookup(tiles: t, childID: "kid1")?.sentence == "More, please!")
+        #expect(cache.overrideLookup(tiles: t, childID: "kid1")?.overrideRank == 3)
+
+        cache.clearOverride(tiles: t, childID: "kid1")
+        #expect(cache.overrideLookup(tiles: t, childID: "kid1") == nil)
+    }
 }
 }

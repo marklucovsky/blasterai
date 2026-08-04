@@ -48,6 +48,24 @@ struct ProfileMigrationTests {
         #expect(kids.count == 1)
         #expect(kids[0].isSystem == true)
         #expect(kids[0].isActive == true) // Sandbox is the resolver fallback
+        #expect(kids[0].id == kSandboxProfileID) // stable, shared across devices
+    }
+
+    /// The Sandbox is auto-seeded independently per device, so its id must be a
+    /// fixed constant (not a random UUID) — otherwise `childID`-keyed data
+    /// (durable overrides, cache, logs) wouldn't line up cross-device. Simulate
+    /// two independent installs and assert they converge on the same Sandbox id.
+    @Test func sandbox_hasStableIdAcrossIndependentInstalls() throws {
+        func seedSandboxID() throws -> String {
+            let ctx = try makeContainer().mainContext
+            ProfileMigration.ensureProfilesAfterBootstrap(
+                context: ctx, seedLegacy: false, defaults: isolatedDefaults())
+            let sandbox = try #require(
+                try ctx.fetch(FetchDescriptor<ChildProfile>()).first { $0.isSystem })
+            return sandbox.id
+        }
+        #expect(try seedSandboxID() == kSandboxProfileID)
+        #expect(try seedSandboxID() == seedSandboxID())   // identical across installs
     }
 
     @Test func returningUser_seedsLegacyFromUserDefaults() throws {
