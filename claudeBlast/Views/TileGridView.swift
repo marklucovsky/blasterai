@@ -403,7 +403,13 @@ struct TileGridView: View {
                 geo: geo.size,
                 userStep: tileSizeStep
             )
-            let chunkedTiles = page.tiles.chunked(into: spec.perPage)
+            // Retired (hidden) and unreviewed (moderation-flagged) tiles never
+            // render for the child — both stay invisible in running scenes until
+            // the caregiver resolves them. A missing tile stays a no-op as before.
+            let lookup = tileLookup
+            let chunkedTiles = page.tiles
+                .filter { lookup[$0.key]?.isHiddenFromChild != true }
+                .chunked(into: spec.perPage)
             Group {
                 if isLandscape {
                     landscapeTabView(chunks: chunkedTiles, spec: spec)

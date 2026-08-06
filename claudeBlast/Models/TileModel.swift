@@ -48,6 +48,56 @@ final class TileModel: Identifiable {
     /// can't resurrect a stale sentence. Defaulted Bool → clean CloudKit migration.
     var isRetired: Bool = false
 
+    /// Why this tile was hidden, when it was hidden automatically — e.g. the
+    /// moderation gate's reason ("not appropriate for a young board"). Nil for
+    /// caregiver-initiated hides. Surfaced in the Vocab manager so a caregiver can
+    /// see the record of what was auto-blocked (and restore a false positive).
+    var retiredReason: String?
+
+    /// Set when the moderation review FLAGGED this word (added via Add-Tiles,
+    /// where there's no Accept gate) — the caregiver must keep or remove it. Like
+    /// a blocked (`isRetired`) word, a `needsReview` word is INVISIBLE in running
+    /// scenes until the caregiver resolves it; the page editor shows it 🟡 and the
+    /// scene's page list surfaces the count. Cleared on Keep; retired (hidden) on
+    /// Hide — never hard-deleted. Defaulted Bool → clean CloudKit migration.
+    var needsReview: Bool = false
+
+    /// The single named safety invariant: a tile is invisible to the child in a
+    /// running scene when it's retired (hidden) OR still awaiting the caregiver's
+    /// keep/hide decision. Every child-facing surface must honor this.
+    var isHiddenFromChild: Bool { isRetired || needsReview }
+
+    // MARK: - Review-state transitions
+    // Centralized so the review surfaces (Vocab manager, page editor, Add-Tiles
+    // audit) can't diverge on which flags a transition touches. Callers that hide
+    // for safety also purge the word's cached sentences and save the context.
+
+    /// Retire (hide) the word — reversible. `reason` records an automatic
+    /// (moderation) hide; nil for a caregiver-initiated one.
+    func retire(reason: String? = nil) {
+        isRetired = true
+        retiredReason = reason
+        needsReview = false
+    }
+
+    /// Un-hide a retired word.
+    func restore() {
+        isRetired = false
+        retiredReason = nil
+    }
+
+    /// Resolve review as approved — the word is clean and visible to the child again.
+    func approveReview() {
+        needsReview = false
+        isRetired = false
+        retiredReason = nil
+    }
+
+    /// Flag the word for caregiver review (hidden from the child until resolved).
+    func flagForReview() {
+        needsReview = true
+    }
+
     var userImage: UIImage? {
         guard let userImageData else { return nil }
         return UIImage(data: userImageData)

@@ -612,6 +612,39 @@ struct ScenePreviewView: View {
         return names
     }
 
+    // At-authoring moderation review of the proposed NEW words (same as Page Preview).
+    @State private var review = NewWordReviewModel()
+
+    private var newWordEntries: [(key: String, name: String)] {
+        var seen = Set<String>()
+        var out: [(String, String)] = []
+        for page in working.pages {
+            for tile in page.tiles where tile.isProposedNew {
+                if let name = tile.displayName, seen.insert(tile.key).inserted { out.append((tile.key, name)) }
+            }
+        }
+        return out
+    }
+    private var presentNewKeys: Set<String> { Set(newWordEntries.map(\.key)) }
+
+    private func removeNewWord(_ key: String) {
+        let newPages = working.pages.map { page -> GeneratedPage in
+            var p = page
+            p.tiles.removeAll { $0.key == key }
+            return p
+        }
+        working = GeneratedScene(name: working.name, description: working.description,
+                                 homePageKey: working.homePageKey, pages: newPages,
+                                 newWords: working.newWords, tokenUsage: working.tokenUsage,
+                                 rawContent: working.rawContent)
+    }
+
+    /// Accept: drop removed + untouched blocked words, then hand off the cleaned scene.
+    private func acceptModerated() {
+        for key in review.droppedKeys(present: presentNewKeys) { removeNewWord(key) }
+        onAccept(working, focused)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // Header
@@ -708,12 +741,16 @@ struct ScenePreviewView: View {
                             GeneratedTileCell(key: genTile.key, displayName: name,
                                               wordClass: wc, link: genTile.link, isNew: true,
                                               imageData: previewImages[genTile.key])
+                                .overlay(alignment: .bottomTrailing) {
+                                    NewWordReviewBadge(key: genTile.key, review: review)
+                                }
                         }
                     }
                 }
                 .padding(.horizontal, 12)
                 .padding(.bottom, 12)
             }
+            .task(id: presentNewKeys) { await review.analyze(newWordEntries, apiKey: apiKey) }
 
             if let refineError {
                 Text(refineError)
@@ -724,6 +761,8 @@ struct ScenePreviewView: View {
             }
 
             Divider()
+
+            NewWordReviewStatus(review: review, present: presentNewKeys)
 
             // Action bar
             HStack(spacing: 10) {
@@ -742,9 +781,9 @@ struct ScenePreviewView: View {
                 }
                 .buttonStyle(.bordered)
                 .disabled(isRefining || apiKey.isEmpty)
-                Button("Accept") { onAccept(working, focused) }
+                Button("Accept") { acceptModerated() }
                     .buttonStyle(.borderedProminent)
-                    .disabled(isRefining)
+                    .disabled(isRefining || !review.canAccept(present: presentNewKeys))
             }
             .padding()
         }

@@ -38,6 +38,29 @@ struct SceneEditorView: View {
         Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
     }
 
+    /// (flagged, blocked) counts for a page's tiles — one pass over a single
+    /// hoisted lookup — shown as chips so a caregiver spots pages needing attention.
+    private func reviewCounts(_ page: PageSpec) -> (flagged: Int, blocked: Int) {
+        let lookup = tileLookup
+        var flagged = 0, blocked = 0
+        for entry in page.tiles {
+            guard let t = lookup[entry.key] else { continue }
+            if t.needsReview { flagged += 1 }
+            if t.isRetired { blocked += 1 }
+        }
+        return (flagged, blocked)
+    }
+
+    private func countChip(_ text: String, _ system: String, _ color: Color) -> some View {
+        HStack(spacing: 3) {
+            Image(systemName: system).font(.caption2)
+            Text(text).font(.caption2.weight(.semibold))
+        }
+        .foregroundStyle(color)
+        .padding(.horizontal, 6).padding(.vertical, 2)
+        .background(Capsule().fill(color.opacity(0.12)))
+    }
+
     /// Caregiver words this scene introduced that still have no art.
     private var tilesNeedingArt: [TileModel] {
         SceneImageBatch.tilesNeedingArt(in: scene, tileLookup: tileLookup, resolver: imageResolver)
@@ -173,9 +196,14 @@ struct SceneEditorView: View {
                                         .foregroundStyle(.blue)
                                 }
                             }
-                            Text("\(page.tiles.count) tile\(page.tiles.count == 1 ? "" : "s")")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                            HStack(spacing: 8) {
+                                Text("\(page.tiles.count) tile\(page.tiles.count == 1 ? "" : "s")")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                let counts = reviewCounts(page)
+                                if counts.flagged > 0 { countChip("\(counts.flagged)", "flag.fill", .orange) }
+                                if counts.blocked > 0 { countChip("\(counts.blocked)", "eye.slash.fill", .red) }
+                            }
                         }
                         .padding(.vertical, 2)
                     }
@@ -472,6 +500,7 @@ private struct PageGeneratorSheet: View {
                     preview: previewBinding,
                     pageName: pageName,
                     allTiles: allTiles,
+                    apiKey: apiKey,
                     provenance: previewProvenance,
                     allowEdit: isLivePreview,
                     onAccept: { if let p = self.preview { buildAndAccept(p, editMode: false) } },
@@ -985,6 +1014,7 @@ private struct PagePreviewView: View {
     @Binding var preview: GeneratedPageResult
     let pageName: String
     let allTiles: [TileModel]
+    var apiKey: String = ""
     var previewImages: [String: Data] = [:]
     var provenance: String? = nil
     var allowEdit: Bool = true
@@ -996,6 +1026,8 @@ private struct PagePreviewView: View {
 
     @State private var selectedSection = 0  // 0 = primary, 1+ = sub-pages
     @State private var isSelecting = false
+    // At-authoring moderation review of the proposed NEW words.
+    @State private var review = NewWordReviewModel()
 
     private var tileLookup: [String: TileModel] {
         Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
@@ -1003,6 +1035,27 @@ private struct PagePreviewView: View {
 
     private var allSections: [GeneratedPage] {
         [preview.primaryPage] + preview.subPages
+    }
+
+    /// Every proposed NEW word across all sections (key, display name) — the set
+    /// the moderation review audits and gates Accept on.
+    private var newWords: [(key: String, name: String)] {
+        allSections.flatMap(\.tiles)
+            .filter(\.isProposedNew)
+            .compactMap { gt in gt.displayName.map { (gt.key, $0) } }
+    }
+    private var presentNewKeys: Set<String> { Set(newWords.map(\.key)) }
+
+    /// Remove a NEW word from every section (a removed 🟡, or a 🔴 pruned on Accept).
+    private func removeNewWord(_ key: String) {
+        preview.primaryPage.tiles.removeAll { $0.key == key }
+        for i in preview.subPages.indices { preview.subPages[i].tiles.removeAll { $0.key == key } }
+    }
+
+    /// Accept: drop the words the caregiver removed + untouched blocked, then hand off.
+    private func acceptModerated() {
+        for key in review.droppedKeys(present: presentNewKeys) { removeNewWord(key) }
+        onAccept()
     }
     private var sectionIndex: Int { min(selectedSection, allSections.count - 1) }
     private var currentTiles: [GeneratedTile] { allSections[sectionIndex].tiles }
@@ -1094,6 +1147,8 @@ private struct PagePreviewView: View {
 
             Divider()
 
+            NewWordReviewStatus(review: review, present: presentNewKeys)
+
             HStack(spacing: 10) {
                 Button("Cancel", role: .destructive) { onCancel() }
                     .buttonStyle(.bordered)
@@ -1110,11 +1165,14 @@ private struct PagePreviewView: View {
                     Button("Edit") { onEdit() }
                         .buttonStyle(.bordered)
                 }
-                Button("Accept") { onAccept() }
+                Button("Accept") { acceptModerated() }
                     .buttonStyle(.borderedProminent)
+                    .disabled(!review.canAccept(present: presentNewKeys))
             }
             .padding()
         }
+        // Moderation runs here, in the open — not silently at image-gen time.
+        .task(id: presentNewKeys) { await review.analyze(newWords, apiKey: apiKey) }
     }
 
     /// Renders one preview tile by key — an existing tile via its art, or a
@@ -1130,6 +1188,9 @@ private struct PagePreviewView: View {
                 GeneratedTileCell(key: gt.key, displayName: name,
                                   wordClass: wc, link: gt.link, isNew: true,
                                   imageData: previewImages[gt.key])
+                    .overlay(alignment: .bottomTrailing) {
+                        NewWordReviewBadge(key: gt.key, review: review)
+                    }
             }
         }
     }

@@ -17,6 +17,15 @@ extension AdminView {
                 scenesSection
                 newSceneSection
                 importSceneSection
+                Section {
+                    NavigationLink {
+                        VocabManagerView()
+                    } label: {
+                        Label("Manage Vocabulary", systemImage: "textformat.abc")
+                    }
+                } footer: {
+                    Text("Hide or restore words, and review anything the moderation gate flagged.")
+                }
             }
             .navigationTitle("Scenes")
             .navigationDestination(item: $navigateToNewScene) { scene in

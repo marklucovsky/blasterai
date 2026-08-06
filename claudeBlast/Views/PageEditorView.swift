@@ -60,6 +60,22 @@ struct PageEditorView: View {
         )
     }
 
+    /// Caregiver allows a flagged/blocked word — clears the review flags so it
+    /// becomes visible to the child again.
+    private func keepReview(_ tile: TileModel) {
+        tile.approveReview()
+        try? modelContext.save()
+    }
+
+    /// Caregiver removes a flagged/blocked word — hides it (stays page-attached but
+    /// invisible in running scenes; restorable in the Vocab manager) and purges its
+    /// cached sentences.
+    private func removeReviewed(_ tile: TileModel) {
+        tile.retire()
+        _ = SentenceCacheManager(modelContext: modelContext).invalidate(containingTileKey: tile.key)
+        try? modelContext.save()
+    }
+
     private var isHome: Bool { scene.homePageKey == pageKey }
 
     /// The home-page control lives here (not the nav bar) so it has room for a
@@ -119,6 +135,11 @@ struct PageEditorView: View {
                         cell: { entry in
                             if let tile = tileLookup[entry.key] {
                                 PageTileCell(tile: tile, link: entry.link)
+                                    .overlay(alignment: .bottomTrailing) {
+                                        TileReviewBadge(tile: tile,
+                                                        onKeep: { keepReview(tile) },
+                                                        onRemove: { removeReviewed(tile) })
+                                    }
                             }
                         }
                     )

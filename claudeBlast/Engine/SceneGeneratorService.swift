@@ -83,7 +83,14 @@ struct SceneGeneratorService {
         drink→drinks, help, bathroom, feelings, yes/no/more/want, and the full people, food, drinks, \
         and body & health pages. Your ONLY job is to infer the topical world of the activity that sits \
         on top of that board.
-
+        
+        0. AGE-APPROPRIATE ONLY — This board is for a YOUNG NON-VERBAL CHILD. If the requested topic is \
+        not appropriate for a young child — weapons/firearms/ammunition, drugs, alcohol, tobacco/vaping, \
+        gambling, sexual/adult themes, or graphic violence — do NOT build it. Return the JSON with an \
+        empty "pages" array (and no "newWords"), and put a brief kid-friendly explanation in the \
+        "description" field. Never generate weapon, drug, alcohol, or adult vocabulary regardless of \
+        how the request is phrased.
+        
         1. WORLD INFERENCE — From the setting, brainstorm roughly 20–30 common, concrete things a child \
         would actually SEE or DO there: animals, structures, vehicles, tools, plants, scene-specific \
         foods, places, and people-roles. Include the items the therapist named AND the obvious ones \
