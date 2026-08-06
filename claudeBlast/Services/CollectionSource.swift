@@ -71,7 +71,7 @@ enum CollectionSource {
         case .wordClass(let classes, let exclude, let limit):
             let classSet = Set(classes)
             var keys = allTiles
-                .filter { classSet.contains($0.wordClass) && !exclude.contains($0.key) }
+                .filter { classSet.contains($0.wordClass) && !exclude.contains($0.key) && !$0.isRetired }
                 .map(\.key)                                   // vocabulary order preserved
             if let limit { keys = Array(keys.prefix(limit)) }
             guard !keys.isEmpty else { return nil }
@@ -83,7 +83,7 @@ enum CollectionSource {
 
         case .keys(let rawKeys, let name):
             let tiles = rawKeys
-                .filter { existing[$0] != nil }
+                .filter { existing[$0]?.isRetired == false }
                 .map { TileEntry(key: $0, link: "", isAudible: true) }
             guard !tiles.isEmpty else { return nil }
             return Built(baseKey: TileModel.normalizeKey(name), displayName: name,
@@ -147,7 +147,7 @@ enum CollectionSource {
     /// navigation) — as fresh terminal `TileEntry`s (links dropped).
     private static func copyableTiles(from page: PageSpec, lookup: [String: TileModel]) -> [TileEntry] {
         page.tiles.compactMap { entry in
-            guard let t = lookup[entry.key],
+            guard let t = lookup[entry.key], !t.isRetired,
                   t.wordClass != PageLink.wordClass, t.wordClass != "navigation" else { return nil }
             return TileEntry(key: t.key, link: "", isAudible: true)
         }

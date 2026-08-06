@@ -99,13 +99,15 @@ struct TilePickerView: View {
         if let pageSourceKeys {
             let byKey = Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
             return pageSourceKeys.compactMap { key in
-                guard let tile = byKey[key], matchesSearch(tile) else { return nil }
+                guard let tile = byKey[key], !tile.isRetired, matchesSearch(tile) else { return nil }
                 return tile
             }
         }
         let packKeySet: Set<String>? = selectedWordClass.hasPrefix("pack:")
             ? packKeys(String(selectedWordClass.dropFirst("pack:".count))) : nil
         return allTiles.filter { tile in
+            // Retired (hidden) words are never offered to add.
+            if tile.isRetired { return false }
             // On-page tiles are NOT excluded — they render marked "on page" in the
             // grid (see pickerCell), so a search like "Golde" that matches an
             // already-added "Golden Retriever" shows it instead of an empty state.
@@ -158,7 +160,7 @@ struct TilePickerView: View {
     private func selectPageSource(_ scene: BlasterScene, _ page: PageSpec) {
         let byKey = Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
         pageSourceKeys = page.tiles.compactMap { entry in
-            guard let t = byKey[entry.key],
+            guard let t = byKey[entry.key], !t.isRetired,
                   t.wordClass != PageLink.wordClass, t.wordClass != "navigation" else { return nil }
             return t.key
         }
@@ -180,8 +182,9 @@ struct TilePickerView: View {
         let q = trimmedSearch
         guard !q.isEmpty else { return true }
         return allTiles.contains {
-            $0.displayName.localizedCaseInsensitiveContains(q)
-            || $0.key.localizedCaseInsensitiveContains(q)
+            !$0.isRetired &&
+            ($0.displayName.localizedCaseInsensitiveContains(q)
+             || $0.key.localizedCaseInsensitiveContains(q))
         }
     }
 
@@ -734,7 +737,7 @@ struct TilePickerView: View {
         suggestionError = nil
         newWordsNote = nil
         let service = TileSuggestionService(apiKey: apiKey)
-        let tiles = allTiles  // capture before async hop
+        let tiles = allTiles.filter { !$0.isRetired }  // capture before async hop; hidden words aren't reused
         Task {
             do {
                 let result = try await service.suggest(goal: goal, allTiles: tiles)
@@ -942,5 +945,17 @@ struct TilePickerView: View {
         pages[idx].tiles.insert(contentsOf: keysToAdd.map { pageEntry(for: $0) }, at: 0)
         scene.pages = pages
         try? modelContext.save()
+
+        // Moderate the newly-added NEW words (no Accept gate for Add Tiles). Mark
+        // them in-review immediately so they're hidden from the child grid while
+        // analysis runs, then the audit resolves each: blocked → hidden, flagged →
+        // needs review, approved → visible.
+        let newlyAdded = keysToAdd.filter { sessionNewWordKeys.contains($0) }
+        if !newlyAdded.isEmpty, !apiKey.isEmpty {
+            let tiles = allTiles.filter { newlyAdded.contains($0.key) }
+            for t in tiles { t.needsReview = true }
+            try? modelContext.save()
+            Task { await WordModerationService.reviewTiles(tiles, apiKey: apiKey, context: modelContext) }
+        }
     }
 }
