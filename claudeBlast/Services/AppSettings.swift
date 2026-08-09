@@ -91,11 +91,16 @@ func setModelContainer(icloudEnabled: Bool) -> ModelContainer {
     // configuration gets a distinct on-disk location.
     let syncedSchema = Schema([
         TileModel.self, TileArtVariant.self,
-        SentenceCache.self, BlasterScene.self, MetricEvent.self,
+        SentenceCache.self, BlasterScene.self,
         RecordedScript.self, LoggedUtterance.self,
         ChildProfile.self,
     ])
-    let localSchema = Schema([DeviceProfile.self])
+    // Device-local: per-device identity/posture (DeviceProfile) plus the raw
+    // analytics stream (MetricEvent), which is high-volume, disposable, and only
+    // ever read as this device's aggregate counts. Keeping it out of the synced
+    // schema sheds the CloudKit push traffic and keeps it off the permanent
+    // production schema. See docs/schema-audit-2026-08-06.md (D3).
+    let localSchema = Schema([DeviceProfile.self, MetricEvent.self])
     let allSchema = Schema([
         TileModel.self, TileArtVariant.self,
         SentenceCache.self, BlasterScene.self, MetricEvent.self,

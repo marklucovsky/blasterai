@@ -203,14 +203,22 @@ struct ProfileMigrationTests {
         #expect(sandboxes[0].displayName == kSandboxProfileDefaultName)
     }
 
-    @Test func legacyRoleValues_normalizeToCaregiver() throws {
+    /// The invariant, stated without reference to any particular retired value:
+    /// a role string this build doesn't recognize resolves to `.caregiver` and is
+    /// rewritten to canonical form on launch. `.caregiver` is the safe landing
+    /// spot — it never silently gates a device the owner didn't mean to lock.
+    ///
+    /// Covers the retired `"personal"` / `"therapist"` raws (removed from
+    /// `DeviceRole.fromRawValue` in the pre-promotion schema audit) and anything
+    /// else an older or newer build might have written.
+    @Test(arguments: ["personal", "therapist", "", "some_future_role"])
+    func unrecognizedRoleValue_normalizesToCaregiver(_ raw: String) throws {
         let container = try makeContainer()
         let ctx = container.mainContext
         let defaults = isolatedDefaults()
 
-        // Plant a DeviceProfile with the old "personal" raw value.
         let device = DeviceProfile(role: .caregiver)
-        device.roleRaw = "personal"
+        device.roleRaw = raw
         ctx.insert(device)
 
         ProfileMigration.ensureProfilesAfterBootstrap(
@@ -221,20 +229,21 @@ struct ProfileMigrationTests {
         #expect(fetched.role == .caregiver)
     }
 
-    @Test func legacyTherapistRoleValue_normalizes() throws {
+    /// The one value that must NOT be absorbed by the default branch.
+    @Test func patientRoleValue_isPreserved() throws {
         let container = try makeContainer()
         let ctx = container.mainContext
         let defaults = isolatedDefaults()
 
-        let device = DeviceProfile(role: .caregiver)
-        device.roleRaw = "therapist"
+        let device = DeviceProfile(role: .patient)
         ctx.insert(device)
 
         ProfileMigration.ensureProfilesAfterBootstrap(
             context: ctx, seedLegacy: false, defaults: defaults)
 
         let fetched = try ctx.fetch(FetchDescriptor<DeviceProfile>())[0]
-        #expect(fetched.roleRaw == "caregiver")
+        #expect(fetched.roleRaw == "patient")
+        #expect(fetched.role == .patient)
     }
 }
 }

@@ -17,8 +17,6 @@ final class DeviceProfile {
     var id: String = UUID().uuidString
     /// `DeviceRole.rawValue`. Stored as String for SwiftData/CloudKit compat
     /// even though this entity is local-only — keeps modeling consistent.
-    /// Legacy "personal" / "therapist" values from earlier worktree builds
-    /// are migrated to "caregiver" by `ProfileMigration`.
     var roleRaw: String = DeviceRole.caregiver.rawValue
     /// Patient devices: always true (forced at onboarding). Caregiver
     /// devices: false by default; the therapist can opt in.
@@ -63,18 +61,20 @@ final class DeviceProfile {
 ///   tester). The engine uses the Sandbox ChildProfile by default; adults
 ///   can also activate any real patient profile for preview / management.
 ///   Admin is ungated unless the therapist opts in.
-///
-/// Legacy values (`.personal`, `.therapist`) are mapped to `.caregiver` by
-/// `fromRawValue` so existing dev installs migrate transparently.
 enum DeviceRole: String, CaseIterable, Codable {
     case patient
     case caregiver
 
+    /// Any value that isn't the explicit patient role resolves to `.caregiver` —
+    /// the safe default, since it never silently gates a device the owner didn't
+    /// intend to lock down. This also absorbs values written by other builds
+    /// (the retired `"personal"` / `"therapist"` raws normalized here before the
+    /// pre-promotion audit; `ProfileMigration` rewrites stored values to canonical
+    /// form on launch).
     static func fromRawValue(_ raw: String) -> DeviceRole {
         switch raw {
-        case "patient":                          return .patient
-        case "caregiver", "therapist", "personal": return .caregiver
-        default:                                 return .caregiver
+        case "patient": return .patient
+        default:        return .caregiver
         }
     }
 

@@ -21,7 +21,10 @@ final class TileArtVariant {
     var tileKey: String = ""
     var imageSetRaw: String = ""
     @Attribute(.externalStorage) var imageData: Data = Data()
-    var created: Date = Date.now
+    /// Last write, not first — `upsert` re-stamps this on an existing variant
+    /// when art is regenerated or refined. Named `modified` because that's what
+    /// it means; it was `created` before the pre-promotion schema audit.
+    var modified: Date = Date.now
 
     var imageSet: ImageSetID { ImageSetID(rawValue: imageSetRaw) ?? .playful3D }
 
@@ -29,7 +32,7 @@ final class TileArtVariant {
         self.tileKey = tileKey
         self.imageSetRaw = imageSet.rawValue
         self.imageData = imageData
-        self.created = .now
+        self.modified = .now
     }
 }
 
@@ -45,7 +48,7 @@ extension TileArtVariant {
         )
         if let existing = try? context.fetch(descriptor).first {
             existing.imageData = imageData
-            existing.created = .now
+            existing.modified = .now
             return existing
         }
         let variant = TileArtVariant(tileKey: tileKey, imageSet: imageSet, imageData: imageData)

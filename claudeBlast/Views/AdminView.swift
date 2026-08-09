@@ -30,12 +30,18 @@ struct AdminView: View {
     // Finalized utterances — the activity-first Logs summary reads from here.
     @Query(sort: \LoggedUtterance.createdAt, order: .reverse) var loggedUtterances: [LoggedUtterance]
 
-    var cacheHitCount: Int {
-        allMetricEvents.count { $0.subjectType == "cache" && $0.eventType == .hit }
+    /// Sums `MetricEvent.count` rather than counting rows, so a compacted
+    /// aggregate row (one row standing for N occurrences) still reports the true
+    /// total. Never replace this with `.count { }`.
+    func metricTotal(subjectType: String, eventType: MetricType) -> Int {
+        allMetricEvents.reduce(0) { total, event in
+            (event.subjectType == subjectType && event.eventType == eventType)
+                ? total + event.count : total
+        }
     }
-    var cacheMissCount: Int {
-        allMetricEvents.count { $0.subjectType == "sentence" && $0.eventType == .used }
-    }
+
+    var cacheHitCount: Int { metricTotal(subjectType: "cache", eventType: .hit) }
+    var cacheMissCount: Int { metricTotal(subjectType: "sentence", eventType: .used) }
     @Environment(\.modelContext) var modelContext
     @Environment(SentenceEngine.self) var sentenceEngine
 

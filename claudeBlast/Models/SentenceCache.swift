@@ -14,12 +14,6 @@ final class SentenceCache {
     var cacheKey: String = ""
     var tileKeys: [String] = []
     var sentence: String = ""
-    /// Dead field: only ever written "" and never read anywhere. The one true
-    /// removal candidate on this model — slated for the pre-promotion
-    /// schema-hardening pass (remove while the CloudKit schema is still in
-    /// Development, reset the dev environment, then promote a clean schema;
-    /// the removal itself is a lightweight SwiftData migration — no custom code).
-    var audioData: String = ""
     var hitCount: Int = 0
     var isPinned: Bool = false
 
@@ -70,13 +64,11 @@ final class SentenceCache {
     /// for legacy entries written before this field existed → treated as stale.
     var keyVersion: String = ""
 
-    init(tiles: [TileSelection], grade: Int, sentence: String, audioData: String = "",
-         childID: String? = nil) {
+    init(tiles: [TileSelection], grade: Int, sentence: String, childID: String? = nil) {
         self.tileKeys = tiles.map(\.key)
         self.cacheKey = CacheKeyPolicy.key(for: tiles, grade: grade)
         self.stableKey = CacheKeyPolicy.stableKey(for: tiles, childID: childID)
         self.sentence = sentence
-        self.audioData = audioData
         self.childID = childID
         self.keyVersion = CacheKeyPolicy.versionToken
     }

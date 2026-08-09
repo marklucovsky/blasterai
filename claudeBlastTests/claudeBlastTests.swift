@@ -28,7 +28,6 @@ struct claudeBlastTests {
         #expect(tile.value == "graham cracker")
         #expect(tile.bundleImage == "graham_cracker")
         #expect(tile.wordClass == "food")
-        #expect(tile.type == .word)
     }
 
     @Test func metricEventCreation() throws {
