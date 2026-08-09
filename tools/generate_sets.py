@@ -83,9 +83,30 @@ HC_SUBJECT_OVERRIDES: dict[str, str] = {
         "A single bold arrow pointing straight downward, drawn entirely in solid "
         "white, with a thick shaft and a large triangular arrowhead"
     ),
+    # The shared subject is "a child catching a colorful ball with both hands,
+    # ball just arriving in their grip" — which is playing catch, not getting.
+    # Playful-3D happens to ignore its own subject here and draws a child
+    # reaching up to a shelf, which is the sense we want; this makes that
+    # explicit rather than lucky.
+    "get": (
+        "A child standing on tiptoe with one arm stretched high overhead, "
+        "lifting a ball down from the top shelf of a tall bookcase. The child "
+        "is reaching upward, not catching"
+    ),
+    # The shared subject asks for a chalkboard, which comes back as a large
+    # rectangle outline that reads as a frame — the one thing this style must
+    # not have — plus stray marks standing in for writing.
+    "school_people": (
+        "A smiling adult teacher standing beside three smiling children, the "
+        "teacher clearly taller. All four face forward and all four have "
+        "simple friendly faces with eyes and a smile. No blackboard, no "
+        "whiteboard, no wall, no desks, nothing behind them"
+    ),
     # next_page / previous_page / question — rendered deterministically by
     # render_hc_basics.py; DALL-E reliably hallucinates frames around the canvas
     # or surrounds the subject with a grid of unrelated icons.
+    # For v2, next_page generates cleanly and previous_page is derived from it
+    # with tools/mirror_tile.py so the pair are true mirrors.
     "food": (
         "A clean white plate seen from a slight angle, holding exactly three "
         "iconic food items: a bright red apple, a golden bread roll, and a "

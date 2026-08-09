@@ -1,0 +1,14 @@
+{
+  "previous_page": {
+    "reason": "previous and next should be mirror images of each other and they are not",
+    "attempts": 1
+  },
+  "school_people": {
+    "reason": "rejected in review",
+    "attempts": 1
+  },
+  "get": {
+    "reason": "this looks more like playing catch than GET ing a ball off of a high shelf like p3d",
+    "attempts": 1
+  }
+}
