@@ -242,5 +242,85 @@ sound, not that the set is done. Open questions:
    *"a bold green checkmark showing the correct right answer"* — the wrong sense
    of the word, in every set, not just this one.
 
-## Round 5 — full set: pending
+## Round 5 — the full set, and two metrics that were wrong
+
+493 keys generated with the final prompt, sharded four ways over disjoint key
+files. **Zero failures.** About 40 minutes wall-clock at `--sleep 5`, against
+the four-to-five hours the default would have taken.
+
+The first score was 384/493. Then two of the flags turned out to be measuring
+the wrong thing, and both were visible the moment I looked at what they had
+caught:
+
+- **`apple`** — a red apple with a bold white outline and a green leaf on pure
+  black. Flagged `contrast`, because the metric compared *mean* ink luminance
+  to the background, and the large red field drags the mean down. But what
+  matters for low vision is whether a strongly contrasting element exists, not
+  the average across the subject. Now measured at the **90th percentile** of
+  ink luminance. The apple scores 20.6.
+- **`family`** — four figures, white with black internal linework, one orange
+  accent. Flagged `multi`. On a dark ground the black lines defining a figure
+  are the same colour as the background, so one drawing reads as a dozen
+  disconnected white regions. Now a morphological closing bridges them before
+  counting.
+
+**The near-miss is the part worth keeping.** The first attempt at that closing
+used a 7px span plus `binary_fill_holes`, and the controls caught it
+immediately: baseline `apple` — the 5×5 grid of twenty-five UI glyphs, the
+worst tile in the old set — scored **clean**. The closing had joined the
+perimeter icons into a ring and fill-holes flooded the interior. I had loosened
+a metric until it stopped catching the thing it was built to catch.
+
+Backing off to a 5px span and dropping fill-holes separates the two cases
+cleanly, because the distances are genuinely different: internal linework is
+2–4px at the analysis scale, while gaps between separate objects are 10–20px.
+
+| tile | components | verdict |
+|---|---|---|
+| baseline `apple` (25-icon grid) | 18 | flagged `multi` |
+| v2 `apple` (one apple) | 1 | clean, contrast 20.6 |
+| v2 `family` (four figures) | 1 | clean, contrast 20.7 |
+
+**Always re-run the controls after relaxing a threshold.** A number that only
+moves in the direction you were hoping for is not evidence.
+
+### Final
+
+Measured with the corrected metrics, so every column is comparable:
+
+| set | clean | |
+|---|---|---|
+| Baseline High Contrast | 149 / 472 — **32%** | not shippable |
+| **High Contrast v2** | **408 / 493 — 82%** | this work |
+| Classic | 507 / 546 — **93%** | shipping |
+| Playful-3D | 498 / 543 — **92%** | shipping |
+
+(The 12% quoted for the baseline in Round 0 was measured with the over-strict
+contrast and component metrics. 32% is the fair number. The conclusion is
+unchanged — a third of a set passing is not a set.)
+
+Remaining flags on v2: `small=37`, `edges=19`, `contrast=13`, `offcenter=12`,
+`multi=10`, `bgcolor=8`, `clutter=4`, `dense=1`, `frame=1`. `small` is the
+largest and is partly geometric — a tall narrow subject like an arrow has a
+small bounding box without being a small subject. These go to human review
+rather than another round of tuning; the analyzer exists to direct attention,
+not to issue verdicts.
+
+`render_hc_basics.py` looks retirable for this set — `next_page`, `question`
+and the arrows all generated cleanly — but that should be confirmed during
+review rather than assumed.
+
+## Next: human review
+
+```bash
+python3 tools/build_review_page.py --set high_contrast_v2
+```
+
+Playful-3D | Classic | new, side by side, with the flagged tiles worth looking
+at first. Then **Export Full Review** and:
+
+```bash
+python3 tools/optimize_tiles.py --set high_contrast_v2
+python3 tools/sync_to_app.py --set high_contrast_v2 --review review_high_contrast_v2.json
+```
 

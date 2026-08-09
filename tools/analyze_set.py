@@ -326,7 +326,13 @@ def analyze(path: Path, key: str, p: Profile) -> TileMetrics:
 
     lum = relative_luminance(rgb)
     if ink.any() and (~ink).any():
-        m.contrast = contrast_ratio(float(lum[ink].mean()), float(lum[~ink].mean()))
+        # The brightest tenth of the ink against the background, not the mean.
+        # What matters for low vision is whether a strongly contrasting element
+        # exists, not the average across the whole subject. A red apple with a
+        # bold white outline is high-contrast; averaging its large red field
+        # with its thin white outline says otherwise and flags a good tile.
+        m.contrast = contrast_ratio(float(np.percentile(lum[ink], 90)),
+                                    float(lum[~ink].mean()))
 
     # Chroma: how much of the ink is a coloured accent vs plain white/grey.
     if ink.any():
@@ -340,7 +346,18 @@ def analyze(path: Path, key: str, p: Profile) -> TileMetrics:
     small = np.asarray(
         Image.fromarray((ink * 255).astype(np.uint8)).resize((256, 256), Image.BOX)
     ) > 96
-    small = ndimage.binary_closing(small, structure=np.ones((3, 3), dtype=bool))
+    # Bridge the subject's own internal linework before counting pieces. On a
+    # dark ground, the black lines defining a figure's features are the same
+    # colour as the background, so a single drawing of a family reads as a
+    # dozen disconnected white regions.
+    #
+    # The span is deliberately small. Internal linework is ~2-4px at this
+    # scale; the gaps between genuinely separate objects are 10-20px. Closing
+    # over 5px reconnects the first and not the second. A 7px span plus
+    # fill_holes was tried and is wrong: it joined the perimeter of a 25-icon
+    # contamination grid into a ring, then flooded the interior, scoring the
+    # worst tile in the old set as clean.
+    small = ndimage.binary_closing(small, structure=np.ones((5, 5), dtype=bool))
     labels, count = ndimage.label(small, structure=np.ones((3, 3), dtype=int))
     total = small.size
     if count:
