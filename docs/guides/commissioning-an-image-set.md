@@ -239,13 +239,30 @@ class, by pack, or by status; approve everything visible in one click when a
 category is clean.
 
 Verdicts persist in `localStorage` and carry a fingerprint of the exact image
-they were given for. Regenerate some tiles and rebuild the page: those verdicts
-expire, the rest survive. That is what makes the loop tractable:
+they were given for. When a tile is regenerated, the two verdicts behave
+differently on purpose:
+
+- **Approved → cleared.** An approval is permission to ship, and it must never
+  carry over to art nobody has looked at.
+- **Rejected → stays rejected**, marked *redone — re-review* in orange. A
+  rejection is a to-do item, and clearing it would destroy the one filter you
+  need in order to check the fixes. A rejected tile ships nothing, so there is
+  no risk in keeping it. Judging it again clears the marker.
+
+That asymmetry is what makes the loop tractable:
 
 1. Review, then **Export Rejects** → paste into
    `tools/tile_sets/your_set/rejected.json`
-2. `python3 tools/review_tiles.py regen --set your_set`
-3. Rebuild the page and re-review just the regenerated tiles
+2. `python3 tools/review_tiles.py regen --set your_set` — or fix the subject
+   and regenerate by hand, which is usually the better answer when the
+   rejection had a reason
+3. Rebuild the page, filter to **Rejected → fixed, needs re-review**, and look
+   only at those
+
+`rejected.json` also seeds the page: any key listed there that the browser has
+no opinion on comes back as an outstanding reject, with its original reason.
+So a review survives being continued on another machine, or a cleared browser
+store.
 
 When you are done, **Export Full Review** downloads the verdict manifest. Keep
 it — the next step needs it.

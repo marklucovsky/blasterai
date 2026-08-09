@@ -115,6 +115,25 @@ def build_page(set_name: str) -> Path:
             "stamp": image_stamp(new_path) if has_new else "",
         })
 
+    # Outstanding rejects, so a review picked up in a different browser (or
+    # after localStorage was cleared) still opens with the to-do list. A tile
+    # whose art is newer than the rejection has already been regenerated and
+    # is flagged for a fresh look rather than left looking untouched.
+    seed_rejects: dict[str, dict] = {}
+    rejected_file = set_dir / "rejected.json"
+    if rejected_file.exists():
+        try:
+            rejected = json.loads(rejected_file.read_text())
+            cutoff = rejected_file.stat().st_mtime
+            for key, entry in rejected.items():
+                art = set_dir / f"{key}.png"
+                seed_rejects[key] = {
+                    "reason": entry.get("reason", ""),
+                    "refreshed": art.exists() and art.stat().st_mtime > cutoff,
+                }
+        except Exception as e:
+            print(f"  (could not read {rejected_file}: {e})")
+
     categories = sorted(set(t["wordClass"] for t in tiles_json))
     packs = ["base"] + sorted({e[2] for e in entries if e[2] != "base"})
 
@@ -158,6 +177,15 @@ body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans
 .card:hover {{ box-shadow: 0 4px 16px rgba(0,0,0,0.12); }}
 .card.approved {{ border-left: 4px solid #34c759; }}
 .card.rejected {{ border-left: 4px solid #ff3b30; }}
+/* Rejected, and the art has since been regenerated — still rejected so it
+   stays in that filter, but visibly awaiting a fresh look. */
+.card.refreshed {{ border-left: 4px solid #ff9500; background: #fffaf2; }}
+.refreshed-badge {{
+    display: inline-block; margin-bottom: 4px; padding: 1px 7px;
+    border-radius: 9px; background: #ff9500; color: #fff;
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .4px;
+}}
 
 .card-images {{
     display: flex; gap: 2px; background: #eee; cursor: pointer;
@@ -232,6 +260,7 @@ body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans
         <option value="unreviewed">Unreviewed</option>
         <option value="approved">Approved</option>
         <option value="rejected">Rejected</option>
+        <option value="refreshed">Rejected &rarr; fixed, needs re-review</option>
     </select>
     <input type="text" id="searchBox" placeholder="Search tiles..." />
     <label style="font-size:13px;display:flex;align-items:center;gap:5px;white-space:nowrap">
@@ -257,6 +286,11 @@ body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans
 const SET_NAME = "{set_name}";
 const TILES = {json.dumps(tiles_json)};
 const STORAGE_KEY = "blaster_review_" + SET_NAME;
+// tools/tile_sets/<set>/rejected.json — the rejects handed off for regen.
+// Seeds a verdict for any key the browser has no opinion on, so a review
+// continued in another browser (or after the store was cleared) still starts
+// with the outstanding to-do list rather than a blank slate.
+const SEED_REJECTS = {json.dumps(seed_rejects)};
 
 // Load state from localStorage
 let state = {{}};
@@ -268,18 +302,44 @@ function saveState() {{
 
 const STAMPS = Object.fromEntries(TILES.map(t => [t.key, t.stamp]));
 
-// A verdict belongs to the image it was given for. If that tile has since been
-// regenerated its stamp no longer matches, so the verdict is dropped and the
-// tile returns to unreviewed — while every untouched tile keeps its verdict.
-// Without this, rebuilding the page silently reattaches old approvals to new
-// images.
-let expired = 0;
-for (const [key, s] of Object.entries(state)) {{
-    if (s.stamp && STAMPS[key] && s.stamp !== STAMPS[key]) {{ delete state[key]; expired++; }}
+// A verdict belongs to the image it was given for, and the two verdicts want
+// opposite things when the image changes underneath them.
+//
+//   approved + changed -> demote to unreviewed. An approval is permission to
+//     ship, and it must never carry over to art nobody has looked at.
+//   rejected + changed -> STAY rejected, flagged as refreshed. A rejection is
+//     a to-do item. Clearing it would lose the very filter you need to check
+//     the fixes, and a rejected tile ships nothing, so there is no risk in
+//     keeping it.
+let seeded = 0;
+for (const [key, entry] of Object.entries(SEED_REJECTS)) {{
+    if (state[key]) continue;                 // the browser's own verdict wins
+    state[key] = {{
+        status: "rejected",
+        comment: entry.reason || "",
+        stamp: STAMPS[key] || "",
+        refreshed: !!entry.refreshed,
+    }};
+    seeded++;
 }}
-if (expired) {{
+if (seeded) console.log(`${{seeded}} outstanding reject(s) restored from rejected.json.`);
+
+let demoted = 0, refreshed = 0;
+for (const [key, s] of Object.entries(state)) {{
+    if (!s.stamp || !STAMPS[key] || s.stamp === STAMPS[key]) continue;
+    if (s.status === "rejected") {{
+        s.refreshed = true;
+        s.stamp = STAMPS[key];
+        refreshed++;
+    }} else {{
+        delete state[key];
+        demoted++;
+    }}
+}}
+if (demoted || refreshed) {{
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    console.log(`${{expired}} verdict(s) expired — those tiles were regenerated.`);
+    console.log(`${{refreshed}} rejected tile(s) regenerated and awaiting re-review; `
+              + `${{demoted}} approval(s) cleared because the art changed.`);
 }}
 
 function getState(key) {{
@@ -287,7 +347,11 @@ function getState(key) {{
 }}
 
 function setState(key, updates) {{
-    state[key] = {{ ...getState(key), ...updates, stamp: STAMPS[key] || "" }};
+    const next = {{ ...getState(key), ...updates, stamp: STAMPS[key] || "" }};
+    // Judging it again is what clears the "fixed, needs re-review" marker —
+    // including re-rejecting it, which starts the next round.
+    if (updates.status !== undefined) next.refreshed = false;
+    state[key] = next;
     saveState();
     renderCard(key);
     updateStats();
@@ -297,13 +361,15 @@ function renderCard(key) {{
     const el = document.getElementById("card-" + key);
     if (!el) return;
     const s = getState(key);
-    el.className = "card " + s.status;
+    el.className = "card " + s.status + (s.refreshed ? " refreshed" : "");
     const approveBtn = el.querySelector(".btn-approve");
     const rejectBtn = el.querySelector(".btn-reject");
     const commentInput = el.querySelector(".comment-input");
+    const badge = el.querySelector(".refreshed-badge");
     approveBtn.className = s.status === "approved" ? "btn-approve active-approve" : "btn-approve";
     rejectBtn.className = s.status === "rejected" ? "btn-reject active-reject" : "btn-reject";
     commentInput.value = s.comment || "";
+    if (badge) badge.style.display = s.refreshed ? "" : "none";
 }}
 
 function updateStats() {{
@@ -335,7 +401,7 @@ function buildGrid() {{
         const s = getState(t.key);
         const card = document.createElement("div");
         card.id = "card-" + t.key;
-        card.className = "card " + s.status;
+        card.className = "card " + s.status + (s.refreshed ? " refreshed" : "");
         card.dataset.key = t.key;
         card.dataset.wordclass = t.wordClass;
         card.dataset.pack = t.pack;
@@ -358,6 +424,7 @@ function buildGrid() {{
                 </div>
             </div>
             <div class="card-body">
+                <span class="refreshed-badge" style="${{s.refreshed ? '' : 'display:none'}}">redone &mdash; re-review</span>
                 <span class="tile-key">${{t.key}}</span>
                 <span class="tile-class">${{t.wordClass}}</span>
                 ${{t.pack !== 'base' ? `<span class="tile-class" style="color:#7a5cff;font-weight:600">· ${{t.pack}}</span>` : ''}}
@@ -396,7 +463,11 @@ function applyFilters() {{
         if (onlyNew && card.dataset.hasnew !== "1") show = false;
         if (cat !== "all" && wc !== cat) show = false;
         if (pk !== "all" && card.dataset.pack !== pk) show = false;
-        if (status !== "all" && s.status !== status) show = false;
+        if (status === "refreshed") {{
+            if (!s.refreshed) show = false;
+        }} else if (status !== "all" && s.status !== status) {{
+            show = false;
+        }}
         if (search && !key.includes(search)) show = false;
         card.classList.toggle("hidden", !show);
     }});
