@@ -10,7 +10,7 @@ Usage:
     python3 tools/build_review_page.py --set both
 
 Opens in browser automatically. Features:
-- Side-by-side current (ARASAAC) vs new tile
+- Side-by-side shipping sets (Playful-3D, Classic) vs the new tile
 - Approve / Reject / Comment per tile
 - Filter by category, status, search
 - Lightbox zoom on click
@@ -18,9 +18,10 @@ Opens in browser automatically. Features:
 - State persists in localStorage (survives browser refresh)
 """
 
-import base64
+import hashlib
 import json
 import os
+import shutil
 import sys
 import webbrowser
 from pathlib import Path
@@ -39,6 +40,11 @@ def img_to_relative_path(path: Path, html_dir: Path) -> str:
         return os.path.relpath(path.resolve(), html_dir.resolve())
     except ValueError:
         return ""
+
+
+def image_stamp(path: Path) -> str:
+    """Short content hash of a tile image, used to expire stale verdicts."""
+    return hashlib.sha1(path.read_bytes()).hexdigest()[:12]
 
 
 def build_page(set_name: str) -> Path:
@@ -67,21 +73,26 @@ def build_page(set_name: str) -> Path:
             if w["key"] not in base_keys:
                 entries.append((w["key"], w.get("wordClass", "unknown"), entry["slug"]))
 
-    # Local copies of p3d + ARASAAC art so the browser can load them.
+    # Local copies of the two shipping sets so the browser can load them.
+    # The comparison baseline is Playful-3D + Classic — the sets a user can
+    # actually pick. ARASAAC used to hold the second column, but it is
+    # isShippable: false, a legacy external corpus we never generate against,
+    # and it permanently lags the vocabulary. Comparing new work against art
+    # nobody can select was measuring the wrong thing.
     current_dir = OUTPUT_BASE / "current_p3d"; current_dir.mkdir(parents=True, exist_ok=True)
-    arasaac_dir = OUTPUT_BASE / "current_arasaac"; arasaac_dir.mkdir(parents=True, exist_ok=True)
+    classic_dir = OUTPUT_BASE / "current_classic"; classic_dir.mkdir(parents=True, exist_ok=True)
     for key, _wc, _pk in entries:
         p3d = TILE_IMAGE_SETS / f"p3d_{key}.png"
         if p3d.exists():
             shutil.copy2(p3d, current_dir / f"{key}.png")
-        ar = ASSETS_DIR / f"{key}.imageset" / f"{key}.png"
-        if ar.exists():
-            shutil.copy2(ar, arasaac_dir / f"{key}.png")
+        cls = TILE_IMAGE_SETS / f"cls_{key}.png"
+        if cls.exists():
+            shutil.copy2(cls, classic_dir / f"{key}.png")
 
     tiles_json = []
     for i, (key, wc, pack) in enumerate(entries):
         current_path = current_dir / f"{key}.png"
-        arasaac_path = arasaac_dir / f"{key}.png"
+        classic_path = classic_dir / f"{key}.png"
         new_path = set_dir / f"{key}.png"
 
         new_img = img_to_relative_path(new_path, html_dir)
@@ -94,9 +105,14 @@ def build_page(set_name: str) -> Path:
             "pack": pack,
             "index": i,
             "currentImg": current_img,
-            "arasaacImg": img_to_relative_path(arasaac_path, html_dir),
+            "classicImg": img_to_relative_path(classic_path, html_dir),
             "newImg": new_img if has_new else current_img,
             "hasNew": has_new,
+            # Content fingerprint, so a saved verdict can be matched to the
+            # exact image it was given for. Regenerating a handful of rejected
+            # tiles then invalidates only those verdicts and leaves the rest of
+            # the review intact.
+            "stamp": image_stamp(new_path) if has_new else "",
         })
 
     categories = sorted(set(t["wordClass"] for t in tiles_json))
@@ -233,7 +249,7 @@ body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
     <span class="close">&times;</span>
     <img id="lb-p3d" />
-    <img id="lb-arasaac" />
+    <img id="lb-classic" />
     <img id="lb-new" />
 </div>
 
@@ -250,12 +266,28 @@ function saveState() {{
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }}
 
+const STAMPS = Object.fromEntries(TILES.map(t => [t.key, t.stamp]));
+
+// A verdict belongs to the image it was given for. If that tile has since been
+// regenerated its stamp no longer matches, so the verdict is dropped and the
+// tile returns to unreviewed — while every untouched tile keeps its verdict.
+// Without this, rebuilding the page silently reattaches old approvals to new
+// images.
+let expired = 0;
+for (const [key, s] of Object.entries(state)) {{
+    if (s.stamp && STAMPS[key] && s.stamp !== STAMPS[key]) {{ delete state[key]; expired++; }}
+}}
+if (expired) {{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    console.log(`${{expired}} verdict(s) expired — those tiles were regenerated.`);
+}}
+
 function getState(key) {{
     return state[key] || {{ status: "unreviewed", comment: "" }};
 }}
 
 function setState(key, updates) {{
-    state[key] = {{ ...getState(key), ...updates }};
+    state[key] = {{ ...getState(key), ...updates, stamp: STAMPS[key] || "" }};
     saveState();
     renderCard(key);
     updateStats();
@@ -317,8 +349,8 @@ function buildGrid() {{
                     <span class="img-label">Playful-3D</span>
                 </div>
                 <div class="img-col">
-                    ${{t.arasaacImg ? `<img src="${{t.arasaacImg}}" loading="lazy" />` : '<div style="aspect-ratio:1;background:#eee;display:flex;align-items:center;justify-content:center;color:#999;font-size:11px">no ARASAAC</div>'}}
-                    <span class="img-label">ARASAAC ref</span>
+                    ${{t.classicImg ? `<img src="${{t.classicImg}}" loading="lazy" />` : '<div style="aspect-ratio:1;background:#eee;display:flex;align-items:center;justify-content:center;color:#999;font-size:11px">no Classic</div>'}}
+                    <span class="img-label">Classic</span>
                 </div>
                 <div class="img-col">
                     ${{t.hasNew ? `<img src="${{t.newImg}}" loading="lazy" />` : '<div style="aspect-ratio:1;background:#eee;display:flex;align-items:center;justify-content:center;color:#999;font-size:11px">Missing</div>'}}
@@ -417,7 +449,7 @@ function exportAll() {{
 function openLightbox(key) {{
     const t = tileMap[key];
     document.getElementById("lb-p3d").src = t.currentImg || "";
-    document.getElementById("lb-arasaac").src = t.arasaacImg || "";
+    document.getElementById("lb-classic").src = t.classicImg || "";
     document.getElementById("lb-new").src = t.hasNew ? t.newImg : "";
     document.getElementById("lightbox").classList.add("active");
 }}

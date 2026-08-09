@@ -271,6 +271,10 @@ def main() -> None:
     parser.add_argument("--skip-existing", action="store_true")
     parser.add_argument("--key", metavar="KEY", action="append", default=None,
                         help="Process only this tile key (repeatable)")
+    parser.add_argument("--keys-file", type=Path, default=None,
+                        help="File of tile keys, one per line. Generation is serial, so "
+                             "sharding a full set across a few processes over disjoint key "
+                             "files is the way to cut wall-clock.")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--batch", type=int, default=0,
                         help="Process only N tiles (for testing)")
@@ -295,11 +299,15 @@ def main() -> None:
     vocab: list[dict] = json.loads(VOCAB_FILE.read_text())
     keys = [tile["key"] for tile in vocab]
 
-    if args.key:
-        missing = [k for k in args.key if k not in keys]
+    selected = list(args.key or [])
+    if args.keys_file:
+        selected += [ln.strip() for ln in args.keys_file.read_text().splitlines() if ln.strip()]
+
+    if selected:
+        missing = [k for k in selected if k not in keys]
         if missing:
             sys.exit(f"Keys not in vocabulary: {missing}")
-        keys = list(args.key)
+        keys = selected
     elif args.batch > 0:
         keys = keys[:args.batch]
 

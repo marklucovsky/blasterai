@@ -78,7 +78,8 @@ def optimize_set(set_name: str, target_size: int) -> None:
 
 def main():
     parser = argparse.ArgumentParser(description="Optimize tiles for app bundle")
-    parser.add_argument("--set", required=True, choices=["playful_3d", "high_contrast", "classic", "both"])
+    parser.add_argument("--set", required=True,
+                        choices=["playful_3d", "high_contrast", "high_contrast_v2", "classic", "both"])
     parser.add_argument("--size", type=int, default=DEFAULT_SIZE, help=f"Target size in px (default {DEFAULT_SIZE})")
     args = parser.parse_args()
 

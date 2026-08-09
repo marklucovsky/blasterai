@@ -51,6 +51,7 @@ tools/tile_sets/optimized/
 tools/tile_sets/current/
 tools/tile_sets/current_p3d/
 tools/tile_sets/current_arasaac/
+tools/tile_sets/current_classic/
 
 # Review tool artifacts (regenerable)
 tools/tile_sets/playful_3d/review/
