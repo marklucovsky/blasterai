@@ -61,6 +61,7 @@ STYLES: dict[str, str] = json.loads(STYLES_FILE.read_text())
 SET_STYLES: dict[str, str] = {
     "playful_3d": "playful_3d",
     "high_contrast": "high_contrast",
+    "high_contrast_v2": "high_contrast_v2",
     "classic": "classic",
 }
 
@@ -69,6 +70,19 @@ SET_STYLES: dict[str, str] = {
 # abstract concepts where DALL-E improvises with secondary icons, or cases
 # where the shared subject says "clay" / "pastel". Looked up by lowercase key.
 HC_SUBJECT_OVERRIDES: dict[str, str] = {
+    # Directional arrows. The shared subjects specify "bright blue color" —
+    # chosen for playful_3d — and a named colour in the subject beats the
+    # style's "white dominates" rule every time. strip_clay_words() removes the
+    # clay wording but deliberately not colours, since most subjects need
+    # theirs ("a red apple"). These are the ones that don't.
+    "up": (
+        "A single bold arrow pointing straight upward, drawn entirely in solid "
+        "white, with a thick shaft and a large triangular arrowhead"
+    ),
+    "down": (
+        "A single bold arrow pointing straight downward, drawn entirely in solid "
+        "white, with a thick shaft and a large triangular arrowhead"
+    ),
     # next_page / previous_page / question — rendered deterministically by
     # render_hc_basics.py; DALL-E reliably hallucinates frames around the canvas
     # or surrounds the subject with a grid of unrelated icons.
@@ -120,7 +134,7 @@ def extract_subject(prompt_text: str) -> str:
 
 
 # prompts.json subjects were authored for playful_3d and bake in clay/3D wording
-# ("A 3D clay figurine child...", "made of shiny clay"). For a flat 2D set that
+# ("A 3D clay figurine child...", "made of shiny clay"). For every other set that
 # language fights the style prefix, so strip it. Longest phrases first.
 CLAY_PHRASES = [
     "3d clay figurine", "clay figurine", "3d clay", "clay character",
@@ -187,7 +201,8 @@ def generate_image(prompt: str, api_key: str, session: requests.Session) -> byte
 
 
 def run_set(style_name: str, keys: list[str], prompts: dict[str, str],
-            api_key: str, skip_existing: bool, dry_run: bool) -> tuple[int, int, list[str]]:
+            api_key: str, skip_existing: bool, dry_run: bool,
+            sleep_seconds: float = SLEEP_SECONDS) -> tuple[int, int, list[str]]:
     """Generate one full set. Returns (ok_count, skipped, failed_keys)."""
     out_dir = OUTPUT_BASE / style_name
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -199,7 +214,8 @@ def run_set(style_name: str, keys: list[str], prompts: dict[str, str],
     failed: list[str] = []
 
     for i, key in enumerate(keys):
-        override = HC_SUBJECT_OVERRIDES.get(key.lower()) if style_name == "high_contrast" else None
+        override = (HC_SUBJECT_OVERRIDES.get(key.lower())
+                    if style_key.startswith("high_contrast") else None)
         if not override and key not in prompts:
             print(f"  ✗ {key:40s} no prompt — skipping")
             failed.append(key)
@@ -219,7 +235,11 @@ def run_set(style_name: str, keys: list[str], prompts: dict[str, str],
             continue
 
         subject = override if override else extract_subject(prompts[key])
-        if style_key in ("arasaac", "classic"):
+        # Only playful_3d wants the clay wording — it authored it. Every other
+        # style is fighting it. high_contrast was silently exempt from this
+        # until Aug 2026, which is why its tiles kept coming back as 3D clay
+        # renders instead of flat white-on-black shapes.
+        if style_key != "playful_3d":
             subject = strip_clay_words(subject)
         prompt = build_prompt(subject, style_key)
 
@@ -240,20 +260,24 @@ def run_set(style_name: str, keys: list[str], prompts: dict[str, str],
             print("  FAILED")
             failed.append(key)
 
-        time.sleep(SLEEP_SECONDS)
+        time.sleep(sleep_seconds)
 
     return ok_count, skipped, failed
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate Blaster tile image sets")
-    parser.add_argument("--set", required=True, choices=["playful_3d", "high_contrast", "classic", "both"])
+    parser.add_argument("--set", required=True, choices=[*SET_STYLES, "both"])
     parser.add_argument("--skip-existing", action="store_true")
     parser.add_argument("--key", metavar="KEY", action="append", default=None,
                         help="Process only this tile key (repeatable)")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--batch", type=int, default=0,
                         help="Process only N tiles (for testing)")
+    parser.add_argument("--sleep", type=float, default=SLEEP_SECONDS,
+                        help=f"Seconds between requests (default {SLEEP_SECONDS}). The default "
+                             "dates from DALL-E 3 Tier 1 (5 images/min); on a higher tier it is "
+                             "the single biggest speedup available on a full-set run.")
     args = parser.parse_args()
 
     api_key = os.environ.get("OPENAI_API_KEY", "")
@@ -289,6 +313,7 @@ def main() -> None:
         ok, skip, failed = run_set(
             style_name, keys, prompts, api_key,
             skip_existing=args.skip_existing, dry_run=args.dry_run,
+            sleep_seconds=args.sleep,
         )
 
         print(f"\n{style_name}: ✓ {ok} generated  → {skip} skipped  ✗ {len(failed)} failed")

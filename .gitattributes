@@ -4,6 +4,7 @@
 # See docs/collaborator-workflow.md for the LFS setup steps tile collaborators need.
 tools/tile_sets/playful_3d/*.png       filter=lfs diff=lfs merge=lfs -text
 tools/tile_sets/high_contrast/*.png    filter=lfs diff=lfs merge=lfs -text
+tools/tile_sets/high_contrast_v2/*.png filter=lfs diff=lfs merge=lfs -text
 tools/tile_sets/classic/*.png          filter=lfs diff=lfs merge=lfs -text
 tools/tile_sets/starter/*.png          filter=lfs diff=lfs merge=lfs -text
 tools/tile_sets/packcovers/*.png       filter=lfs diff=lfs merge=lfs -text

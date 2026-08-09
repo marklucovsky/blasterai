@@ -1,8 +1,21 @@
 # AAC Intervention: Selection and Usage of Communication Devices — Research Plan
 
-**Status:** Approved
-**Researcher:** Kurt Lucovsky
-**Last updated:** May 18, 2026
+> **Status note (2026-08-09): superseded for the current phase — preserved, not
+> retired.** This study was scoped in May, when the premise below ("Blaster has
+> been built without direct input from its intended users… we are not testing
+> Blaster's current design") was accurate. The product is now feature-complete
+> against `docs/prd.md` v1 and heading into a TestFlight pilot, and the
+> clinicians who actually engage are trainers and influencers who lead with
+> design critique rather than answer discovery questions. Those conversations
+> run on `docs/research/expert-track.md` instead.
+>
+> This plan stays intact because it remains the right instrument for the
+> **family and caregiver study** it explicitly defers — the population the
+> expert track does not reach. Revisit it after the pilot.
+
+**Status:** Approved (superseded for the current phase — see above)
+**Researcher:** Kurt Yalcin
+**Last updated:** May 18, 2026 · status note added Aug 9, 2026
 
 ---
 
@@ -137,20 +150,20 @@ The insight report will include specific recommendations for:
 |---|---|---|---|
 | Plan approved | markl | May 18 | ✓ Done |
 | NDA reviewed (legal sanity check recommended) | markl | May 18 | ✓ Done |
-| Recruiting materials finalized | Kurt Lucovsky | May 20 | |
-| Pilot interviews (1 SLP, 1 BCBA) + parent discovery call | Kurt Lucovsky | May 23 | |
-| Script revised based on pilot findings | Kurt Lucovsky | May 25 | |
-| Outreach begins | Kurt Lucovsky | May 26 | |
-| Participants screened & scheduled (6–10 confirmed across both cohorts) | Kurt Lucovsky | May 30 | |
-| Interviews conducted | Kurt Lucovsky | Jun 2–13 | |
-| Synthesis complete | Kurt Lucovsky | Jun 20 | |
-| Insight report delivered | Kurt Lucovsky | Jun 27 | |
+| Recruiting materials finalized | Kurt Yalcin | May 20 | |
+| Pilot interviews (1 SLP, 1 BCBA) + parent discovery call | Kurt Yalcin | May 23 | |
+| Script revised based on pilot findings | Kurt Yalcin | May 25 | |
+| Outreach begins | Kurt Yalcin | May 26 | |
+| Participants screened & scheduled (6–10 confirmed across both cohorts) | Kurt Yalcin | May 30 | |
+| Interviews conducted | Kurt Yalcin | Jun 2–13 | |
+| Synthesis complete | Kurt Yalcin | Jun 20 | |
+| Insight report delivered | Kurt Yalcin | Jun 27 | |
 
 ---
 
 ## Creator Approval
 
-Approved by markl on May 18, 2026. Research lead: Kurt Lucovsky.
+Approved by markl on May 18, 2026. Research lead: Kurt Yalcin.
 
 - [x] Research questions are aligned with your product priorities
 - [x] Participant criteria make sense for the intended audience

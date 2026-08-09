@@ -68,6 +68,60 @@ work — per `CLAUDE.md`'s standing note. Until then, `claudeBlast` in source is
 *only* as the current module name; no new code should introduce it, and new type names use
 the `Blaster` prefix.
 
+## Domain vocabulary: Board, Page, Pack
+
+The same split as `Blaster` vs `BlasterAI` applies to the domain nouns. **The
+user-facing word is Board; the code identifier stays `BlasterScene`.**
+
+| Concept | User-facing | Code / format | What it is |
+|---|---|---|---|
+| The thing a child communicates with | **Board** | `BlasterScene`, `.blasterscene`, `sceneID`, `slug` | A named set of pages with one designated home page. Shareable, has provenance, one active at a time. |
+| One screen within it | **Page** | `PageSpec` / `PageModel` | A grid of tiles. Reached by a navigation tile that links to it. |
+| A named vocabulary set | **Pack** | `VocabPack`, `packs.json` | Words only, no layout — installing one adds vocabulary, it does not create a board. |
+| Where tiles come from when building | **Collection** | `CollectionSource` | A *source* used while authoring (a pack, a word class, another page), not a thing that persists. Only ever surfaces on the "Build from Collections" screen. |
+
+**Why Board.** It is what the audience already says. "Core board", "activity
+board", and "fringe board" are terms of art for speech-language pathologists;
+"scene" is ours and nobody else's. We already use "core board" correctly in the
+scene-refine hints, and the built-in board is named **Core-First** — the
+vocabulary was half-adopted already. A pilot clinician who reads the site's
+"Describe → a board" and then opens the app should not have to translate.
+
+**Why the code keeps `Scene`.** Identical reasoning to `Blaster` in code: the
+type names, the exported UTI (`com.claudeblast.scene`), the file extension, and
+every `sceneID`/`slug` in shared content are already in the wild. Renaming them
+buys nothing a reader ever sees and breaks content people have already shared.
+`docs/scene-identity.md` stays as written — it is a format spec.
+
+The one visible seam is the **`.blasterscene` file extension**, which a
+caregiver does see when AirDropping a board. It stays: compatibility with
+already-shared files outweighs a rarely-read suffix.
+
+### "Board" had three other meanings — all retired
+
+The word was already in the UI meaning three different things. Each needs a
+different fix, and none of them may keep the bare word:
+
+| Where | Meant | Becomes |
+|---|---|---|
+| `SceneEditorView.swift` — `Section("Board")` around the Focused toggle | the board's tile complement | **"Focused layout"** — describe the toggle, not the container |
+| `Admin/AboutStatsView.swift` — `Section("Boards")` over scene + page counts | boards *and* pages together | **`Section("Content")`** with rows "Boards" and "Pages" |
+| `VocabManagerView.swift`, `WordModerationService.swift` reason strings | "what the child sees" | keep "board" — now correct, and it already reads naturally |
+
+### Do / don't
+
+- ✅ "Make a board", "add a page to this board", "install a vocabulary pack"
+- ❌ "Make a scene" in any user-facing copy; "board" for a single page; "pack"
+  for anything that carries layout or art
+- ✅ `BlasterScene`, `sceneID`, `.blasterscene` in code and wire formats
+- ❌ Renaming code types to `Board*`
+
+### State
+
+Canon as of 2026-08-09. The site and all new collateral use it immediately;
+the in-app string rename lands as its own commit (UI strings only — no type,
+format, or identifier changes).
+
 ## What stays as-is (never rename)
 
 - **Bundle id `app.blasterai.ios`** and **CloudKit container `iCloud.app.blasterai`** —
