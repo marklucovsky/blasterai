@@ -247,12 +247,40 @@ window. `AdminView+LogsTab.flushAllCache` deletes rows directly and is unaffecte
 
 ---
 
-## Remaining session-1 work after these land
+## Remaining session-1 work
 
-- **1B** — `SchemaV1: VersionedSchema` + empty `SchemaMigrationPlan`, plus a test that
-  opens a container at V1.
+- **1B — ✅ done.** `BlasterSchemaV1: VersionedSchema` + `BlasterMigrationPlan`
+  (`Models/SchemaVersions.swift`), wired into both container paths in
+  `AppSettings.setModelContainer`. The version owns the **synced/local partition**
+  (`syncedModels` / `localModels`), and `AppSettings` builds its configurations from
+  those lists — so the configurations and the schema version cannot drift apart.
+  `SchemaVersionTests` (7 cases) pins the exact membership of each partition, asserts they
+  are disjoint and that `models` is their union, and opens a real container at V1 through
+  the migration plan, round-tripping a model from each side.
+
+  The membership tests are deliberately literal: adding a model to the synced set should
+  *fail a test*, because that's the moment to ask whether it really needs to sync and
+  whether it's shaped for a schema it can never remove a field from.
+
 - **1C** — reset the Development CloudKit environment, let SwiftData regenerate a clean
   schema from the audited models, review it record-type-by-record-type in the Console,
   then **Deploy Schema to Production**.
 - **1D** — verify against Production (Ad Hoc export loop; see plan Appendix A).
 - **1E** — `PrivacyInfo.xcprivacy`, `ITSAppUsesNonExemptEncryption`, version numbers.
+
+### Device sequencing for 1C (agreed 2026-08-09)
+
+In the **Development** environment, SwiftData auto-creates record types and fields on
+demand but never removes them. Two consequences:
+
+1. Running the post-audit build against the *current* dev schema would layer the new fields
+   on top of the cruft this audit removed. Harmless (the reset wipes it) but pointless —
+   hence no device runs before the reset.
+2. **The real hazard is the reverse:** after the reset, any device still on an *older*
+   build that touches CloudKit will re-create the dead fields in the freshly-clean schema.
+   If that happens before promotion, the cruft becomes permanent.
+
+So the gate is: **once dev is reset, every device must be on the post-reset build before
+any of them syncs.** All schema-affecting code (1A, 1B) lands first; the reset, review, and
+promotion happen as a single ceremony. The reset also wipes dev *data*, so it's the
+factory-reset-and-re-add-packs drill.

@@ -89,25 +89,12 @@ func setModelContainer(icloudEnabled: Bool) -> ModelContainer {
     // The "synced" configuration keeps the default name/URL so existing
     // installs continue to read the same store file — only the new local
     // configuration gets a distinct on-disk location.
-    let syncedSchema = Schema([
-        TileModel.self, TileArtVariant.self,
-        SentenceCache.self, BlasterScene.self,
-        RecordedScript.self, LoggedUtterance.self,
-        ChildProfile.self,
-    ])
-    // Device-local: per-device identity/posture (DeviceProfile) plus the raw
-    // analytics stream (MetricEvent), which is high-volume, disposable, and only
-    // ever read as this device's aggregate counts. Keeping it out of the synced
-    // schema sheds the CloudKit push traffic and keeps it off the permanent
-    // production schema. See docs/schema-audit-2026-08-06.md (D3).
-    let localSchema = Schema([DeviceProfile.self, MetricEvent.self])
-    let allSchema = Schema([
-        TileModel.self, TileArtVariant.self,
-        SentenceCache.self, BlasterScene.self, MetricEvent.self,
-        RecordedScript.self, LoggedUtterance.self,
-        ChildProfile.self,
-        DeviceProfile.self,
-    ])
+    // The synced/local partition is defined once, on the versioned schema, so
+    // the configurations here and the schema version can't drift apart.
+    // See BlasterSchemaV1 and docs/schema-audit-2026-08-06.md.
+    let syncedSchema = Schema(BlasterSchemaV1.syncedModels)
+    let localSchema = Schema(BlasterSchemaV1.localModels)
+    let allSchema = Schema(versionedSchema: BlasterSchemaV1.self)
 
     let localConfig = ModelConfiguration("DeviceLocal",
                                          schema: localSchema,
@@ -128,11 +115,13 @@ func setModelContainer(icloudEnabled: Bool) -> ModelContainer {
     // gracefully if the CloudKit entitlement is absent.
     if icloudEnabled,
        let container = try? ModelContainer(for: allSchema,
+                                           migrationPlan: BlasterMigrationPlan.self,
                                            configurations: [localConfig, syncedCloudConfig]) {
         return container
     }
     do {
         return try ModelContainer(for: allSchema,
+                                  migrationPlan: BlasterMigrationPlan.self,
                                   configurations: [localConfig, syncedLocalConfig])
     } catch {
         fatalError("Could not create ModelContainer: \(error)")
