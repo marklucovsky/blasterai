@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  Privacy manifest for Blaster.
+
+	  Blaster has no backend, no analytics platform, and no third-party
+	  tracking SDKs. User data lives in SwiftData + the user's own private
+	  CloudKit database. AI calls go to OpenAI using the *user's own* API key
+	  and are stateless (words in, sentence out) — nothing is transmitted to
+	  or retained by us, so there is no collected data to declare.
+
+	  Accessed-API declarations below are audited against actual usage; see
+	  docs/schema-audit-2026-08-06.md and docs/plan-2026-08-06.md (session 1E).
+	-->
+
+	<!-- No tracking, and no domains contacted for tracking purposes. -->
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+
+	<!-- Nothing is collected. No backend exists to collect it into. -->
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<!--
+			  UserDefaults — app preferences (iCloud toggle, selected voice,
+			  tile set, demo mode, bootstrap state, and similar). Read and
+			  written across ~21 files via UserDefaults / @AppStorage. All of
+			  it is accessible only to this app.
+			-->
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+		<dict>
+			<!--
+			  File timestamps — TileScriptRunLogger sorts its own run logs
+			  newest-first via .contentModificationDateKey. The files live in
+			  Documents/TileScriptLogs/, inside this app's container.
+			-->
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>0A2A.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

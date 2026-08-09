@@ -17,6 +17,15 @@
 			</array>
 		</dict>
 	</array>
+	<!--
+	  Export compliance: Blaster uses only standard HTTPS/TLS (URLSession to
+	  api.openai.com) and Apple-provided cryptography (Keychain, PBKDF2 via
+	  CryptoKit for the admin PIN, CloudKit transport). That is exempt under
+	  the App Store's encryption rules. Declaring it here stops App Store
+	  Connect from prompting for export compliance on every single upload.
+	-->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
