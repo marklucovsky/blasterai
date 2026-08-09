@@ -9,11 +9,6 @@ import SwiftData
 import SwiftUI
 import Foundation
 
-enum TileType: String, Codable {
-    case word
-    case phrase
-}
-
 @Model
 final class TileModel: Identifiable {
     var id: String = UUID().uuidString
@@ -26,7 +21,6 @@ final class TileModel: Identifiable {
 
     // Value
     var value: String = ""
-    var type: TileType = TileType.word
     var key: String = ""
     var wordClass: String = ""
 

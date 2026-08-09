@@ -37,10 +37,10 @@ enum TestStore {
         // DeviceProfile store, so inserting one (via a scene duplicate/fork)
         // trapped with "Can't assign an object to a store…". Matching the split
         // keeps the binding consistent.
-        let localSchema = Schema([DeviceProfile.self])
+        let localSchema = Schema([DeviceProfile.self, MetricEvent.self])
         let mainSchema = Schema([
             TileModel.self, TileArtVariant.self, SentenceCache.self, BlasterScene.self,
-            MetricEvent.self, RecordedScript.self, LoggedUtterance.self, ChildProfile.self,
+            RecordedScript.self, LoggedUtterance.self, ChildProfile.self,
         ])
         let allSchema = Schema([
             TileModel.self, TileArtVariant.self, SentenceCache.self, BlasterScene.self,

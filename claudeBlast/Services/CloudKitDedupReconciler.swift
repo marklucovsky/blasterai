@@ -202,7 +202,7 @@ enum CloudKitDedupReconciler {
         guard let variants = try? context.fetch(FetchDescriptor<TileArtVariant>()) else { return 0 }
         return collapse(variants, context: context,
                         keyOf: { "\($0.tileKey)\u{1}\($0.imageSetRaw)" }) { a, b in
-            if a.created != b.created { return a.created > b.created }
+            if a.modified != b.modified { return a.modified > b.modified }
             return String(describing: a.persistentModelID) < String(describing: b.persistentModelID)
         }.deleted.count
     }

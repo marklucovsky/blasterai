@@ -61,7 +61,7 @@ final class SentenceCacheManager {
     /// `childID` is stamped on new entries so future per-child analytics can
     /// filter on it. Existing entries retain their original `childID`.
     /// Every write (re)stamps `keyVersion` with the current `CacheKeyPolicy`.
-    func store(tiles: [TileSelection], grade: Int, sentence: String, audioData: String = "",
+    func store(tiles: [TileSelection], grade: Int, sentence: String,
                childID: String? = nil) {
         let key = Self.cacheKey(for: tiles, grade: grade)
         var descriptor = FetchDescriptor<SentenceCache>(
@@ -71,12 +71,11 @@ final class SentenceCacheManager {
 
         if let existing = try? context.fetch(descriptor).first {
             existing.sentence = sentence
-            existing.audioData = audioData
             existing.lastUsed = .now
             existing.keyVersion = CacheKeyPolicy.versionToken
         } else {
             let entry = SentenceCache(tiles: tiles, grade: grade, sentence: sentence,
-                                      audioData: audioData, childID: childID)
+                                      childID: childID)
             context.insert(entry)
         }
     }
@@ -334,27 +333,30 @@ final class SentenceCacheManager {
         context.insert(event)
     }
 
-    /// Persist a finalized utterance for therapist review. Captures the active scene name
-    /// at commit time so logs remain meaningful after scene edits. `childID` is stamped
-    /// for per-child review filtering.
+    /// Persist a finalized utterance for therapist review. Captures BOTH the active
+    /// scene's stable `sceneID` (identity — survives a rename) and its name at commit
+    /// time (display snapshot — survives a deletion). `childID` is stamped for
+    /// per-child review filtering. See `LoggedUtterance.sceneDisplayName(resolving:)`.
     func logUtterance(tiles: [TileSelection], sentence: String,
                       repetitionCount: Int, childID: String? = nil) {
-        let sceneName = activeSceneName()
+        let scene = activeScene()
         let entry = LoggedUtterance(
             tileKeys: tiles.map(\.key),
             sentence: sentence,
             repetitionCount: repetitionCount,
-            sceneName: sceneName,
+            sceneName: scene.name,
+            sceneID: scene.id,
             childID: childID
         )
         context.insert(entry)
     }
 
-    private func activeSceneName() -> String? {
+    private func activeScene() -> (id: String?, name: String?) {
         var descriptor = FetchDescriptor<BlasterScene>(
             predicate: #Predicate { $0.isActive == true }
         )
         descriptor.fetchLimit = 1
-        return try? context.fetch(descriptor).first?.name
+        guard let scene = try? context.fetch(descriptor).first else { return (nil, nil) }
+        return (scene.sceneID.isEmpty ? nil : scene.sceneID, scene.name)
     }
 }

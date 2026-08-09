@@ -24,9 +24,8 @@ let kSandboxProfileID = "system.sandbox"
 /// One-shot migration that runs after `BootstrapLoader` at app launch.
 ///
 /// Three jobs:
-/// 1. Materialize the singleton `DeviceProfile` and normalize any legacy
-///    role values (`personal`, `therapist` → `caregiver`) into the
-///    two-mode model.
+/// 1. Materialize the singleton `DeviceProfile` and normalize any unrecognized
+///    role value onto the two-mode model (anything but `patient` → `caregiver`).
 /// 2. Ensure exactly one Sandbox (`isSystem == true`) ChildProfile exists.
 ///    The resolver returns this profile when no real child is active, so
 ///    the engine never has to handle an empty roster.
@@ -121,9 +120,11 @@ enum ProfileMigration {
         }
     }
 
-    // MARK: - Legacy role normalization
+    // MARK: - Role normalization
 
-    /// Map "personal" / "therapist" stored values onto "caregiver". Idempotent.
+    /// Rewrite any stored role that isn't already canonical (`patient` /
+    /// `caregiver`) to its resolved value, so the store converges on the
+    /// two-mode vocabulary. Idempotent.
     private static func normalizeLegacyRole(_ device: DeviceProfile) {
         let normalized = DeviceRole.fromRawValue(device.roleRaw).rawValue
         if device.roleRaw != normalized {
