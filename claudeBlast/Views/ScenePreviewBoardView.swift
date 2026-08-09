@@ -41,7 +41,7 @@ struct ScenePreviewBoardView: View {
                     }
                     .padding()
                 } else {
-                    ContentUnavailableView("Empty scene", systemImage: "square.grid.2x2")
+                    ContentUnavailableView("Empty board", systemImage: "square.grid.2x2")
                         .padding(.top, 60)
                 }
             }

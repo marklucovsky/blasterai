@@ -144,7 +144,7 @@ struct AdminGate<Content: View>: View {
             Text("Forgot your PIN?")
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(.secondary)
-            Text("Delete Blaster from this device and reinstall it. iCloud-synced data (profiles, scenes, history) restores automatically. The API key and device mode need to be re-entered.")
+            Text("Delete Blaster from this device and reinstall it. iCloud-synced data (profiles, boards, history) restores automatically. The API key and device mode need to be re-entered.")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

@@ -337,7 +337,7 @@ extension AdminView {
             Button("Reset All Data", role: .destructive) { performFactoryReset() }
             Button("Cancel", role: .cancel) { }
         } message: {
-            Text("Deletes all scenes, pages, tiles, and cache. Vocabulary reloads from the bundle.")
+            Text("Deletes all boards, pages, tiles, and cache. Vocabulary reloads from the bundle.")
         }
     }
 

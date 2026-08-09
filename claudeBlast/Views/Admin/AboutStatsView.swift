@@ -34,8 +34,8 @@ struct AboutStatsView: View {
                 let custom = tiles.filter { !$0.isSystem }.count
                 if custom > 0 { LabeledContent("Added by you", value: "\(custom)") }
             }
-            Section("Boards") {
-                LabeledContent("Scenes", value: "\(scenes.count)")
+            Section("Content") {
+                LabeledContent("Boards", value: "\(scenes.count)")
                 LabeledContent("Pages", value: "\(pageCount)")
             }
             Section("Profiles & activity") {

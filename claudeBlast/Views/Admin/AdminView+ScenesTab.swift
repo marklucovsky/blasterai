@@ -27,13 +27,13 @@ extension AdminView {
                     Text("Hide or restore words, and review anything the moderation gate flagged.")
                 }
             }
-            .navigationTitle("Scenes")
+            .navigationTitle("Boards")
             .navigationDestination(item: $navigateToNewScene) { scene in
                 SceneEditorView(scene: scene)
             }
             .toolbar { adminDoneToolbar }
         }
-        .tabItem { Label("Scenes", systemImage: "square.grid.2x2.fill") }
+        .tabItem { Label("Boards", systemImage: "square.grid.2x2.fill") }
         .sheet(isPresented: $isCreatingScene) {
             SceneGeneratorSheet(allTiles: allTiles, apiKey: resolvedAPIKey) { scene in
                 navigateToNewScene = scene
@@ -76,7 +76,7 @@ extension AdminView {
 
     @ViewBuilder
     var scenesSection: some View {
-        Section("Scenes") {
+        Section("Boards") {
             ForEach(scenes) { scene in
                 NavigationLink(destination: SceneEditorView(scene: scene)) {
                     SceneRow(
@@ -123,7 +123,7 @@ extension AdminView {
             Button {
                 isCreatingScene = true
             } label: {
-                Label("New Scene", systemImage: "plus.circle")
+                Label("New Board", systemImage: "plus.circle")
             }
         }
     }
@@ -134,7 +134,7 @@ extension AdminView {
             Button {
                 isImporting = true
             } label: {
-                Label("Import Scene", systemImage: "square.and.arrow.down")
+                Label("Import Board", systemImage: "square.and.arrow.down")
             }
         }
     }
@@ -212,7 +212,7 @@ extension AdminView {
     }
 
     func createBlankScene(name: String) {
-        let scene = BlasterScene(name: name.isEmpty ? "New Scene" : name)
+        let scene = BlasterScene(name: name.isEmpty ? "New Board" : name)
         scene.ensureIdentity(authorID: DeviceProfileStore.ensureAuthorID(context: modelContext),
                              authorName: DeviceProfileStore.authorName(context: modelContext))
         modelContext.insert(scene)

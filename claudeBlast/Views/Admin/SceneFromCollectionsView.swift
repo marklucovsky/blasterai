@@ -4,7 +4,7 @@
 //  SceneFromCollectionsView.swift
 //  claudeBlast
 //
-//  "New Scene from Collections" — assemble a scene, with zero AI and no key, by
+//  "New Board from Collections" — assemble a scene, with zero AI and no key, by
 //  ticking vocabulary packs and word classes. Each becomes its own page; a home
 //  page linking them all is generated. This makes the hand-built combine-packs
 //  scene (e.g. the demo "Vocab") a one-action build. Resolves through
@@ -45,7 +45,7 @@ struct SceneFromCollectionsView: View {
 
     var body: some View {
         Form {
-            Section("Scene Name") {
+            Section("Board Name") {
                 TextField("e.g. Snack time", text: $sceneName)
                     .autocorrectionDisabled()
             }

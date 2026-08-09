@@ -150,9 +150,9 @@ struct SceneEditorView: View {
                 }
             }
 
-            Section("Scene Info") {
+            Section("Board Info") {
                 LabeledContent("Name") {
-                    TextField("Scene name", text: $scene.name)
+                    TextField("Board name", text: $scene.name)
                         .multilineTextAlignment(.trailing)
                 }
                 LabeledContent("Description") {
@@ -174,7 +174,7 @@ struct SceneEditorView: View {
                 }
                 .disabled(scene.isDefault)
             } header: {
-                Text("Board")
+                Text("Focused layout")
             } footer: {
                 Text("Focused trims the board for 1:1 sessions: the topical tiles plus a short needs strip (hungry/thirsty, help, feelings) and the body & health page. Off uses the full familiar board (people, food, drinks, body & health).")
             }
@@ -233,7 +233,7 @@ struct SceneEditorView: View {
                 }
             }
         }
-        .navigationTitle(scene.name.isEmpty ? "New Scene" : scene.name)
+        .navigationTitle(scene.name.isEmpty ? "New Board" : scene.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -242,7 +242,7 @@ struct SceneEditorView: View {
                 } label: {
                     Image(systemName: "eye")
                 }
-                .accessibilityLabel("Preview scene")
+                .accessibilityLabel("Preview board")
             }
             ToolbarItem(placement: .primaryAction) {
                 Button {
@@ -437,7 +437,7 @@ private struct PageGeneratorSheet: View {
     /// path + the provenance badge.
     @State private var cachedClassQuery: [String]? = nil
 
-    /// All scenes — source list for the "Copy from another scene" picker.
+    /// All scenes — source list for the "Copy from another board" picker.
     @Query private var allScenes: [BlasterScene]
 
     /// Featured "Build with AI" examples. Tapping fills the vetted goal; Generate
@@ -645,7 +645,7 @@ private struct PageGeneratorSheet: View {
                 if !copyableScenes.isEmpty {
                     Section {
                         ForEach(copyableScenes, id: \.persistentModelID) { src in
-                            DisclosureGroup(src.name.isEmpty ? "Untitled scene" : src.name) {
+                            DisclosureGroup(src.name.isEmpty ? "Untitled board" : src.name) {
                                 ForEach(src.pages, id: \.key) { page in
                                     Button {
                                         loadCopiedPage(from: src, page: page)
@@ -672,9 +672,9 @@ private struct PageGeneratorSheet: View {
                             }
                         }
                     } header: {
-                        Text("Copy from another scene")
+                        Text("Copy from another board")
                     } footer: {
-                        Text("Copies a page's word tiles into this scene. Navigation links are dropped — re-add them here if needed.")
+                        Text("Copies a page's word tiles into this board. Navigation links are dropped — re-add them here if needed.")
                             .font(.caption)
                     }
                 }
@@ -926,7 +926,7 @@ private struct PageGeneratorSheet: View {
             return
         }
         cachedCopy = page
-        cachedCopyFrom = src.name.isEmpty ? "another scene" : src.name
+        cachedCopyFrom = src.name.isEmpty ? "another board" : src.name
         pageName = page.key
         let gen = tiles.map {
             GeneratedTile(key: $0.key, isAudible: true, link: "",
@@ -1375,7 +1375,7 @@ private struct SceneRefinementSheet: View {
                 TextField("Describe the change…", text: $instruction, axis: .vertical)
                     .lineLimit(3...6)
             } header: {
-                Text("Refine \(scene.name.isEmpty ? "Scene" : scene.name)")
+                Text("Refine \(scene.name.isEmpty ? "Board" : scene.name)")
             } footer: {
                 Text("e.g. \u{201C}add a fish pond and a creek\u{201D} — the activity tiles update; the familiar core board stays the same.")
             }
@@ -1399,7 +1399,7 @@ private struct SceneRefinementSheet: View {
                 .disabled(instruction.trimmingCharacters(in: .whitespaces).isEmpty || apiKey.isEmpty || isRefining)
             }
         }
-        .navigationTitle("Refine Scene")
+        .navigationTitle("Refine Board")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
