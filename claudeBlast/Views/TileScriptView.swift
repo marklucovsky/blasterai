@@ -328,7 +328,7 @@ struct TileScriptView: View {
         let recorded = RecordedScript(
             name: name,
             yamlContent: updatedYaml,
-            sceneName: recorder.lastRecordedScript?.scene ?? ""
+            sceneRef: recorder.lastRecordedScript?.scene ?? ""
         )
         modelContext.insert(recorded)
         recorder.lastRecordedScript = nil
