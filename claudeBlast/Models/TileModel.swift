@@ -17,7 +17,12 @@ final class TileModel: Identifiable {
     // Display
     var displayName: String = ""
     var bundleImage: String = ""
-    var userImageData: Data?
+    /// Removable camera-photo override that sits on top of the canonical art
+    /// (`TileArtVariant`). **Empty means "no override"** — it is deliberately not
+    /// `Data?`: CloudKit stores no nulls, so a nil-valued optional is never
+    /// written and its field would never materialize in the schema. See the
+    /// no-optionals rule on `BlasterSchemaV1`.
+    var userImageData: Data = Data()
 
     // Value
     var value: String = ""
@@ -46,7 +51,9 @@ final class TileModel: Identifiable {
     /// moderation gate's reason ("not appropriate for a young board"). Nil for
     /// caregiver-initiated hides. Surfaced in the Vocab manager so a caregiver can
     /// see the record of what was auto-blocked (and restore a false positive).
-    var retiredReason: String?
+    /// **Empty means "no recorded reason"** (a caregiver-initiated hide) — not
+    /// optional, per the no-optionals rule on `BlasterSchemaV1`.
+    var retiredReason: String = ""
 
     /// Set when the moderation review FLAGGED this word (added via Add-Tiles,
     /// where there's no Accept gate) — the caregiver must keep or remove it. Like
@@ -67,8 +74,8 @@ final class TileModel: Identifiable {
     // for safety also purge the word's cached sentences and save the context.
 
     /// Retire (hide) the word — reversible. `reason` records an automatic
-    /// (moderation) hide; nil for a caregiver-initiated one.
-    func retire(reason: String? = nil) {
+    /// (moderation) hide; empty for a caregiver-initiated one.
+    func retire(reason: String = "") {
         isRetired = true
         retiredReason = reason
         needsReview = false
@@ -77,14 +84,14 @@ final class TileModel: Identifiable {
     /// Un-hide a retired word.
     func restore() {
         isRetired = false
-        retiredReason = nil
+        retiredReason = ""
     }
 
     /// Resolve review as approved — the word is clean and visible to the child again.
     func approveReview() {
         needsReview = false
         isRetired = false
-        retiredReason = nil
+        retiredReason = ""
     }
 
     /// Flag the word for caregiver review (hidden from the child until resolved).
@@ -92,8 +99,12 @@ final class TileModel: Identifiable {
         needsReview = true
     }
 
+    /// True when a caregiver photo override is present. Prefer this over
+    /// comparing `userImageData` to nil — it is no longer optional.
+    var hasUserImage: Bool { !userImageData.isEmpty }
+
     var userImage: UIImage? {
-        guard let userImageData else { return nil }
+        guard hasUserImage else { return nil }
         return UIImage(data: userImageData)
     }
 

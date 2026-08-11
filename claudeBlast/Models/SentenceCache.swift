@@ -54,10 +54,12 @@ final class SentenceCache {
     /// newer). NOT vestigial — do not remove without updating that dedup order.
     var created: Date = Date.now
     var lastUsed: Date = Date.now
-    /// `ChildProfile.id` whose interaction produced this cache entry. Nil
-    /// for legacy entries written before commit 3. Reserved for per-child
-    /// cache filtering / analytics; v1 lookups ignore the field.
-    var childID: String?
+    /// `ChildProfile.id` whose interaction produced this cache entry.
+    /// **Empty means "unknown child"** (no active profile at write time).
+    /// Reserved for per-child cache filtering / analytics; v1 lookups ignore it.
+    /// Not optional, per the no-optionals rule on `BlasterSchemaV1` — callers
+    /// still pass `String?` and it is coerced here.
+    var childID: String = ""
     /// `CacheKeyPolicy.versionToken` (model id + prompt version) at write time.
     /// Drives stale-entry eviction: a model/prompt-version change leaves old
     /// entries with a mismatched token, swept at launch and on demand. Empty
@@ -69,7 +71,7 @@ final class SentenceCache {
         self.cacheKey = CacheKeyPolicy.key(for: tiles, grade: grade)
         self.stableKey = CacheKeyPolicy.stableKey(for: tiles, childID: childID)
         self.sentence = sentence
-        self.childID = childID
+        self.childID = childID ?? ""
         self.keyVersion = CacheKeyPolicy.versionToken
     }
 }

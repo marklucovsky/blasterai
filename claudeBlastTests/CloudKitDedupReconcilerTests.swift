@@ -31,7 +31,7 @@ struct CloudKitDedupReconcilerTests {
     }
 
     private func tile(_ key: String, id: String, isSystem: Bool = true,
-                      image: Data? = nil) -> TileModel {
+                      image: Data = Data()) -> TileModel {
         let t = TileModel(key: key, wordClass: "actions")
         t.id = id
         t.isSystem = isSystem
@@ -88,7 +88,7 @@ struct CloudKitDedupReconcilerTests {
         let eats = try ctx.fetch(FetchDescriptor<TileModel>(predicate: #Predicate { $0.key == "eat" }))
         #expect(eats.count == 1)
         #expect(eats[0].id == "z")            // customized copy wins despite higher id
-        #expect(eats[0].userImageData != nil)
+        #expect(eats[0].hasUserImage)
     }
 
     // MARK: - Scenes

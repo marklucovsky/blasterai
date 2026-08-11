@@ -48,11 +48,11 @@ struct TilePhotoSection: View {
 
     /// Refine is offered only when there's active-set art AND no photo override —
     /// a photo would hide the refined variant, which would be confusing.
-    private var canRefine: Bool { hasActiveArt && tile.userImageData == nil }
+    private var canRefine: Bool { hasActiveArt && !tile.hasUserImage }
 
     var body: some View {
         Section("Photo") {
-            if tile.userImageData != nil {
+            if tile.hasUserImage {
                 Label("Custom photo set", systemImage: "checkmark.circle.fill")
                     .foregroundStyle(.green)
                 Button(role: .destructive, action: removePhoto) {
@@ -61,7 +61,7 @@ struct TilePhotoSection: View {
             }
 
             PhotosPicker(selection: $pickerItem, matching: .images) {
-                Label(tile.userImageData == nil ? "Add Photo" : "Replace Photo",
+                Label(tile.hasUserImage ? "Replace Photo" : "Add Photo",
                       systemImage: "photo.badge.plus")
             }
             .disabled(isLoading || isGenerating)
@@ -210,7 +210,7 @@ struct TilePhotoSection: View {
     }
 
     private func removePhoto() {
-        tile.userImageData = nil
+        tile.userImageData = Data()   // empty == no override; reverts to canonical art
         try? modelContext.save()
         resolver.invalidatePhoto(for: tile.key)
     }

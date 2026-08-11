@@ -25,7 +25,7 @@ import SwiftData
         await WordModerationService.reviewTiles([blocked, flagged], apiKey: "test-key", context: context)
 
         #expect(blocked.isRetired == true)
-        #expect(blocked.retiredReason != nil)
+        #expect(!blocked.retiredReason.isEmpty)
         #expect(blocked.needsReview == false)
         #expect(flagged.needsReview == true)
         #expect(flagged.isRetired == false)

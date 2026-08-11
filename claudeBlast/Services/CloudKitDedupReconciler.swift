@@ -114,8 +114,8 @@ enum CloudKitDedupReconciler {
         guard let tiles = try? context.fetch(FetchDescriptor<TileModel>()) else { return 0 }
         return collapse(tiles, context: context,
                         keyOf: { $0.key.isEmpty ? nil : $0.key }) { a, b in
-            if (a.userImageData != nil) != (b.userImageData != nil) {
-                return a.userImageData != nil
+            if a.hasUserImage != b.hasUserImage {
+                return a.hasUserImage
             }
             return a.id < b.id
         }.deleted.count
@@ -211,7 +211,7 @@ enum CloudKitDedupReconciler {
     private static func dedupeSentenceCache(_ context: ModelContext) -> Int {
         guard let caches = try? context.fetch(FetchDescriptor<SentenceCache>()) else { return 0 }
         return collapse(caches, context: context,
-                        keyOf: { "\($0.cacheKey)\u{1}\($0.childID ?? "")" }) { a, b in
+                        keyOf: { "\($0.cacheKey)\u{1}\($0.childID)" }) { a, b in
             if a.hitCount != b.hitCount { return a.hitCount > b.hitCount }
             if a.created != b.created { return a.created > b.created }
             return a.id < b.id
@@ -267,10 +267,10 @@ enum CloudKitDedupReconciler {
 
     private static func repointChildID(_ context: ModelContext, from dead: Set<String>, to newID: String) {
         if let caches = try? context.fetch(FetchDescriptor<SentenceCache>()) {
-            for c in caches where (c.childID.map(dead.contains) ?? false) { c.childID = newID }
+            for c in caches where dead.contains(c.childID) { c.childID = newID }
         }
         if let logs = try? context.fetch(FetchDescriptor<LoggedUtterance>()) {
-            for l in logs where (l.childID.map(dead.contains) ?? false) { l.childID = newID }
+            for l in logs where dead.contains(l.childID) { l.childID = newID }
         }
     }
 }

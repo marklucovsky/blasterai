@@ -328,8 +328,8 @@ final class TileImageResolver {
         var descriptor = FetchDescriptor<TileModel>(predicate: #Predicate { $0.key == key })
         descriptor.fetchLimit = 1
         if let tile = try? context?.fetch(descriptor).first,
-           let data = tile.userImageData,
-           let img = UIImage(data: data) {
+           tile.hasUserImage,
+           let img = UIImage(data: tile.userImageData) {
             overrideCache.setObject(img, forKey: cacheKey)
             return img
         }

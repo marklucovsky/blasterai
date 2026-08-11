@@ -60,7 +60,10 @@ enum CollectionSource {
             // fall back to a representative tile if the source had none.
             let srcLink = existing[PageLink.key(forPage: page.key)]
             let cover: Cover
-            if let data = srcLink?.userImageData {
+            // NB: `srcLink?.userImageData` is non-optional through the chain, so it
+            // must be tested for emptiness — a bare `if let` would bind to an empty
+            // Data and dead-code the fallback below.
+            if let data = srcLink?.userImageData, !data.isEmpty {
                 cover = .data(data)
             } else {
                 let aliased = (srcLink?.bundleImage).flatMap { $0.isEmpty ? nil : $0 }

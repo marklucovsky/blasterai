@@ -28,7 +28,21 @@ import SwiftData
 /// - You may never delete a field or record type, change a field's type, or
 ///   change a field's on-disk name. (`originalName:` renames the *Swift*
 ///   property; the CloudKit field keeps its original name permanently.)
-/// - Every new property must be optional or have a default value.
+/// - **No optional stored properties. Use a non-optional with a sentinel default
+///   (`""`, `Data()`, `0`) instead.** SwiftData accepts "optional *or* defaulted",
+///   but only the defaulted form is safe here. CloudKit stores no nulls: a nil
+///   optional is never written to the record, so its **field never materializes
+///   in the schema** — and since the Production schema is read-only, a field that
+///   never appeared in Development does not exist after promotion. The first user
+///   to set it then fails to export. A defaulted property is written on every
+///   save, so the field always exists. This bit us pre-promotion: `retiredReason`
+///   was absent from the dev schema purely because nothing had been auto-hidden
+///   yet.
+/// - When converting an optional to a sentinel, audit the readers. `x != nil`
+///   against a non-optional is a **warning, not an error**, and silently becomes
+///   always-true; `if let y = opt?.field` still compiles and silently binds to the
+///   empty sentinel. Both change behavior with a green build.
+/// - Every new property must have a default value.
 /// - No `@Attribute(.unique)` — CloudKit doesn't support it. Dedup in code
 ///   (`BootstrapLoader`, `ProfileMigration`, `CloudKitDedupReconciler`).
 /// - Relationships, if ever introduced, must be optional with an inverse and
