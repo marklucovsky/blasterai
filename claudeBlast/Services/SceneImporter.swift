@@ -105,7 +105,7 @@ enum SceneImporter {
         for tile in exportable.tiles ?? [] {
             if let existing = lookup[tile.key] {
                 guard tile.imageData != nil else { continue }   // nothing to offer
-                if existing.userImageData == nil { fillWords.append(tile) }
+                if !existing.hasUserImage { fillWords.append(tile) }
                 else { collisions.append(tile) }
             } else {
                 newWords.append(tile)

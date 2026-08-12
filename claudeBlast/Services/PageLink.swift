@@ -43,7 +43,7 @@ enum PageLink {
                      existing: [String: TileModel]) -> TileModel {
         let k = key(forPage: pageKey)
         if let tile = existing[k] {
-            if let image, tile.userImageData == nil { tile.userImageData = image }
+            if let image, !tile.hasUserImage { tile.userImageData = image }
             return tile
         }
         let tile = TileModel(key: k, value: displayName, wordClass: wordClass)

@@ -66,14 +66,9 @@ struct AuthorNameField: View {
 
 struct SceneRow: View {
     let scene: BlasterScene
-    var updateAvailable: Bool = false
     let onActivate: () -> Void
-    var onUpdate: (() -> Void)? = nil
 
-    private var isSystemScene: Bool { !scene.systemSceneKey.isEmpty }
-    /// Show the update affordance only for the system scene, and only when a
-    /// newer bundled version is available.
-    private var showUpdateButton: Bool { isSystemScene && updateAvailable && onUpdate != nil }
+    private var isSystemScene: Bool { scene.isSystemOwned }
 
     /// Provenance dot color: BlasterAI = purple, local = green, imported = orange.
     private var provenanceColor: Color {
@@ -93,26 +88,6 @@ struct SceneRow: View {
                     if scene.isDefault {
                         badge("Default", .blue)
                     }
-                    if showUpdateButton {
-                        // Inline next to the System badge — a tappable badge
-                        // that drives the same confirmation dialog.
-                        Button {
-                            onUpdate?()
-                        } label: {
-                            HStack(spacing: 3) {
-                                Image(systemName: "arrow.down.circle.fill")
-                                    .imageScale(.small)
-                                Text("Update")
-                            }
-                            .font(.caption2)
-                            .fontWeight(.semibold)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Capsule().fill(Color.orange.opacity(0.18)))
-                            .foregroundStyle(.orange)
-                        }
-                        .buttonStyle(.plain)
-                    }
                 }
                 Text("\(scene.pages.count) pages · \(scene.lastModified, style: .date)")
                     .font(.caption)
@@ -130,7 +105,7 @@ struct SceneRow: View {
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
                 if isSystemScene {
-                    Text("Built-in scene — defined by the app. Updates ship with new versions.")
+                    Text("Built-in board — supplied and updated by BlasterAI. Tap to make an editable copy.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else if !scene.descriptionText.isEmpty {
@@ -164,95 +139,6 @@ struct SceneRow: View {
             .padding(.vertical, 2)
             .background(Capsule().fill(color.opacity(0.15)))
             .foregroundStyle(color)
-    }
-}
-
-// MARK: - Update Confirmation Sheet
-
-/// Confirms the caregiver's intent to overwrite the system Core-First scene
-/// with the latest bundled version. Two safety affordances:
-///
-/// - "Save a copy first" toggle (default ON) creates a duplicate of the
-///   current scene before applying the overwrite, preserving any caregiver
-///   customizations as a recoverable peer scene.
-/// - "Remember this choice" persists the toggle's value via UserDefaults so
-///   future updates pre-select accordingly. The dialog is still shown every
-///   time — caregivers shouldn't be conditioned to dismiss without reading.
-struct UpdateConfirmationSheet: View {
-    let sceneName: String
-    /// Callback: (duplicateFirst, remember)
-    let onConfirm: (Bool, Bool) -> Void
-
-    @Environment(\.dismiss) private var dismiss
-    @State private var duplicateFirst: Bool
-    @State private var rememberChoice: Bool
-
-    private var hasRememberedChoice: Bool {
-        UserDefaults.standard.bool(forKey: AppSettingsKey.forceRefreshDuplicateRemembered)
-    }
-
-    init(sceneName: String, onConfirm: @escaping (Bool, Bool) -> Void) {
-        self.sceneName = sceneName
-        self.onConfirm = onConfirm
-        let defaults = UserDefaults.standard
-        let remembered = defaults.bool(forKey: AppSettingsKey.forceRefreshDuplicateRemembered)
-        let initialDuplicate: Bool
-        if remembered {
-            // .bool returns false for missing keys, so use .object check.
-            initialDuplicate = defaults.object(forKey: AppSettingsKey.forceRefreshDuplicate) as? Bool ?? true
-        } else {
-            initialDuplicate = true   // safe default for first-time and unremembered cases
-        }
-        _duplicateFirst = State(initialValue: initialDuplicate)
-        // Pre-check the Remember toggle when a previous choice is stored, so
-        // the caregiver sees the persisted state. Unchecking it on confirm
-        // clears the sticky preference (handled in applySystemSceneUpdate).
-        _rememberChoice = State(initialValue: remembered)
-    }
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    Text("This replaces the **\(sceneName)** layout with the latest built-in version.")
-                        .font(.callout)
-                    Text("If someone depends on the current layout, save a copy first — the update overwrites in place.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-                Section {
-                    Toggle(isOn: $duplicateFirst) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Save a copy of the current \(sceneName) first")
-                            Text("Recommended")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    Toggle("Remember this choice", isOn: $rememberChoice)
-                } footer: {
-                    if hasRememberedChoice {
-                        Text("Last choice was remembered. Change here and check Remember to update.")
-                            .font(.caption2)
-                    }
-                }
-            }
-            .navigationTitle("Update \(sceneName)?")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Update") {
-                        onConfirm(duplicateFirst, rememberChoice)
-                        dismiss()
-                    }
-                    .fontWeight(.semibold)
-                }
-            }
-        }
-        .presentationDetents([.medium])
     }
 }
 

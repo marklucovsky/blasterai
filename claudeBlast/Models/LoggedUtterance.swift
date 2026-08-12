@@ -21,16 +21,17 @@ final class LoggedUtterance {
     /// Display-name SNAPSHOT of the scene at commit time. Deliberately
     /// denormalized: it's the only thing that still reads correctly after the
     /// scene is deleted. Never use it to identify a scene — use `sceneID`.
-    var sceneName: String?
-    /// `BlasterScene.sceneID` — the rename-proof identity from PR #44. Nil for
-    /// legacy rows written before this field, and for scenes with no stamped
-    /// identity. Use for joining/filtering history to a scene; use `sceneName`
-    /// only for display fallback.
-    var sceneID: String?
-    /// `ChildProfile.id` whose interaction produced this utterance. Nil for
-    /// legacy entries written before commit 3 — therapist analytics that
-    /// filter by child should treat nil as "unknown" rather than "any."
-    var childID: String?
+    /// **Empty means "no scene recorded".**
+    var sceneName: String = ""
+    /// `BlasterScene.sceneID` — the rename-proof identity from PR #44.
+    /// **Empty** for rows written with no active scene, or for scenes with no
+    /// stamped identity. Use for joining/filtering history to a scene; use
+    /// `sceneName` only for display fallback.
+    var sceneID: String = ""
+    /// `ChildProfile.id` whose interaction produced this utterance.
+    /// **Empty means "unknown"** — therapist analytics that filter by child
+    /// should treat it as unknown rather than "any."
+    var childID: String = ""
 
     init(
         tileKeys: [String],
@@ -44,9 +45,9 @@ final class LoggedUtterance {
         self.tileKeys = tileKeys
         self.sentence = sentence
         self.repetitionCount = repetitionCount
-        self.sceneName = sceneName
-        self.sceneID = sceneID
-        self.childID = childID
+        self.sceneName = sceneName ?? ""
+        self.sceneID = sceneID ?? ""
+        self.childID = childID ?? ""
         self.createdAt = createdAt
     }
 
@@ -57,11 +58,10 @@ final class LoggedUtterance {
     /// 3. Neither → nil (caller omits the attribution rather than showing a
     ///    dangling identifier).
     func sceneDisplayName(resolving scenes: [BlasterScene]) -> String? {
-        if let id = sceneID, !id.isEmpty,
-           let live = scenes.first(where: { $0.sceneID == id }) {
+        if !sceneID.isEmpty,
+           let live = scenes.first(where: { $0.sceneID == sceneID }) {
             return live.name
         }
-        guard let snapshot = sceneName, !snapshot.isEmpty else { return nil }
-        return snapshot
+        return sceneName.isEmpty ? nil : sceneName
     }
 }

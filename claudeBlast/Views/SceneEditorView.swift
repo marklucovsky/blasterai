@@ -780,10 +780,13 @@ private struct PageGeneratorSheet: View {
         // Cached AI example (vetted goal, served instantly): its pack + the
         // projected demo word (no art) so the caregiver experiences art generation.
         if let ex = cachedAIExample, !editMode {
-            var lookup = Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
             guard let pack = PackCatalog.pack(id: ex.packId),
                   var built = CollectionSource.build(.pack(pack), into: modelContext,
-                                                     allTiles: allTiles, existing: lookup) else { dismiss(); return }
+                                                     allTiles: allTiles,
+                                                     existing: currentTileLookup()) else { dismiss(); return }
+            // Re-read after `build` so the pack's freshly installed words are
+            // visible to `previewTiles` below — see `currentTileLookup`.
+            var lookup = currentTileLookup()
             // The demo word is a projected new tile — materialize it so the
             // preview's demo entry resolves (the preview already includes it).
             if lookup[ex.demoKey] == nil {
@@ -861,12 +864,27 @@ private struct PageGeneratorSheet: View {
     /// Page Preview's Select mode hold. The source still supplies side effects
     /// (installing pack words), the page name, and the cover image.
     private func commitSource(_ source: CollectionSource, honoring result: GeneratedPageResult) {
-        let lookup = Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
         guard var built = CollectionSource.build(source, into: modelContext,
-                                                 allTiles: allTiles, existing: lookup) else { dismiss(); return }
+                                                 allTiles: allTiles,
+                                                 existing: currentTileLookup()) else { dismiss(); return }
+        // MUST re-read: `build` can INSERT tiles (a pack installs its words), and
+        // `allTiles` is a @Query snapshot taken before that which does not refresh
+        // mid-function. Filtering `previewTiles` against the stale snapshot dropped
+        // every word the pack had just added, so an 8-word pack committed as a
+        // 1-tile page — while the preview, which renders from `result`, looked right.
+        let lookup = currentTileLookup()
         built.tiles = previewTiles(result, lookup: lookup)
         guard !built.tiles.isEmpty else { dismiss(); return }
         commitBuilt(built, lookup: lookup)
+    }
+
+    /// Key→tile map that includes tiles inserted earlier in the same call.
+    /// A `ModelContext` fetch sees pending (unsaved) inserts; the `allTiles`
+    /// `@Query` only updates on the next view update, so it cannot be trusted
+    /// after anything in this call has created a tile.
+    private func currentTileLookup() -> [String: TileModel] {
+        let tiles = (try? modelContext.fetch(FetchDescriptor<TileModel>())) ?? allTiles
+        return Dictionary(tiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
     }
 
     /// The preview's primary-page tiles as `TileEntry`s, in the preview's current

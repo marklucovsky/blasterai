@@ -39,10 +39,6 @@ enum CloudKitDedupReconciler {
         var deleted = 0
         var changed = false
 
-        // Backfill legacy system-scene keys FIRST, so dedupeSystemScenes can see
-        // scenes that were bootstrapped before they carried a systemSceneKey.
-        changed = normalizeLegacySystemScenes(context) || changed
-
         deleted += dedupeTiles(context)
         deleted += dedupeSystemScenes(context)
         deleted += dedupeSandbox(context)
@@ -114,28 +110,11 @@ enum CloudKitDedupReconciler {
         guard let tiles = try? context.fetch(FetchDescriptor<TileModel>()) else { return 0 }
         return collapse(tiles, context: context,
                         keyOf: { $0.key.isEmpty ? nil : $0.key }) { a, b in
-            if (a.userImageData != nil) != (b.userImageData != nil) {
-                return a.userImageData != nil
+            if a.hasUserImage != b.hasUserImage {
+                return a.hasUserImage
             }
             return a.id < b.id
         }.deleted.count
-    }
-
-    /// Legacy installs created the "All Tiles" review scene WITHOUT a
-    /// systemSceneKey (the key was added later), so its duplicates slip past
-    /// `dedupeSystemScenes` (which only collapses *keyed* system scenes) and the
-    /// dup stat that keys on it. Backfill the key by the scene's unmistakable
-    /// signature (name + homePageKey) so the dedup step can then collapse them.
-    /// Idempotent; never touches user-named or imported scenes.
-    private static func normalizeLegacySystemScenes(_ context: ModelContext) -> Bool {
-        guard let scenes = try? context.fetch(FetchDescriptor<BlasterScene>()) else { return false }
-        var changed = false
-        for s in scenes where s.systemSceneKey.isEmpty
-            && s.name == "All Tiles" && s.homePageKey == "all_tiles" {
-            s.systemSceneKey = "all_tiles"
-            changed = true
-        }
-        return changed
     }
 
     /// Collapse duplicate SYSTEM scenes by `systemSceneKey`. User/imported/
@@ -211,7 +190,7 @@ enum CloudKitDedupReconciler {
     private static func dedupeSentenceCache(_ context: ModelContext) -> Int {
         guard let caches = try? context.fetch(FetchDescriptor<SentenceCache>()) else { return 0 }
         return collapse(caches, context: context,
-                        keyOf: { "\($0.cacheKey)\u{1}\($0.childID ?? "")" }) { a, b in
+                        keyOf: { "\($0.cacheKey)\u{1}\($0.childID)" }) { a, b in
             if a.hitCount != b.hitCount { return a.hitCount > b.hitCount }
             if a.created != b.created { return a.created > b.created }
             return a.id < b.id
@@ -221,12 +200,23 @@ enum CloudKitDedupReconciler {
     // MARK: - Single-active invariants
 
     /// Ensure at most one active scene. Keep the most-recently-modified active
-    /// scene (mirrors `ChildProfile.resolveActive`); deactivate the rest.
+    /// scene, but a USER scene always beats a SYSTEM one first. Mirrors
+    /// `enforceSingleActiveProfile`, where a real profile beats the Sandbox:
+    /// category before timestamp.
+    ///
+    /// Why the category test has to come first: a freshly-installed device
+    /// bootstraps the system scene and marks it active, so its `lastModified` is
+    /// necessarily newer than the user's board, which was chosen earlier. On a
+    /// pure most-recently-modified rule, adding a second device would silently
+    /// switch the family back to the built-in board — the same "a fresh bootstrap
+    /// always looks newer than real work" flaw that was destroying scene edits.
+    /// Timestamps are only comparable between peers of the same kind.
     private static func enforceSingleActiveScene(_ context: ModelContext) -> Bool {
         guard let active = try? context.fetch(
             FetchDescriptor<BlasterScene>(predicate: #Predicate { $0.isActive })
         ), active.count > 1 else { return false }
         let winner = active.sorted {
+            if $0.isSystemOwned != $1.isSystemOwned { return !$0.isSystemOwned }
             if $0.lastModified != $1.lastModified { return $0.lastModified > $1.lastModified }
             return $0.id < $1.id
         }.first
@@ -267,10 +257,10 @@ enum CloudKitDedupReconciler {
 
     private static func repointChildID(_ context: ModelContext, from dead: Set<String>, to newID: String) {
         if let caches = try? context.fetch(FetchDescriptor<SentenceCache>()) {
-            for c in caches where (c.childID.map(dead.contains) ?? false) { c.childID = newID }
+            for c in caches where dead.contains(c.childID) { c.childID = newID }
         }
         if let logs = try? context.fetch(FetchDescriptor<LoggedUtterance>()) {
-            for l in logs where (l.childID.map(dead.contains) ?? false) { l.childID = newID }
+            for l in logs where dead.contains(l.childID) { l.childID = newID }
         }
     }
 }

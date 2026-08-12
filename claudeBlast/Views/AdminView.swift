@@ -105,12 +105,9 @@ struct AdminView: View {
     @State var pendingCaregiverTransition = false
 
     /// Whether the bundled Core-First content differs from what's installed.
-    /// Recomputed onAppear and after an update is applied. Drives the
-    /// per-scene "Update Available" affordance.
-    @State var bundleUpdateAvailable = false
-    /// Set to the system scene the caregiver tapped "Update" on, to drive the
-    /// confirmation dialog.
-    @State var sceneToUpdate: BlasterScene?
+    /// System-owned scene the caregiver tried to edit. Drives the clone-on-write
+    /// confirmation; on confirm we take an editable copy and open that instead.
+    @State var sceneToClone: BlasterScene?
 
     var envKeyOverride: Bool {
         ProcessInfo.processInfo.environment["OPENAI_API_KEY"] != nil
@@ -147,10 +144,8 @@ struct AdminView: View {
         }
         .onAppear {
             // Global setup — request speech-recognition permission while
-            // no sheet is open so the system dialog isn't occluded, and
-            // check whether the bundled scenes have a pending update.
+            // no sheet is open so the system dialog isn't occluded.
             SFSpeechRecognizer.requestAuthorization { _ in }
-            bundleUpdateAvailable = BootstrapLoader.isBundleUpdateAvailable()
         }
     }
 

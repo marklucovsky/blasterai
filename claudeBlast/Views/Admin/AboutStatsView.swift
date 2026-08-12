@@ -96,7 +96,7 @@ struct AboutStatsView: View {
         + dupes(scenes.filter { !$0.systemSceneKey.isEmpty }.map(\.systemSceneKey))
         + max(0, profiles.filter(\.isSystem).count - 1)
         + dupes(artVariants.map { "\($0.tileKey)|\($0.imageSetRaw)" })
-        + dupes(caches.map { "\($0.cacheKey)|\($0.childID ?? "")" })
+        + dupes(caches.map { "\($0.cacheKey)|\($0.childID)" })
     }
 
     private func dupes(_ keys: [String]) -> Int { keys.count - Set(keys).count }

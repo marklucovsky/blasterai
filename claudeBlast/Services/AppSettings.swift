@@ -32,15 +32,10 @@ enum AppSettingsKey {
     static let reconcileLastDeleted     = "reconcile_last_deleted"
     static let reconcileLifetimeDeleted = "reconcile_lifetime_deleted"
     static let reconcileLastDate        = "reconcile_last_date"
-    /// Sticky preference for the force-refresh "Save a copy first" toggle.
-    /// Default true (safe). Only read when forceRefreshDuplicateRemembered
-    /// is true; otherwise the dialog opens with the default each time.
-    static let forceRefreshDuplicate           = "force_refresh_duplicate"
-    /// Whether the user checked "Remember this choice" in the force-refresh
-    /// dialog. False = the dialog re-asks every time with the default
-    /// pre-selected. True = the toggle's last value is honored as the
-    /// pre-selected value.
-    static let forceRefreshDuplicateRemembered = "force_refresh_duplicate_remembered"
+    // NB: forceRefreshDuplicate / forceRefreshDuplicateRemembered were removed
+    // with the manual "Update Available" flow. System scenes are immutable now,
+    // so a newer bundled board is applied silently at launch — there is nothing
+    // of the caregiver's inside one to save a copy of first.
     static let icloudEnabled     = "icloud_enabled"
     static let openaiApiKey      = "openai_api_key"
     static let providerChoice    = "provider_choice"

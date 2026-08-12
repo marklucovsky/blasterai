@@ -156,7 +156,10 @@ struct claudeBlastTests {
 
         #expect(result.scene.isDefault)
         #expect(result.scene.isActive)
-        #expect(result.scene.name == "Core-First")
+        // The name carries the system-supplied marker so the caregiver can see
+        // at a glance which board is ours; `baseName` is what a copy is named after.
+        #expect(result.scene.name == "Core-First" + BlasterScene.systemSuppliedSuffix)
+        #expect(result.scene.baseName == "Core-First")
         #expect(result.scene.homePageKey == "home")
         // Core-First is now sourced from scenes/core_first.json — 13 pages:
         // home + food_drinks + 11 topic pages (people/social/actions/describe/
@@ -164,8 +167,14 @@ struct claudeBlastTests {
         // result.pages is the same materialized list, so the counts match.
         #expect(result.scene.pages.count == result.pages.count)
         #expect(result.scene.pages.count == 13)
-        // The bundled scene is tagged as system-defined.
+        // The bundled scene is tagged as system-defined, which now also means
+        // immutable — caregivers edit a clone instead.
         #expect(result.scene.systemSceneKey == "core_first")
+        #expect(result.scene.isSystemOwned)
+        // Bootstrap no longer creates the "All Tiles (Review)" scene; VocabManagerView
+        // replaced it. Core-First should be the only scene bootstrap produces.
+        let allScenes = try container.mainContext.fetch(FetchDescriptor<BlasterScene>())
+        #expect(allScenes.count == 1)
     }
 
     @Test func bundledTopicPagesKeepHomeLinkLiteral() throws {

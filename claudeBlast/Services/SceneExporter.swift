@@ -35,7 +35,7 @@ enum SceneExporter {
                 // Collect tiles that are not in the default vocabulary or have custom images
                 if seenTileKeys.insert(tile.key).inserted {
                     let isCustom = !defaultTileKeys.contains(tile.key)
-                    let hasCustomImage = tile.userImageData != nil
+                    let hasCustomImage = tile.hasUserImage
 
                     if isCustom || hasCustomImage {
                         let imageBase64 = encodeImage(tile.userImageData)

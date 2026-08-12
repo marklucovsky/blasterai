@@ -81,6 +81,17 @@ struct claudeBlastApp: App {
             }
         }
 
+        // Push a newer bundled system board silently. This is only safe — and is
+        // the reason it's automatic rather than a prompt — because system scenes
+        // are immutable (`BlasterScene.isSystemOwned`): there is no caregiver work
+        // inside one to lose, since edits go to a clone. It replaces the old
+        // "Update Available" affordance, which asked permission and offered to
+        // save a copy first, and which a naive user could decline forever.
+        // No-op on a fresh bootstrap (markBootstrapComplete stamps the hash).
+        if BootstrapLoader.isBundleUpdateAvailable() {
+            BootstrapLoader.updateSystemScene(context: container.mainContext)
+        }
+
         ProfileMigration.ensureProfilesAfterBootstrap(
             context: container.mainContext,
             seedLegacy: wasInstalled

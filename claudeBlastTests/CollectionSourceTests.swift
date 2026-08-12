@@ -205,6 +205,38 @@ struct CollectionSourceTests {
 
     // MARK: - pack
 
+    /// Regression for "adding a pack page lands only one tile".
+    ///
+    /// The page-commit path filters the preview's tiles through a key→tile
+    /// lookup. Building a pack INSERTS tiles as a side effect, so a lookup
+    /// captured before the build is missing every newly installed word — which
+    /// silently committed a whole pack as a one-tile page (the single word that
+    /// already existed in core vocabulary), while the preview looked correct
+    /// because it renders from the generated result, not the lookup.
+    ///
+    /// This pins the mechanism the fix relies on: a `ModelContext` fetch made
+    /// after the build sees the pending, still-unsaved inserts. If that ever
+    /// stops being true, `SceneEditorView.currentTileLookup` is unsound and this
+    /// test fails rather than the bug silently returning.
+    @Test func packWordsAreVisibleOnlyToALookupTakenAfterTheBuild() throws {
+        let ctx = try makeContext()
+        guard let pack = PackCatalog.all.first, pack.words.count > 1 else { return }
+
+        let staleLookup = lookup(ctx)          // before install — what the bug used
+        guard let built = CollectionSource.build(.pack(pack), into: ctx,
+                                                 allTiles: [], existing: staleLookup) else {
+            Issue.record("pack build returned nil"); return
+        }
+        // Deliberately NOT saved — the fix depends on seeing pending inserts.
+        let freshLookup = lookup(ctx)          // after install — what the fix uses
+
+        let keptByStale = built.tiles.filter { staleLookup[$0.key] != nil }
+        let keptByFresh = built.tiles.filter { freshLookup[$0.key] != nil }
+
+        #expect(keptByStale.count < built.tiles.count)      // words WOULD be dropped
+        #expect(keptByFresh.count == built.tiles.count)     // all words survive
+    }
+
     @Test func packBuildsFromWordsAndInstallsThem() throws {
         let ctx = try makeContext()
         guard let pack = PackCatalog.all.first else { return }

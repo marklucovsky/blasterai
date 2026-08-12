@@ -140,8 +140,8 @@ struct VocabManagerView: View {
 
     @ViewBuilder
     private func subtitle(for tile: TileModel) -> some View {
-        if tile.isRetired, let reason = tile.retiredReason {
-            Text(reason).font(.caption2).foregroundStyle(.red)
+        if tile.isRetired, !tile.retiredReason.isEmpty {
+            Text(tile.retiredReason).font(.caption2).foregroundStyle(.red)
         } else if tile.isRetired {
             Text("hidden").font(.caption2).foregroundStyle(.secondary)
         } else if tile.needsReview {
