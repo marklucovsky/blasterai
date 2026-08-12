@@ -174,7 +174,7 @@ struct SceneEditorView: View {
                 }
                 .disabled(scene.isDefault)
             } header: {
-                Text("Board")
+                Text("Focused layout")
             } footer: {
                 Text("Focused trims the board for 1:1 sessions: the topical tiles plus a short needs strip (hungry/thirsty, help, feelings) and the body & health page. Off uses the full familiar board (people, food, drinks, body & health).")
             }

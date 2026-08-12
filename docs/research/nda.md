@@ -7,7 +7,7 @@
 ## Non-Disclosure and Consent Agreement
 
 **Project:** Blaster — AAC Intervention: Selection and Usage of Communication Devices
-**Researcher:** Kurt Lucovsky
+**Researcher:** Kurt Yalcin
 **Project contact:** [Creator name and contact]
 **Date:** [DATE]
 

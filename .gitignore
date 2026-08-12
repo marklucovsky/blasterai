@@ -51,6 +51,7 @@ tools/tile_sets/optimized/
 tools/tile_sets/current/
 tools/tile_sets/current_p3d/
 tools/tile_sets/current_arasaac/
+tools/tile_sets/current_classic/
 
 # Review tool artifacts (regenerable)
 tools/tile_sets/playful_3d/review/
@@ -59,6 +60,9 @@ tools/tile_sets/playful_3d_v2/review/
 tools/tile_sets/review_*.html
 tools/tile_sets/*_failed.txt
 tools/tile_sets/assets_link
+# analyze_set.py reports — per-round working files. The numbers that matter
+# are quoted in docs/imageset-highcontrast-log.md.
+tools/tile_sets/analysis/
 
 # Downloaded symbol sets (large — re-download with tools scripts)
 tools/sclera/

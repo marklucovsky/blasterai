@@ -68,6 +68,94 @@ work — per `CLAUDE.md`'s standing note. Until then, `claudeBlast` in source is
 *only* as the current module name; no new code should introduce it, and new type names use
 the `Blaster` prefix.
 
+## Domain vocabulary: Scene, Page, Pack
+
+| Concept | Name | Code / format | What it is |
+|---|---|---|---|
+| The thing a child communicates with | **Scene** | `BlasterScene`, `.blasterscene`, `sceneID`, `slug` | A named set of pages with one designated home page. Shareable, has provenance, one active at a time. |
+| One screen within it | **Page** | `PageSpec` / `PageModel` | A grid of tiles. Reached by a navigation tile that links to it. |
+| A named vocabulary set | **Pack** | `VocabPack`, `packs.json` | Words only, no layout — installing one adds vocabulary, it does not create a scene. |
+| Where tiles come from when building | **Collection** | `CollectionSource` | A *source* used while authoring (a pack, a word class, another page), not a thing that persists. Only ever surfaces on the "Build from Collections" screen. |
+
+Unlike the `Blaster` / `BlasterAI` split, these are the same word in code and in
+the UI. There is no translation to teach.
+
+### Why not "Board" — decided 2026-08-11
+
+This was renamed to **Board** and reverted within the same branch. Recording
+why, so it doesn't get re-litigated.
+
+**The case for Board** was that clinicians say it. "Core board", "activity
+board", "fringe board" are ordinary speech in the field, and "scene" is our
+word and nobody else's. The marketing site had already drifted to it
+("Describe → a board").
+
+**The case against, which is stronger: in the standards, a board is one
+screen — not the whole thing.**
+
+| product | one screen | the whole thing |
+|---|---|---|
+| Open Board Format | board (`.obf`) | board set (`.obz`) |
+| CoughDrop | board | board set |
+| TouchChat | page | vocabulary |
+| Proloquo2Go | page | vocabulary |
+| Snap Core First | page | page set |
+| Grid 3 | grid | grid set |
+
+Naming our multi-page container "Board" therefore **inverts** the OpenAAC
+interchange standard that `docs/gtm.md` cites as the portability story we are
+attacking, and inverts CoughDrop, the reference open-source AAC app. Our
+**Page** would be their *board*; our **Board** would be their *board set*.
+
+Note what the table also shows: **Page is safe.** It is standard vocabulary
+across Proloquo2Go, TouchChat and Snap Core First. The unsettled term was only
+ever the container, and every product names that with a "set" word or calls it
+the vocabulary — and "vocabulary" is unavailable to us, since it already means
+the word list.
+
+The remaining candidates were "Board set" (standards-exact, clunky in UI and
+marketing) and keeping **Scene**. Scene wins on a second argument beyond
+avoiding the clash: it is *accurate*. This container is an activity context —
+bedtime, farm visit, therapy session, grandma's house — which is `docs/prd.md`'s
+own framing and arguably the distinctive product idea. It is jargon, but it is
+jargon that means something, and it needs teaching exactly once.
+
+**Cost of the revert:** near zero. It also preserved the recorded demo videos
+and the deck, which show the Scenes tab on screen and would have needed
+re-recording.
+
+**If this is revisited**, the only fully standards-aligned option is the big
+one: rename Page → Board *and* find a container word. Do not adopt Board for
+the container alone.
+
+### Do / don't
+
+- ✅ "Make a scene", "add a page to this scene", "install a vocabulary pack"
+- ❌ "Board" for the container; "board" for a single page in our own copy
+- ❌ "Pack" for anything carrying layout or art
+
+### Where "board" is still correct
+
+The word is not banned. **"Core board"** is a term of art for a page of
+high-frequency core vocabulary, and our built-in scene is named **Core-First**
+for that reason. Using "board" loosely in prose about the field is fine; using
+it as the name of one of our objects is not.
+
+Two places in the app used "Board" to mean something else entirely, and both
+were fixed while the rename was in flight and kept after the revert:
+
+- `AboutStatsView` — `Section("Boards")` over scene and page counts is now
+  `Section("Content")`.
+- `SceneEditorView` — `Section("Board")` around the Focused toggle is now
+  **"Focused layout"**, which describes the toggle rather than the container.
+
+### Site alignment
+
+`blasterai.app` still mixes both, including on one page: `index.html` says
+"Describe → a board" in a card and "whole scenes on demand" a few lines later,
+and `faq/index.html` says "builds boards and scenes". The site follows this
+canon and needs a sweep.
+
 ## What stays as-is (never rename)
 
 - **Bundle id `app.blasterai.ios`** and **CloudKit container `iCloud.app.blasterai`** —
