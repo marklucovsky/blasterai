@@ -83,6 +83,17 @@ HC_SUBJECT_OVERRIDES: dict[str, str] = {
         "A single bold arrow pointing straight downward, drawn entirely in solid "
         "white, with a thick shaft and a large triangular arrowhead"
     ),
+    # Words naming a visual condition are a trap: asked for fog, the model
+    # renders the whole picture foggy — atmospheric, and measuring 3.0 contrast
+    # in a set whose premise is 21. It illustrates the condition instead of
+    # depicting the concept. Forced to a symbol here. (fog is the only weather
+    # word that fell into this; the rest score 18-21.)
+    "fog": (
+        "A simple house with a triangular roof and a tree beside it, both as "
+        "bold solid white silhouettes, with three thick straight horizontal "
+        "white bars lying across them. Everything is crisp and solid — nothing "
+        "is blurred, faded, soft, hazy or semi-transparent"
+    ),
     # The shared subject is "a child catching a colorful ball with both hands,
     # ball just arriving in their grip" — which is playing catch, not getting.
     # Playful-3D happens to ignore its own subject here and draws a child

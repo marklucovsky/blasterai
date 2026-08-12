@@ -1,14 +1,62 @@
 {
-  "previous_page": {
-    "reason": "previous and next should be mirror images of each other and they are not",
+  "triangle": {
+    "reason": "lets have the triangle point up",
     "attempts": 1
   },
-  "school_people": {
+  "fog": {
+    "reason": "this one works, but it looks very different from all of the other HC tiles. Your thoughts?",
+    "attempts": 1
+  },
+  "red": {
+    "reason": "the colors should be identical to classic but on a black background.",
+    "attempts": 1
+  },
+  "orange_": {
+    "reason": "see red",
+    "attempts": 1
+  },
+  "yellow": {
     "reason": "rejected in review",
     "attempts": 1
   },
-  "get": {
-    "reason": "this looks more like playing catch than GET ing a ball off of a high shelf like p3d",
+  "green": {
+    "reason": "rejected in review",
+    "attempts": 1
+  },
+  "blue": {
+    "reason": "rejected in review",
+    "attempts": 1
+  },
+  "purple": {
+    "reason": "see red comments, but this white band around the color is not bad",
+    "attempts": 1
+  },
+  "pink": {
+    "reason": "this is what I expected all the colors to look like. But honestly, just re-using classic here might be fine too given the darker tones on a black background might fail",
+    "attempts": 1
+  },
+  "black": {
+    "reason": "rejected in review",
+    "attempts": 1
+  },
+  "brown": {
+    "reason": "rejected in review",
+    "attempts": 1
+  },
+  "grey": {
+    "reason": "rejected in review",
+    "attempts": 1
+  },
+  "gold": {
+    "reason": "rejected in review",
+    "attempts": 1
+  },
+  "silver": {
+    "reason": "use a colored circle",
+    "attempts": 1
+  },
+  "tan": {
+    "reason": "rejected in review",
     "attempts": 1
   }
 }
