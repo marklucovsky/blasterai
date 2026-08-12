@@ -41,16 +41,20 @@ extension AdminView {
                 createBlankScene(name: name)
             }
         }
-        .sheet(item: $sceneToUpdate) { scene in
-            UpdateConfirmationSheet(
-                sceneName: scene.name,
-                onConfirm: { duplicateFirst, remember in
-                    applySystemSceneUpdate(duplicateFirst: duplicateFirst, remember: remember)
-                }
-            )
-        }
         .sheet(item: $sceneToExport) { file in
             ActivityView(items: [file.temporaryFileURL()])
+        }
+        .confirmationDialog(
+            "This is a built-in board",
+            isPresented: Binding(get: { sceneToClone != nil },
+                                 set: { if !$0 { sceneToClone = nil } }),
+            titleVisibility: .visible,
+            presenting: sceneToClone
+        ) { scene in
+            Button("Make My Copy") { cloneSystemSceneForEditing(scene) }
+            Button("Cancel", role: .cancel) { sceneToClone = nil }
+        } message: { scene in
+            Text("\(scene.baseName) is supplied and updated by BlasterAI, so it can't be edited directly. We'll make you an editable copy and switch to it. Your copy is yours — app updates won't touch it.")
         }
         .fileImporter(
             isPresented: $isImporting,
@@ -78,13 +82,23 @@ extension AdminView {
     var scenesSection: some View {
         Section("Scenes") {
             ForEach(scenes) { scene in
-                NavigationLink(destination: SceneEditorView(scene: scene)) {
-                    SceneRow(
-                        scene: scene,
-                        updateAvailable: bundleUpdateAvailable,
-                        onActivate: { activateScene(scene) },
-                        onUpdate: { sceneToUpdate = scene }
-                    )
+                Group {
+                    if scene.isSystemOwned {
+                        // System scenes are immutable — the editor is the single
+                        // door to every scene mutation, so refusing to open it
+                        // here is what keeps them pristine. Tapping offers an
+                        // editable copy instead.
+                        Button {
+                            sceneToClone = scene
+                        } label: {
+                            SceneRow(scene: scene, onActivate: { activateScene(scene) })
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        NavigationLink(destination: SceneEditorView(scene: scene)) {
+                            SceneRow(scene: scene, onActivate: { activateScene(scene) })
+                        }
+                    }
                 }
                 .swipeActions(edge: .leading) {
                     if !scene.isActive {
@@ -93,7 +107,10 @@ extension AdminView {
                     }
                 }
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                    if !scene.isDefault {
+                    // System-owned scenes are undeletable as well as uneditable:
+                    // we ship them, and a caregiver who wants rid of one keeps
+                    // their own copy and simply stops activating this.
+                    if !scene.isDefault && !scene.isSystemOwned {
                         Button(role: .destructive) {
                             deleteScene(scene)
                         } label: {
@@ -141,33 +158,6 @@ extension AdminView {
 
     // MARK: - Scene actions
 
-    func applySystemSceneUpdate(duplicateFirst: Bool, remember: Bool) {
-        // Persist the sticky preference state to match the toggle exactly:
-        // - remember ON → store remembered=true + the duplicate value
-        // - remember OFF → store remembered=false (toggling off explicitly
-        //   forgets a previous choice, so the dialog reverts to safe defaults
-        //   next time)
-        let defaults = UserDefaults.standard
-        defaults.set(remember, forKey: AppSettingsKey.forceRefreshDuplicateRemembered)
-        if remember {
-            defaults.set(duplicateFirst, forKey: AppSettingsKey.forceRefreshDuplicate)
-        }
-
-        // Snapshot the current Core-First into a duplicate before applying
-        // the bundled overwrite, so the caregiver always has a recovery path.
-        if duplicateFirst, let source = sceneToUpdate {
-            _ = BlasterScene.duplicate(of: source, in: modelContext,
-                                       authorID: DeviceProfileStore.ensureAuthorID(context: modelContext),
-                                       authorName: DeviceProfileStore.authorName(context: modelContext))
-            try? modelContext.save()
-        }
-
-        sceneToUpdate = nil
-        guard BootstrapLoader.updateSystemScene(context: modelContext) else { return }
-        bundleUpdateAvailable = BootstrapLoader.isBundleUpdateAvailable()
-        sentenceEngine.clearSelection()
-    }
-
     func duplicateScene(_ scene: BlasterScene) {
         _ = BlasterScene.duplicate(of: scene, in: modelContext,
                                    authorID: DeviceProfileStore.ensureAuthorID(context: modelContext),
@@ -177,6 +167,21 @@ extension AdminView {
 
     func activateScene(_ scene: BlasterScene) {
         try? scene.activate(context: modelContext)
+    }
+
+    /// Clone-on-write for an immutable system scene: take an editable copy,
+    /// make it active, and open the editor on it. The caregiver asked to edit,
+    /// so they land in something they can actually edit rather than being told
+    /// no. See `BlasterScene.isSystemOwned`.
+    func cloneSystemSceneForEditing(_ scene: BlasterScene) {
+        let copy = BlasterScene.cloneForEditing(
+            scene, in: modelContext,
+            authorID: DeviceProfileStore.ensureAuthorID(context: modelContext),
+            authorName: DeviceProfileStore.authorName(context: modelContext))
+        try? copy.activate(context: modelContext)
+        try? modelContext.save()
+        sceneToClone = nil
+        navigateToNewScene = copy       // reuse the post-generation editor route
     }
 
     func deleteScenes(at offsets: IndexSet) {

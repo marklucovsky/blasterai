@@ -201,37 +201,11 @@ enum BootstrapLoader {
             )
             let coreFirstScene = buildScene(from: materialized)
 
-            // ----- All Tiles scene (programmatic) -----
-            // Single page with every vocab tile, grouped by wordClass in vocab
-            // declaration order. Useful for review/admin; not a child-facing
-            // scene. Programmatic rather than JSON because the content is just
-            // "all of vocabulary" — no curation needed.
-            var wcOrder: [String] = []
-            var wcGroups: [String: [String]] = [:]
-            for tile in allTiles {
-                if wcGroups[tile.wordClass] == nil {
-                    wcOrder.append(tile.wordClass)
-                    wcGroups[tile.wordClass] = []
-                }
-                wcGroups[tile.wordClass]!.append(tile.key)
-            }
-            let allTilesEntries: [TileEntry] = wcOrder.flatMap { wc in
-                (wcGroups[wc] ?? []).map { TileEntry(key: $0, link: "", isAudible: true) }
-            }
-            let allTilesPage = PageSpec(key: "all_tiles", tiles: allTilesEntries)
-            let allTilesScene = BlasterScene(
-                name: "All Tiles",
-                descriptionText: "Full vocabulary grouped by word class",
-                homePageKey: "all_tiles",
-                isDefault: false,
-                isActive: false
-            )
-            // Stable key so CloudKitDedupReconciler can collapse duplicate
-            // All-Tiles scenes produced by multi-device bootstrap.
-            allTilesScene.systemSceneKey = "all_tiles"
-            allTilesScene.markFirstPartyIdentity()
-            allTilesScene.pages = [allTilesPage]
-            allTilesScene.importedContentHash = allTilesScene.contentHash   // pristine baseline
+            // NB: the "All Tiles (Review)" scene was removed — a flat 492-tile
+            // board was the old way to review the vocabulary, and VocabManagerView
+            // (Scenes tab → Manage Vocabulary) does that job properly now with
+            // search, class filter, scope, and hide/restore. It was also a second
+            // system scene to keep pristine for no benefit.
 
             // ----- persist -----
             // BlasterScene.pages is now an inline JSON-encoded attribute, so
@@ -240,7 +214,6 @@ enum BootstrapLoader {
             try context.transaction {
                 for tile in allTiles { context.insert(tile) }
                 context.insert(coreFirstScene)
-                context.insert(allTilesScene)
                 // Every page gets a page-link image tile, reusing the image its
                 // existing category link already uses (no new art).
                 let lookup = Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
@@ -285,11 +258,11 @@ enum BootstrapLoader {
         return scene
     }
 
-    // MARK: - Force-refresh (caregiver-initiated bundle update)
+    // MARK: - System-scene refresh (automatic, on app update)
 
-    /// True when the bundled content differs from what was last applied. In
-    /// RELEASE this is the only signal a caregiver gets that a newer Core-First
-    /// layout shipped with an app update (auto-bootstrap is suppressed there).
+    /// True when the bundled content differs from what was last applied — i.e. an
+    /// app update shipped a newer Core-First layout. Checked at launch, since
+    /// auto-bootstrap is suppressed in RELEASE once installed.
     static func isBundleUpdateAvailable() -> Bool {
         let stored = UserDefaults.standard.string(forKey: AppSettingsKey.bootstrapContentHash) ?? ""
         return stored != bundledContentHash
@@ -301,8 +274,10 @@ enum BootstrapLoader {
     /// disrupted. Scoped strictly to the system Core-First scene; user-created
     /// and duplicated scenes (systemSceneKey == "") are never touched.
     ///
-    /// Caregiver-initiated only (AdminView "Update Available"). After applying,
-    /// the stored content hash is advanced so the affordance clears.
+    /// Applied automatically at launch. Safe to do silently because system scenes
+    /// are immutable (`BlasterScene.isSystemOwned`) — caregiver edits live in a
+    /// clone, so there is nothing of theirs here to overwrite. After applying,
+    /// the stored content hash is advanced so it runs once per bundle change.
     @discardableResult
     static func updateSystemScene(context: ModelContext) -> Bool {
         guard let url = Bundle.main.url(forResource: "core_first", withExtension: "json"),
@@ -331,6 +306,11 @@ enum BootstrapLoader {
             scene.descriptionText = materialized.description
             scene.homePageKey = materialized.homePageKey
             scene.pages = materialized.pages
+            // Re-baseline: the freshly-applied bundle content IS the new pristine
+            // state. Without this the scene would compare against the OLD baseline
+            // and start reporting isLocallyModified — labelling our own board
+            // "modified locally" in the scenes list.
+            scene.importedContentHash = scene.contentHash
             try context.save()
             UserDefaults.standard.set(bundledContentHash, forKey: AppSettingsKey.bootstrapContentHash)
             return true

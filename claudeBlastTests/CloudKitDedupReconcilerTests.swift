@@ -110,23 +110,21 @@ struct CloudKitDedupReconcilerTests {
         #expect(userScenes.count == 2)   // never collapsed by name
     }
 
-    @Test func legacyAllTiles_normalizedThenCollapsed_userNamedSurvives() throws {
+    /// Scenes with an empty `systemSceneKey` are NEVER collapsed, no matter how
+    /// alike they look. This is the invariant that makes system-scene dedup safe:
+    /// the only scenes the reconciler may collapse are the immutable, pristine
+    /// system ones, so a collapse can never destroy user work.
+    @Test func userScenesAreNeverCollapsed_evenWhenIdentical() throws {
         let container = try makeContainer()
         let ctx = container.mainContext
-        // Legacy All-Tiles: right signature, empty key (bootstrapped pre-fix).
-        ctx.insert(scene("All Tiles", id: "a1", systemKey: "", home: "all_tiles"))
-        ctx.insert(scene("All Tiles", id: "a2", systemKey: "", home: "all_tiles"))
-        ctx.insert(scene("All Tiles", id: "a3", systemKey: "", home: "all_tiles"))
-        // A user scene coincidentally named "All Tiles" but NOT the signature.
-        ctx.insert(scene("All Tiles", id: "u1", systemKey: "", home: "home"))
+        ctx.insert(scene("My Board", id: "u1", systemKey: "", home: "home"))
+        ctx.insert(scene("My Board", id: "u2", systemKey: "", home: "home"))
+        ctx.insert(scene("My Board", id: "u3", systemKey: "", home: "home"))
 
         CloudKitDedupReconciler.reconcile(context: ctx)
 
-        let allTiles = try ctx.fetch(FetchDescriptor<BlasterScene>(predicate: #Predicate { $0.systemSceneKey == "all_tiles" }))
-        #expect(allTiles.count == 1)                 // 3 legacy → 1, key backfilled
-        let named = try ctx.fetch(FetchDescriptor<BlasterScene>(predicate: #Predicate { $0.name == "All Tiles" }))
-        #expect(named.count == 2)                    // the collapsed all_tiles + the untouched user scene
-        #expect(named.contains { $0.id == "u1" && $0.systemSceneKey == "" })
+        let mine = try ctx.fetch(FetchDescriptor<BlasterScene>(predicate: #Predicate { $0.name == "My Board" }))
+        #expect(mine.count == 3)
     }
 
     @Test func enforcesSingleActiveScene_keepsMostRecentlyModified() throws {

@@ -33,6 +33,8 @@ final class BlasterScene {
     /// Drives the AdminView "system scene" label and the bundle-update
     /// affordance — only a scene with a systemSceneKey can be force-refreshed
     /// from the bundle.
+    ///
+    /// It is also the **immutability marker** — see `isSystemOwned`.
     var systemSceneKey: String = ""
 
     // MARK: - Decentralized identity (see SceneIdentity)
@@ -74,6 +76,46 @@ final class BlasterScene {
 
     /// How first-party (BlasterAI-shipped) content is credited in the UI.
     static let firstPartyAuthorDisplay = "BlasterAI"
+
+    // MARK: - System ownership (immutability)
+
+    /// Marker appended to the name of a bundle-backed scene we own.
+    static let systemSuppliedSuffix = " - System Supplied"
+    /// Marker appended when a caregiver takes an editable copy of one.
+    static let myCopySuffix = " - My Copy"
+
+    /// **System-owned scenes are immutable.** They are bundle-backed, we ship
+    /// them, and the caregiver edits a *copy* instead (`cloneForEditing`).
+    ///
+    /// This exists to close two problems with one rule:
+    ///
+    /// 1. **App updates.** We change the bundled board between releases. If a
+    ///    caregiver's edits lived in it, refreshing from the bundle would destroy
+    ///    their work — so the refresh had to ask permission and offer to save a
+    ///    copy first. With nothing of theirs inside, the bundle is free to change.
+    /// 2. **Multi-device sync.** `needsBootstrap()` gates on a per-device
+    ///    UserDefaults flag that never syncs, so every fresh install bootstraps
+    ///    its own copy of the system scenes. `CloudKitDedupReconciler` then
+    ///    collapses them by `systemSceneKey` — and whichever copy it keeps, the
+    ///    other is deleted. That was destroying caregiver edits: a *fresh*
+    ///    bootstrap is always newer than a prior edit, so "keep most recently
+    ///    modified" systematically preferred the pristine newcomer.
+    ///
+    /// The invariant that makes this airtight: **the set of scenes the reconciler
+    /// may collapse is exactly the set that can never diverge.** `dedupeSystemScenes`
+    /// groups on a non-empty `systemSceneKey` and skips everything else, which is
+    /// precisely the set marked immutable here. A collapse can therefore never
+    /// destroy user work, because no user work can be in there.
+    var isSystemOwned: Bool { !systemSceneKey.isEmpty }
+
+    /// The name without the system-supplied marker, so a copy of
+    /// "Core-First - System Supplied" is named "Core-First - My Copy" rather than
+    /// stacking both suffixes.
+    var baseName: String {
+        name.hasSuffix(Self.systemSuppliedSuffix)
+            ? String(name.dropLast(Self.systemSuppliedSuffix.count))
+            : name
+    }
 
     /// True for scenes BlasterAI ships — built-ins (bootstrapped, `systemSceneKey`)
     /// and bundled starters (id under the `scenes.blasterai.app` authority).
@@ -288,6 +330,53 @@ final class BlasterScene {
         }
     }
 
+    // MARK: - Naming
+
+    /// `base`, or `base-2` / `base-3` / … if that name is already taken.
+    static func availableName(basedOn base: String, in context: ModelContext) -> String {
+        let taken: Set<String> = (try? context.fetch(FetchDescriptor<BlasterScene>()))
+            .map { Set($0.map(\.name)) } ?? []
+        guard taken.contains(base) else { return base }
+        var n = 2
+        while taken.contains("\(base)-\(n)") { n += 1 }
+        return "\(base)-\(n)"
+    }
+
+    // MARK: - Clone-on-write
+
+    /// Take a user-owned, editable copy of a system-owned scene.
+    ///
+    /// The copy is a genuinely independent, locally-authored scene — it drops
+    /// `systemSceneKey`, which is what makes it editable, deletable, and
+    /// invisible to `dedupeSystemScenes`. It gets a fresh identity under this
+    /// device's author id, so two devices cloning the same system scene produce
+    /// two distinct scenes rather than a collision.
+    ///
+    /// `importedContentHash` is deliberately cleared: the copy has no pristine
+    /// baseline to diverge from, so `isLocallyModified` stays false and the
+    /// scenes list doesn't label a brand-new copy as "modified locally".
+    ///
+    /// Inserts into `context` and returns the copy; the caller activates it.
+    @discardableResult
+    static func cloneForEditing(_ source: BlasterScene, in context: ModelContext,
+                                authorID: String, authorName: String) -> BlasterScene {
+        let copy = BlasterScene(
+            name: availableName(basedOn: source.baseName + myCopySuffix, in: context),
+            descriptionText: source.descriptionText,
+            homePageKey: source.homePageKey,
+            isDefault: false,
+            isActive: false
+        )
+        copy.isFocused = source.isFocused
+        copy.pages = source.pages           // deep copy via the Codable round-trip
+        copy.systemSceneKey = ""            // ← user-owned from here on
+        copy.isImported = false
+        copy.importedContentHash = ""
+        copy.ensureIdentity(authorID: authorID, authorName: authorName)
+        context.insert(copy)
+        return copy
+    }
+
     // MARK: - Duplicate
 
     /// Create a peer copy of `source`. The new scene is inserted into `context`
@@ -313,15 +402,7 @@ final class BlasterScene {
     @discardableResult
     static func duplicate(of source: BlasterScene, in context: ModelContext,
                           authorID: String, authorName: String) -> BlasterScene {
-        let baseName = "duplicate-of:\(source.name)"
-        let existingNames: Set<String> = (try? context.fetch(FetchDescriptor<BlasterScene>()))
-            .map { Set($0.map(\.name)) } ?? []
-        var candidate = baseName
-        var n = 2
-        while existingNames.contains(candidate) {
-            candidate = "\(baseName)-\(n)"
-            n += 1
-        }
+        let candidate = availableName(basedOn: "duplicate-of:\(source.name)", in: context)
 
         let iso = ISO8601DateFormatter()
         iso.formatOptions = [.withInternetDateTime]
