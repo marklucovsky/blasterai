@@ -30,6 +30,16 @@ VOCAB_FILE = Path("claudeBlast/Resources/vocabulary.json")
 ASSETS_DIR = Path("claudeBlast/Assets.xcassets")
 TILE_IMAGE_SETS = Path("claudeBlast/TileImageSets")
 OUTPUT_BASE = Path("tools/tile_sets")
+COVER_MASTERS = OUTPUT_BASE / "packcovers"
+
+# Mirrors tools/sync_to_app.py — needed to locate a set's cover masters, which
+# live in one shared folder rather than per-set.
+SET_PREFIX = {
+    "playful_3d": "p3d",
+    "high_contrast": "hc",
+    "high_contrast_v2": "hc2",
+    "classic": "cls",
+}
 
 
 def img_to_relative_path(path: Path, html_dir: Path) -> str:
@@ -50,6 +60,7 @@ def image_stamp(path: Path) -> str:
 def build_page(set_name: str) -> Path:
     vocab = json.loads(VOCAB_FILE.read_text())
     set_dir = OUTPUT_BASE / set_name
+    set_prefix = SET_PREFIX.get(set_name, set_name)
     html_dir = OUTPUT_BASE  # HTML lives in tools/tile_sets/
     res = VOCAB_FILE.parent  # claudeBlast/Resources
 
@@ -73,6 +84,14 @@ def build_page(set_name: str) -> Path:
             if w["key"] not in base_keys:
                 entries.append((w["key"], w.get("wordClass", "unknown"), entry["slug"]))
 
+    # Pack cover images. They live in a shared prefixed folder rather than
+    # per-set, so they were invisible here — which meant a set could be
+    # "fully reviewed" while six images nobody had looked at shipped with it.
+    # Every pack picker in the app shows one.
+    cover_slugs = [e["slug"] for e in catalog]
+    for slug in cover_slugs:
+        entries.append((f"packcover_{slug}", "pack cover", slug))
+
     # Local copies of the two shipping sets so the browser can load them.
     # The comparison baseline is Playful-3D + Classic — the sets a user can
     # actually pick. ARASAAC used to hold the second column, but it is
@@ -93,7 +112,13 @@ def build_page(set_name: str) -> Path:
     for i, (key, wc, pack) in enumerate(entries):
         current_path = current_dir / f"{key}.png"
         classic_path = classic_dir / f"{key}.png"
-        new_path = set_dir / f"{key}.png"
+        # Cover masters live in one shared prefixed folder, not per-set. The
+        # p3d/classic columns still resolve through the app bundle above,
+        # since covers ship there as <prefix>_packcover_<slug>.png.
+        if key.startswith("packcover_"):
+            new_path = COVER_MASTERS / f"{set_prefix}_{key[len('packcover_'):]}.png"
+        else:
+            new_path = set_dir / f"{key}.png"
 
         new_img = img_to_relative_path(new_path, html_dir)
         current_img = img_to_relative_path(current_path, html_dir)
