@@ -1,0 +1,2854 @@
+{
+  "home": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "9363a6738575"
+  },
+  "next_page": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "4a7883bb9593"
+  },
+  "previous_page": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "8f2c240ea45b"
+  },
+  "food": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "3bba20674dea"
+  },
+  "body_health": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "d3d036d96fc9"
+  },
+  "question": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "bd99ab9f5004"
+  },
+  "snack": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "5eb4b5ee108a"
+  },
+  "popsicle": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "aa20454a0701"
+  },
+  "graham_cracker": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "2bbaf2d85575"
+  },
+  "goldfish_cracker": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "225bc2eff643"
+  },
+  "snack_bar": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "62346a4cf6a1"
+  },
+  "pretzel": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "c2efa8b0cb39"
+  },
+  "tired": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "06df8a5bb1b0"
+  },
+  "happy": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "468cc73a89f1"
+  },
+  "slide": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "d7d7ae6a3616"
+  },
+  "basketball": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "5c0288b00d45"
+  },
+  "tricycle": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "69264008c734"
+  },
+  "friend": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "bcfccc6ee7ef"
+  },
+  "dad": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "2fa8367ff34c"
+  },
+  "family": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "558a92c66468"
+  },
+  "mom": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "b7c5cd45a0b6"
+  },
+  "brother": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "86ecb49a703e"
+  },
+  "people": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "e147006b9637"
+  },
+  "sister": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "f1790b920333"
+  },
+  "grandma": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "86bdb85ffa26"
+  },
+  "student": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "088c63179e98"
+  },
+  "they": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "0b40b2bb8988"
+  },
+  "mine": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "0a33671ed44d"
+  },
+  "grandpa": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "5b3f041c8a1d"
+  },
+  "girl": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "b3d043d078d8"
+  },
+  "she": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "c06461ef9dc1"
+  },
+  "we": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "9abcfb1dd131"
+  },
+  "baby": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "298fd8b02dac"
+  },
+  "teacher": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "26828f991dcb"
+  },
+  "boy": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "efa4556f40fd"
+  },
+  "school_people": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "99ac9415d05e"
+  },
+  "actions": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "ac9e727e59b4"
+  },
+  "play": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "a67ecd4ae63c"
+  },
+  "read": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "f4f3be7f9982"
+  },
+  "stop": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "e2b9e6080712"
+  },
+  "want": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "098c8ca43889"
+  },
+  "take": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "547c57feb430"
+  },
+  "tell": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "57e163fef486"
+  },
+  "turn": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "5fa96a567b6a"
+  },
+  "watch": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "9b0ccafdddd3"
+  },
+  "eat": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "4855f89d18d4"
+  },
+  "drink": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "f18fe4bb323d"
+  },
+  "finish": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "5fd30a363ac7"
+  },
+  "get": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "4f0fa0bceaeb"
+  },
+  "come": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "a414a9b5a468"
+  },
+  "go": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "07db81aed63c"
+  },
+  "help": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "d23cd2ba34ba"
+  },
+  "open": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "2f605bfbb9f3"
+  },
+  "put": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "6d426226ad25"
+  },
+  "like": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "6abc5fc20ada"
+  },
+  "answer": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "984eca5b5984"
+  },
+  "ask": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "5e139230df23"
+  },
+  "buy": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "2e601536e6c9"
+  },
+  "call": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "5650a2f6a26d"
+  },
+  "clean": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "77d1ea9f2abb"
+  },
+  "cook": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "0f01c0e0f93f"
+  },
+  "color": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "622059fb4e0e"
+  },
+  "close": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "fd8a7ebda877"
+  },
+  "feel": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "ab3ecdef660f"
+  },
+  "give": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "6d5d795902e7"
+  },
+  "have": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "2d666fbf342a"
+  },
+  "dance": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "cd71cb4a7f3b"
+  },
+  "draw": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "e8fbca189b55"
+  },
+  "drive": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "9e975218ddd6"
+  },
+  "hurt": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "781873214c60"
+  },
+  "hear": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "059afa6c9dd0"
+  },
+  "know": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "4a040e67abc2"
+  },
+  "listen": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "38d5f1beff90"
+  },
+  "look": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "9c2cbd2e2f3a"
+  },
+  "find": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "ba369126b86a"
+  },
+  "jump": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "b38ccc3d2e89"
+  },
+  "learn": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "e5336bfe4310"
+  },
+  "leave": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "d2946d2cc450"
+  },
+  "love": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "3f49f48e33fd"
+  },
+  "make": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "0ee78a26923a"
+  },
+  "need": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "4f386f402757"
+  },
+  "line_up": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "2e1c3ec5e32a"
+  },
+  "pull": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "7c904d7b6423"
+  },
+  "push": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "c24cb5bb6fc8"
+  },
+  "remember": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "593cd9e35f9e"
+  },
+  "ride": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "cc38812731c4"
+  },
+  "say": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "c2191e3506c0"
+  },
+  "see": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "59c4fbb369aa"
+  },
+  "show": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "ddd43c53e04f"
+  },
+  "run": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "ecba1bb20c07"
+  },
+  "shop": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "6dc2094dfef9"
+  },
+  "sing": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "a72578e15349"
+  },
+  "sit": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "6270396d8e1b"
+  },
+  "sleep": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "4813d104667f"
+  },
+  "talk": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "7ca530801e7a"
+  },
+  "walk": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "f7b222e0dfde"
+  },
+  "think": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "6c2001024196"
+  },
+  "stand": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "db8f78f0a98f"
+  },
+  "swim": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "6180a03a0555"
+  },
+  "swing": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "f75d3656ef68"
+  },
+  "write": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "213049bff18a"
+  },
+  "wash": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "92a27bc1c7a1"
+  },
+  "wear": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "a3729b0e8662"
+  },
+  "work": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "5ef88ab8dd5d"
+  },
+  "blow": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "ec4ae3848c91"
+  },
+  "blush": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "6f357d9d7f23"
+  },
+  "bowl": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "456f825ab9b0"
+  },
+  "brush": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "f35ae2f72e99"
+  },
+  "catch": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "54a6d4001f93"
+  },
+  "chew": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "2782611f99ea"
+  },
+  "clap": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "08c5e947dc76"
+  },
+  "cry": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "7532dc2302d5"
+  },
+  "dress_up": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "0b0e4e86eb4d"
+  },
+  "dry": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "5fcfba596b32"
+  },
+  "email": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "d92156fb2cbf"
+  },
+  "fall": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "3deabd05163d"
+  },
+  "fly": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "16568301996b"
+  },
+  "forget": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "186537a0c060"
+  },
+  "guess": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "d4f51fcaae52"
+  },
+  "hate": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "8c346ef0813d"
+  },
+  "hope": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "de49ca4ff213"
+  },
+  "kick": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "5f504d946e38"
+  },
+  "kiss": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "d2557a3c8f53"
+  },
+  "live": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "8d5668e71bb6"
+  },
+  "lose": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "eed9d022e16f"
+  },
+  "meet": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "4e854c70a003",
+    "refreshed": false
+  },
+  "move": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "cb43ed26c1f8",
+    "refreshed": false
+  },
+  "nap": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "e5439f0bf3fc",
+    "refreshed": false
+  },
+  "paint": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "8f8733647a08",
+    "refreshed": false
+  },
+  "pray": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "57b9aa43f48e"
+  },
+  "smell": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "385528f00909"
+  },
+  "wait": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "fe0873f9c836"
+  },
+  "wish": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "759d9c257412"
+  },
+  "brush_teeth": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "7611def557db"
+  },
+  "speak": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "eb01ff179dff"
+  },
+  "throw": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "1187ad78f004"
+  },
+  "try": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "7d85c7023b23"
+  },
+  "understand": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "0fad8d3cefb5"
+  },
+  "use": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "fb01913287de"
+  },
+  "wash_hair": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "cff7836fc58f"
+  },
+  "bathe": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "baba9c9f7cc6"
+  },
+  "shower": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "1bccf91eca12"
+  },
+  "wash_hands": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "e636b7de49c7"
+  },
+  "polish_nails": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "9d1dca6eda37"
+  },
+  "social": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "8b1e3490e37e"
+  },
+  "yes": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "084419fe577e"
+  },
+  "no": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "f8bc14dd09a2"
+  },
+  "bathroom": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "a23de04babf8"
+  },
+  "sorry": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "ba1e162570aa"
+  },
+  "excuse_me": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "91364cab2d12"
+  },
+  "problem": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "6dbc4c86d0a3"
+  },
+  "i_dont_know": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "869d7b627f81"
+  },
+  "maybe": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "2d439c1b81a7"
+  },
+  "hello": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "7f74123233a7"
+  },
+  "whats_up": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "803046ef2066"
+  },
+  "goodbye": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "c3ff11fdb1f0"
+  },
+  "goodnight": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "2cc57d403887"
+  },
+  "nice_to_meet": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "add3f20dff49"
+  },
+  "please": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "ec3b2f9a9276"
+  },
+  "thank_you": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "bb3b123e3a32"
+  },
+  "youre_welcome": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "f127fa7a56ea"
+  },
+  "okay": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "00f6456f7c85"
+  },
+  "hungry": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "4497be30ee48"
+  },
+  "thirsty": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "4d212fbbd55b"
+  },
+  "sick": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "89ad757fc14f"
+  },
+  "be_quiet": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "8628ba5816b6",
+    "refreshed": false
+  },
+  "cool": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "f0e023653872"
+  },
+  "great": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "3b9f4c6e989b"
+  },
+  "uh_oh": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "f18ed418302f"
+  },
+  "no_way": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "4ebec8814d44"
+  },
+  "i_love_you": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "40285655b799"
+  },
+  "awesome": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "12563f211465"
+  },
+  "oh_my": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "2bf3d2d40bb2"
+  },
+  "funny": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "03b2ced5495f"
+  },
+  "school": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "74eb0f302363"
+  },
+  "places": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "4c0d2b13aefb"
+  },
+  "house": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "c8421bb1bbbb"
+  },
+  "bedroom": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "ef1cf9928e69"
+  },
+  "closet": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "e1c9dce56fb1"
+  },
+  "dining_room": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "5034d850a272"
+  },
+  "kitchen": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "82e5a62badde"
+  },
+  "living_room": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "656c6b2c0765"
+  },
+  "laundry": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "09b34c1b6062"
+  },
+  "door": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "25177895cab0"
+  },
+  "window": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "a99c60e8c564"
+  },
+  "building": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "8f4d937ceec4"
+  },
+  "airport": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "c07a4001257f"
+  },
+  "bowling_alley": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "e438e26e32e7"
+  },
+  "church": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "d829eac09f49"
+  },
+  "doctor": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "d380ec271609"
+  },
+  "grocery_store": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "da6106c84344"
+  },
+  "mall": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "b8c75850ff42"
+  },
+  "movie": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "a82502638c3f"
+  },
+  "restaurant": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "debb6d62bee1"
+  },
+  "store": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "5a9e4bb59c94"
+  },
+  "outside": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "7d501729c51f"
+  },
+  "beach": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "09baf3b7cb3d"
+  },
+  "camp": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "bf8af88772db"
+  },
+  "farm": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "625a12ce9b94"
+  },
+  "lake": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "5b45b8bba1e5"
+  },
+  "ocean": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "29288d495b0f"
+  },
+  "park": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "7b7908ed76e0"
+  },
+  "playground": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "5c4c71f11ca9"
+  },
+  "pool": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "ca03d5404439"
+  },
+  "zoo": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "47a0b220d3fe"
+  },
+  "class": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "c696afdb2456"
+  },
+  "bus": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "db825a2d6465"
+  },
+  "library": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "2371d32fd389"
+  },
+  "lunch": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "ea10a8029398"
+  },
+  "therapy": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "52cffb2fa4ea"
+  },
+  "speech": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "8e18a4f0f0f3"
+  },
+  "drinks": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "cb0df579fd95"
+  },
+  "juice": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "cad61820b829"
+  },
+  "milk": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "37a0a70b9cb0"
+  },
+  "chocolate_milk": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "a7ad853b530b"
+  },
+  "chocolate": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "2590bb9fa0b6"
+  },
+  "water": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "e03cde27659d"
+  },
+  "soda": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "8f129e63d71a"
+  },
+  "iced_tea": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "bc05e3bfb810"
+  },
+  "milkshake": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "e8afd54583bc"
+  },
+  "lemonade": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "544b386141cc"
+  },
+  "ice_cubes": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "a1ec09db1862"
+  },
+  "crackers": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "51757ba3a9f1"
+  },
+  "cookie": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "10f1c84ce56a"
+  },
+  "fruit_snack": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "80419f171eae"
+  },
+  "pudding": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "ebe96dcfd2fc"
+  },
+  "applesauce": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "9bc36404b023"
+  },
+  "yogurt": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "0a02fc5a8a68"
+  },
+  "popcorn": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "43726d32161d"
+  },
+  "chips": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "3b2175741804"
+  },
+  "meals": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "8e66db7b2d85"
+  },
+  "sandwich": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "ac8ff02b58b8"
+  },
+  "macaroni": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "242168fd19bd"
+  },
+  "pizza": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "61df65596c0e"
+  },
+  "hamburger": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "873c6c05e283"
+  },
+  "fries": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "f7b9c9e0bc1b"
+  },
+  "hot_dog": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "1c72be567046"
+  },
+  "nuggets": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "646a75b4cb39"
+  },
+  "salad": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "922580b94de2"
+  },
+  "soup": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "2a16a333823f"
+  },
+  "cereal": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "2386e7c081a0"
+  },
+  "oatmeal": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "414759fc8c24"
+  },
+  "toast": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "97febe1a9611"
+  },
+  "eggs": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "83b41b459f7a"
+  },
+  "pancakes": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "a6fbe77942e2"
+  },
+  "syrup": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "39da294896e7"
+  },
+  "peanut_butter": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "fde7a203bdd6"
+  },
+  "jelly": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "a17a80d8d53b"
+  },
+  "sausage": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "4091fc06a580"
+  },
+  "cheese": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "09630de629f9"
+  },
+  "fruit": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "8ff5a3cc3724"
+  },
+  "apple": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "a9eb36cafdc3"
+  },
+  "banana": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "7ec263f1b1f1"
+  },
+  "blueberries": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "349232603c75"
+  },
+  "orange": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "d088f9d21a9a"
+  },
+  "cherry": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "d4d8aa777020"
+  },
+  "grapes": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "c9c2ae8d9906"
+  },
+  "lemon": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "472285151a2c"
+  },
+  "strawberry": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "8f4ad21c9a24"
+  },
+  "pear": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "3bb125e9969f"
+  },
+  "veggie": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "356fff8e6974"
+  },
+  "broccoli": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "cdb9ee7275ac"
+  },
+  "carrot": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "6064d82c11ba"
+  },
+  "corn": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "fc1aa22ca7c8"
+  },
+  "cucumber": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "de08f0bf3ed3"
+  },
+  "green_beans": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "e72798b2c26c"
+  },
+  "pepper": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "8bf0c63c1a02"
+  },
+  "lettuce": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "4ad79bb52fd7"
+  },
+  "tomato": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "bba7f86a201d"
+  },
+  "potato": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "74124dc76dd2"
+  },
+  "shape": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "e1365560d3e1"
+  },
+  "circle": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "e6480d198bb9",
+    "refreshed": false
+  },
+  "square": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "c1de73d9b52a",
+    "refreshed": false
+  },
+  "heart": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "83f822f95cf7",
+    "refreshed": false
+  },
+  "triangle": {
+    "status": "approved",
+    "comment": "lets have the triangle point up",
+    "stamp": "eedc0ec4deae",
+    "refreshed": false
+  },
+  "diamond": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "d973804ecea7",
+    "refreshed": false
+  },
+  "star": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "17385823686a",
+    "refreshed": false
+  },
+  "rectangle": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "271ac26a655d",
+    "refreshed": false
+  },
+  "oval": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "df7936a2cb34",
+    "refreshed": false
+  },
+  "octagon": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "78792a123c11",
+    "refreshed": false
+  },
+  "art": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "2adc1a7b9355"
+  },
+  "markers": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "bb8183d39c0b"
+  },
+  "crayons": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "3d008fe9dcdd"
+  },
+  "pencil": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "78d2bb67b0f2"
+  },
+  "paintbrush": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "e9c2d3347582"
+  },
+  "scissors": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "cc67949c61f4"
+  },
+  "tape": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "33a0c0c841e5"
+  },
+  "glue": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "c596acf0a874"
+  },
+  "paper": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "96d9f79afd3a"
+  },
+  "body": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "8ce50b5505ab"
+  },
+  "head": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "bc541daaa308"
+  },
+  "eye": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "bb0b1496b868"
+  },
+  "ear": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "e06358d1ee32"
+  },
+  "nose": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "2e6576a3f664"
+  },
+  "mouth": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "fdb65f195047"
+  },
+  "arm": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "3b9bc5978d95"
+  },
+  "leg": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "975c5d82edf0"
+  },
+  "stomach": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "9e26a117011b"
+  },
+  "back": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "8bc8b0ed67a5"
+  },
+  "health": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "8d7a24c8878a"
+  },
+  "cold": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "66edc025632a"
+  },
+  "fever": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "b36e9fcab215"
+  },
+  "headache": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "abea78477807"
+  },
+  "sore_throat": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "65935de5f4e5"
+  },
+  "stomachache": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "0eb04b5f337e"
+  },
+  "toothache": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "533d505bd8a9"
+  },
+  "toy": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "702867a6ac4d"
+  },
+  "ipad": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "2b2d5125a956"
+  },
+  "blocks": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "4b167266b539"
+  },
+  "bubbles": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "72f0f3edf978"
+  },
+  "cars": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "e7c2e6b5b73c"
+  },
+  "trampoline": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "b32d1d363f41"
+  },
+  "puzzle": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "897ba98f24b3"
+  },
+  "playdoh": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "dc2d229762b8"
+  },
+  "doll": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "245f9c6ad211"
+  },
+  "sports": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "c96489fc84e4"
+  },
+  "baseball": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "c2e488e225fa"
+  },
+  "football": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "513b87015fd6"
+  },
+  "ball": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "3cedd1d0789a"
+  },
+  "soccer": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "0e448b1bd66d"
+  },
+  "tennis": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "9134f5f4a6a5"
+  },
+  "games": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "ab05ba3d63a7"
+  },
+  "bingo": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "87b914379135"
+  },
+  "cards": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "67e50af6d352"
+  },
+  "video_game": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "4ddd3a4c5b32"
+  },
+  "weather": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "716aa8771f37"
+  },
+  "cold_": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "19392a811837"
+  },
+  "hot": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "a26e9cacb5f2"
+  },
+  "cool_": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "f878e508f643"
+  },
+  "warm": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "f37958f56f63"
+  },
+  "rain": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "044aa2124579"
+  },
+  "cloud": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "727a2ad073de"
+  },
+  "sun": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "d191cc458204"
+  },
+  "wind": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "a69cb7ab3e2a"
+  },
+  "fog": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "a8f08de9f213",
+    "refreshed": false
+  },
+  "rainbow": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "c6ddc1c544c6"
+  },
+  "storm": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "c98a43719a08"
+  },
+  "lightning": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "0333c4804eb4"
+  },
+  "thunder": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "8aac3f681e09"
+  },
+  "tornado": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "b93d14791440"
+  },
+  "snow": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "45329084a2f4"
+  },
+  "describe": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "dddc7fb2f6bf"
+  },
+  "big": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "ce2df4f665f4"
+  },
+  "little": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "b03c5ac13273"
+  },
+  "clean_": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "35a85a7d13fb"
+  },
+  "dirty": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "1179ab951194"
+  },
+  "sad": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "c817352bf283"
+  },
+  "fine": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "81a5058c61da"
+  },
+  "okay_": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "57f7146bc8a1"
+  },
+  "bad": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "dadc9f6f0186"
+  },
+  "good": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "a2cdc1361daa"
+  },
+  "cold__": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "00c2d6ef1959"
+  },
+  "hot_": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "5f1051fc2810"
+  },
+  "easy": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "40e728b544e5"
+  },
+  "hard": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "07fdc3103e4f"
+  },
+  "more": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "0e58c3212d2c"
+  },
+  "fast": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "06e14c9be99e"
+  },
+  "slow": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "716cf18c4b07"
+  },
+  "full": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "5b4dc879ee0f"
+  },
+  "empty": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "aa57dcf99685"
+  },
+  "pretty": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "ce106598bb1a"
+  },
+  "ugly": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "4814641aefff"
+  },
+  "hard_": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "0995301f537f"
+  },
+  "soft": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "58c15ab8946d"
+  },
+  "busy": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "a5c1c1bf5596"
+  },
+  "cute": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "e0934ad4d12d"
+  },
+  "short": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "c5facdcdd155"
+  },
+  "long": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "f2491d0486ad"
+  },
+  "loud": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "8252eb44fabb"
+  },
+  "quiet": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "7eae3f8a5f8e"
+  },
+  "smart": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "ed26f64fc5d8"
+  },
+  "dumb": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "f3e786c440b6"
+  },
+  "excited": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "631d56af9bff"
+  },
+  "nice": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "c4cd259ff390"
+  },
+  "proud": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "b75409a3c399"
+  },
+  "fun": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "b83e7c2e4c3c"
+  },
+  "new": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "db2de92625ed"
+  },
+  "old": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "a9648c42b08f"
+  },
+  "right": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "27238974bcc1"
+  },
+  "wrong": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "7ddb4213e818"
+  },
+  "angry": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "9edf86a8e75d"
+  },
+  "bored": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "6db9ed3155d0"
+  },
+  "frustrated": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "3717432c77f3"
+  },
+  "mean": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "4578588a7cd8"
+  },
+  "yummy": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "3196e1e03eac"
+  },
+  "funny_": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "4d96138c37a7"
+  },
+  "same": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "916717ae9dd8"
+  },
+  "different": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "8e4280732af5"
+  },
+  "wet": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "956cb7b5065f"
+  },
+  "dry_": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "5e2a3ff67044"
+  },
+  "messy": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "c9bb4e0a7952"
+  },
+  "scared": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "2b7a8dd8212e"
+  },
+  "stinky": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "5f9a38976439"
+  },
+  "uncomfortable": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "bd45acce3c92"
+  },
+  "yucky": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "9d2f71c01021"
+  },
+  "better": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "605e3f96f95c"
+  },
+  "worse": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "1cc554b8a4c8"
+  },
+  "excellent": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "3c977bdf8fd7"
+  },
+  "terrible": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "1071955fefa3"
+  },
+  "heavy": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "ea09074a01a8"
+  },
+  "light": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "3dcf6f620b2d"
+  },
+  "together": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "ddf1e5c2d1e1"
+  },
+  "apart": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "04043339dda6"
+  },
+  "asleep": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "8f44bfd26bd5"
+  },
+  "crazy": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "560c861fddd2"
+  },
+  "best": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "1de300703fed"
+  },
+  "worst": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "6a8657465c36"
+  },
+  "exciting": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "aaa9a301a3cd"
+  },
+  "boring": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "a6ed41c7692b"
+  },
+  "high": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "b44da4413276"
+  },
+  "low": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "c6fd1e7c53f4"
+  },
+  "true": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "cf5ed6c2fafa"
+  },
+  "false": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "27e4d48c2fe2"
+  },
+  "quick": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "e132c0d2337c"
+  },
+  "silly": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "14d4021d64f7"
+  },
+  "broken": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "b6d6cef4b21d"
+  },
+  "fixed": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "b24f5b91e350"
+  },
+  "fat": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "65cb64e96e52"
+  },
+  "thin": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "fcdf5509613d"
+  },
+  "light_": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "fc736fe13b19"
+  },
+  "dark": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "58a410f690bd"
+  },
+  "young": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "b65442214e2e"
+  },
+  "old_": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "1d7c1ea83ecf"
+  },
+  "surprised": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "3d4738aa525a"
+  },
+  "terrific": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "983f6c18b787"
+  },
+  "cheap": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "d67beb493df7"
+  },
+  "expensive": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "8182784deb2b"
+  },
+  "few": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "1140d6fcc1f8"
+  },
+  "many": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "5b31626bfbca"
+  },
+  "near": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "7229eac6dbf7"
+  },
+  "far": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "46439b7a038f"
+  },
+  "alone": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "d41335520d9b"
+  },
+  "lonely": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "b5121e02d41e"
+  },
+  "afraid": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "72c0afa0dfa2"
+  },
+  "smelly": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "997057ffca70"
+  },
+  "there": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "42501fc6fabe"
+  },
+  "away": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "a429924f48b7"
+  },
+  "this": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "a2cdbb550b4f"
+  },
+  "again": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "f7c2e8fa607c"
+  },
+  "around": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "18c8b1304369"
+  },
+  "front": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "83e74494c2e6"
+  },
+  "back_": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "2644de9d95b3"
+  },
+  "behind": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "95a571632baf"
+  },
+  "top": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "ff8ffe6822dd"
+  },
+  "over": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "5363df01b8d2"
+  },
+  "under": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "faea75f3e95c"
+  },
+  "not": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "84acbc21c36e"
+  },
+  "don't": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "6da067984d72"
+  },
+  "between": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "cd71d19c3d88"
+  },
+  "middle": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "882686fa6d17"
+  },
+  "through": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "b4f6882ab21b"
+  },
+  "or": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "0fa1c4de7a5b"
+  },
+  "bottom": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "5efc6f9a6731"
+  },
+  "left": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "2953fae31ee9"
+  },
+  "right_": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "d6815f0138e6"
+  },
+  "red": {
+    "status": "approved",
+    "comment": "the colors should be identical to classic but on a black background.",
+    "stamp": "414dc95edcf5",
+    "refreshed": false
+  },
+  "orange_": {
+    "status": "approved",
+    "comment": "see red",
+    "stamp": "dc165d273679",
+    "refreshed": false
+  },
+  "yellow": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "06bd66277e5f",
+    "refreshed": false
+  },
+  "green": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "4c051c6ec961",
+    "refreshed": false
+  },
+  "blue": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "45848e28246d",
+    "refreshed": false
+  },
+  "purple": {
+    "status": "approved",
+    "comment": "see red comments, but this white band around the color is not bad",
+    "stamp": "717fb74e874c",
+    "refreshed": false
+  },
+  "pink": {
+    "status": "approved",
+    "comment": "this is what I expected all the colors to look like. But honestly, just re-using classic here might be fine too given the darker tones on a black background might fail",
+    "stamp": "2490752da286",
+    "refreshed": false
+  },
+  "black": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "9a4af4833bb9",
+    "refreshed": false
+  },
+  "brown": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "adba256d49a1",
+    "refreshed": false
+  },
+  "white": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "ea940a3c0dab",
+    "refreshed": false
+  },
+  "grey": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "c5f570ff6319",
+    "refreshed": false
+  },
+  "gold": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "7d05b396f4c0",
+    "refreshed": false
+  },
+  "silver": {
+    "status": "approved",
+    "comment": "use a colored circle",
+    "stamp": "997b84a220c6",
+    "refreshed": false
+  },
+  "tan": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "575116274a51",
+    "refreshed": false
+  },
+  "colors": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "a028f0b13cde"
+  },
+  "he": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "9593b40d5f66"
+  },
+  "how_are_you": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "85f9eac7128b"
+  },
+  "i_love_it": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "558898579af6"
+  },
+  "in": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "6908309fa93c"
+  },
+  "on": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "c3202b428555"
+  },
+  "off": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "c14ef145d484"
+  },
+  "out": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "2a824d97b90a"
+  },
+  "up": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "63d070e9222b"
+  },
+  "down": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "88fac245f8fe"
+  },
+  "with": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "253127f879ae"
+  },
+  "for": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "b18e00d25148"
+  },
+  "that": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "9093de62cf7e",
+    "refreshed": false
+  },
+  "all": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "863a6bc02e75",
+    "refreshed": false
+  },
+  "here": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "6dfb2d9dccc8",
+    "refreshed": false
+  },
+  "all_done": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "7734df504019",
+    "refreshed": false
+  },
+  "i": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "77577d409c1d"
+  },
+  "me": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "a5a68ce8aabc"
+  },
+  "my": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "584a6c426bed"
+  },
+  "you": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "ed1ac0f663cd"
+  },
+  "your": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "bfdaba26fd73"
+  },
+  "it": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "d21b46f3efe6"
+  },
+  "toilet": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "8b9c7fd85c82"
+  },
+  "backyard": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "0d90c037bab9"
+  },
+  "cow": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "7d9512d90e31",
+    "refreshed": false
+  },
+  "pig": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "5097dfee4070",
+    "refreshed": false
+  },
+  "horse": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "f55231155e0a",
+    "refreshed": false
+  },
+  "chicken": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "c931f299e0d8",
+    "refreshed": false
+  },
+  "sheep": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "26b7810dbc18",
+    "refreshed": false
+  },
+  "rooster": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "aa80824de44e",
+    "refreshed": false
+  },
+  "tractor": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "0c4834475e8b",
+    "refreshed": false
+  },
+  "barn": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "08915af212b4",
+    "refreshed": false
+  },
+  "farmer": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "673454954452",
+    "refreshed": false
+  },
+  "egg": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "71f9cf8f0165",
+    "refreshed": false
+  },
+  "hay": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "7c854a68c004",
+    "refreshed": false
+  },
+  "crab": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "a94039078cbf",
+    "refreshed": false
+  },
+  "starfish": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "221788e7b8f3",
+    "refreshed": false
+  },
+  "shell": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "fa888a0652f4",
+    "refreshed": false
+  },
+  "seaweed": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "fec7186db4a7",
+    "refreshed": false
+  },
+  "fish": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "554f479e8010",
+    "refreshed": false
+  },
+  "snail": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "5a0036f7b88d",
+    "refreshed": false
+  },
+  "anemone": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "07490dfabfb7",
+    "refreshed": false
+  },
+  "spaghetti": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "49fe5a90f9be",
+    "refreshed": false
+  },
+  "plate": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "6df47ad0dfb1",
+    "refreshed": false
+  },
+  "fork": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "349e2c1dfb5d",
+    "refreshed": false
+  },
+  "cup": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "724ef11bbbbe",
+    "refreshed": false
+  },
+  "napkin": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "b4927d4c5231",
+    "refreshed": false
+  },
+  "rocket": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "544e75b76937",
+    "refreshed": false
+  },
+  "astronaut": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "921d5cde1ff5",
+    "refreshed": false
+  },
+  "planet": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "8a9a0bfdf75e",
+    "refreshed": false
+  },
+  "moon": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "ca110035694b",
+    "refreshed": false
+  },
+  "comet": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "4313e4c3ccc2",
+    "refreshed": false
+  },
+  "alien": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "760a8f19bcb1",
+    "refreshed": false
+  },
+  "spaceship": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "bb0592c4f54e",
+    "refreshed": false
+  },
+  "telescope": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "82b75bf36772",
+    "refreshed": false
+  },
+  "satellite": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "83f8735dcd11",
+    "refreshed": false
+  },
+  "galaxy": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "bcfd8139771c",
+    "refreshed": false
+  },
+  "dinosaur": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "66b2ea88ccbc",
+    "refreshed": false
+  },
+  "trex": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "6b43445978cd",
+    "refreshed": false
+  },
+  "triceratops": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "c2b12e05b179",
+    "refreshed": false
+  },
+  "stegosaurus": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "d874c5b14693",
+    "refreshed": false
+  },
+  "pterodactyl": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "d0631161865f",
+    "refreshed": false
+  },
+  "brontosaurus": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "1485d08e47aa",
+    "refreshed": false
+  },
+  "raptor": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "87952cbe13c2",
+    "refreshed": false
+  },
+  "fossil": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "8a17c5a28e7f",
+    "refreshed": false
+  },
+  "volcano": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "042228925c72",
+    "refreshed": false
+  },
+  "dino_egg": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "c3587103e536",
+    "refreshed": false
+  },
+  "car": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "c751c7983725",
+    "refreshed": false
+  },
+  "truck": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "3ee9ebcd5196",
+    "refreshed": false
+  },
+  "train": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "38916d8a4ab3",
+    "refreshed": false
+  },
+  "airplane": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "e16d5c2c3785",
+    "refreshed": false
+  },
+  "boat": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "f30714e44531",
+    "refreshed": false
+  },
+  "bicycle": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "a1a2cf37ffeb",
+    "refreshed": false
+  },
+  "helicopter": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "c50df7cc5091",
+    "refreshed": false
+  },
+  "fire_truck": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "d0543ae7991d",
+    "refreshed": false
+  },
+  "ambulance": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "39eb93a078ac",
+    "refreshed": false
+  },
+  "police_car": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "8a0a9578705a",
+    "refreshed": false
+  },
+  "packcover_farm": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "36036cfa77f5",
+    "refreshed": false
+  },
+  "packcover_tidepools": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "e4d6ed510e08",
+    "refreshed": false
+  },
+  "packcover_mealtime": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "494738808fa0",
+    "refreshed": false
+  },
+  "packcover_space": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "6ea4b07aaa53",
+    "refreshed": false
+  },
+  "packcover_dinosaurs": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "ad14ff19e833",
+    "refreshed": false
+  },
+  "packcover_vehicles": {
+    "status": "approved",
+    "comment": "",
+    "stamp": "73d4c2dab93f",
+    "refreshed": false
+  }
+}
