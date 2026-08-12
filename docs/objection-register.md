@@ -132,7 +132,7 @@ backlog item, and it is the one to bring to experts before building anything.
 **Verdict: Answered. This is the strongest true answer we have.**
 
 Yes, and it is the core of the design. A word is one `TileModel` with one
-identity, appearing on as many pages and boards as you like. Selecting up to
+identity, appearing on as many pages and scenes as you like. Selecting up to
 `maxSelectedTiles` (2–8, default 4) tiles composes freely:
 
 - `like` + `chocolate` → liking it
@@ -163,7 +163,7 @@ nothing.
 token accounting in the app to support it — that is gate 4 of
 `docs/plan-2026-08-06.md`. Art generation almost certainly dwarfs sentence
 generation, so the honest claim is probably "pennies a month to talk, plus a
-one-time cost when a caregiver builds a new board." Do not quote the number
+one-time cost when a caregiver builds a new scene." Do not quote the number
 until the ledger ships.
 
 The real friction is not the money, it is that a caregiver must create an

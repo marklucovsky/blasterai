@@ -91,7 +91,7 @@ live — do not narrate slides. Lead with:
 2. Repetition → escalation. The idea most likely to be new to them.
 3. Single-word mode. The trust beat for a skeptical clinician: AI is optional.
 4. Caregiver refine / hand-type / suppress. The answer to "what if it's wrong."
-5. Board generation from a plain-language goal, **and** the no-AI, no-key
+5. Scene generation from a plain-language goal, **and** the no-AI, no-key
    Build-from-Collections path.
 
 **Objections (30 min).** They will already be talking. Do not run a script —

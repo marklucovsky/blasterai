@@ -95,7 +95,7 @@ enum CollectionSource {
     /// source, plus a generated **home page** whose tiles are silent nav links to
     /// each topic page. Installs any pack words, mints each page's link tile (with
     /// that source's cover), and inserts the scene. Returns nil if no source
-    /// yields tiles. The caller saves. (This is the "New Board from Collections"
+    /// yields tiles. The caller saves. (This is the "New Scene from Collections"
     /// builder — the AI generator remains its own path.)
     static func buildScene(name: String,
                            sources: [CollectionSource],

@@ -79,11 +79,11 @@ Three outcomes:
 |---|---|---|
 | **Allowed** | Nothing — it's added | — |
 | **Flagged** 🟡 | "sensitive — review before adding" | **Keep** or **Remove**. Your call. |
-| **Blocked** | "not appropriate for a young board" | Left off |
+| **Blocked** | "not appropriate for a young scene" | Left off |
 
-**When a board or page is generated, Accept is gated on resolving the flags.**
+**When a scene or page is generated, Accept is gated on resolving the flags.**
 The banner says "N flagged — keep or remove the 🟡 tiles to continue." That's
-deliberate: a flagged word shouldn't slip onto a child's board because someone
+deliberate: a flagged word shouldn't slip onto a child's scene because someone
 tapped Accept quickly.
 
 **Flagged is not blocked, and the distinction is the point.** Anatomical terms
@@ -100,12 +100,12 @@ the whole page with it, invisibly.
 
 ## Hiding a word without deleting it
 
-**Admin → Boards → Manage Vocabulary.**
+**Admin → Scenes → Manage Vocabulary.**
 
 Search, filter by class, and scope to **All**, **Needs review**, **Hidden**, or
 **Added by you**. Per word: **Hide**, **Restore**, or **Keep**.
 
-Hiding removes the word from the board and clears its cached sentences. **It is
+Hiding removes the word from the scene and clears its cached sentences. **It is
 reversible** — that's why it's the default rather than deletion. A word you
 hide today can come back next month without losing its picture or its history.
 
@@ -124,7 +124,7 @@ your device generates for. If you'd rather use a photo, add one in Tile
 Settings → **Photo**; a photo always wins over generated art, everywhere that
 tile appears, and syncs across your devices.
 
-If a board introduced several new words at once, the board editor shows a
+If a scene introduced several new words at once, the scene editor shows a
 **New-Word Art** section with a count and a single Generate button, rather than
 making you visit each tile.
 

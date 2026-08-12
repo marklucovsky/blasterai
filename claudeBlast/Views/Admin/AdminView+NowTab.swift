@@ -181,12 +181,12 @@ extension AdminView {
 
     /// Lets the user switch among installed scenes without exposing the
     /// editor surface. Therapist-style scene management stays in the
-    /// "Boards" section below; this is the parent-style "today is bedtime
-    /// → switch to the Bedtime board" path.
+    /// "Scenes" section below; this is the parent-style "today is bedtime
+    /// → switch to the Bedtime scene" path.
     @ViewBuilder
     var activeSceneSection: some View {
         if !scenes.isEmpty {
-            Section("Active Board") {
+            Section("Active Scene") {
                 ForEach(scenes) { scene in
                     Button {
                         try? scene.activate(context: modelContext)

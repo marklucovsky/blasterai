@@ -34,7 +34,7 @@ all, here, all_done, how_are_you, i_love_it, toilet, backyard
 ```
 
 That gap is not incidental. Core words are the highest-frequency tiles on any
-board, and the set that exists specifically for children with low vision is the
+scene, and the set that exists specifically for children with low vision is the
 one missing them — those tiles currently fall back to Playful-3D pastel clay.
 
 **Scores.**

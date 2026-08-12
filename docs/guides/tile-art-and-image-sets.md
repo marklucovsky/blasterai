@@ -8,7 +8,7 @@ the built-in styles are right.
 ## Switching style
 
 **Admin → Device → Tile Style.** It changes every tile everywhere,
-immediately. It's a per-device setting, not per-child or per-board.
+immediately. It's a per-device setting, not per-child or per-scene.
 
 Two styles ship:
 
@@ -51,7 +51,7 @@ prompting.
 per screen, or more, smaller ones. Per-device.
 
 The grid recomputes column count automatically and pages any overflow, so you
-can move this freely without breaking a board's layout.
+can move this freely without breaking a scene's layout.
 
 ---
 
@@ -94,10 +94,10 @@ the valuable part. Tell us and we'll help build it.
 Tiles that ship with the app have reviewed artwork in both styles. Words you
 add get AI-generated art automatically, in the background.
 
-**Generate all styles** (in the board editor's New-Word Art section, and in the
+**Generate all styles** (in the scene editor's New-Word Art section, and in the
 New Word sheet) makes art for every style rather than just the one you're
-using. Slower and slightly more expensive, but the board then still looks right
-if you or a family switch styles later. Worth it for a board you intend to
+using. Slower and slightly more expensive, but the scene then still looks right
+if you or a family switch styles later. Worth it for a scene you intend to
 share.
 
 ---

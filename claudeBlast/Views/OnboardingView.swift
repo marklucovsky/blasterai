@@ -283,14 +283,14 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Your name")
                 .font(.title.bold())
-            Text("Credited when you share boards, pages, or vocabulary packs you make — e.g. \u{201C}by Dr. Yalcin.\u{201D}")
+            Text("Credited when you share scenes, pages, or vocabulary packs you make — e.g. \u{201C}by Dr. Yalcin.\u{201D}")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             TextField("Dr. Yalcin", text: $authorName)
                 .textFieldStyle(.roundedBorder)
                 .textInputAutocapitalization(.words)
                 .autocorrectionDisabled()
-            Text("Optional — skip for now and set it anytime in Admin → Boards, before you first share.")
+            Text("Optional — skip for now and set it anytime in Admin → Scenes, before you first share.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -402,7 +402,7 @@ struct OnboardingView: View {
             Toggle(isOn: $icloudEnabled) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Enable iCloud sync").font(.headline)
-                    Text("Sync child profiles, boards, and history across your own Apple devices.")
+                    Text("Sync child profiles, scenes, and history across your own Apple devices.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }

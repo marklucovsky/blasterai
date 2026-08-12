@@ -22,7 +22,7 @@ returns them.
 
 ## Adding a page
 
-Open the board → **Add Page**. The sheet gives you six routes; pick by whether
+Open the scene → **Add Page**. The sheet gives you six routes; pick by whether
 you have a key and how much you want the AI to decide.
 
 | Route | Needs a key | What you get |
@@ -31,7 +31,7 @@ you have a key and how much you want the AI to decide.
 | **Build with AI** — a vetted prompt | no* | Same, from a known-good prompt |
 | **Start from a vocabulary pack** | no | Every word in that pack |
 | **Add a page of one word class** | no | Every word of that class you already have |
-| **Copy from another board** | no | An existing page's word tiles |
+| **Copy from another scene** | no | An existing page's word tiles |
 | **Skip AI — Create Empty Page** | no | Nothing. You add the tiles. |
 
 \* A vetted prompt you haven't edited is served from cache — no key, no tokens.
@@ -39,7 +39,7 @@ you have a key and how much you want the AI to decide.
 Always name the page first. Page names are lowercase slugs — `feelings`,
 `body_health` — and autocapitalisation is off for that field on purpose.
 
-**One thing to know about Copy from another board:** it copies the word tiles
+**One thing to know about Copy from another scene:** it copies the word tiles
 but **drops the navigation links**. A copied page won't take the child anywhere
 until you re-add the links. The sheet says so; it's easy to skip past.
 
@@ -81,12 +81,12 @@ A plain word tile always adds to the tray; the toggle is disabled for those.
 
 Two controls, and they do the same thing:
 
-- **Board Info → Home Page** — a picker listing every page
+- **Scene Info → Home Page** — a picker listing every page
 - Open a page → **Set as Home** in the header
 
 The page marked home shows a **HOME** badge in the page list. Turn home off on
 a page and it passes to the conventional `home` page, or to the first other
-page. A board with only one page keeps it as home.
+page. A scene with only one page keeps it as home.
 
 ---
 
@@ -114,15 +114,15 @@ automatically — there are no "next page" tiles to manage.
 
 That means a page with sixty tiles isn't an error, it just becomes a page the
 child has to scroll. Whether that's right depends on the child, and you know
-better than the app does. The **Focused layout** toggle in Board Info is the
+better than the app does. The **Focused layout** toggle in Scene Info is the
 blunt instrument for 1:1 sessions.
 
 **Tile size** is Admin → Device → **Tile Density**, roughly 64pt to 160pt.
-It's a per-device setting, not per-child or per-board.
+It's a per-device setting, not per-child or per-scene.
 
 ---
 
 ## Next
 
 - **[Adding vocabulary](adding-vocabulary.md)**
-- **[Sharing a board](sharing-boards.md)**
+- **[Sharing a scene](sharing-scenes.md)**

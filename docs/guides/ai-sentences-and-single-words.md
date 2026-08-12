@@ -146,4 +146,4 @@ anything in the app.
 ## Next
 
 - **[Adding vocabulary](adding-vocabulary.md)**
-- **[Sharing a board](sharing-boards.md)**
+- **[Sharing a scene](sharing-scenes.md)**

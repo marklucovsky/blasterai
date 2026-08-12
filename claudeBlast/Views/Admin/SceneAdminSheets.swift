@@ -26,7 +26,7 @@ struct AuthorNameField: View {
         } header: {
             Text("Author")
         } footer: {
-            Text("Optional. Boards you create and share are labeled \u{201C}by \(name.isEmpty ? "you" : name)\u{201D} so others know who made them. Set or change it anytime.")
+            Text("Optional. Scenes you create and share are labeled \u{201C}by \(name.isEmpty ? "you" : name)\u{201D} so others know who made them. Set or change it anytime.")
         }
         .onAppear {
             guard !loaded else { return }
@@ -130,7 +130,7 @@ struct SceneRow: View {
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
                 if isSystemScene {
-                    Text("Built-in board — defined by the app. Updates ship with new versions.")
+                    Text("Built-in scene — defined by the app. Updates ship with new versions.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else if !scene.descriptionText.isEmpty {
@@ -292,7 +292,7 @@ struct SceneGeneratorSheet: View {
                     onAccept: { scene, focused in buildAndAccept(scene, focused: focused) },
                     onCancel: { dismiss() }
                 )
-                .navigationTitle("Board Preview")
+                .navigationTitle("Scene Preview")
                 .navigationBarTitleDisplayMode(.inline)
             } else if showManual {
                 manualForm
@@ -350,7 +350,7 @@ struct SceneGeneratorSheet: View {
                     } header: {
                         Text("Start from an example")
                     } footer: {
-                        Text("Loads instantly as a ready-made board. Edit the description to generate a fresh one with AI.")
+                        Text("Loads instantly as a ready-made scene. Edit the description to generate a fresh one with AI.")
                             .font(.caption)
                     }
                 }
@@ -382,7 +382,7 @@ struct SceneGeneratorSheet: View {
 
                 if apiKey.isEmpty {
                     Section {
-                        Text("Add an OpenAI API key in Admin to generate custom boards. The ready-made examples above work without a key.")
+                        Text("Add an OpenAI API key in Admin to generate custom scenes. The ready-made examples above work without a key.")
                             .font(.caption)
                             .foregroundStyle(.orange)
                     }
@@ -401,10 +401,10 @@ struct SceneGeneratorSheet: View {
                             Text("Generating…")
                         }
                     } else {
-                        // Demo mode always presents "Generate Board" ✨ so a
+                        // Demo mode always presents "Generate Scene" ✨ so a
                         // prebuilt sample reads as live AI on stage.
                         let isCached = StarterSceneCatalog.matching(sessionDescription) != nil && !demoMode
-                        Label(isCached ? "Load Example" : "Generate Board",
+                        Label(isCached ? "Load Example" : "Generate Scene",
                               systemImage: isCached ? "square.grid.2x2.fill" : "sparkles")
                     }
                 }
@@ -417,7 +417,7 @@ struct SceneGeneratorSheet: View {
                       || (apiKey.isEmpty && StarterSceneCatalog.matching(sessionDescription) == nil))
             .padding()
         }
-        .navigationTitle("New Board")
+        .navigationTitle("New Scene")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
@@ -432,11 +432,11 @@ struct SceneGeneratorSheet: View {
 
     private var manualForm: some View {
         Form {
-            Section("Board Name") {
+            Section("Scene Name") {
                 TextField("e.g. Morning routine", text: $manualName)
             }
         }
-        .navigationTitle("New Board")
+        .navigationTitle("New Scene")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
@@ -851,7 +851,7 @@ struct SceneRefineInputSheet: View {
                     Text("e.g. \u{201C}add a fish pond and a creek\u{201D}, or \u{201C}remove the tractor\u{201D}. The familiar core board stays the same.")
                 }
             }
-            .navigationTitle("Refine Board")
+            .navigationTitle("Refine Scene")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

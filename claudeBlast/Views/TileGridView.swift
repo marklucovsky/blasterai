@@ -199,9 +199,9 @@ struct TileGridView: View {
                     }
             } else {
                 ContentUnavailableView(
-                    "No Active Board",
+                    "No Active Scene",
                     systemImage: "questionmark.square",
-                    description: Text("No board is currently active.")
+                    description: Text("No scene is currently active.")
                 )
             }
         }
