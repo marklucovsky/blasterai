@@ -99,7 +99,7 @@ and helps the grown-ups around them grow that voice.*
 
 - **iPad & iPhone** — the same voice, at home and on the go
 - **AI sentence generation** — tiles become natural, age-appropriate speech
-- **AI image & scene generation** — grow vocabulary, build boards in seconds
+- **AI image & board generation** — grow vocabulary, build boards in seconds
 - **Private by design** — no backend, no analytics, on-device data
 
 </div>
@@ -124,7 +124,7 @@ and helps the grown-ups around them grow that voice.*
 
 **On the go**, they don't have to carry it. At the store, at Costco, at grandma's — **a parent's iPhone becomes the child's voice** the moment they need it.
 
-Same child, same words, same scenes — because everything syncs through the family's own iCloud.
+Same child, same words, same boards — because everything syncs through the family's own iCloud.
 
 </div>
 <div>
@@ -215,7 +215,7 @@ Add any word and BlasterAI **generates a matching tile** — styled to the child
 </div>
 <div>
 
-### 3 · Scenes & vocabulary
+### 3 · Boards & vocabulary
 Describe a goal in plain English → a **complete board in seconds**, plus ready-made packs to grow into new worlds.
 
 <br>
@@ -326,9 +326,9 @@ Every child's vocabulary is personal — BlasterAI isn't limited to the tiles it
 
 ---
 
-## 3 · Scenes — a board in seconds
+## 3 · A set of boards, in seconds
 
-<span class="cap">AI advantage · scenes & vocabulary</span>
+<span class="cap">AI advantage · boards & vocabulary</span>
 
 <div class="cols">
 <div>
@@ -339,13 +339,13 @@ Today, therapists hand-pick vocabulary from **5,000–10,000+** items — hours 
 
 > "feelings for a 5-year-old working on frustration vs anger"
 
-...and get a **complete, ready-to-use scene** in seconds — pages, tiles, images, and navigation, all wired up. **Hours → minutes.**
+...and get a **complete, ready-to-use set of boards** in seconds — pages, tiles, images, and navigation, all wired up. **Hours → minutes.**
 
 </div>
 <div>
 
 ![w:400](../assets/prototypes/cow_p3d.png)
-<span class="cap">`cow`, from the ready-made Farm pack — scenes and packs export as shareable JSON.</span>
+<span class="cap">`cow`, from the ready-made Farm pack — boards and packs export as shareable JSON.</span>
 
 </div>
 </div>
@@ -431,7 +431,7 @@ Today, therapists hand-pick vocabulary from **5,000–10,000+** items — hours 
 - **Product design** — the PRD, the "repetition as intensity" insight, a privacy-first architecture
 - **Competitive analysis & GTM** — mapping the landscape and the positioning
 - **Art & vocabulary** — a **500+ word** vocabulary with **1,500+ AI-generated** tile images across styles, plus expansion packs
-- **Built & shipped** — a working iOS app: onboarding, profiles, sentence + image + scene generation, eval-tested
+- **Built & shipped** — a working iOS app: onboarding, profiles, sentence + image + board generation, eval-tested
 
 ### ▶ Up next: a TestFlight pilot — real therapists & families, a caregiver feedback loop → then App Store launch
 
@@ -525,7 +525,7 @@ The runtime that helps these children be heard — sentences *and* images. Let's
 4. Staleness guard discards results if tiles changed in flight
 5. Speak + cache
 
-**Models:** `gpt-4o-mini` for sentences & scenes, `gpt-image-1` for tiles. Prompts load from editable JSON.
+**Models:** `gpt-4o-mini` for sentences & boards, `gpt-image-1` for tiles. Prompts load from editable JSON.
 
 </div>
 <div>
