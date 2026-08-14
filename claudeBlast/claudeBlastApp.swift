@@ -179,6 +179,9 @@ struct claudeBlastApp: App {
                 .onAppear {
                     profileResolver.configure(modelContext: modelContainer.mainContext)
                     imageResolver.configure(modelContext: modelContainer.mainContext)
+                    // Until this runs, API usage recording is a silent no-op —
+                    // never a crash, so previews and tests work unconfigured.
+                    UsageRecorder.shared.configure(context: modelContainer.mainContext)
                     sentenceEngine.configure(
                         modelContext: modelContainer.mainContext,
                         profileResolver: profileResolver

@@ -50,7 +50,11 @@ struct OpenAISentenceProvider: SentenceProvider {
             conversationContext: conversationContext
         ))
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        // `.sentenceGenerate` is the fallback only. Escalations and caregiver
+        // refines reach this same line, and `SentenceEngine` distinguishes them
+        // via the `UsageContext` task-local.
+        let (data, response) = try await OpenAIClient.send(
+            request, cause: .sentenceGenerate, endpoint: OpenAIEndpoint.chatCompletions)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw OpenAIError.httpError(statusCode: 0, body: "Invalid response")

@@ -26,7 +26,7 @@ import Foundation
 enum CacheKeyPolicy {
     /// The sentence model. `OpenAISentenceProvider` references this same constant
     /// so the request model and the cache version can never silently diverge.
-    nonisolated static let modelID = "gpt-4o-mini"
+    nonisolated static let modelID = ModelID.sentence
 
     /// Bump this whenever a prompt/rubric change should invalidate every cached
     /// sentence. Entries stamped with a different `versionToken` are swept:

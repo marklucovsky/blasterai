@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2026 Mark Lucovsky
 //
-//  AdminView+LogsTab.swift
+//  AdminView+ActivityTab.swift
 //  claudeBlast
 //
 
@@ -9,13 +9,14 @@ import SwiftUI
 import SwiftData
 
 extension AdminView {
-    var logsTab: some View {
+    var activityTab: some View {
         NavigationStack {
             List {
-                // Activity-first: what the child actually said leads; cache and
-                // promoted-tile diagnostics are secondary, further down.
+                // Activity-first: what the child actually said leads; AI usage,
+                // cache, and promoted-tile diagnostics are secondary, below it.
                 activitySummarySection
                 recentActivitySection
+                aiUsageSection
                 cachePerformanceSection
                 promotedTilesSection
                 sentenceCacheSection
@@ -23,10 +24,10 @@ extension AdminView {
                 developerSection
                 #endif
             }
-            .navigationTitle("Logs")
+            .navigationTitle("Activity")
             .toolbar { adminDoneToolbar }
         }
-        .tabItem { Label("Logs", systemImage: "list.bullet.rectangle.fill") }
+        .tabItem { Label("Activity", systemImage: "list.bullet.rectangle.fill") }
     }
 
     // MARK: - Activity summary (this week)
@@ -247,6 +248,113 @@ extension AdminView {
         if removed > 0 {
             try? modelContext.save()
         }
+    }
+
+    // MARK: - AI Usage
+    //
+    // Named "AI Usage", not "Spending". The subject is what the app DID — calls
+    // made, images generated, tokens consumed — with cost as one attribute of
+    // that activity. A section headed "Spending" would make a caregiver feel
+    // metered for letting their child talk, which is both unpleasant and
+    // backwards: talking costs fractions of a cent, and essentially all of the
+    // money goes to generating art.
+    //
+    // Cost figures appear HERE AND NOWHERE ELSE in the app. No badges, running
+    // totals, or "this will cost ~$X" hints in the editor, the art batch sheet,
+    // or any child-facing surface. Authoring stays about the work, not the meter.
+
+    var usageThisMonth: [APIUsageEvent] { UsageLedger.inMonth(apiUsageEvents) }
+
+    @ViewBuilder
+    var aiUsageSection: some View {
+        let month = usageThisMonth
+        let total = UsageLedger.summarize(month)
+        let split = UsageLedger.speechVsAuthoring(month)
+        let savings = UsageLedger.estimatedCacheSavingsMicros(events: month, cacheHits: cacheHitCount)
+
+        Section {
+            if month.isEmpty {
+                Text("No AI calls this month.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                HStack {
+                    StatBox(label: "Cost", value: UsageLedger.formatCost(total), color: .primary)
+                    StatBox(label: "Calls", value: "\(total.calls)", color: .blue)
+                    StatBox(label: "Images", value: "\(total.imageCount)", color: .purple)
+                    StatBox(label: "Tokens", value: UsageLedger.formatTokens(total.totalTokens), color: .secondary)
+                }
+                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+
+                // The comparison the public cost claim rests on. Shown as two
+                // plain lines rather than a chart because the ratio is the point
+                // and it's usually stark.
+                VStack(alignment: .leading, spacing: 4) {
+                    usageSplitRow(label: "Talking", summary: split.speech, color: .green)
+                    usageSplitRow(label: "Authoring", summary: split.authoring, color: .orange)
+                    if savings > 0 {
+                        Text("Cache avoided about \(UsageLedger.formatUSD(micros: savings)) of generation.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    if total.hasUnpriced {
+                        // Says plainly that the total is a floor. These rows keep
+                        // zero cost forever — history is never re-priced — so
+                        // without this the number silently understates.
+                        Text("\(UsageLedger.pluralize(total.unpricedCalls, "call")) couldn't be priced (unknown model at the time) and count as $0. The real total is higher.")
+                            .font(.caption2)
+                            .foregroundStyle(.orange)
+                    }
+                }
+                .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 8, trailing: 16))
+
+                ForEach(UsageLedger.byCause(month), id: \.cause) { row in
+                    usageCauseRow(cause: row.cause, summary: row.summary)
+                }
+
+                NavigationLink {
+                    UsageDetailView(events: apiUsageEvents)
+                } label: {
+                    Text("View all \(apiUsageEvents.count) calls")
+                        .font(.caption)
+                }
+            }
+        } header: {
+            Text("AI Usage — This Month")
+        } footer: {
+            Text("What this device spent against its own API key. Costs are computed from a price table last verified \(UsageLedger.pluralize(ModelPricing.daysSinceVerified(), "day")) ago; check them against your OpenAI dashboard.")
+        }
+    }
+
+    func usageSplitRow(label: String, summary: UsageSummary, color: Color) -> some View {
+        HStack(spacing: 6) {
+            Circle().fill(color).frame(width: 7, height: 7)
+            Text(label).font(.caption.weight(.medium))
+            Spacer()
+            Text(UsageLedger.pluralize(summary.calls, "call"))
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Text(UsageLedger.formatCost(summary))
+                .font(.caption.monospacedDigit())
+        }
+    }
+
+    func usageCauseRow(cause: UsageCause, summary: UsageSummary) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(cause.label).font(.caption.weight(.medium))
+                Text(UsageLedger.pluralize(summary.calls, "call")
+                     + " · \(UsageLedger.formatTokens(summary.totalTokens)) tokens"
+                     + (summary.imageCount > 0 ? " · " + UsageLedger.pluralize(summary.imageCount, "image") : ""))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Text(UsageLedger.formatCost(summary, isFreeCause: cause.isFreeEndpoint))
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(summary.costMicros == 0 ? .secondary : .primary)
+        }
+        .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
     }
 
     // MARK: - Sections

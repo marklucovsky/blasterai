@@ -57,7 +57,16 @@ enum TileImageGenerator {
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         request.timeoutInterval = 60 // image generation is slow (~10-20s)
 
-        return try await send(request)
+        // Record WHICH set this art was for — the distinction between "art for
+        // the set we ship" and "art for a set no release build can select", which
+        // is a live question for the bundle work. Set here rather than at the
+        // five view call sites, since the knowledge is already a parameter.
+        return try await UsageContext.$current.withValue(
+            UsageContext(cause: .tileImageGenerate, detail: imageSet.rawValue)
+        ) {
+            try await send(request, cause: .tileImageGenerate,
+                           endpoint: OpenAIEndpoint.imagesGenerations)
+        }
     }
 
     /// Refine an existing image (image-to-image) via /images/edits: sends the
@@ -96,7 +105,8 @@ enum TileImageGenerator {
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         request.httpBody = body
         request.timeoutInterval = 90
-        return try await send(request)
+        return try await send(request, cause: .tileImageRefine,
+                              endpoint: OpenAIEndpoint.imagesEdits)
     }
 
     private static func editPrompt(instruction: String) -> String {
@@ -107,8 +117,11 @@ enum TileImageGenerator {
 
     /// Shared: run an images request, surface OpenAI's structured error, decode
     /// the returned image (base64 or URL).
-    private static func send(_ request: URLRequest) async throws -> UIImage {
-        let (data, response) = try await URLSession.shared.data(for: request)
+    private static func send(_ request: URLRequest,
+                             cause: UsageCause,
+                             endpoint: String) async throws -> UIImage {
+        let (data, response) = try await OpenAIClient.send(
+            request, cause: cause, endpoint: endpoint)
         guard let http = response as? HTTPURLResponse else {
             throw OpenAIError.httpError(statusCode: 0, body: "Invalid response")
         }

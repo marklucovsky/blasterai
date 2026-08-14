@@ -52,7 +52,8 @@ struct SceneRefinerService {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await OpenAIClient.send(
+            request, cause: .sceneRefine, endpoint: OpenAIEndpoint.chatCompletions)
         guard let http = response as? HTTPURLResponse else {
             throw OpenAIError.httpError(statusCode: 0, body: "Invalid response")
         }

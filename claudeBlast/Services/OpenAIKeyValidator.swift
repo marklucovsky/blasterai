@@ -48,7 +48,9 @@ enum OpenAIKeyValidator {
         request.timeoutInterval = 15
 
         do {
-            let (_, response) = try await session.data(for: request)
+            let (_, response) = try await OpenAIClient.send(
+                request, cause: .keyValidation, endpoint: OpenAIEndpoint.models,
+                session: session)
             guard let http = response as? HTTPURLResponse else {
                 return .networkError("Invalid response")
             }

@@ -158,7 +158,10 @@ struct WordModerationService {
                 ["role": "user", "content": user],
             ],
         ])
-        let (data, response) = try await URLSession.shared.data(for: request)
+        // Tier 3 — the age-appropriateness rubric. The only billable part of a
+        // word audit; tier 1 is offline and tier 2 (below) is free.
+        let (data, response) = try await OpenAIClient.send(
+            request, cause: .wordAuditRubric, endpoint: OpenAIEndpoint.chatCompletions)
         guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
             throw OpenAIError.httpError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0,
                                        body: String(data: data, encoding: .utf8) ?? "")
@@ -184,7 +187,10 @@ struct WordModerationService {
             "model": "omni-moderation-latest",
             "input": words,
         ])
-        let (data, response) = try await URLSession.shared.data(for: request)
+        // Tier 2 — free policy screen. Recorded so the call volume behind an
+        // add-word is visible even though it costs nothing.
+        let (data, response) = try await OpenAIClient.send(
+            request, cause: .wordAuditScreen, endpoint: OpenAIEndpoint.moderations)
         guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
             throw OpenAIError.httpError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0,
                                        body: String(data: data, encoding: .utf8) ?? "")
