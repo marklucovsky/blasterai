@@ -84,6 +84,10 @@ enum BlasterSchemaV1: VersionedSchema {
     ///   and iPhone legitimately hold different roles.
     /// - `MetricEvent` — the raw analytics stream. Highest write volume in the
     ///   app, disposable, and only ever read as this device's aggregate counts.
+    /// - `APIUsageEvent` — what each OpenAI call consumed and cost. Local for the
+    ///   same reason as `MetricEvent`, and because the spend is incurred by *this*
+    ///   device against *this* device's API key, which is also the more correct
+    ///   meaning.
     ///
     /// Free to evolve without migration ceremony, since nothing here is
     /// frozen by a Production CloudKit schema.
@@ -91,6 +95,7 @@ enum BlasterSchemaV1: VersionedSchema {
         [
             DeviceProfile.self,
             MetricEvent.self,
+            APIUsageEvent.self,
         ]
     }
 

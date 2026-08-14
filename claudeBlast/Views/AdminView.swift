@@ -29,6 +29,7 @@ struct AdminView: View {
 
     // Finalized utterances — the activity-first Logs summary reads from here.
     @Query(sort: \LoggedUtterance.createdAt, order: .reverse) var loggedUtterances: [LoggedUtterance]
+    @Query(sort: \APIUsageEvent.timestamp, order: .reverse) var apiUsageEvents: [APIUsageEvent]
 
     /// Sums `MetricEvent.count` rather than counting rows, so a compacted
     /// aggregate row (one row standing for N occurrences) still reports the true
@@ -132,7 +133,9 @@ struct AdminView: View {
         //   Profiles — child roster management
         //   Scenes — scene library + editor
         //   Device — device config (provider, API key, role, PIN, engine)
-        //   Logs — diagnostics (cache, activity, promoted tiles)
+        //   Activity — what happened (utterances, AI usage + cost, cache,
+        //     promoted tiles). Renamed from "Logs": it leads with what the child
+        //     said, not with diagnostics, and it's where AI usage now reports.
         // Defaulting to Now means a parent landing in Admin to adjust
         // voice/volume/scene never has to scroll past therapist UI.
         TabView {
@@ -140,7 +143,7 @@ struct AdminView: View {
             profilesTab
             scenesTab
             deviceTab
-            logsTab
+            activityTab
         }
         .onAppear {
             // Global setup — request speech-recognition permission while

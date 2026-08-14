@@ -42,10 +42,19 @@ struct SchemaVersionTests {
 
     /// Device-local models never enter the CloudKit schema and stay freely
     /// mutable. `MetricEvent` moved here in the pre-promotion audit (D3).
+    /// Inventory tripwire: changing the device-local set must be a deliberate
+    /// edit here, never a side effect. `APIUsageEvent` was added in 2A (token/
+    /// cost accounting) — device-local because spend is incurred by *this* device
+    /// against *this* device's API key.
+    ///
+    /// Worth noting what did NOT change: `syncedModels` above is untouched, which
+    /// is the evidence that cost accounting added nothing to the partition bound
+    /// by the additive-only CloudKit rules.
     @Test func localModelsAreExactlyTheExpectedSet() {
         #expect(names(BlasterSchemaV1.localModels) == [
             "DeviceProfile",
             "MetricEvent",
+            "APIUsageEvent",
         ])
     }
 

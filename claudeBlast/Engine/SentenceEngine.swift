@@ -961,22 +961,36 @@ final class SentenceEngine {
         }
         let context = contextWithPrior + [userPrompt]
         let apiStart = ContinuousClock.now
+
+        // A plain sentence, an escalation, and a caregiver refine all reach the
+        // same line in `OpenAISentenceProvider`; only this method knows which is
+        // happening. The task-local carries that down without changing the
+        // `SentenceProvider` protocol (whose other two implementations make no
+        // network call at all). Escalation is worth separating because it
+        // deliberately bypasses the cache, so it is pure API spend.
+        let usage = UsageContext(
+            cause: refine ? .sentenceRefine : (repetition > 0 ? .sentenceEscalate : .sentenceGenerate),
+            childID: profileResolver?.active?.id ?? ""
+        )
+
         do {
             let result: SentenceResult
             let comparisonText: String?
 
             if let compProvider = comparisonProvider {
                 // Run both providers concurrently
-                async let primaryTask = provider.generateSentence(
-                    tiles: tiles, systemPrompt: systemPrompt, conversationContext: context)
-                async let compTask = Self.safeGenerate(
-                    provider: compProvider, tiles: tiles, systemPrompt: systemPrompt, context: context)
-
-                result = try await primaryTask
-                comparisonText = await compTask
+                (result, comparisonText) = try await UsageContext.$current.withValue(usage) {
+                    async let primaryTask = provider.generateSentence(
+                        tiles: tiles, systemPrompt: systemPrompt, conversationContext: context)
+                    async let compTask = Self.safeGenerate(
+                        provider: compProvider, tiles: tiles, systemPrompt: systemPrompt, context: context)
+                    return try await (primaryTask, compTask)
+                }
             } else {
-                result = try await provider.generateSentence(
-                    tiles: tiles, systemPrompt: systemPrompt, conversationContext: context)
+                result = try await UsageContext.$current.withValue(usage) {
+                    try await provider.generateSentence(
+                        tiles: tiles, systemPrompt: systemPrompt, conversationContext: context)
+                }
                 comparisonText = nil
             }
 
