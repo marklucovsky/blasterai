@@ -215,11 +215,12 @@ exception.
    That is a real strategic tension and it should be named rather than buried: our
    no-backend, on-device, privacy-preserving stance is a genuine differentiator in the US
    market and a genuine *disadvantage* in exactly the underserved markets where the mission
-   argument is strongest. Worth confirming directly with Brandi: **does their Khmer board
-   speak, and through what engine?** If it does, we know the bar. If it doesn't — if the
-   electronic version is silent and the speech only ever came from the child's
-   communication partner reading the tiles — then the gap is far smaller than it looks and
-   §5.1 stops being a blocker at all.
+   argument is strongest.
+
+   **Resolved by assumption 2026-08-13 (Mark):** treat Brandi's Khmer board as **classic AAC —
+   tap a tile, hear a word** — almost certainly backed by a cloud TTS. That is the bar, and
+   it is a *much* lower bar than it first appeared, because a closed vocabulary played one
+   word at a time does not need synthesis at runtime at all. See §11.
 
 ### 5.2 Culturally relevant art — converges with session 2
 
@@ -612,6 +613,97 @@ change landing immediately before a pilot**, and it needs eval evidence that it 
 baseline before it ships — the same discipline that took escalation 38% → 85%. Don't let the
 second half get squeezed into a polish session by the first half's deadline; if it can't be done
 with eval backing, ship the pilot on grade and change the axis on pilot feedback.
+
+---
+
+## 11. The English-side AI boundary — the architecture a non-English board actually wants
+
+Established 2026-08-13, from two of Mark's observations: that Brandi's board is classic AAC
+(tap tile → hear word, cloud TTS), and that **our existing OpenAI calls are likely to behave
+badly in a small-market language.**
+
+The second suspicion is well founded. For a low-resource language like Khmer we should expect:
+weaker generation quality from `gpt-4o-mini` than its English output would suggest; degraded
+`/v1/moderations` coverage, meaning our three-tier word-safety gate silently gets less reliable
+exactly where we can't tell; and materially worse tokenization (non-Latin scripts cost several
+times more tokens per character, and Khmer is written without spaces between words), which
+distorts the cost model session 2 is building.
+
+Worse than any of those: **we cannot evaluate the output.** Nobody on this project reads Khmer,
+and the eval harness is English. Shipping a generator whose sentences we are structurally
+unable to check — to a non-verbal child, as their voice — is not a quality problem, it's an
+ethical one.
+
+### The resolution: the AI never sees the target language
+
+Brandi's own process already draws this line, and we should adopt it as architecture:
+
+> generate in English → translate → native speaker refines → deploy
+
+Every AI service we run — `SceneGeneratorService`, `PageGeneratorService`,
+`TileSuggestionService`, `WordModerationService`, `TileImageGenerator` — sits **upstream of the
+translation boundary** and operates in English, driven by an English-speaking team. The
+deployed board downstream is a static artifact: concept keys (already language-neutral, §2),
+translated labels, art, and audio.
+
+**Consequence: every risk above disappears.** The models only ever see English. Moderation runs
+on English words. Token costs are English-shaped. And we can evaluate everything the AI
+produces, because it's produced in a language we read.
+
+The rule, stated so it can be checked:
+
+> **AI runs English-side, upstream of translation. The deployed non-English board contains no
+> live model call.**
+
+### Runtime: no backend, and better output than a proxy
+
+Mark's read is that a cloud TTS "doesn't necessarily mean we need a backend yet, and if we did
+it would probably just be a simple proxy." Correct — and under this design we likely need
+neither, because **a single-word board with a closed vocabulary has no novel utterances to
+synthesize.** ~200 words is ~200 audio clips. Synthesize (or record) them **once at authoring
+time** and ship them with the board.
+
+That is strictly better than a runtime proxy on every axis that matters here:
+
+- **Works offline** — decisive for schools in developing countries, where connectivity is the
+  binding constraint and a per-tap network round trip is a broken product
+- **No per-utterance cost**, no backend to run, no keys in-country
+- **No change to the no-external-backend privacy claim**
+- **Better audio**: for a low-resource language, a **native speaker recording 200 words** beats
+  cloud TTS outright — and Brandi's team is already sitting with native speakers for two weeks
+
+Cloud TTS then becomes an authoring-time convenience with a human-recording alternative, not a
+runtime dependency. A proxy stays available as a fallback if pre-synthesis proves impractical,
+but it should not be the design's assumption.
+
+### This unifies two problems into one capability
+
+Per-tile recorded/baked audio (`TileAudioVariant`, mirroring `TileArtVariant`, an additive and
+therefore always-legal record type — §5.1) solves **both**:
+
+- **§5.1** — languages iOS has no voice for
+- **§9** — the handoff, where locals add vocabulary for years. A local adding a word **records
+  it themselves on the device**: no cloud, no proxy, no API key, no BYOK problem, and higher
+  quality than synthesis. Graceful degradation is natural — a new word shows its tile and stays
+  silent until someone records it.
+
+That last point is the strongest argument in this document for the whole direction: the
+handoff-friendly answer and the no-voice answer are **the same feature**, and it is a feature
+that needs no network at all.
+
+### Caveats
+
+- **Sentence generation is out of scope for such a board**, by construction. `InteractionMode`
+  `.singleWord` already exists and is the right runtime mode. Be honest about it: for a
+  language with no voice, BlasterAI is a single-word AAC device plus an English-side authoring
+  pipeline — not a sentence generator. That's a narrower product than the US pitch, and it is
+  still the thing Brandi asked for.
+- **Machine translation is a first draft only.** Brandi's process already assumes a native
+  speaker refines it; ours must too. Whether that step uses Google Translate, OpenAI, or a
+  human is an implementation detail, not an architecture question.
+- **The boundary must be enforced, not just intended.** The failure mode is someone later
+  wiring "add a word" in-country straight into `WordModerationService` or `TileImageGenerator`
+  with a Khmer string. That's the moment all the risks above come back, quietly.
 
 ---
 
