@@ -691,6 +691,73 @@ That last point is the strongest argument in this document for the whole directi
 handoff-friendly answer and the no-voice answer are **the same feature**, and it is a feature
 that needs no network at all.
 
+### 11.1 The audio resolution chain
+
+Mark's proposal, 2026-08-13 — where iOS has no voice, and where the friction of API keys and
+costs is prohibitive for a local deployment, Blaster settles into **single-word mode** with a
+speech fallback chain:
+
+1. **If tile audio exists, play it** (recorded by a native speaker, or synthesized at authoring
+   time)
+2. **Otherwise, if TTS supports the board's language, speak it**
+3. **Otherwise, fall back to English from the tile key with underscores removed**
+
+This mirrors `TileImageResolver.image(for:)`, which is a good sign — art already resolves
+through exactly this kind of chain (user photo → active set → Playful-3D backfill → any
+variant → placeholder). **`TileAudioResolver` should be built as the audio twin of the image
+resolver**, not as ad-hoc branching in the speech path.
+
+**Step 3 is right to key off the *key*, not the label** — and subtly so. Once labels are
+localized (§3), `value`/`displayName` holds Khmer text, and handing Khmer text to an English
+voice yields garbage or silence rather than English. The **key is the only guaranteed-English
+string on the record**, which is §2's concept-key rule paying a dividend nobody designed it
+for. The transformation is already in the codebase: `TileModel`'s convenience initializer
+derives its English label by replacing `_` with a space.
+
+#### One change: step 3 fires *only* when it is wrong
+
+Worth noticing the trigger condition. Step 3 is reached only when there is no tile audio **and**
+no TTS for the board's language. But an English board always has a voice, so step 2 always
+catches it. **Step 3 therefore fires exclusively on non-English boards — which is precisely the
+case where speaking English is wrong.**
+
+The tile reads ញុំា and the device says "eat" in an American voice. For a Khmer child that isn't
+degraded communication, it's a false sound-symbol association taught by the device — and per
+this project's own framing, TTS *is* the child's feedback loop (the sentence text is what's for
+the caregiver). It's also useless to the communication partner, who doesn't speak English
+either.
+
+The art chain already sets the precedent for the better answer: it terminates in a
+**placeholder**, not in a plausible-but-wrong image. Audio should terminate the same way.
+
+**Recommended chain:**
+
+1. Tile audio, if present
+2. TTS, if a voice exists for the board's language
+3. English from the key — **but only when the board's language is English or unspecified.**
+   There it's a genuine safety net (it's what the app effectively does today), and it becomes a
+   no-op in the case where it would lie.
+4. **Otherwise: silent, and visibly flagged to the caregiver** — "N tiles need audio." Precedent
+   exists in `TileModel.needsReview`, which is already the pattern for "degraded for the child,
+   surfaced to the caregiver."
+
+Silence is honest and immediately actionable — it tells the local exactly which words to record,
+which is the very thing they can fix in thirty seconds with the device's microphone (§11). A
+confident wrong word tells them nothing and teaches the child something false.
+
+### 11.2 This configuration is a complete, viable product
+
+Worth stating plainly, because it reads like a degraded mode and isn't: **single-word mode +
+tile audio + no API key + no network is a coherent, complete AAC device.** Zero running cost,
+fully offline, no BYOK, no backend, no per-utterance spend. It is what a Cambodian classroom
+would actually deploy, and it dissolves the BYOK-hostility problem from §9 — a local extending
+the vocabulary needs a microphone, not an OpenAI account.
+
+It also strengthens something in session 4. **Pilot gate 6 is "a beta reviewer has no OpenAI
+key"** — and the reviewer's no-key path *is this configuration*. Making the audio chain
+well-defined makes the reviewer story more robust as a side effect, which is a rare case of the
+mission work and the App Store work pulling the same direction.
+
 ### Caveats
 
 - **Sentence generation is out of scope for such a board**, by construction. `InteractionMode`
