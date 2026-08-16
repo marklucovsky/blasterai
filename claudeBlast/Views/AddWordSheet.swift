@@ -381,7 +381,7 @@ struct AddWordSheet: View {
             }
         }
         if photoPreview == nil, let first = generatedArt.values.first {
-            photoPreview = UIImage(data: first)   // active set wasn't a target (e.g. arasaac)
+            photoPreview = UIImage(data: first)   // active set wasn't a generation target (e.g. High Contrast)
         }
     }
 

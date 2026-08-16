@@ -177,7 +177,7 @@ enum TileImageGenerator {
             return "3D clay/plasticine sculpture, soft rounded shapes, pastel-bright colors, clean solid-color background, no text. Square format, single clear subject centered."
         case .highContrast:
             return "High-contrast pictogram: one bold white subject on a pure solid black background, thick clean lines, no frame, no border, no text. Square format, subject centered."
-        case .arasaac, .classic:
+        case .classic:
             return "Flat 2D AAC pictogram, bold clean outlines, bright saturated solid colors, white background, no text. Square format, single clear subject centered."
         }
     }

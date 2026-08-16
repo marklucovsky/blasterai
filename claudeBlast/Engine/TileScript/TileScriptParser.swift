@@ -62,7 +62,11 @@ struct TileScriptParser {
         )
     }
 
-    /// Parse a `tileSet:` value (`classic` / `playful` / `arasaac` / `high-contrast`).
+    /// Parse a `tileSet:` value (`classic` / `playful` / `high-contrast`).
+    ///
+    /// A script naming `arasaac` now returns nil, as any unknown set does. That
+    /// set was removed and no compatibility mapping is provided — pre-pilot,
+    /// a stale reference is a delete-and-reinstall, not a shim to carry forward.
     static func parseImageSet(_ value: Any?) -> ImageSetID? {
         guard let raw = (value as? String)?
             .lowercased()
@@ -73,7 +77,6 @@ struct TileScriptParser {
         switch raw {
         case "classic": return .classic
         case "playful3d", "playful", "p3d", "3d": return .playful3D
-        case "arasaac", "legacy": return .arasaac
         case "highcontrast", "hc": return .highContrast
         default: return ImageSetID(rawValue: raw)
         }
