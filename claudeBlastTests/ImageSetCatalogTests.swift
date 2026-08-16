@@ -76,7 +76,7 @@ struct ImageSetCatalogTests {
             bundlePrefix: "khmer", version: "1.0.0",
             systemSetKey: "",                    // <- the whole test
             isShippable: true, isGenerationTarget: true,
-            stylePromptKey: "classic", toneExemplarKey: "")
+            stylePromptKey: "classic", toneExemplarKey: "", toneBase: nil)
         #expect(!installed.isSystemOwned)
         #expect(installed.acceptsNewWords)
     }
@@ -131,6 +131,53 @@ struct ImageSetCatalogTests {
         #expect(ImageSetID.classic.toneExemplarKey.isEmpty)
     }
 
+    // MARK: - Tone families
+
+    /// Every tone variant must name a base that exists and is itself a base.
+    /// Without the link, a runtime word-add generates each set independently and
+    /// the family stops being one figure: adding "swimmer" produced three
+    /// different swimmers, in different swimsuits, one wearing a cap.
+    @Test func toneVariantsPointAtARealBase() {
+        let variants = ImageSetCatalog.all.filter(\.isToneVariant)
+        #expect(!variants.isEmpty)
+        for v in variants {
+            let base = ImageSetCatalog.descriptor(for: v.toneBase!)
+            #expect(base != nil, "\(v.displayName) names a base that does not exist")
+            #expect(base?.isToneVariant == false, "tone bases must not themselves be variants")
+            // A variant is a recolour, so it has to be drawn the same way.
+            #expect(base?.stylePromptKey == v.stylePromptKey,
+                    "\(v.displayName) and its base are drawn in different styles")
+            // And it needs an exemplar, or there is nothing to recolour toward.
+            #expect(!v.toneExemplarKey.isEmpty)
+        }
+    }
+
+    @Test func classicToneFamilyIsComplete() {
+        let family = ImageSetCatalog.all.filter { $0.toneBase == .classic }.map(\.id)
+        #expect(Set(family) == [.classicMedium, .classicMediumDark])
+        #expect(ImageSetCatalog.descriptor(for: .classic)?.toneBase == nil)
+    }
+
+    /// Distinct styles must NOT be tone variants — recolouring Classic would not
+    /// produce Playful 3D or High Contrast art, it would produce Classic art in
+    /// the wrong set.
+    @Test func distinctStylesAreNotToneVariants() {
+        #expect(ImageSetCatalog.descriptor(for: .playful3D)?.isToneVariant == false)
+        #expect(ImageSetCatalog.descriptor(for: .highContrast)?.isToneVariant == false)
+    }
+
+    /// High Contrast ships and has a style prompt, so "Generate all styles" must
+    /// include it. It was excluded while the set was incomplete, and leaving that
+    /// stale meant the toggle silently skipped it — the Contrast slot just stayed
+    /// empty with no error.
+    @Test func everyShippableStyleIsAGenerationTarget() {
+        let targets = Set(ImageSetCatalog.generationTargets)
+        for set in ImageSetCatalog.all where set.isShippable {
+            #expect(targets.contains(set.id),
+                    "\(set.displayName) ships but 'generate all styles' skips it")
+        }
+    }
+
     @Test func exemplarTilesExistInTheirOwnSet() {
         for set in ImageSetCatalog.all where !set.toneExemplarKey.isEmpty {
             let name = "\(set.bundlePrefix)_\(set.toneExemplarKey)"
@@ -154,8 +201,12 @@ struct ImageSetCatalogTests {
         let ordered = ImageSetCatalog.generationTargets(preferring: .classicMediumDark)
         #expect(ordered.first == .classicMediumDark)
         #expect(Set(ordered) == Set(ImageSetCatalog.generationTargets))
-        // High Contrast isn't a generation target — nothing generates into it.
-        #expect(!ImageSetCatalog.generationTargets.contains(.highContrast))
+        // High Contrast IS a generation target now. This assertion previously
+        // said the opposite, encoding the state from when the set was incomplete
+        // and unshippable — which is exactly why "Generate all styles" left the
+        // Contrast slot empty with no error. It ships and has a style prompt, so
+        // it generates; `everyShippableStyleIsAGenerationTarget` guards the rule.
+        #expect(ImageSetCatalog.generationTargets.contains(.highContrast))
     }
 
     // MARK: - Reading persisted ids

@@ -71,6 +71,96 @@ enum TileImageGenerator {
         return try await matchToneIfNeeded(generated, imageSet: imageSet, apiKey: apiKey)
     }
 
+    /// Generate art for several sets at once, deriving tone variants from a
+    /// single shared base rather than generating each independently.
+    ///
+    /// ## Why this exists
+    ///
+    /// Generating per set produced a *different picture* for each. Adding
+    /// "swimmer" with all styles on gave three different swimmers across Classic,
+    /// Medium and Dark — different poses, different swimsuits, one in a cap. The
+    /// shipped tone sets are clones of one Classic source with only the skin
+    /// recoloured, and a runtime word-add has to obey the same rule or the sets
+    /// stop being a family: in AAC the figure is the referent, so a child whose
+    /// caregiver switches tone would meet a different person.
+    ///
+    /// So each tone family generates its base ONCE and recolours it per variant.
+    /// Genuinely different styles — Playful 3D, High Contrast — still generate
+    /// independently, because they are different art, not a recolour.
+    ///
+    /// Returns art per set. A set whose generation fails is simply absent, so one
+    /// failure never discards the styles that did succeed.
+    static func generateAll(displayName: String,
+                            wordClass: String,
+                            imageSets: [ImageSetID],
+                            detail: String = "",
+                            apiKey: String) async -> [ImageSetID: UIImage] {
+        guard !apiKey.isEmpty else { return [:] }
+        var out: [ImageSetID: UIImage] = [:]
+
+        // Bases first: a variant needs its base's image, and the base may not
+        // itself be among the requested sets (a caregiver on Dark with "all
+        // styles" off still needs Classic art to recolour).
+        let requested = Set(imageSets)
+        let variants = imageSets.filter { $0.descriptor?.isToneVariant == true }
+        let neededBases = Set(variants.compactMap { $0.descriptor?.toneBase })
+        let independents = imageSets.filter { $0.descriptor?.isToneVariant != true }
+
+        var baseImages: [ImageSetID: UIImage] = [:]
+        for base in Set(independents).union(neededBases) {
+            // `generateOne` deliberately skips tone-matching; a base has no tone
+            // to match, and matching here would recolour the source everything
+            // else derives from.
+            if let img = try? await generateOne(displayName: displayName,
+                                                wordClass: wordClass,
+                                                imageSet: base,
+                                                detail: detail,
+                                                apiKey: apiKey) {
+                baseImages[base] = img
+                if requested.contains(base) { out[base] = img }
+            }
+        }
+
+        for variant in variants {
+            guard let baseID = variant.descriptor?.toneBase,
+                  let baseImage = baseImages[baseID] else { continue }
+            // Same picture, skin recoloured to this set's exemplar.
+            out[variant] = (try? await matchToneIfNeeded(baseImage,
+                                                         imageSet: variant,
+                                                         apiKey: apiKey)) ?? baseImage
+        }
+        return out
+    }
+
+    /// One set's art with no tone matching — the raw style generation.
+    private static func generateOne(displayName: String,
+                                    wordClass: String,
+                                    imageSet: ImageSetID,
+                                    detail: String,
+                                    apiKey: String) async throws -> UIImage {
+        let body: [String: Any] = [
+            "model": model,
+            "prompt": prompt(displayName: displayName, wordClass: wordClass,
+                             imageSet: imageSet, detail: detail),
+            "size": "1024x1024",
+            "quality": quality,
+            "n": 1,
+        ]
+        var request = URLRequest(url: URL(string: "https://api.openai.com/v1/images/generations")!)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        request.timeoutInterval = 60
+
+        return try await UsageContext.$current.withValue(
+            UsageContext(cause: .tileImageGenerate, detail: imageSet.rawValue)
+        ) {
+            try await send(request, cause: .tileImageGenerate,
+                           endpoint: OpenAIEndpoint.imagesGenerations)
+        }
+    }
+
     /// Bring freshly generated art onto a tone set's skin tone.
     ///
     /// A caregiver on "Classic — Medium-Dark" who adds *policeman* gets art drawn

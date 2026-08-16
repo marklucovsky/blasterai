@@ -367,22 +367,31 @@ struct AddWordSheet: View {
         let targets = generateAllStyles
             ? ImageSetCatalog.generationTargets(preferring: resolver.activeSet)
             : [resolver.activeSet]
-        for set in targets {
+        // One call for all sets: tone variants share a single generated base so
+        // the family shows the same figure, differing only in skin.
+        let images = await TileImageGenerator.generateAll(
+            displayName: trimmedName, wordClass: wordClass,
+            imageSets: targets, detail: imageDetail, apiKey: apiKey)
+
+        for (set, image) in images {
             do {
-                let image = try await TileImageGenerator.generate(
-                    displayName: trimmedName, wordClass: wordClass,
-                    imageSet: set, detail: imageDetail, apiKey: apiKey)
                 let data = try TilePhotoProcessor.process(image)
                 generatedArt[set.rawValue] = data
                 if set == resolver.activeSet { photoPreview = UIImage(data: data) }
             } catch let err as TilePhotoProcessor.ProcessError {
                 photoError = err.errorDescription
             } catch {
-                photoError = (error as? LocalizedError)?.errorDescription ?? "Couldn't generate an image."
+                photoError = "Couldn't prepare the generated image."
             }
         }
+        if images.isEmpty {
+            photoError = "Couldn't generate an image."
+        } else if images.count < targets.count {
+            let missing = targets.filter { images[$0] == nil }.map(\.shortName)
+            photoError = "Couldn't generate: \(missing.joined(separator: ", "))."
+        }
         if photoPreview == nil, let first = generatedArt.values.first {
-            photoPreview = UIImage(data: first)   // active set wasn't a generation target (e.g. High Contrast)
+            photoPreview = UIImage(data: first)   // active set wasn't among the targets
         }
     }
 

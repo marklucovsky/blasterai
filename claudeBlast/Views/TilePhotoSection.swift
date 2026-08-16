@@ -173,18 +173,25 @@ struct TilePhotoSection: View {
         let targets = generateAllStyles
             ? ImageSetCatalog.generationTargets(preferring: resolver.activeSet)
             : [resolver.activeSet]
-        for set in targets {
-            do {
-                let image = try await TileImageGenerator.generate(
-                    displayName: tile.displayName, wordClass: tile.wordClass,
-                    imageSet: set, detail: imageDetail, apiKey: apiKey)
-                if let err = TilePhotoCommit.applyVariant(image, to: tile, imageSet: set,
-                                                          context: modelContext, resolver: resolver) {
-                    errorMessage = err
-                }
-            } catch {
-                errorMessage = (error as? LocalizedError)?.errorDescription ?? "Couldn't generate an image."
+        // One call for all sets: tone variants share a single generated base so
+        // the family shows the same figure, differing only in skin.
+        let images = await TileImageGenerator.generateAll(
+            displayName: tile.displayName, wordClass: tile.wordClass,
+            imageSets: targets, detail: imageDetail, apiKey: apiKey)
+
+        for (set, image) in images {
+            if let err = TilePhotoCommit.applyVariant(image, to: tile, imageSet: set,
+                                                      context: modelContext, resolver: resolver) {
+                errorMessage = err
             }
+        }
+        if images.isEmpty {
+            errorMessage = "Couldn't generate an image."
+        } else if images.count < targets.count {
+            // Name what is missing rather than reporting a bare success — a style
+            // that silently never appears reads as the app ignoring the request.
+            let missing = targets.filter { images[$0] == nil }.map(\.shortName)
+            errorMessage = "Couldn't generate: \(missing.joined(separator: ", "))."
         }
     }
 

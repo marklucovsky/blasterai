@@ -147,9 +147,22 @@ struct ImageSetDescriptor: Identifiable, Hashable, Sendable {
     /// as a colour swatch does. Empty for sets with no tone to match.
     let toneExemplarKey: String
 
+    /// The set this one is a skin-tone variant OF, or nil if it is a base.
+    ///
+    /// The shipped tone sets are clones of a single Classic source with only the
+    /// skin recoloured — that is what makes them a family rather than three
+    /// lookalike sets. A word added at runtime has to follow the same rule, and
+    /// without this it did not: each set generated independently, so "swimmer"
+    /// came out as three different swimmers in different swimsuits, one wearing a
+    /// cap. In AAC the figure is the referent, so a child switching tone would
+    /// have seen a different person, which is precisely the failure the sets were
+    /// built to avoid.
+    let toneBase: ImageSetID?
+
     var isSystemOwned: Bool { !systemSetKey.isEmpty }
     var slug: String { id.rawValue }
     var acceptsNewWords: Bool { isGenerationTarget && !stylePromptKey.isEmpty }
+    var isToneVariant: Bool { toneBase != nil }
 }
 
 /// The sets this install knows about.
@@ -197,7 +210,8 @@ enum ImageSetCatalog {
             isShippable: true,
             isGenerationTarget: true,
             stylePromptKey: "classic",
-            toneExemplarKey: ""),
+            toneExemplarKey: "",
+            toneBase: nil),
         ImageSetDescriptor(
             id: .classicMedium,
             setID: firstPartyID("classic_medium"),
@@ -212,7 +226,8 @@ enum ImageSetCatalog {
             stylePromptKey: "classic",
             // `mom` is a plain front-facing figure with a large, unambiguous area
             // of skin — the clearest colour reference in the set.
-            toneExemplarKey: "mom"),
+            toneExemplarKey: "mom",
+            toneBase: .classic),
         ImageSetDescriptor(
             id: .classicMediumDark,
             setID: firstPartyID("classic_medium_dark"),
@@ -225,7 +240,8 @@ enum ImageSetCatalog {
             isShippable: true,
             isGenerationTarget: true,
             stylePromptKey: "classic",
-            toneExemplarKey: "mom"),
+            toneExemplarKey: "mom",
+            toneBase: .classic),
         ImageSetDescriptor(
             id: .playful3D,
             setID: firstPartyID("playful_3d"),
@@ -238,7 +254,8 @@ enum ImageSetCatalog {
             isShippable: true,
             isGenerationTarget: true,
             stylePromptKey: "playful_3d",
-            toneExemplarKey: ""),
+            toneExemplarKey: "",
+            toneBase: nil),
         ImageSetDescriptor(
             id: .highContrast,
             setID: firstPartyID("high_contrast"),
@@ -249,9 +266,10 @@ enum ImageSetCatalog {
             version: "2.0.0",   // v2 — the complete 546-tile set; v1 had 23 gaps
             systemSetKey: "high_contrast",
             isShippable: true,
-            isGenerationTarget: false,
+            isGenerationTarget: true,
             stylePromptKey: "high_contrast_v2",
-            toneExemplarKey: ""),
+            toneExemplarKey: "",
+            toneBase: nil),
     ]
 
     /// Sets installed from outside the bundle. Empty until installable sets land;
