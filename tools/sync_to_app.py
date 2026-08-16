@@ -29,10 +29,13 @@ from pathlib import Path
 OPTIMIZED_BASE = Path("tools/tile_sets/optimized")
 APP_BUNDLE_DIR = Path("claudeBlast/TileImageSets")
 
+# High Contrast **v2** now ships as `hc_` — it is the approved 546-tile set with
+# full vocabulary coverage, where v1 had 23 gaps and was never shippable. v1 is
+# retired rather than renamed: keeping both would mean two sets competing for one
+# prefix, and nothing should be able to sync the superseded one by accident.
 SET_PREFIX = {
     "playful_3d": "p3d",
-    "high_contrast": "hc",
-    "high_contrast_v2": "hc2",
+    "high_contrast_v2": "hc",
     "classic": "cls",
 }
 
@@ -60,6 +63,36 @@ def load_approved(review_path: Path) -> set[str]:
     return approved
 
 
+def sync_pack_covers(set_name: str, dry_run: bool) -> int:
+    """Sync a set's pack covers, which live outside the set's own directory.
+
+    Covers sit in one shared `packcovers/` folder named `{prefix}_{pack}.png`,
+    not under `tile_sets/<set>/`, so a sync that only walked the set directory
+    silently shipped no covers at all. That is how the HEIC re-encode dropped
+    every pack cover — nothing crashed, the packs UI would just have rendered
+    placeholders where the artwork belongs.
+    """
+    prefix = SET_PREFIX.get(set_name)
+    src_dir = OPTIMIZED_BASE / "packcovers"
+    if not prefix or not src_dir.exists():
+        return 0
+    covers = sorted(src_dir.glob(f"{prefix}_*.heic")) or sorted(src_dir.glob(f"{prefix}_*.png"))
+    n = 0
+    for src in covers:
+        # Masters are named `{prefix}_{slug}`; the app resolves covers by
+        # `VocabPack.coverKey` → `{prefix}_packcover_{slug}`. Copying the master
+        # name straight across ships files nothing ever asks for, which looks
+        # like success and renders placeholders.
+        slug = src.stem[len(prefix) + 1:]
+        dst = APP_BUNDLE_DIR / f"{prefix}_packcover_{slug}{src.suffix}"
+        if dry_run:
+            print(f"  [COVER] {dst.name}")
+        else:
+            shutil.copy2(src, dst)
+        n += 1
+    return n
+
+
 def sync_set(set_name: str, dry_run: bool, only_changed: bool,
              approved: set[str] | None = None) -> None:
     src_dir = OPTIMIZED_BASE / set_name
@@ -72,9 +105,12 @@ def sync_set(set_name: str, dry_run: bool, only_changed: bool,
 
     APP_BUNDLE_DIR.mkdir(parents=True, exist_ok=True)
 
-    tiles = sorted(src_dir.glob("*.png"))
+    # HEIC is what ships (512/q65, approved 2026-08-15); PNG is still accepted so
+    # an older optimized/ directory syncs rather than failing confusingly.
+    tiles = sorted(src_dir.glob("*.heic")) or sorted(src_dir.glob("*.png"))
     if not tiles:
-        sys.exit(f"No PNGs in {src_dir}")
+        sys.exit(f"No .heic or .png in {src_dir}\n"
+                 f"Run: python3 tools/optimize_tiles.py --set {set_name} --format heic")
 
     added = 0
     updated = 0
@@ -109,8 +145,12 @@ def sync_set(set_name: str, dry_run: bool, only_changed: bool,
         else:
             added += 1
 
+    covers = sync_pack_covers(set_name, dry_run)
+
     total = added + updated + unchanged
     print(f"\n{set_name}: {added} added, {updated} updated, {unchanged} unchanged ({total} total)")
+    if covers:
+        print(f"{covers} pack covers synced.")
     if withheld:
         print(f"{withheld} withheld — not approved in the review file.")
 

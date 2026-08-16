@@ -15,6 +15,7 @@ Usage:
 """
 
 import argparse
+import subprocess
 import sys
 from pathlib import Path
 
@@ -28,7 +29,8 @@ OUTPUT_BASE = Path("tools/tile_sets/optimized")
 DEFAULT_SIZE = 512
 
 
-def optimize_set(set_name: str, target_size: int) -> None:
+def optimize_set(set_name: str, target_size: int,
+                 fmt: str = "png", quality: int = 65) -> None:
     src_dir = INPUT_BASE / set_name
     dst_dir = OUTPUT_BASE / set_name
     dst_dir.mkdir(parents=True, exist_ok=True)
@@ -48,7 +50,7 @@ def optimize_set(set_name: str, target_size: int) -> None:
     total_dst = 0
 
     for src in tiles:
-        dst = dst_dir / src.name
+        dst = dst_dir / (src.stem + "." + fmt)
 
         # Skip if optimized version is newer than source
         if dst.exists() and dst.stat().st_mtime >= src.stat().st_mtime:
@@ -56,10 +58,22 @@ def optimize_set(set_name: str, target_size: int) -> None:
             continue
 
         try:
-            img = Image.open(src)
-            img = img.convert("RGB")
-            img = img.resize((target_size, target_size), Image.LANCZOS)
-            img.save(dst, "PNG", optimize=True)
+            if fmt == "heic":
+                # Pillow cannot write HEIC without pillow-heif; sips is already a
+                # dependency of the review tooling and does the resize in the same
+                # pass. Reviewed and approved at 512/q65 on 2026-08-15 — printed
+                # proofs at 2in were indistinguishable from lossless.
+                r = subprocess.run(
+                    ["sips", "-Z", str(target_size), "-s", "format", "heic",
+                     "-s", "formatOptions", str(quality), str(src), "--out", str(dst)],
+                    capture_output=True)
+                if r.returncode != 0 or not dst.exists():
+                    raise RuntimeError(r.stderr.decode()[:200] or "sips failed")
+            else:
+                img = Image.open(src)
+                img = img.convert("RGB")
+                img = img.resize((target_size, target_size), Image.LANCZOS)
+                img.save(dst, "PNG", optimize=True)
 
             src_kb = src.stat().st_size // 1024
             dst_kb = dst.stat().st_size // 1024
@@ -81,13 +95,18 @@ def main():
     parser.add_argument("--set", required=True,
                         choices=["playful_3d", "high_contrast", "high_contrast_v2", "classic", "both"])
     parser.add_argument("--size", type=int, default=DEFAULT_SIZE, help=f"Target size in px (default {DEFAULT_SIZE})")
+    parser.add_argument("--format", default="png", choices=["png", "heic"],
+                        help="heic ships in the bundle; png for interop/print")
+    parser.add_argument("--quality", type=int, default=65,
+                        help="heic quality (512/q65 approved 2026-08-15)")
     args = parser.parse_args()
 
     sets = ["playful_3d", "high_contrast"] if args.set == "both" else [args.set]
 
-    print(f"Optimizing to {args.size}×{args.size}...")
+    print(f"Optimizing to {args.size}×{args.size} {args.format}"
+          + (f" q{args.quality}" if args.format == "heic" else "") + "…")
     for s in sets:
-        optimize_set(s, args.size)
+        optimize_set(s, args.size, args.format, args.quality)
 
     print(f"\nOutput: {OUTPUT_BASE}/")
     print("These optimized tiles are committed to git and used by the app.")
