@@ -72,3 +72,13 @@ tools/sclera/
 *.secret
 Config.swift
 Secrets.swift
+
+# Generated review surfaces (session 2B) — rebuilt by their tools on demand.
+tools/tile_sets/encoding_review/
+tools/tile_sets/tone_review/
+tools/tile_sets/cutsheet/
+tools/tile_sets/tone_cutsheet/
+# Exemplar / new-word experiments: evidence that runtime tone-matching works,
+# regenerable from tools/test_tone_exemplar.py.
+tools/tile_sets/exemplar_*/
+tools/tile_sets/new_words/
