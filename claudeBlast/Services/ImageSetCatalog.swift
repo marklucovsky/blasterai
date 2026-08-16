@@ -164,12 +164,32 @@ enum ImageSetCatalog {
     /// Classic leads because it is the default. The tone variants follow it
     /// directly — they are Classic, with skin tone changed and nothing else, so
     /// separating them from their base would misrepresent what they are.
+    ///
+    /// ## Display names deliberately do not match the slugs
+    ///
+    /// The slugs (`classic`, `classic_medium`, `classic_medium_dark`) name the
+    /// Fitzpatrick/emoji steps the sets were *built* from, and are frozen because
+    /// they are persisted in `TileArtVariant.imageSetRaw` and the `imageSet`
+    /// default.
+    ///
+    /// The labels are **Light / Medium / Dark**, relative to these three sets and
+    /// nothing else. Fitzpatrick is our construction reference, not a caregiver's
+    /// vocabulary — "Medium-Dark" only means something to someone who knows the
+    /// scale it came from. And the labels tell the truth about *this* palette:
+    /// the darkest set really is our dark end, because the black facial features
+    /// stop reading below it (see the note on cutting Fitzpatrick VI), so calling
+    /// it "Medium-Dark" would imply a darker option that deliberately does not
+    /// exist.
+    ///
+    /// So `classic_medium_dark` is labelled "Classic — Dark", and the base set —
+    /// which measures at the emoji Medium-Light swatch — is labelled
+    /// "Classic — Light". Both are correct in their own frame.
     static let system: [ImageSetDescriptor] = [
         ImageSetDescriptor(
             id: .classic,
             setID: firstPartyID("classic"),
-            displayName: "Classic",
-            shortName: "Classic",
+            displayName: "Classic — Light",
+            shortName: "Light",
             summary: "Flat pictograms, like most school boards and other AAC apps.",
             bundlePrefix: "cls",
             version: "1.0.0",
@@ -183,7 +203,7 @@ enum ImageSetCatalog {
             setID: firstPartyID("classic_medium"),
             displayName: "Classic — Medium",
             shortName: "Medium",
-            summary: "Classic art with a medium skin tone.",
+            summary: "The same pictograms with a medium skin tone.",
             bundlePrefix: "clsm",
             version: "1.0.0",
             systemSetKey: "classic_medium",
@@ -196,9 +216,9 @@ enum ImageSetCatalog {
         ImageSetDescriptor(
             id: .classicMediumDark,
             setID: firstPartyID("classic_medium_dark"),
-            displayName: "Classic — Medium-Dark",
-            shortName: "Med-Dark",
-            summary: "Classic art with a medium-dark skin tone.",
+            displayName: "Classic — Dark",
+            shortName: "Dark",
+            summary: "The same pictograms with a darker skin tone.",
             bundlePrefix: "clsmd",
             version: "1.0.0",
             systemSetKey: "classic_medium_dark",
@@ -244,11 +264,21 @@ enum ImageSetCatalog {
     /// Resolution ladder, mirroring `TileScriptValidator.resolveScene`:
     /// **slug → qualified setID → displayName**. A reference authored before
     /// this model existed is a bare slug and still resolves.
+    ///
+    /// Every rung is case-insensitive. Lookup is not storage: `"Classic"` from a
+    /// hand-written script or an import should find the set whose slug is
+    /// `classic`. That used to work by accident — it fell through to the
+    /// displayName rung, which was literally "Classic" — and broke the moment the
+    /// label became "Classic — Light". Matching identity case-insensitively is
+    /// what was actually meant.
     static func descriptor(for id: ImageSetID) -> ImageSetDescriptor? {
         let raw = id.rawValue
-        if let bySlug = all.first(where: { $0.id.rawValue == raw }) { return bySlug }
-        if let byQualified = all.first(where: { $0.setID == raw }) { return byQualified }
-        return all.first { $0.displayName.caseInsensitiveCompare(raw) == .orderedSame }
+        func same(_ a: String, _ b: String) -> Bool {
+            a.caseInsensitiveCompare(b) == .orderedSame
+        }
+        if let bySlug = all.first(where: { same($0.id.rawValue, raw) }) { return bySlug }
+        if let byQualified = all.first(where: { same($0.setID, raw) }) { return byQualified }
+        return all.first { same($0.displayName, raw) }
     }
 
     static func descriptor(forSlug slug: String) -> ImageSetDescriptor? {

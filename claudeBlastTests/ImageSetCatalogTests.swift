@@ -48,7 +48,14 @@ struct ImageSetCatalogTests {
         #expect(ImageSetCatalog.descriptor(forSlug: "classic")?.id == .classic)
         #expect(ImageSetCatalog.descriptor(
             for: ImageSetID("imagesets.blasterai.app/classic"))?.id == .classic)
+        // Case-insensitive on every rung: a hand-written script saying "Classic"
+        // must find the set whose slug is `classic`. This used to pass only by
+        // accident, matching the displayName back when it was literally
+        // "Classic" — and broke when the label became "Classic — Light".
         #expect(ImageSetCatalog.descriptor(for: ImageSetID("Classic"))?.id == .classic)
+        #expect(ImageSetCatalog.descriptor(for: ImageSetID("CLASSIC_MEDIUM"))?.id == .classicMedium)
+        // Display names still resolve, including the renamed ones.
+        #expect(ImageSetCatalog.descriptor(for: ImageSetID("Classic — Dark"))?.id == .classicMediumDark)
     }
 
     @Test func systemSetsCarryFirstPartyProvenance() {
@@ -184,7 +191,11 @@ struct ImageSetCatalogTests {
 
     @Test func tileScriptResolvesToneSetsAndAliases() {
         #expect(TileScriptParser.parseImageSet("classic_medium") == .classicMedium)
-        #expect(TileScriptParser.parseImageSet("Classic — Medium-Dark") == .classicMediumDark)
+        // Display name (em-dash and all) and the frozen slug both resolve — they
+        // deliberately differ, since the labels are relative to this palette
+        // while the slugs record the Fitzpatrick steps the sets were built from.
+        #expect(TileScriptParser.parseImageSet("Classic — Dark") == .classicMediumDark)
+        #expect(TileScriptParser.parseImageSet("classic_medium_dark") == .classicMediumDark)
         #expect(TileScriptParser.parseImageSet("clsmd") == .classicMediumDark)
         #expect(TileScriptParser.parseImageSet("p3d") == .playful3D)
         #expect(TileScriptParser.parseImageSet("hc") == .highContrast)
