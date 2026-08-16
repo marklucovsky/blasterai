@@ -644,31 +644,36 @@ struct OnboardingView: View {
 
     // MARK: - Tile style
 
-    /// Sample words chosen so the three styles are actually distinguishable:
-    /// a person (where style and skin tone read most strongly), an action, and
-    /// two concrete objects.
-    private static let styleSampleKeys = ["happy", "eat", "apple", "ball"]
+    /// Sample words chosen so the styles are actually distinguishable: two people
+    /// (where style and skin tone read most strongly) and one object to show the
+    /// non-figure art. Trimmed from four — with five sets on screen, a fourth
+    /// thumbnail bought nothing and cost a lot of height.
+    private static let styleSampleKeys = ["happy", "eat", "apple"]
 
     /// Sets offered here. Deliberately `selectable` rather than `allCases`, so a
     /// release build never advertises a set the picker would then refuse.
     private var styleChoices: [ImageSetID] { ImageSetCatalog.selectable.map(\.id) }
 
+    /// One compact row per set: samples on the left, name and description on the
+    /// right. The earlier layout stacked a full-width four-tile strip under each
+    /// heading, which ran to roughly 180pt per set — with five sets that is over
+    /// 900pt of scrolling and only two options visible at once, so a caregiver
+    /// could not compare the thing they were being asked to compare. Side-by-side
+    /// rows fit the whole list on an iPad and most of it on a phone.
     private var tileStyleStep: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("Which looks most familiar?")
-                .font(.largeTitle.bold())
-            Text("If this child already uses symbols — on a paper board, at school, or in another app — pick the style closest to what they know. Keeping the symbols familiar means less to relearn.")
-                .font(.title3)
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Pick a tile style")
+                .font(.title.bold())
+            Text("Choose the style closest to what this child already uses. You can change it any time.")
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
 
-            ForEach(styleChoices) { set in
-                styleCard(set)
+            VStack(spacing: 8) {
+                ForEach(styleChoices) { set in
+                    styleCard(set)
+                }
             }
-
-            Text("You can change this any time in Admin, and it doesn't affect the words — only how they look.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .padding(.top, 4)
+            .padding(.top, 2)
         }
     }
 
@@ -678,42 +683,41 @@ struct OnboardingView: View {
         Button {
             tileStyle = set
         } label: {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 10) {
-                    Image(systemName: selected ? "checkmark.circle.fill" : "circle")
-                        .foregroundStyle(selected ? Color.accentColor : Color.secondary)
-                        .font(.title3)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(set.displayName).font(.headline)
-                        Text(styleBlurb(set))
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    Spacer(minLength: 0)
-                }
+            HStack(spacing: 12) {
+                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(selected ? Color.accentColor : Color.secondary)
+                    .font(.title3)
 
-                HStack(spacing: 10) {
+                HStack(spacing: 4) {
                     ForEach(Self.styleSampleKeys, id: \.self) { key in
                         // Rendered per-set rather than via TileImageView, which
                         // always draws the *active* set — the whole point here is
-                        // showing three sets side by side before one is active.
+                        // showing every set at once, before one is active.
                         if let img = resolver.image(for: key, in: set) {
                             Image(uiImage: img)
                                 .resizable()
                                 .scaledToFit()
-                                .frame(maxWidth: .infinity)
-                                .background(Color(.secondarySystemBackground))
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                .frame(width: 42, height: 42)
                         }
                     }
                 }
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(set.displayName).font(.subheadline.weight(.semibold))
+                    Text(styleBlurb(set))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
             }
-            .padding(14)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(selected ? Color.accentColor : Color.secondary.opacity(0.25),
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(selected ? Color.accentColor : Color.secondary.opacity(0.22),
                             lineWidth: selected ? 2 : 1)
             )
         }
@@ -746,6 +750,11 @@ struct OnboardingView: View {
         // unconditionally so a caregiver who accepted the default still gets an
         // explicit value rather than an absent key.
         UserDefaults.standard.set(tileStyle.rawValue, forKey: AppSettingsKey.imageSet)
+        // ...and tell the LIVE resolver. It reads this default only at launch, so
+        // writing the preference alone left the running session on the previous
+        // set: Settings reported Medium while every tile still rendered Classic,
+        // and the choice appeared to do nothing until the next cold start.
+        resolver.activeSet = tileStyle
         profileResolver.refresh()
         // Switch the running engine to OpenAI when the user just supplied a key.
         if let key = OpenAIKeyVault.currentKey() {
