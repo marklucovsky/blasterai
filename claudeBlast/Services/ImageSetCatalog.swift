@@ -54,6 +54,27 @@ struct ImageSetID: RawRepresentable, Hashable, Codable, Identifiable, Sendable {
     /// different questions, and the backfill must always be a set with **full
     /// vocabulary coverage**.
     static let universalBackfill: ImageSetID = .classic
+
+    /// A set this build can actually resolve, or `defaultSet`.
+    ///
+    /// **Always use this when reading a persisted or user-supplied id.**
+    /// `init(rawValue:)` accepts any string on purpose — an installed set's id
+    /// must be storable by a build that has never heard of it — which means it
+    /// cannot also reject junk. `ImageSetID(rawValue: stored) ?? .defaultSet`
+    /// *looks* like it handles that and does nothing at all, because the left
+    /// side is not optional.
+    ///
+    /// That exact line shipped: with no stored preference it produced
+    /// `ImageSetID("")`, which matched no card in onboarding (nothing appeared
+    /// selected), was then written back as an empty string, and left the resolver
+    /// on the default while the UI implied otherwise — so a word added on
+    /// Medium-Dark was generated in Classic.
+    static func resolved(_ raw: String?) -> ImageSetID {
+        guard let raw, !raw.isEmpty,
+              ImageSetCatalog.descriptor(forSlug: raw) != nil
+        else { return .defaultSet }
+        return ImageSetID(raw)
+    }
 }
 
 // MARK: - Metadata accessors

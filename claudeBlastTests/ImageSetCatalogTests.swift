@@ -151,6 +151,47 @@ struct ImageSetCatalogTests {
         #expect(!ImageSetCatalog.generationTargets.contains(.highContrast))
     }
 
+    // MARK: - Reading persisted ids
+
+    /// The bug this suite exists to prevent recurring.
+    ///
+    /// `init(rawValue:)` is non-failable by design — an installed set's id must be
+    /// storable by a build that has never heard of it. That makes
+    /// `ImageSetID(rawValue: stored) ?? .defaultSet` dead code, and it shipped:
+    /// with no stored preference it yielded `ImageSetID("")`, which matched no
+    /// card in onboarding, was persisted as an empty string, and left the
+    /// resolver on Classic while the UI implied Medium-Dark — so a word added on
+    /// Medium-Dark was generated in Classic.
+    @Test func unresolvableStoredIDsFallBackToTheDefault() {
+        #expect(ImageSetID.resolved(nil) == .defaultSet)
+        #expect(ImageSetID.resolved("") == .defaultSet)
+        #expect(ImageSetID.resolved("a_set_this_build_removed") == .defaultSet)
+        // A resolvable id is passed through untouched.
+        #expect(ImageSetID.resolved("classic_medium_dark") == .classicMediumDark)
+        #expect(ImageSetID.resolved("playful_3d") == .playful3D)
+    }
+
+    /// `resolved` must never be used for stored ART, only for the active-set
+    /// preference: a variant generated for an installed set has to keep pointing
+    /// at that set, or reinstalling the set would not bring the art back.
+    @Test func variantKeepsItsOwnSetIDEvenWhenUnknown() {
+        let v = TileArtVariant(tileKey: "eat",
+                               imageSet: ImageSetID("khmer_core"),
+                               imageData: Data())
+        #expect(v.imageSet.rawValue == "khmer_core")
+        #expect(v.imageSet != .defaultSet)
+    }
+
+    @Test func tileScriptResolvesToneSetsAndAliases() {
+        #expect(TileScriptParser.parseImageSet("classic_medium") == .classicMedium)
+        #expect(TileScriptParser.parseImageSet("Classic — Medium-Dark") == .classicMediumDark)
+        #expect(TileScriptParser.parseImageSet("clsmd") == .classicMediumDark)
+        #expect(TileScriptParser.parseImageSet("p3d") == .playful3D)
+        #expect(TileScriptParser.parseImageSet("hc") == .highContrast)
+        // An unknown set is nil, not a silent substitution.
+        #expect(TileScriptParser.parseImageSet("no_such_set") == nil)
+    }
+
     @Test func everySelectableSetIsShippableInRelease() {
         #if !DEBUG
         #expect(ImageSetCatalog.selectable.allSatisfy(\.isShippable))

@@ -150,10 +150,8 @@ struct claudeBlastApp: App {
         // or from a build that had one this one doesn't — would otherwise leave
         // every tile falling through to the backfill with no explanation.
         let resolver = TileImageResolver()
-        if let storedSet = UserDefaults.standard.string(forKey: AppSettingsKey.imageSet),
-           ImageSetCatalog.descriptor(forSlug: storedSet) != nil {
-            resolver.activeSet = ImageSetID(storedSet)
-        }
+        resolver.activeSet = ImageSetID.resolved(
+            UserDefaults.standard.string(forKey: AppSettingsKey.imageSet))
         self._imageResolver = State(initialValue: resolver)
 
         // Configure audio session at launch so speech plays regardless of the

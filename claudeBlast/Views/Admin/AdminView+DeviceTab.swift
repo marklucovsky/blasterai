@@ -162,7 +162,16 @@ extension AdminView {
             }
         }
         .onChange(of: imageSetRaw) {
-            imageResolver.activeSet = ImageSetID(imageSetRaw)
+            // Resolved, not raw: a stored id this build cannot resolve must fall
+            // back rather than leave the resolver pointing at a set with no art.
+            imageResolver.activeSet = ImageSetID.resolved(imageSetRaw)
+        }
+        .onAppear {
+            // Self-heal a stored id that no longer resolves — including the empty
+            // string an earlier build could persist. Without this the Picker has
+            // no matching tag and simply shows nothing selected.
+            let resolved = ImageSetID.resolved(imageSetRaw)
+            if resolved.rawValue != imageSetRaw { imageSetRaw = resolved.rawValue }
         }
         .onChange(of: providerChoice) { applyProvider() }
         .onChange(of: apiKey) {

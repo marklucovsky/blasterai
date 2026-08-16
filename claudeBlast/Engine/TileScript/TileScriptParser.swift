@@ -68,18 +68,33 @@ struct TileScriptParser {
     /// set was removed and no compatibility mapping is provided — pre-pilot,
     /// a stale reference is a delete-and-reinstall, not a shim to carry forward.
     static func parseImageSet(_ value: Any?) -> ImageSetID? {
-        guard let raw = (value as? String)?
-            .lowercased()
-            .replacingOccurrences(of: "_", with: "")
-            .replacingOccurrences(of: "-", with: "")
-            .replacingOccurrences(of: " ", with: "")
-            .trimmingCharacters(in: .whitespaces) else { return nil }
+        // Filter to alphanumerics rather than stripping a list of separators.
+        // The list missed the em-dash, so a display name copied out of the UI
+        // ("Classic — Medium-Dark") normalised to `classic—mediumdark` and matched
+        // nothing — and any separator added later would have failed the same way.
+        guard let raw = (value as? String).map(squashSeparators), !raw.isEmpty
+        else { return nil }
+        // Friendly aliases first, then the catalog — matched on the same
+        // separator-stripped form, so `classic_medium`, `classic-medium` and
+        // "Classic — Medium" all land on the same set, and an installed set is
+        // matchable without editing this list.
         switch raw {
-        case "classic": return .classic
-        case "playful3d", "playful", "p3d", "3d": return .playful3D
-        case "highcontrast", "hc": return .highContrast
-        default: return ImageSetID(rawValue: raw)
+        case "playful3d", "playful", "3d": return .playful3D
+        case "hc", "contrast": return .highContrast
+        default: break
         }
+        return ImageSetCatalog.all.first {
+            squashSeparators($0.id.rawValue) == raw
+                || squashSeparators($0.bundlePrefix) == raw
+                || squashSeparators($0.displayName) == raw
+                || squashSeparators($0.shortName) == raw
+        }?.id
+    }
+
+    /// Lowercase and keep only alphanumerics, so both sides of a set-name match
+    /// are compared in the same shape regardless of separators or casing.
+    private static func squashSeparators(_ s: String) -> String {
+        s.lowercased().filter { $0.isLetter || $0.isNumber }
     }
 
     /// Parse a `mode:` header value (`sentence` / `single-word` / `singleWord`).

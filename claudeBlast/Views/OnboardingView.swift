@@ -46,8 +46,7 @@ struct OnboardingView: View {
     /// Seeded from the registered default so the preselected card matches what
     /// the app would use anyway if this step were skipped.
     @State private var tileStyle: ImageSetID =
-        ImageSetID(rawValue: UserDefaults.standard.string(forKey: AppSettingsKey.imageSet) ?? "")
-        ?? ImageSetID.defaultSet
+        ImageSetID.resolved(UserDefaults.standard.string(forKey: AppSettingsKey.imageSet))
 
     @State private var apiKey: String = ""
     /// Seeded from the registered default (RELEASE: ON, DEBUG: OFF — see
