@@ -51,7 +51,7 @@ final class SceneImageBatchController {
     /// Styles to generate per word: every generatable style when the "all styles"
     /// setting is on, else just the active set.
     private var styleTargets: [ImageSetID] {
-        let active = resolver?.activeSet ?? .playful3D
+        let active = resolver?.activeSet ?? ImageSetID.defaultSet
         if UserDefaults.standard.bool(forKey: AppSettingsKey.generateAllStyles) {
             return ImageSetID.generationTargets(preferring: active)
         }

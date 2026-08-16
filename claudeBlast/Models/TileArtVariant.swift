@@ -26,7 +26,7 @@ final class TileArtVariant {
     /// it means; it was `created` before the pre-promotion schema audit.
     var modified: Date = Date.now
 
-    var imageSet: ImageSetID { ImageSetID(rawValue: imageSetRaw) ?? .playful3D }
+    var imageSet: ImageSetID { ImageSetID(rawValue: imageSetRaw) ?? ImageSetID.defaultSet }
 
     init(tileKey: String, imageSet: ImageSetID, imageData: Data) {
         self.tileKey = tileKey

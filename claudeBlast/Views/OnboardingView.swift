@@ -18,11 +18,12 @@ struct OnboardingView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ChildProfileResolver.self) private var profileResolver
     @Environment(SentenceEngine.self) private var sentenceEngine
+    @Environment(TileImageResolver.self) private var resolver
 
     // Step machine -----------------------------------------------------------
 
     private enum Step: Int, CaseIterable {
-        case welcome, role, authorName, childProfile, apiKey, icloud, pinSetup, done
+        case welcome, role, authorName, childProfile, tileStyle, apiKey, icloud, pinSetup, done
     }
 
     @State private var step: Step = .welcome
@@ -41,6 +42,12 @@ struct OnboardingView: View {
     @State private var skipChildProfile: Bool = false
     /// Presents the OpenAI key setup guide from the welcome screen's prerequisite callout.
     @State private var showKeyGuide: Bool = false
+
+    /// Seeded from the registered default so the preselected card matches what
+    /// the app would use anyway if this step were skipped.
+    @State private var tileStyle: ImageSetID =
+        ImageSetID(rawValue: UserDefaults.standard.string(forKey: AppSettingsKey.imageSet) ?? "")
+        ?? ImageSetID.defaultSet
 
     @State private var apiKey: String = ""
     /// Seeded from the registered default (RELEASE: ON, DEBUG: OFF — see
@@ -87,6 +94,7 @@ struct OnboardingView: View {
                     case .role:          roleStep
                     case .authorName:    authorNameStep
                     case .childProfile:  childProfileStep
+                    case .tileStyle:     tileStyleStep
                     case .apiKey:        apiKeyStep
                     case .icloud:        icloudStep
                     case .pinSetup:      pinSetupStep
@@ -134,6 +142,13 @@ struct OnboardingView: View {
             // Caregiver mode uses the Sandbox profile until the user adds
             // a real patient from Admin → Profiles.
             return role == .patient
+        case .tileStyle:
+            // Caregiver setup only. A caregiver — often an SLP — can answer
+            // "which looks like what they already use" instantly, and knowing
+            // the answer matters most to them. Patient-device setup stays as
+            // short as possible so the child is talking sooner; that device
+            // takes the default and can change it in Admin → Now.
+            return role == .caregiver
         case .apiKey:       return !hasEnvKey
         case .icloud:
             // iCloud is on by default; we don't ask in release. DEBUG
@@ -556,6 +571,7 @@ struct OnboardingView: View {
         case .role:         return true
         case .authorName:   return true   // optional / deferrable
         case .childProfile: return !childName.trimmingCharacters(in: .whitespaces).isEmpty
+        case .tileStyle:    return true   // always has a valid selection
         case .apiKey:       return true
         case .icloud:       return true
         case .pinSetup:     return canAdvancePINSetup
@@ -627,6 +643,95 @@ struct OnboardingView: View {
         }
     }
 
+    // MARK: - Tile style
+
+    /// Sample words chosen so the three styles are actually distinguishable:
+    /// a person (where style and skin tone read most strongly), an action, and
+    /// two concrete objects.
+    private static let styleSampleKeys = ["happy", "eat", "apple", "ball"]
+
+    /// Sets offered here. Deliberately `selectable` rather than `allCases`, so a
+    /// release build never advertises a set the picker would then refuse.
+    private var styleChoices: [ImageSetID] { ImageSetID.selectable }
+
+    private var tileStyleStep: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Text("Which looks most familiar?")
+                .font(.largeTitle.bold())
+            Text("If this child already uses symbols — on a paper board, at school, or in another app — pick the style closest to what they know. Keeping the symbols familiar means less to relearn.")
+                .font(.title3)
+                .foregroundStyle(.secondary)
+
+            ForEach(styleChoices) { set in
+                styleCard(set)
+            }
+
+            Text("You can change this any time in Admin, and it doesn't affect the words — only how they look.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .padding(.top, 4)
+        }
+    }
+
+    @ViewBuilder
+    private func styleCard(_ set: ImageSetID) -> some View {
+        let selected = tileStyle == set
+        Button {
+            tileStyle = set
+        } label: {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 10) {
+                    Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(selected ? Color.accentColor : Color.secondary)
+                        .font(.title3)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(set.displayName).font(.headline)
+                        Text(styleBlurb(set))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer(minLength: 0)
+                }
+
+                HStack(spacing: 10) {
+                    ForEach(Self.styleSampleKeys, id: \.self) { key in
+                        // Rendered per-set rather than via TileImageView, which
+                        // always draws the *active* set — the whole point here is
+                        // showing three sets side by side before one is active.
+                        if let img = resolver.image(for: key, in: set) {
+                            Image(uiImage: img)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(maxWidth: .infinity)
+                                .background(Color(.secondarySystemBackground))
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                    }
+                }
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(selected ? Color.accentColor : Color.secondary.opacity(0.25),
+                            lineWidth: selected ? 2 : 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func styleBlurb(_ set: ImageSetID) -> String {
+        switch set {
+        case .classic:
+            return "Flat pictograms — closest to most school boards, printed cards, and other AAC apps."
+        case .playful3D:
+            return "Soft 3D characters. Warmer and more playful; less like traditional symbol sets."
+        case .highContrast:
+            return "Bold white-on-black. Built for low vision and CVI."
+        }
+    }
+
     // MARK: - Final commit
 
     private func commitAndFinish() {
@@ -643,6 +748,12 @@ struct OnboardingView: View {
             adminPIN: role == .patient ? pinInput : nil
         )
         OnboardingCommit.apply(inputs, context: modelContext)
+        // Written directly rather than through OnboardingInputs: the tile style
+        // is a device display preference (`@AppStorage`), not part of the
+        // profile/keychain/CloudKit state OnboardingCommit owns. Written
+        // unconditionally so a caregiver who accepted the default still gets an
+        // explicit value rather than an absent key.
+        UserDefaults.standard.set(tileStyle.rawValue, forKey: AppSettingsKey.imageSet)
         profileResolver.refresh()
         // Switch the running engine to OpenAI when the user just supplied a key.
         if let key = OpenAIKeyVault.currentKey() {
