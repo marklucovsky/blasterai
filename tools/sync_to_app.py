@@ -37,6 +37,9 @@ SET_PREFIX = {
     "playful_3d": "p3d",
     "high_contrast_v2": "hc",
     "classic": "cls",
+    # Skin-tone variants of Classic. Separate complete sets, not overlays.
+    "classic_chain_medium": "clsm",
+    "classic_chain_medium_dark": "clsmd",
 }
 
 

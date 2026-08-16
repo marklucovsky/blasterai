@@ -145,11 +145,14 @@ struct claudeBlastApp: App {
         engine.voiceIdentifier = UserDefaults.standard.string(forKey: AppSettingsKey.speechVoiceIdentifier) ?? ""
         self._sentenceEngine = State(initialValue: engine)
 
-        // Restore image set preference
+        // Restore image set preference. Only restore a set this build can
+        // actually resolve: a stored id from a set that has since been removed —
+        // or from a build that had one this one doesn't — would otherwise leave
+        // every tile falling through to the backfill with no explanation.
         let resolver = TileImageResolver()
         if let storedSet = UserDefaults.standard.string(forKey: AppSettingsKey.imageSet),
-           let setID = ImageSetID(rawValue: storedSet) {
-            resolver.activeSet = setID
+           ImageSetCatalog.descriptor(forSlug: storedSet) != nil {
+            resolver.activeSet = ImageSetID(storedSet)
         }
         self._imageResolver = State(initialValue: resolver)
 

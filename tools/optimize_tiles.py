@@ -93,7 +93,8 @@ def optimize_set(set_name: str, target_size: int,
 def main():
     parser = argparse.ArgumentParser(description="Optimize tiles for app bundle")
     parser.add_argument("--set", required=True,
-                        choices=["playful_3d", "high_contrast", "high_contrast_v2", "classic", "both"])
+                        choices=["playful_3d", "high_contrast", "high_contrast_v2", "classic",
+                                 "classic_chain_medium", "classic_chain_medium_dark", "both"])
     parser.add_argument("--size", type=int, default=DEFAULT_SIZE, help=f"Target size in px (default {DEFAULT_SIZE})")
     parser.add_argument("--format", default="png", choices=["png", "heic"],
                         help="heic ships in the bundle; png for interop/print")

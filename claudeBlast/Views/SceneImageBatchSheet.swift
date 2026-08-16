@@ -53,7 +53,7 @@ final class SceneImageBatchController {
     private var styleTargets: [ImageSetID] {
         let active = resolver?.activeSet ?? ImageSetID.defaultSet
         if UserDefaults.standard.bool(forKey: AppSettingsKey.generateAllStyles) {
-            return ImageSetID.generationTargets(preferring: active)
+            return ImageSetCatalog.generationTargets(preferring: active)
         }
         return [active]
     }

@@ -652,7 +652,7 @@ struct OnboardingView: View {
 
     /// Sets offered here. Deliberately `selectable` rather than `allCases`, so a
     /// release build never advertises a set the picker would then refuse.
-    private var styleChoices: [ImageSetID] { ImageSetID.selectable }
+    private var styleChoices: [ImageSetID] { ImageSetCatalog.selectable.map(\.id) }
 
     private var tileStyleStep: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -721,16 +721,9 @@ struct OnboardingView: View {
         .buttonStyle(.plain)
     }
 
-    private func styleBlurb(_ set: ImageSetID) -> String {
-        switch set {
-        case .classic:
-            return "Flat pictograms — closest to most school boards, printed cards, and other AAC apps."
-        case .playful3D:
-            return "Soft 3D characters. Warmer and more playful; less like traditional symbol sets."
-        case .highContrast:
-            return "Bold white-on-black. Built for low vision and CVI."
-        }
-    }
+    /// Description comes from the set's own descriptor, so an installed set
+    /// describes itself rather than falling through a switch it isn't in.
+    private func styleBlurb(_ set: ImageSetID) -> String { set.summary }
 
     // MARK: - Final commit
 

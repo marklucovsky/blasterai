@@ -304,11 +304,12 @@ struct AddWordSheet: View {
         // AI-generated art is the word's CANONICAL per-style art (synced), keyed to
         // the now-final tile key. The key isn't known until here, so it's held until
         // commit and upserted per style.
+        // No longer a failable lookup: any id is storable, because the art was
+        // generated for that set and a build that doesn't recognise the id must
+        // not throw the image away.
         for (setRaw, data) in generatedArt {
-            if let set = ImageSetID(rawValue: setRaw) {
-                TileArtVariant.upsert(tileKey: finalKey, imageSet: set,
-                                      imageData: data, context: modelContext)
-            }
+            TileArtVariant.upsert(tileKey: finalKey, imageSet: ImageSetID(setRaw),
+                                  imageData: data, context: modelContext)
         }
         try? modelContext.save()
         if processedPhoto != nil { resolver.invalidatePhoto(for: finalKey) }
@@ -364,7 +365,7 @@ struct AddWordSheet: View {
         photoError = nil
         defer { isGenerating = false }
         let targets = generateAllStyles
-            ? ImageSetID.generationTargets(preferring: resolver.activeSet)
+            ? ImageSetCatalog.generationTargets(preferring: resolver.activeSet)
             : [resolver.activeSet]
         for set in targets {
             do {

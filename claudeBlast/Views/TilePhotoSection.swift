@@ -171,7 +171,7 @@ struct TilePhotoSection: View {
         errorMessage = nil
         defer { isGenerating = false }
         let targets = generateAllStyles
-            ? ImageSetID.generationTargets(preferring: resolver.activeSet)
+            ? ImageSetCatalog.generationTargets(preferring: resolver.activeSet)
             : [resolver.activeSet]
         for set in targets {
             do {

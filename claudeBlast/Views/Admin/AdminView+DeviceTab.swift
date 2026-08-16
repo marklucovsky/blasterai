@@ -155,18 +155,14 @@ extension AdminView {
                 step: 1
             )
             Picker("Image Set", selection: $imageSetRaw) {
-                ForEach(ImageSetID.selectable) { setID in
-                    VStack(alignment: .leading) {
-                        Text(setID.isShippable ? setID.displayName : "\(setID.displayName) (incomplete)")
-                    }
-                    .tag(setID.rawValue)
+                ForEach(ImageSetCatalog.selectable) { set in
+                    Text(set.isShippable ? set.displayName : "\(set.displayName) (incomplete)")
+                        .tag(set.id.rawValue)
                 }
             }
         }
         .onChange(of: imageSetRaw) {
-            if let setID = ImageSetID(rawValue: imageSetRaw) {
-                imageResolver.activeSet = setID
-            }
+            imageResolver.activeSet = ImageSetID(imageSetRaw)
         }
         .onChange(of: providerChoice) { applyProvider() }
         .onChange(of: apiKey) {

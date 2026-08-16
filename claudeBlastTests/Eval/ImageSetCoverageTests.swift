@@ -78,7 +78,7 @@ struct ImageSetCoverageTests {
         #expect(!keys.isEmpty, "no bundled starter/pack scene keys found")
 
         let resolver = TileImageResolver()
-        for set in ImageSetID.generationTargets {
+        for set in ImageSetCatalog.generationTargets {
             let missing = Set(keys.filter { resolver.image(for: $0, in: set) == nil })
             let unexpected = missing.subtracting(Self.extensionWordsWithoutArt).sorted()
             #expect(unexpected.isEmpty,
@@ -91,7 +91,7 @@ struct ImageSetCoverageTests {
         #expect(!keys.isEmpty)
 
         let resolver = TileImageResolver()
-        for set in ImageSetID.allCases where set.isShippable {
+        for set in ImageSetCatalog.all.map(\.id) where set.isShippable {
             // Real art only — bypasses photo overrides, master-set backfill, and
             // placeholders by querying the specific set.
             let missing = Set(keys.filter { resolver.image(for: $0, in: set) == nil })
@@ -115,7 +115,7 @@ struct ImageSetCoverageTests {
     @Test func reportsNonShippableSetsThatAreActuallyComplete() throws {
         let keys = try vocabularyKeys()
         let resolver = TileImageResolver()
-        for set in ImageSetID.allCases where !set.isShippable {
+        for set in ImageSetCatalog.all.map(\.id) where !set.isShippable {
             let missing = keys.filter { resolver.image(for: $0, in: set) == nil }
             if missing.isEmpty {
                 print("[eval] \(set.rawValue) now has full coverage — consider marking it isShippable.")

@@ -11,129 +11,17 @@ import SwiftUI
 import UIKit
 import SwiftData
 import Observation
-
 // MARK: - Image Set Identifier
-
-/// The tile art styles the app knows about.
-///
-/// **ARASAAC was removed 2026-08-14.** It was the app's original art source and
-/// the reason `classic` exists — building a clean-room set meant first learning
-/// what good AAC pictograms look like, and ARASAAC taught that. Its job is done:
-/// `classic` covers the full vocabulary, is ours, and carries no licence
-/// encumbrance, where ARASAAC is CC BY-NC-SA (non-commercial). It also never
-/// left the bundle — `isShippable: false` hid it from the picker while 15 MB of
-/// it shipped in every build from `Assets.xcassets`.
-enum ImageSetID: String, CaseIterable, Identifiable {
-    case playful3D = "playful_3d"
-    case classic = "classic"
-    case highContrast = "high_contrast"
-
-    var id: String { rawValue }
-
-    var displayName: String {
-        switch self {
-        case .playful3D: return "Playful 3D"
-        case .classic: return "Classic"
-        case .highContrast: return "High Contrast"
-        }
-    }
-
-    /// Compact label for tight UI (e.g. the per-style review strip).
-    var shortName: String {
-        switch self {
-        case .playful3D: return "Playful 3D"
-        case .classic: return "Classic"
-        case .highContrast: return "Contrast"
-        }
-    }
-
-    var description: String {
-        switch self {
-        case .playful3D: return "Modern clay/plasticine 3D style"
-        case .classic: return "Flat pictogram style"
-        case .highContrast: return "Bold white-on-black accessibility style"
-        }
-    }
-
-    /// Whether this set is **complete** — ships reviewed, real art for every
-    /// vocabulary key — and is therefore offered to end users as a first-class
-    /// choice.
-    ///
-    /// Norm: anything we ship must be complete and reviewed, and we hold any
-    /// community-contributed set we bless as shippable to the same bar. The
-    /// Playful-3D master backfill (`TileImageResolver.image(for:)`) removes the
-    /// *absolute* need for completeness so you can prototype an alternate style
-    /// without first generating the whole world — but an incomplete set stays a
-    /// development-only affordance, hidden from the release picker until it has
-    /// been reviewed and regenerated to full coverage.
-    ///
-    /// High Contrast is currently incomplete (~20 vocabulary gaps) and is
-    /// pending a full review + regen pass before it can ship.
-    ///
-    /// **`isShippable` controls the picker, not the bundle.** It hides a set
-    /// from users; it removes nothing from the binary. ARASAAC sat at `false`
-    /// for months while 15 MB of it shipped in every build, and High Contrast
-    /// does the same today from `TileImageSets/`. Keeping art out of the app is
-    /// a build-phase question, not an enum question.
-    var isShippable: Bool {
-        switch self {
-        case .playful3D:    return true   // master set — full coverage, reviewed
-        case .classic:      return true   // complete clean-room set
-        case .highContrast: return false  // pending full review + regen
-        }
-    }
-
-    /// Sets offered to end users. In release builds only complete sets appear;
-    /// debug builds expose every set (incomplete ones flagged) so alternate
-    /// tile sets can be developed against the live app.
-    static var selectable: [ImageSetID] {
-        #if DEBUG
-        return allCases
-        #else
-        return allCases.filter(\.isShippable)
-        #endif
-    }
-
-    /// The set a new install starts on, and what the onboarding style question
-    /// preselects.
-    ///
-    /// **Classic, not Playful 3D** (changed 2026-08-14). Flat pictograms are the
-    /// visual language the field already speaks — ARASAAC, CBoard, CoughDrop,
-    /// and most laminated paper boards. A child arriving from any of those keeps
-    /// the vocabulary they already learned, and the relearning cost of a
-    /// different style is paid by the person least able to absorb it. Two
-    /// supporting reasons: flat art is what survives being printed at 2 inches
-    /// (photographic renders go soft), and abstract words — *is*, *are*, *that* —
-    /// lean on symbol convention rather than realism.
-    ///
-    /// Playful 3D isn't demoted so much as reassigned: it's the proof the
-    /// generator can produce any style, which is the actual claim.
-    static let defaultSet: ImageSetID = .classic
-
-    /// Fills a gap when the active set lacks a key, so an incomplete or
-    /// in-progress set still renders something correct rather than a placeholder.
-    ///
-    /// Separate constant from `defaultSet` even though both are Classic today —
-    /// they answer different questions ("what do we start on" vs "what covers a
-    /// hole"), and the backfill must always be a set with **full vocabulary
-    /// coverage**. Classic and Playful 3D both qualify; High Contrast v1 does not
-    /// (23 gaps), v2 does.
-    static let universalBackfill: ImageSetID = .classic
-
-    /// Styles AI art is generated for — the authored, first-class sets, default
-    /// first. High Contrast is excluded while it is unshipped.
-    static var generationTargets: [ImageSetID] { [.classic, .playful3D] }
-
-    /// Generation targets ordered so `preferred` (usually the active set) comes
-    /// first. A newly-generated tile then shows the right style as soon as its
-    /// first variant lands — the other styles fill in behind it — instead of
-    /// briefly showing whichever style happened to finish first (e.g. a p3d flash
-    /// while in Classic mode).
-    static func generationTargets(preferring preferred: ImageSetID) -> [ImageSetID] {
-        guard generationTargets.contains(preferred) else { return generationTargets }
-        return [preferred] + generationTargets.filter { $0 != preferred }
-    }
-}
+//
+// `ImageSetID` and the set catalog now live in `ImageSetCatalog.swift`.
+//
+// It was an enum here, which worked while sets were a fixed list baked into the
+// build. It stopped working the moment sets became *content*: a downloadable or
+// caregiver-authored set cannot be an enum case, skin-tone variants multiply
+// cases combinatorially, and `ImageSetID(rawValue:) ?? .playful3D` answered an
+// unknown id by silently rendering a different set's art. Identity, metadata,
+// and mutability now follow the same model scenes use — see
+// `docs/scene-identity.md`.
 
 // MARK: - Tile Image Resolver
 
@@ -246,16 +134,10 @@ final class TileImageResolver {
     /// tile art at all since ARASAAC was removed — only the app icon and accent
     /// colour.
     private func bundledImage(for key: String, in imageSet: ImageSetID) -> UIImage? {
-        switch imageSet {
-        case .playful3D:
-            return prefixedBundleImage(for: key, prefix: "p3d")
-
-        case .classic:
-            return prefixedBundleImage(for: key, prefix: "cls")
-
-        case .highContrast:
-            return prefixedBundleImage(for: key, prefix: "hc")
-        }
+        // Catalog lookup rather than a switch: an installed set has no case to
+        // match, and adding a set should not require editing this function.
+        prefixedBundleImage(for: key,
+                            prefix: ImageSetCatalog.bundlePrefix(for: imageSet))
     }
 
     // MARK: - Custom per-style art (TileArtVariant, synced)
@@ -308,7 +190,10 @@ final class TileImageResolver {
     /// Invalidate cached variants for `key` after art is (re)generated, and bump
     /// `revision` so views re-render.
     func invalidateVariants(for key: String) {
-        for set in ImageSetID.allCases {
+        // Every known set, including installed ones — a variant cached under an
+        // installed set's id must invalidate too, or regenerated art keeps
+        // showing the old image until relaunch.
+        for set in ImageSetCatalog.all.map(\.id) {
             let pair = "\(set.rawValue):\(key)"
             variantCache.removeObject(forKey: NSString(string: "variant:\(pair)"))
             variantMisses.remove(pair)
@@ -325,11 +210,10 @@ final class TileImageResolver {
     /// sparse High Contrast tile shows the master art, and this placeholder is
     /// only reached for a key even P3D lacks. Cached on first load.
     private func placeholderImage(for imageSet: ImageSetID) -> UIImage? {
-        let prefix: String
-        switch imageSet {
-        case .highContrast: prefix = "hc"
-        case .playful3D, .classic: return nil
-        }
+        // Any set may ship a `{prefix}_missing` placeholder; only High Contrast
+        // does today. Driven by what is actually in the bundle rather than a
+        // hardcoded list, so an installed set can supply one too.
+        let prefix = ImageSetCatalog.bundlePrefix(for: imageSet)
         guard let placeholderName = Self.missingPlaceholderName(for: prefix) else { return nil }
         let cacheKey = NSString(string: placeholderName)
         if let cached = cache.object(forKey: cacheKey) { return cached }
@@ -417,9 +301,11 @@ final class TileImageResolver {
     /// Currently only the high-contrast set has a shared placeholder; the
     /// other sets fall through to TileImageView's letter-on-color rendering.
     private static func missingPlaceholderName(for prefix: String) -> String? {
+        // By convention any set may ship `{prefix}_missing`; the lookup below
+        // returns nil when it doesn't, so this needs no per-set list.
         switch prefix {
-        case "hc": return "hc_missing"
-        default:   return nil
+        case "": return nil
+        default: return "\(prefix)_missing"
         }
     }
 }
