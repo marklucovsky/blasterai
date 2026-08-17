@@ -196,9 +196,13 @@ struct claudeBlastApp: App {
                     scriptRecorder.configure(engine: sentenceEngine, runner: scriptRunner, coordinator: navigationCoordinator)
                     // Keep collapsing CloudKit duplicates as they arrive via async
                     // import; refresh the active-profile cache if a pass changed it.
-                    syncCoordinator.configure(modelContext: modelContainer.mainContext) {
-                        profileResolver.refresh()
-                    }
+                    // Art and photos sync too, and the resolver's negative caches
+                    // would otherwise keep showing a placeholder for a word another
+                    // device has since illustrated.
+                    syncCoordinator.configure(
+                        modelContext: modelContainer.mainContext,
+                        onRemoteChange: { imageResolver.invalidateSyncedArt() },
+                        onReconciled: { profileResolver.refresh() })
                 }
                 .environment(importCoordinator)
                 .onChange(of: scenePhase) { _, phase in

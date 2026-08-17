@@ -203,6 +203,35 @@ final class TileImageResolver {
         revision &+= 1
     }
 
+    /// Drop every cached answer that CloudKit can change underneath us, and bump
+    /// `revision` so views re-render.
+    ///
+    /// ## The negative caches are the reason this exists
+    ///
+    /// `variantMisses` and `overrideMisses` record "this key has no art", and
+    /// they have to: without them every render of every bundled tile — the vast
+    /// majority — issues a SwiftData fetch. But a miss is only true until another
+    /// device says otherwise.
+    ///
+    /// The bug: a phone showing the letter placeholder for a word has cached a
+    /// miss for it. Art made for that word on another device syncs down
+    /// correctly, and the phone keeps rendering the placeholder until it is
+    /// relaunched, because nothing ever retracts the miss. The data was there the
+    /// whole time — opening the tile's style strip showed it, since that asks
+    /// about sets the grid had never queried and so never poisoned.
+    ///
+    /// Everything is dropped rather than diffed against the import: the notice
+    /// says only that *something* changed, coalescing a burst of records. Bundled
+    /// art (`cache`) is deliberately kept — it ships in the binary and no sync can
+    /// alter it. What is dropped refills lazily on the next render.
+    func invalidateSyncedArt() {
+        variantCache.removeAllObjects()
+        variantMisses.removeAll()
+        overrideCache.removeAllObjects()
+        overrideMisses.removeAll()
+        revision &+= 1
+    }
+
     /// The active set's shared missing-art placeholder, if it ships one.
     /// Only High Contrast does today (`hc_missing.png`). This is now a defensive
     /// last resort: the Playful-3D backfill (step 3 of `image(for:)`) runs first
