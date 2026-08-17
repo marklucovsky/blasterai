@@ -48,8 +48,13 @@ enum AppSettingsKey {
     static let tileSizeStep          = "tile_size_step"
     static let compareProviders      = "compare_providers"
     static let imageSet              = "image_set"
-    /// When ON, AI art generation produces a variant for every generatable style
-    /// (see ImageSetID.generationTargets) so a custom word is arted in all styles.
+    /// When ON, AI art generation covers every generatable style rather than just
+    /// the active one (see `ImageSetCatalog.generationTargets`).
+    ///
+    /// Either way a *whole style* is generated, all of its variants: the variants
+    /// are one image plus transforms of it, so generating some of them is not a
+    /// meaningful request. This toggle picks how many styles, never how many
+    /// variants within one.
     static let generateAllStyles     = "generate_all_styles"
 
     // Sentence tray timeline settings (PR cb-tray-timeline)

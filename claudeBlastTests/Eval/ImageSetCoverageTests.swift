@@ -78,7 +78,7 @@ struct ImageSetCoverageTests {
         #expect(!keys.isEmpty, "no bundled starter/pack scene keys found")
 
         let resolver = TileImageResolver()
-        for set in ImageSetCatalog.generationTargets {
+        for set in ImageSetCatalog.generationTargets.flatMap(\.setIDs) {
             let missing = Set(keys.filter { resolver.image(for: $0, in: set) == nil })
             let unexpected = missing.subtracting(Self.extensionWordsWithoutArt).sorted()
             #expect(unexpected.isEmpty,

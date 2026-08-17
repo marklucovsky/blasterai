@@ -91,10 +91,37 @@ extension ImageSetID {
     var isShippable: Bool { descriptor?.isShippable ?? false }
     var isSystemOwned: Bool { descriptor?.isSystemOwned ?? false }
 
-    /// A tile from this set whose skin tone new art should match, empty when the
-    /// set has no tone to match. This is what a runtime word-add passes as a
-    /// colour reference — describing a tone in words does not reproduce it.
-    var toneExemplarKey: String { descriptor?.toneExemplarKey ?? "" }
+    /// The skin tone this set was built to land on, nil when it has none.
+    var toneTarget: ToneTarget? { descriptor?.toneTarget }
+}
+
+/// The skin tone a set's figures were built to land on.
+///
+/// Carried as **channel values, not a label**, because a label does not work:
+/// the first offline pilot asked for "medium skin tone (Fitzpatrick IV)" and got
+/// back rgb(176,80,24) — terracotta, and darker than the *dark* reference. The
+/// model needs the target colour. Blue is the channel that decides whether a
+/// brown reads as skin or as rust, so the prompt states it as a ratio too.
+///
+/// These are the same values `tools/build_tone_variants.py` built the shipped
+/// sets with, sampled from the Apple Color Emoji tone modifiers
+/// (`tools/measure_skin_tone.py`). Runtime word-adds must walk the same scale
+/// with the same numbers or a new word lands off-palette from the set it joins.
+struct ToneTarget: Hashable, Sendable {
+    let label: String        // caregiver-facing: "Medium"
+    let fitzpatrick: String  // construction reference: "Fitzpatrick IV"
+    let emoji: String        // the emoji modifier the value was sampled from
+    let summary: String      // "moderate Mediterranean or East Asian brown"
+    let red: Int
+    let green: Int
+    let blue: Int
+
+    var hex: String { String(format: "#%02X%02X%02X", red, green, blue) }
+    /// Blue and green as a percentage of red — how the prompt pins the hue.
+    var bluePercent: Int { Int((Double(blue) / Double(red) * 100).rounded()) }
+    var greenPercent: Int { Int((Double(green) / Double(red) * 100).rounded()) }
+    /// "medium skin (#BF8F68)" — how a step names where it is coming FROM.
+    var origin: String { "\(label.lowercased()) skin (\(hex))" }
 }
 
 /// Everything the app needs to know about one set.
@@ -137,32 +164,101 @@ struct ImageSetDescriptor: Identifiable, Hashable, Sendable {
 
     /// Key in `Resources/image_styles.json` describing how this set is drawn.
     /// A set that can accept new words **must** carry one, or on-device
-    /// additions render in the wrong style.
+    /// additions render in the wrong style. It also groups sets into styles —
+    /// see `TileStyle`.
     let stylePromptKey: String
 
-    /// A tile from this set whose skin tone a new word should be matched to.
+    /// The style's human name — "Classic", not "Classic — Light".
     ///
-    /// This is what makes runtime word-adds work on a tone variant: describing a
-    /// tone in words does not reproduce it, but passing an existing correct tile
-    /// as a colour swatch does. Empty for sets with no tone to match.
-    let toneExemplarKey: String
+    /// Repeated across a style's variants rather than derived by splitting
+    /// `displayName` on its separator. That split is exactly the kind of string
+    /// surgery that already broke once here, when an em-dash was missing from a
+    /// list of separators and "Classic — Medium-Dark" parsed as a set nobody had
+    /// heard of. `styleNamesAgreeWithinAStyle` keeps the copies honest.
+    let styleName: String
 
-    /// The set this one is a skin-tone variant OF, or nil if it is a base.
+    /// The skin tone this set's figures sit at, nil for sets where skin tone is
+    /// not a property of the art (High Contrast is white-on-black silhouettes).
     ///
-    /// The shipped tone sets are clones of a single Classic source with only the
-    /// skin recoloured — that is what makes them a family rather than three
-    /// lookalike sets. A word added at runtime has to follow the same rule, and
-    /// without this it did not: each set generated independently, so "swimmer"
+    /// Present on the tone *base* as well as its variants, because a step along
+    /// the scale has to name where it is coming from as well as where it is
+    /// going — see `ToneTarget`.
+    let toneTarget: ToneTarget?
+
+    /// Position in this set's style: **0 is the base**, and each higher index is
+    /// one transform further along.
+    ///
+    /// This is how a style stays a family. New art is generated ONCE, for the
+    /// base, and every other variant is a transform of the variant before it —
+    /// the same build order `tools/build_tone_variants.py --chain` used for the
+    /// shipped sets. Without it, each set generated independently and "swimmer"
     /// came out as three different swimmers in different swimsuits, one wearing a
     /// cap. In AAC the figure is the referent, so a child switching tone would
-    /// have seen a different person, which is precisely the failure the sets were
-    /// built to avoid.
-    let toneBase: ImageSetID?
+    /// have met a different person.
+    ///
+    /// **It is a chain, not a star.** Dark is index 2 and is transformed from
+    /// Medium, not from Classic. Asking for the dark end in one jump is what the
+    /// offline build tried first and abandoned: results ranged luma 46–201 across
+    /// six tiles, sometimes coming back *lighter* than the step above them,
+    /// because the model has no idea the tones form an ordered scale when each
+    /// call sees one target alone.
+    let variantIndex: Int
 
     var isSystemOwned: Bool { !systemSetKey.isEmpty }
     var slug: String { id.rawValue }
     var acceptsNewWords: Bool { isGenerationTarget && !stylePromptKey.isEmpty }
-    var isToneVariant: Bool { toneBase != nil }
+    var isStyleBase: Bool { variantIndex == 0 }
+}
+
+/// A family of sets drawn the same way, differing only by variant transform.
+///
+/// **A style is the unit art is generated in, and a set is what a caregiver
+/// looks at.** Classic is a style whose variants are Light, Medium and Dark;
+/// Playful 3D and High Contrast are styles with one variant each. Adding a word
+/// generates the style's base and then one transform per remaining variant, so
+/// the style as a whole supports the new word and switching tone never turns up
+/// a missing or off-palette tile.
+///
+/// A style with one variant is not a special case — it is N transforms where N
+/// is zero. If Playful 3D ever gains tones it slots into the same machinery with
+/// no new code path.
+///
+/// Derived from the descriptors rather than listed separately: a set names its
+/// style with `stylePromptKey` and its place in it with `variantIndex`, so an
+/// installed set joins the right family without a second table to keep in sync.
+struct TileStyle: Identifiable, Hashable, Sendable {
+    /// The `stylePromptKey` its variants share — the key into `image_styles.json`.
+    let id: String
+    /// Base first, then each transform in the order it must be applied.
+    let variants: [ImageSetDescriptor]
+
+    var base: ImageSetDescriptor { variants[0] }
+    var setIDs: [ImageSetID] { variants.map(\.id) }
+    /// "Classic" — what a caregiver calls the family, not any one variant.
+    var displayName: String { base.styleName }
+
+    /// The variants to produce when `set` is the one a caregiver actually uses,
+    /// or every variant when `set` belongs to some other style (or is nil).
+    ///
+    /// **Always a prefix, never a subset.** Each variant is transformed from the
+    /// one before it, so Dark cannot exist without Medium — "generate Light and
+    /// Dark but skip Medium" is not a request that can be honoured, and a UI
+    /// offering it would be lying. The only real choice is where to stop.
+    ///
+    /// Stopping at the active variant is the default because most caregivers
+    /// identify with exactly one: someone on Medium needs Medium and the Light
+    /// base it derives from, and nothing else. Dark is a call they never asked
+    /// for. The variants above the stop are kept anyway — they already exist in
+    /// memory, so the cost was the API call, not the row.
+    func variants(upTo set: ImageSetID?) -> [ImageSetDescriptor] {
+        guard let set, let stop = variants.firstIndex(where: { $0.id == set })
+        else { return variants }
+        return Array(variants.prefix(through: stop))
+    }
+    /// Whether a caregiver adding a word gets art in this style. A property of
+    /// the style, not the set: the variants are one piece of art plus transforms,
+    /// so generating "some of them" is not a meaningful request.
+    var acceptsNewWords: Bool { base.acceptsNewWords }
 }
 
 /// The sets this install knows about.
@@ -210,8 +306,15 @@ enum ImageSetCatalog {
             isShippable: true,
             isGenerationTarget: true,
             stylePromptKey: "classic",
-            toneExemplarKey: "",
-            toneBase: nil),
+            styleName: "Classic",
+            // Measured from the shipped art rather than taken from the emoji
+            // scale: Classic's figures sit at roughly #F0B482, warmer than the
+            // Light modifier. A step has to start from where the art actually
+            // is, not from where the label suggests it should be.
+            toneTarget: ToneTarget(label: "Light", fitzpatrick: "Fitzpatrick II–III",
+                                   emoji: "🏻", summary: "light, warm",
+                                   red: 240, green: 180, blue: 130),
+            variantIndex: 0),
         ImageSetDescriptor(
             id: .classicMedium,
             setID: firstPartyID("classic_medium"),
@@ -224,10 +327,12 @@ enum ImageSetCatalog {
             isShippable: true,
             isGenerationTarget: true,
             stylePromptKey: "classic",
-            // `mom` is a plain front-facing figure with a large, unambiguous area
-            // of skin — the clearest colour reference in the set.
-            toneExemplarKey: "mom",
-            toneBase: .classic),
+            styleName: "Classic",
+            toneTarget: ToneTarget(label: "Medium", fitzpatrick: "Fitzpatrick IV",
+                                   emoji: "🏽",
+                                   summary: "moderate Mediterranean or East Asian brown",
+                                   red: 191, green: 143, blue: 104),
+            variantIndex: 1),
         ImageSetDescriptor(
             id: .classicMediumDark,
             setID: firstPartyID("classic_medium_dark"),
@@ -240,8 +345,13 @@ enum ImageSetCatalog {
             isShippable: true,
             isGenerationTarget: true,
             stylePromptKey: "classic",
-            toneExemplarKey: "mom",
-            toneBase: .classic),
+            styleName: "Classic",
+            toneTarget: ToneTarget(label: "Dark", fitzpatrick: "Fitzpatrick V",
+                                   emoji: "🏾",
+                                   summary: "dark brown, South Asian or Middle Eastern",
+                                   red: 155, green: 100, blue: 61),
+            // Transformed from Medium, not Classic — see `variantIndex`.
+            variantIndex: 2),
         ImageSetDescriptor(
             id: .playful3D,
             setID: firstPartyID("playful_3d"),
@@ -254,8 +364,9 @@ enum ImageSetCatalog {
             isShippable: true,
             isGenerationTarget: true,
             stylePromptKey: "playful_3d",
-            toneExemplarKey: "",
-            toneBase: nil),
+            styleName: "Playful 3D",
+            toneTarget: nil,
+            variantIndex: 0),
         ImageSetDescriptor(
             id: .highContrast,
             setID: firstPartyID("high_contrast"),
@@ -268,8 +379,9 @@ enum ImageSetCatalog {
             isShippable: true,
             isGenerationTarget: true,
             stylePromptKey: "high_contrast_v2",
-            toneExemplarKey: "",
-            toneBase: nil),
+            styleName: "High Contrast",
+            toneTarget: nil,
+            variantIndex: 0),
     ]
 
     /// Sets installed from outside the bundle. Empty until installable sets land;
@@ -313,16 +425,53 @@ enum ImageSetCatalog {
         #endif
     }
 
-    /// Styles AI art is generated for when a caregiver adds a word, default
-    /// first so the active set's style appears immediately.
-    static var generationTargets: [ImageSetID] {
-        all.filter(\.acceptsNewWords).map(\.id)
+    // MARK: - Styles
+
+    /// Every style this install knows about, in catalog order, each with its
+    /// variants ordered base-first.
+    ///
+    /// Grouped out of the descriptors rather than listed separately so there is
+    /// nothing to keep in sync — a set declares its style and its place in it,
+    /// and an installed set joins the right family by saying so.
+    static var styles: [TileStyle] {
+        var order: [String] = []
+        var grouped: [String: [ImageSetDescriptor]] = [:]
+        for set in all where !set.stylePromptKey.isEmpty {
+            if grouped[set.stylePromptKey] == nil { order.append(set.stylePromptKey) }
+            grouped[set.stylePromptKey, default: []].append(set)
+        }
+        return order.compactMap { key in
+            // Sorted by index, then slug so the order is total — two sets
+            // claiming the same index would otherwise make the base, and
+            // therefore every transform below it, depend on dictionary order.
+            let variants = grouped[key]!.sorted {
+                ($0.variantIndex, $0.slug) < ($1.variantIndex, $1.slug)
+            }
+            // A style whose first variant is not a base has no art to transform
+            // FROM, so there is nothing coherent to generate. Dropping it keeps
+            // the invariant `variants[0].isStyleBase` that `TileStyle.base`
+            // relies on; `stylesCoverEverySet` fails loudly if it ever happens.
+            guard variants.first?.isStyleBase == true else { return nil }
+            return TileStyle(id: key, variants: variants)
+        }
     }
 
-    static func generationTargets(preferring preferred: ImageSetID) -> [ImageSetID] {
+    /// The style a set belongs to, nil for a set that names no style.
+    static func style(for set: ImageSetID) -> TileStyle? {
+        guard let key = descriptor(for: set)?.stylePromptKey, !key.isEmpty else { return nil }
+        return styles.first { $0.id == key }
+    }
+
+    /// Styles art is generated in when a caregiver adds a word, the active set's
+    /// style first so their own board fills in before the others.
+    static var generationTargets: [TileStyle] {
+        styles.filter(\.acceptsNewWords)
+    }
+
+    static func generationTargets(preferring preferred: ImageSetID) -> [TileStyle] {
         let targets = generationTargets
-        guard targets.contains(preferred) else { return targets }
-        return [preferred] + targets.filter { $0 != preferred }
+        guard let active = style(for: preferred), targets.contains(active) else { return targets }
+        return [active] + targets.filter { $0 != active }
     }
 
     /// Filename prefix for a set, falling back to the slug so an unknown set

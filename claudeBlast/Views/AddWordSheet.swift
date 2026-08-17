@@ -364,14 +364,11 @@ struct AddWordSheet: View {
         isGenerating = true
         photoError = nil
         defer { isGenerating = false }
-        let targets = generateAllStyles
-            ? ImageSetCatalog.generationTargets(preferring: resolver.activeSet)
-            : [resolver.activeSet]
-        // One call for all sets: tone variants share a single generated base so
-        // the family shows the same figure, differing only in skin.
-        let images = await TileImageGenerator.generateAll(
+        let plan = ArtPlan.plan(activeSet: resolver.activeSet, allStyles: generateAllStyles)
+        let expected = ArtPlan.expectedSets(plan)
+        let images = await TileImageGenerator.generate(
             displayName: trimmedName, wordClass: wordClass,
-            imageSets: targets, detail: imageDetail, apiKey: apiKey)
+            plan: plan, detail: imageDetail, apiKey: apiKey)
 
         for (set, image) in images {
             do {
@@ -386,8 +383,8 @@ struct AddWordSheet: View {
         }
         if images.isEmpty {
             photoError = "Couldn't generate an image."
-        } else if images.count < targets.count {
-            let missing = targets.filter { images[$0] == nil }.map(\.shortName)
+        } else if images.count < expected.count {
+            let missing = expected.filter { images[$0] == nil }.map(\.shortName)
             photoError = "Couldn't generate: \(missing.joined(separator: ", "))."
         }
         if photoPreview == nil, let first = generatedArt.values.first {

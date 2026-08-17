@@ -65,6 +65,22 @@ struct SceneEditorView: View {
     private var tilesNeedingArt: [TileModel] {
         SceneImageBatch.tilesNeedingArt(in: scene, tileLookup: tileLookup, resolver: imageResolver)
     }
+
+    /// The style the caregiver is actually looking at. Completion is offered for
+    /// that one only — a style they don't use isn't a gap they can see.
+    private var activeStyle: TileStyle? {
+        ImageSetCatalog.style(for: imageResolver.activeSet)
+    }
+
+    /// Words with art in part of the active style but not all of it — the
+    /// catch-up list. Reading `imageResolver.revision` re-evaluates this after a
+    /// run finishes, so the section disappears when the style is complete.
+    private var tilesMissingVariants: [TileModel] {
+        _ = imageResolver.revision
+        guard let activeStyle else { return [] }
+        return SceneImageBatch.tilesMissingVariants(in: scene, tileLookup: tileLookup,
+                                                    style: activeStyle, resolver: imageResolver)
+    }
     /// Identifier of a freshly-created page to navigate into. Stored as the
     /// page key string now that pages are inline structs rather than
     /// SwiftData entities.
@@ -147,6 +163,27 @@ struct SceneEditorView: View {
                              ? "These words were added by AI and don't have pictures yet. Art is generated for every tile style."
                              : "These words were added by AI and don't have pictures yet.")
                     }
+                }
+            } else if let style = activeStyle, !tilesMissingVariants.isEmpty,
+                      !resolvedAPIKey.isEmpty {
+                // Only once the new-word work is done: a word with no art at all
+                // has nothing to transform, so offering both at once would ask
+                // the caregiver to run them in an order nothing explains.
+                Section {
+                    Button {
+                        artController.start(tiles: tilesMissingVariants,
+                                            mode: .fillVariants(style),
+                                            apiKey: resolvedAPIKey,
+                                            context: modelContext, resolver: imageResolver)
+                        isGeneratingArt = true
+                    } label: {
+                        Label("Complete \(style.displayName) for \(tilesMissingVariants.count) word\(tilesMissingVariants.count == 1 ? "" : "s")",
+                              systemImage: "square.on.square.badge.person.crop")
+                    }
+                } header: {
+                    Text("Complete \(style.displayName)")
+                } footer: {
+                    Text("These words have art in some \(style.displayName) styles but not all of them. Completing recolours the pictures you already have — it doesn't draw new ones, so the figures stay the same.")
                 }
             }
 

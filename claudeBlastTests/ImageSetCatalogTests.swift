@@ -76,7 +76,8 @@ struct ImageSetCatalogTests {
             bundlePrefix: "khmer", version: "1.0.0",
             systemSetKey: "",                    // <- the whole test
             isShippable: true, isGenerationTarget: true,
-            stylePromptKey: "classic", toneExemplarKey: "", toneBase: nil)
+            stylePromptKey: "classic", styleName: "Classic",
+            toneTarget: nil, variantIndex: 0)
         #expect(!installed.isSystemOwned)
         #expect(installed.acceptsNewWords)
     }
@@ -121,49 +122,128 @@ struct ImageSetCatalogTests {
         }
     }
 
-    /// A tone set without an exemplar cannot tone-match a new word, so a
+    /// A set on the tone scale without a target cannot recolour a new word, so a
     /// caregiver's added word would arrive as the only light-skinned figure in
     /// their set — the exact absence these sets exist to remove.
-    @Test func toneVariantsDeclareAnExemplar() {
-        #expect(!ImageSetID.classicMedium.toneExemplarKey.isEmpty)
-        #expect(!ImageSetID.classicMediumDark.toneExemplarKey.isEmpty)
-        // Base Classic is the light end of the scale; it has no tone to match.
-        #expect(ImageSetID.classic.toneExemplarKey.isEmpty)
+    ///
+    /// The **base** carries one too: a step names where it is coming from as well
+    /// as where it is going, and without the origin the model has no idea the
+    /// tones form an ordered scale.
+    @Test func everySetOnTheToneScaleDeclaresATarget() {
+        for id in [ImageSetID.classic, .classicMedium, .classicMediumDark] {
+            #expect(id.toneTarget != nil, "\(id.displayName) has no tone target")
+        }
+        // Skin tone is not a property of white-on-black silhouettes.
+        #expect(ImageSetID.highContrast.toneTarget == nil)
     }
 
-    // MARK: - Tone families
-
-    /// Every tone variant must name a base that exists and is itself a base.
-    /// Without the link, a runtime word-add generates each set independently and
-    /// the family stops being one figure: adding "swimmer" produced three
-    /// different swimmers, in different swimsuits, one wearing a cap.
-    @Test func toneVariantsPointAtARealBase() {
-        let variants = ImageSetCatalog.all.filter(\.isToneVariant)
-        #expect(!variants.isEmpty)
-        for v in variants {
-            let base = ImageSetCatalog.descriptor(for: v.toneBase!)
-            #expect(base != nil, "\(v.displayName) names a base that does not exist")
-            #expect(base?.isToneVariant == false, "tone bases must not themselves be variants")
-            // A variant is a recolour, so it has to be drawn the same way.
-            #expect(base?.stylePromptKey == v.stylePromptKey,
-                    "\(v.displayName) and its base are drawn in different styles")
-            // And it needs an exemplar, or there is nothing to recolour toward.
-            #expect(!v.toneExemplarKey.isEmpty)
+    /// The scale must actually descend. A target that is lighter than the step
+    /// above it is how the offline build first failed — dark came back sometimes
+    /// *lighter* than medium-dark — and it is invisible without this check.
+    @Test func toneTargetsDarkenMonotonically() {
+        for style in ImageSetCatalog.styles {
+            for (previous, variant) in zip(style.variants, style.variants.dropFirst()) {
+                guard let target = variant.toneTarget,
+                      let origin = previous.toneTarget else { continue }
+                #expect(target.red < origin.red && target.green < origin.green
+                        && target.blue < origin.blue,
+                        "\(variant.displayName) is not darker than \(previous.displayName)")
+            }
         }
     }
 
-    @Test func classicToneFamilyIsComplete() {
-        let family = ImageSetCatalog.all.filter { $0.toneBase == .classic }.map(\.id)
-        #expect(Set(family) == [.classicMedium, .classicMediumDark])
-        #expect(ImageSetCatalog.descriptor(for: .classic)?.toneBase == nil)
+    /// Blue as a fraction of red is what separates a brown that reads as skin
+    /// from one that reads as rust — the model crushed blue to less than half its
+    /// target on the first offline pilot and produced terracotta. The prompt pins
+    /// the ratio, so the values themselves have to be in a plausible band.
+    @Test func toneTargetsAreSkinNotTerracotta() {
+        for set in ImageSetCatalog.all {
+            guard let t = set.toneTarget else { continue }
+            #expect((35...75).contains(t.bluePercent),
+                    "\(set.displayName) blue is \(t.bluePercent)% of red — not a skin tone")
+            #expect((60...90).contains(t.greenPercent),
+                    "\(set.displayName) green is \(t.greenPercent)% of red")
+        }
     }
 
-    /// Distinct styles must NOT be tone variants — recolouring Classic would not
-    /// produce Playful 3D or High Contrast art, it would produce Classic art in
-    /// the wrong set.
-    @Test func distinctStylesAreNotToneVariants() {
-        #expect(ImageSetCatalog.descriptor(for: .playful3D)?.isToneVariant == false)
-        #expect(ImageSetCatalog.descriptor(for: .highContrast)?.isToneVariant == false)
+    // MARK: - Styles
+
+    /// A style is the unit art is generated in, so every set must belong to
+    /// exactly one. A set left out of the grouping can never receive a new word:
+    /// nothing would ever name it as a generation target.
+    @Test func stylesCoverEverySet() {
+        let grouped = ImageSetCatalog.styles.flatMap(\.setIDs)
+        #expect(Set(grouped) == Set(ImageSetCatalog.all.map(\.id)))
+        #expect(grouped.count == ImageSetCatalog.all.count, "a set appears in two styles")
+    }
+
+    /// Classic is one style with three variants, in scale order. This is the
+    /// whole point of the model: Light, Medium and Dark are not three sets that
+    /// resemble each other, they are one picture and two transforms of it.
+    @Test func classicIsOneStyleWithThreeVariants() {
+        let classic = ImageSetCatalog.style(for: .classic)
+        #expect(classic?.id == "classic")
+        #expect(classic?.setIDs == [.classic, .classicMedium, .classicMediumDark])
+        #expect(classic?.base.id == .classic)
+        // Every variant resolves to the same style, whichever one you ask from.
+        #expect(ImageSetCatalog.style(for: .classicMediumDark) == classic)
+    }
+
+    /// A style with one variant is not a special case — it is the same loop with
+    /// zero transforms. If Playful 3D ever gains tones it slots in unchanged.
+    @Test func singleVariantStylesAreOrdinary() {
+        for id in [ImageSetID.playful3D, .highContrast] {
+            let style = ImageSetCatalog.style(for: id)
+            #expect(style?.variants.count == 1)
+            #expect(style?.base.id == id)
+        }
+    }
+
+    /// `TileStyle.base` subscripts `variants[0]`, so the first variant must be
+    /// the base. A style whose sets all claimed index 1 would otherwise transform
+    /// from art that was never generated.
+    @Test func everyStyleStartsAtItsBase() {
+        for style in ImageSetCatalog.styles {
+            #expect(style.base.isStyleBase, "\(style.id) has no base variant")
+            #expect(style.variants.map(\.variantIndex) == Array(0..<style.variants.count),
+                    "\(style.id) has a gap or duplicate in its variant order")
+        }
+    }
+
+    /// A style's variants must agree on the family's name, since `styleName` is
+    /// copied per set rather than derived.
+    @Test func styleNamesAgreeWithinAStyle() {
+        for style in ImageSetCatalog.styles {
+            let names = Set(style.variants.map(\.styleName))
+            #expect(names.count == 1, "\(style.id) variants disagree on styleName: \(names)")
+            #expect(style.displayName == style.base.styleName)
+        }
+        #expect(ImageSetCatalog.style(for: .classicMediumDark)?.displayName == "Classic")
+    }
+
+    // MARK: - Generation depth
+
+    /// Stopping at the active variant is a **prefix**, never a subset: each
+    /// variant is transformed from the one above it, so Dark cannot exist without
+    /// Medium. A caregiver on Medium pays for Light and Medium and nothing else.
+    @Test func variantsStopAtTheActiveOne() {
+        let classic = ImageSetCatalog.style(for: .classic)!
+        #expect(classic.variants(upTo: .classic).map(\.id) == [.classic])
+        #expect(classic.variants(upTo: .classicMedium).map(\.id) == [.classic, .classicMedium])
+        #expect(classic.variants(upTo: .classicMediumDark).map(\.id)
+                == [.classic, .classicMedium, .classicMediumDark])
+    }
+
+    /// A stop that isn't in this style means the caregiver is looking at some
+    /// other style, so there is no variant of theirs to stop at — complete it.
+    /// This is what "Generate all styles" relies on for the styles you're not on.
+    @Test func aStopFromAnotherStyleCompletesThisOne() {
+        let classic = ImageSetCatalog.style(for: .classic)!
+        #expect(classic.variants(upTo: .playful3D).map(\.id) == classic.setIDs)
+        #expect(classic.variants(upTo: nil).map(\.id) == classic.setIDs)
+        // Single-variant styles are unaffected either way.
+        let p3d = ImageSetCatalog.style(for: .playful3D)!
+        #expect(p3d.variants(upTo: .classicMedium).map(\.id) == [.playful3D])
     }
 
     /// High Contrast ships and has a style prompt, so "Generate all styles" must
@@ -171,22 +251,13 @@ struct ImageSetCatalogTests {
     /// stale meant the toggle silently skipped it — the Contrast slot just stayed
     /// empty with no error.
     @Test func everyShippableStyleIsAGenerationTarget() {
-        let targets = Set(ImageSetCatalog.generationTargets)
+        let targets = Set(ImageSetCatalog.generationTargets.flatMap(\.setIDs))
         for set in ImageSetCatalog.all where set.isShippable {
             #expect(targets.contains(set.id),
                     "\(set.displayName) ships but 'generate all styles' skips it")
         }
     }
 
-    @Test func exemplarTilesExistInTheirOwnSet() {
-        for set in ImageSetCatalog.all where !set.toneExemplarKey.isEmpty {
-            let name = "\(set.bundlePrefix)_\(set.toneExemplarKey)"
-            let found = ["heic", "png"].contains {
-                Bundle.main.url(forResource: name, withExtension: $0) != nil
-            }
-            #expect(found, "\(set.displayName) names exemplar \(name), which isn't bundled")
-        }
-    }
 
     // MARK: - Defaults
 
@@ -197,16 +268,19 @@ struct ImageSetCatalogTests {
         #expect(ImageSetCatalog.descriptor(for: .universalBackfill)?.isShippable == true)
     }
 
-    @Test func generationTargetsPutThePreferredSetFirst() {
+    /// Preferring a *variant* must put its whole style first, not the variant —
+    /// a caregiver on Dark should see their own board fill in first, and their
+    /// board's art cannot be generated without the two variants above it.
+    @Test func generationTargetsPutThePreferredStyleFirst() {
         let ordered = ImageSetCatalog.generationTargets(preferring: .classicMediumDark)
-        #expect(ordered.first == .classicMediumDark)
+        #expect(ordered.first?.id == "classic")
         #expect(Set(ordered) == Set(ImageSetCatalog.generationTargets))
         // High Contrast IS a generation target now. This assertion previously
         // said the opposite, encoding the state from when the set was incomplete
         // and unshippable — which is exactly why "Generate all styles" left the
         // Contrast slot empty with no error. It ships and has a style prompt, so
         // it generates; `everyShippableStyleIsAGenerationTarget` guards the rule.
-        #expect(ImageSetCatalog.generationTargets.contains(.highContrast))
+        #expect(ImageSetCatalog.generationTargets.flatMap(\.setIDs).contains(.highContrast))
     }
 
     // MARK: - Reading persisted ids

@@ -15,6 +15,7 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 
 /// App-level registry of per-scene art controllers. Held in the environment so a
 /// background run survives the scene editor being dismissed and re-entered — the
@@ -48,14 +49,25 @@ final class SceneImageBatchController {
     private(set) var currentName = ""
     private(set) var failures: [String] = []
 
-    /// Styles to generate per word: every generatable style when the "all styles"
-    /// setting is on, else just the active set.
-    private var styleTargets: [ImageSetID] {
-        let active = resolver?.activeSet ?? ImageSetID.defaultSet
-        if UserDefaults.standard.bool(forKey: AppSettingsKey.generateAllStyles) {
-            return ImageSetCatalog.generationTargets(preferring: active)
-        }
-        return [active]
+    /// What this run is doing. Drawing new art and filling in a style's missing
+    /// variants share every bit of the machinery around them — the queue, pause,
+    /// resume, background survival, failure list — and differ only in the call
+    /// made per word, so they are one controller with two modes rather than two
+    /// near-identical controllers.
+    enum Mode: Equatable {
+        /// Draw art for words that have none.
+        case newArt
+        /// Transform existing art into the variants this style is missing.
+        case fillVariants(TileStyle)
+    }
+
+    private(set) var mode: Mode = .newArt
+
+    /// What to make per word — see `ArtPlan`, which owns the whole decision so
+    /// this sheet and the two per-word surfaces cannot drift apart.
+    private var artPlan: [PlannedStyle] {
+        ArtPlan.plan(activeSet: resolver?.activeSet ?? ImageSetID.defaultSet,
+                     allStyles: UserDefaults.standard.bool(forKey: AppSettingsKey.generateAllStyles))
     }
 
     private var queue: [TileModel] = []
@@ -74,8 +86,10 @@ final class SceneImageBatchController {
 
     var isActive: Bool { phase == .running || phase == .paused }
 
-    func start(tiles: [TileModel], apiKey: String, context: ModelContext, resolver: TileImageResolver) {
+    func start(tiles: [TileModel], mode: Mode = .newArt, apiKey: String,
+               context: ModelContext, resolver: TileImageResolver) {
         guard !isActive, !tiles.isEmpty, !apiKey.isEmpty else { return }
+        self.mode = mode
         self.apiKey = apiKey
         self.context = context
         self.resolver = resolver
@@ -150,6 +164,16 @@ final class SceneImageBatchController {
         }
     }
 
+    private func existingArt(of style: TileStyle, for tile: TileModel) -> [ImageSetID: UIImage] {
+        guard let resolver else { return [:] }
+        return SceneImageBatch.existingArt(of: style, for: tile, resolver: resolver)
+    }
+
+    private func missingVariants(of style: TileStyle, for tile: TileModel) -> [ImageSetID] {
+        guard let resolver else { return [] }
+        return SceneImageBatch.missingVariants(of: style, for: tile, resolver: resolver)
+    }
+
     private func runLoop() {
         task = Task { [weak self] in
             guard let self else { return }
@@ -159,20 +183,34 @@ final class SceneImageBatchController {
 
                 let tile = self.queue.removeFirst()
                 self.currentName = tile.displayName.isEmpty ? tile.value : tile.displayName
-                var failed = false
-                for set in self.styleTargets {
-                    if Task.isCancelled { return }
-                    do {
-                        let image = try await TileImageGenerator.generate(
-                            displayName: tile.displayName, wordClass: tile.wordClass,
-                            imageSet: set, apiKey: self.apiKey)
-                        if let context = self.context, let resolver = self.resolver,
-                           TilePhotoCommit.applyVariant(image, to: tile, imageSet: set,
-                                                        context: context, resolver: resolver) != nil {
-                            failed = true
-                        }
-                    } catch {
-                        if !Task.isCancelled { failed = true }
+
+                let images: [ImageSetID: UIImage]
+                var failed: Bool
+                switch self.mode {
+                case .newArt:
+                    // One call for every style, rather than a per-set loop:
+                    // variants in a style have to share a single generated
+                    // figure, and a per-set loop produced a different picture
+                    // for each.
+                    let plan = self.artPlan
+                    images = await TileImageGenerator.generate(
+                        displayName: tile.displayName, wordClass: tile.wordClass,
+                        plan: plan, apiKey: self.apiKey)
+                    failed = images.count < ArtPlan.expectedSets(plan).count
+                case .fillVariants(let style):
+                    let missing = self.missingVariants(of: style, for: tile)
+                    images = await TileImageGenerator.fillMissingVariants(
+                        style: style, existing: self.existingArt(of: style, for: tile),
+                        apiKey: self.apiKey)
+                    failed = images.count < missing.count
+                }
+                if Task.isCancelled { return }
+
+                for (set, image) in images {
+                    if let context = self.context, let resolver = self.resolver,
+                       TilePhotoCommit.applyVariant(image, to: tile, imageSet: set,
+                                                    context: context, resolver: resolver) != nil {
+                        failed = true
                     }
                 }
                 if failed { self.failures.append(self.currentName) }
@@ -202,9 +240,18 @@ struct SceneImageBatchSheet: View {
                 actions
             }
             .padding()
-            .navigationTitle("New Word Art")
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .interactiveDismissDisabled(controller.isActive)
+        }
+    }
+
+    /// Named for what the run is doing — "New Word Art" over a run that is
+    /// recolouring existing pictures would misdescribe both the work and the bill.
+    private var title: String {
+        switch controller.mode {
+        case .newArt: "New Word Art"
+        case .fillVariants(let style): "Complete \(style.base.styleName)"
         }
     }
 
@@ -214,7 +261,7 @@ struct SceneImageBatchSheet: View {
                 Text("\(controller.completed) of \(controller.total)")
                     .font(.system(size: 40, weight: .bold, design: .rounded))
                     .monospacedDigit()
-                Text("images created")
+                Text(controller.mode == .newArt ? "images created" : "words completed")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }

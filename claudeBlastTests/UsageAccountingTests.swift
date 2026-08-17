@@ -16,6 +16,17 @@ extension SerialTests {
 @Suite(.serialized)
 struct UsageAccountingTests {
 
+    /// Every cause needs a label and an honest free/paid answer. The art check
+    /// is a real gpt-4o-mini vision call — cheap, but not free, and reporting it
+    /// as free would make the art total quietly miss its own gate.
+    @Test func everyCauseIsLabelledAndPricedHonestly() {
+        for cause in UsageCause.allCases {
+            #expect(!cause.label.isEmpty, "\(cause.rawValue) has no label")
+        }
+        #expect(!UsageCause.tileArtClassify.isFreeEndpoint)
+        #expect(UsageCause.wordAuditScreen.isFreeEndpoint)
+    }
+
     // MARK: - Price arithmetic
 
     /// A rate quoted per 1M tokens, applied to N tokens, expressed in

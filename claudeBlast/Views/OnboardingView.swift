@@ -697,7 +697,11 @@ struct OnboardingView: View {
                             Image(uiImage: img)
                                 .resizable()
                                 .scaledToFit()
-                                .frame(width: 42, height: 42)
+                                // 42 -> 52: the first compact pass over-corrected
+                                // from the original full-width strips. Skin tone
+                                // is the thing being compared here, and it needs
+                                // enough face to read at a glance.
+                                .frame(width: 52, height: 52)
                         }
                     }
                 }
