@@ -55,7 +55,7 @@ struct AdminView: View {
     @AppStorage(AppSettingsKey.tileSpeechEnabled) var tileSpeechEnabled: Bool = true
     @AppStorage(AppSettingsKey.speechVoiceIdentifier) var voiceIdentifier: String = ""
     @AppStorage(AppSettingsKey.tileSizeStep) var tileSizeStep: Int = 0
-    @AppStorage(AppSettingsKey.imageSet) var imageSetRaw: String = ImageSetID.playful3D.rawValue
+    @AppStorage(AppSettingsKey.imageSet) var imageSetRaw: String = ImageSetID.defaultSet.rawValue
 
     // Sentence tray timeline settings
     @AppStorage(AppSettingsKey.tileCapPerGroup) var tileCapPerGroup: Int = 4

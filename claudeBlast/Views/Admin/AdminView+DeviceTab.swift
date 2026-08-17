@@ -155,18 +155,23 @@ extension AdminView {
                 step: 1
             )
             Picker("Image Set", selection: $imageSetRaw) {
-                ForEach(ImageSetID.selectable) { setID in
-                    VStack(alignment: .leading) {
-                        Text(setID.isShippable ? setID.displayName : "\(setID.displayName) (incomplete)")
-                    }
-                    .tag(setID.rawValue)
+                ForEach(ImageSetCatalog.selectable) { set in
+                    Text(set.isShippable ? set.displayName : "\(set.displayName) (incomplete)")
+                        .tag(set.id.rawValue)
                 }
             }
         }
         .onChange(of: imageSetRaw) {
-            if let setID = ImageSetID(rawValue: imageSetRaw) {
-                imageResolver.activeSet = setID
-            }
+            // Resolved, not raw: a stored id this build cannot resolve must fall
+            // back rather than leave the resolver pointing at a set with no art.
+            imageResolver.activeSet = ImageSetID.resolved(imageSetRaw)
+        }
+        .onAppear {
+            // Self-heal a stored id that no longer resolves — including the empty
+            // string an earlier build could persist. Without this the Picker has
+            // no matching tag and simply shows nothing selected.
+            let resolved = ImageSetID.resolved(imageSetRaw)
+            if resolved.rawValue != imageSetRaw { imageSetRaw = resolved.rawValue }
         }
         .onChange(of: providerChoice) { applyProvider() }
         .onChange(of: apiKey) {

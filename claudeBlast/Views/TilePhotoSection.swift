@@ -170,21 +170,25 @@ struct TilePhotoSection: View {
         isGenerating = true
         errorMessage = nil
         defer { isGenerating = false }
-        let targets = generateAllStyles
-            ? ImageSetID.generationTargets(preferring: resolver.activeSet)
-            : [resolver.activeSet]
-        for set in targets {
-            do {
-                let image = try await TileImageGenerator.generate(
-                    displayName: tile.displayName, wordClass: tile.wordClass,
-                    imageSet: set, detail: imageDetail, apiKey: apiKey)
-                if let err = TilePhotoCommit.applyVariant(image, to: tile, imageSet: set,
-                                                          context: modelContext, resolver: resolver) {
-                    errorMessage = err
-                }
-            } catch {
-                errorMessage = (error as? LocalizedError)?.errorDescription ?? "Couldn't generate an image."
+        let plan = ArtPlan.plan(activeSet: resolver.activeSet, allStyles: generateAllStyles)
+        let expected = ArtPlan.expectedSets(plan)
+        let images = await TileImageGenerator.generate(
+            displayName: tile.displayName, wordClass: tile.wordClass,
+            plan: plan, detail: imageDetail, apiKey: apiKey)
+
+        for (set, image) in images {
+            if let err = TilePhotoCommit.applyVariant(image, to: tile, imageSet: set,
+                                                      context: modelContext, resolver: resolver) {
+                errorMessage = err
             }
+        }
+        if images.isEmpty {
+            errorMessage = "Couldn't generate an image."
+        } else if images.count < expected.count {
+            // Name what is missing rather than reporting a bare success — a style
+            // that silently never appears reads as the app ignoring the request.
+            let missing = expected.filter { images[$0] == nil }.map(\.shortName)
+            errorMessage = "Couldn't generate: \(missing.joined(separator: ", "))."
         }
     }
 

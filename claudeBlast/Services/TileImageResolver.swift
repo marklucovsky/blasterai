@@ -11,99 +11,17 @@ import SwiftUI
 import UIKit
 import SwiftData
 import Observation
-
 // MARK: - Image Set Identifier
-
-enum ImageSetID: String, CaseIterable, Identifiable {
-    case playful3D = "playful_3d"
-    case classic = "classic"
-    case arasaac = "arasaac"
-    case highContrast = "high_contrast"
-
-    var id: String { rawValue }
-
-    var displayName: String {
-        switch self {
-        case .playful3D: return "Playful 3D"
-        case .classic: return "Classic"
-        case .arasaac: return "ARASAAC (legacy)"
-        case .highContrast: return "High Contrast"
-        }
-    }
-
-    /// Compact label for tight UI (e.g. the per-style review strip).
-    var shortName: String {
-        switch self {
-        case .playful3D: return "Playful 3D"
-        case .classic: return "Classic"
-        case .arasaac: return "ARASAAC"
-        case .highContrast: return "Contrast"
-        }
-    }
-
-    var description: String {
-        switch self {
-        case .playful3D: return "Modern clay/plasticine 3D style"
-        case .classic: return "Flat ARASAAC-style pictograms"
-        case .arasaac: return "Legacy open-source reference (CC BY-NC-SA)"
-        case .highContrast: return "Bold white-on-black accessibility style"
-        }
-    }
-
-    /// Whether this set is **complete** — ships reviewed, real art for every
-    /// vocabulary key — and is therefore offered to end users as a first-class
-    /// choice.
-    ///
-    /// Norm: anything we ship must be complete and reviewed, and we hold any
-    /// community-contributed set we bless as shippable to the same bar. The
-    /// Playful-3D master backfill (`TileImageResolver.image(for:)`) removes the
-    /// *absolute* need for completeness so you can prototype an alternate style
-    /// without first generating the whole world — but an incomplete set stays a
-    /// development-only affordance, hidden from the release picker until it has
-    /// been reviewed and regenerated to full coverage.
-    ///
-    /// High Contrast is currently incomplete (~20 vocabulary gaps) and is
-    /// pending a full review + regen pass before it can ship.
-    ///
-    /// ARASAAC is a **legacy/historical** external set: it's a fixed public
-    /// corpus we never generate against (`generationTargets` excludes it), so it
-    /// permanently lags as the vocabulary grows (e.g. no "chocolate"). We don't
-    /// ship it — it stays a DEBUG-only reference that open-source users can
-    /// backfill themselves. It is therefore not held to the coverage bar.
-    var isShippable: Bool {
-        switch self {
-        case .playful3D:    return true   // master set — full coverage, reviewed
-        case .classic:      return true   // complete clean-room ARASAAC-style set
-        case .arasaac:      return false  // legacy external reference — dev-only, not shipped
-        case .highContrast: return false  // pending full review + regen
-        }
-    }
-
-    /// Sets offered to end users. In release builds only complete sets appear;
-    /// debug builds expose every set (incomplete ones flagged) so alternate
-    /// tile sets can be developed against the live app.
-    static var selectable: [ImageSetID] {
-        #if DEBUG
-        return allCases
-        #else
-        return allCases.filter(\.isShippable)
-        #endif
-    }
-
-    /// Styles AI art is generated for — the authored, first-class sets. ARASAAC
-    /// is an external reference set (not generated); High Contrast is unshipped.
-    static var generationTargets: [ImageSetID] { [.playful3D, .classic] }
-
-    /// Generation targets ordered so `preferred` (usually the active set) comes
-    /// first. A newly-generated tile then shows the right style as soon as its
-    /// first variant lands — the other styles fill in behind it — instead of
-    /// briefly showing whichever style happened to finish first (e.g. a p3d flash
-    /// while in Classic mode).
-    static func generationTargets(preferring preferred: ImageSetID) -> [ImageSetID] {
-        guard generationTargets.contains(preferred) else { return generationTargets }
-        return [preferred] + generationTargets.filter { $0 != preferred }
-    }
-}
+//
+// `ImageSetID` and the set catalog now live in `ImageSetCatalog.swift`.
+//
+// It was an enum here, which worked while sets were a fixed list baked into the
+// build. It stopped working the moment sets became *content*: a downloadable or
+// caregiver-authored set cannot be an enum case, skin-tone variants multiply
+// cases combinatorially, and `ImageSetID(rawValue:) ?? .playful3D` answered an
+// unknown id by silently rendering a different set's art. Identity, metadata,
+// and mutability now follow the same model scenes use — see
+// `docs/scene-identity.md`.
 
 // MARK: - Tile Image Resolver
 
@@ -114,11 +32,8 @@ enum ImageSetID: String, CaseIterable, Identifiable {
 final class TileImageResolver {
 
     /// The currently active image set. Changing this causes all tiles to re-render.
-    /// Defaults to Playful 3D — the master set: most complete vocabulary
-    /// coverage, highest tile quality, and fully owned (clears the ARASAAC
-    /// CC BY-NC-SA licensing concern for display). ARASAAC is one swappable
-    /// option among others; see `image(for:)` for the master-set backfill.
-    var activeSet: ImageSetID = .playful3D
+    /// See `ImageSetID.defaultSet` for why this starts on Classic.
+    var activeSet: ImageSetID = ImageSetID.defaultSet
 
     /// Bumped whenever a per-key photo override is added or removed so SwiftUI
     /// views that read it (TileImageView) re-render. NSCache reads/writes are
@@ -172,16 +87,17 @@ final class TileImageResolver {
     ///   1. caregiver photo override
     ///   2. the active set's real art
     ///   3. **Playful-3D backfill** — the master set is the most complete and
-    ///      backs up any sparser active set (ARASAAC, High Contrast, a future
-    ///      set). Skipped when P3D is already active.
+    ///      backs up any sparser active set (High Contrast, a future or
+    ///      downloaded set). Skipped when the backfill set is already active.
     ///   4. the active set's own missing-art placeholder (currently only High
-    ///      Contrast ships one). With full P3D coverage this is rarely reached;
-    ///      kept defensively for tiles even P3D lacks.
+    ///      Contrast ships one). With full backfill coverage this is rarely
+    ///      reached; kept defensively.
     ///   5. nil → TileImageView renders its letter-on-color placeholder.
     func image(for key: String) -> UIImage? {
         if let photo = userPhoto(for: key) { return photo }
         if let img = rawImage(for: key, in: activeSet) { return img }
-        if activeSet != .playful3D, let img = rawImage(for: key, in: .playful3D) { return img }
+        if activeSet != ImageSetID.universalBackfill,
+           let img = rawImage(for: key, in: ImageSetID.universalBackfill) { return img }
         // A custom word arted in only one style still shows (its variant) in others.
         if let img = anyVariantImage(for: key) { return img }
         return placeholderImage(for: activeSet)
@@ -194,14 +110,14 @@ final class TileImageResolver {
     }
 
     /// Check whether a tile has bundled art. True when the active set OR the
-    /// Playful-3D master set ships real art for the key — i.e. it's a known
-    /// bundled tile, not a custom user-only one. Deliberately bypasses photo
-    /// overrides and placeholders: callers (e.g. export's `defaultTileKeys`)
-    /// use this to decide whether a tile relies on bundled art, and a caregiver
-    /// photo must not make a custom tile look bundled.
+    /// backfill set ships real art for the key — i.e. it's a known bundled tile,
+    /// not a custom user-only one. Deliberately bypasses photo overrides and
+    /// placeholders: callers (e.g. export's `defaultTileKeys`) use this to decide
+    /// whether a tile relies on bundled art, and a caregiver photo must not make
+    /// a custom tile look bundled.
     func hasImage(for key: String) -> Bool {
         if bundledImage(for: key, in: activeSet) != nil { return true }
-        return bundledImage(for: key, in: .playful3D) != nil
+        return bundledImage(for: key, in: ImageSetID.universalBackfill) != nil
     }
 
     /// Raw art for a key in a set, with no placeholder or backfill. This is the
@@ -211,23 +127,17 @@ final class TileImageResolver {
         return variantImage(for: key, in: imageSet)
     }
 
-    /// Bundled system art only (asset catalog / {prefix}_{key}.png). No custom
+    /// Bundled system art only ({prefix}_{key}.png in TileImageSets/). No custom
     /// variants, no placeholder — the single source of "is this a bundled tile".
+    ///
+    /// Every set now resolves from `TileImageSets/`. The asset catalog holds no
+    /// tile art at all since ARASAAC was removed — only the app icon and accent
+    /// colour.
     private func bundledImage(for key: String, in imageSet: ImageSetID) -> UIImage? {
-        switch imageSet {
-        case .arasaac:
-            // ARASAAC images live in Assets.xcassets — UIKit caches these internally.
-            return UIImage(named: key)
-
-        case .playful3D:
-            return prefixedBundleImage(for: key, prefix: "p3d")
-
-        case .classic:
-            return prefixedBundleImage(for: key, prefix: "cls")
-
-        case .highContrast:
-            return prefixedBundleImage(for: key, prefix: "hc")
-        }
+        // Catalog lookup rather than a switch: an installed set has no case to
+        // match, and adding a set should not require editing this function.
+        prefixedBundleImage(for: key,
+                            prefix: ImageSetCatalog.bundlePrefix(for: imageSet))
     }
 
     // MARK: - Custom per-style art (TileArtVariant, synced)
@@ -255,7 +165,7 @@ final class TileImageResolver {
         return nil
     }
 
-    /// Any variant for `key` (preferring the master set), for the cross-style
+    /// Any variant for `key` (preferring the backfill set), for the cross-style
     /// fallback — a word arted in one style still shows in another.
     private func anyVariantImage(for key: String) -> UIImage? {
         guard let context else { return nil }
@@ -269,7 +179,7 @@ final class TileImageResolver {
         guard let variants = try? context.fetch(descriptor), !variants.isEmpty else {
             variantMisses.insert(missKey); return nil
         }
-        let chosen = variants.first { $0.imageSetRaw == ImageSetID.playful3D.rawValue } ?? variants[0]
+        let chosen = variants.first { $0.imageSetRaw == ImageSetID.universalBackfill.rawValue } ?? variants[0]
         guard let img = UIImage(data: chosen.imageData) else {
             variantMisses.insert(missKey); return nil
         }
@@ -280,13 +190,45 @@ final class TileImageResolver {
     /// Invalidate cached variants for `key` after art is (re)generated, and bump
     /// `revision` so views re-render.
     func invalidateVariants(for key: String) {
-        for set in ImageSetID.allCases {
+        // Every known set, including installed ones — a variant cached under an
+        // installed set's id must invalidate too, or regenerated art keeps
+        // showing the old image until relaunch.
+        for set in ImageSetCatalog.all.map(\.id) {
             let pair = "\(set.rawValue):\(key)"
             variantCache.removeObject(forKey: NSString(string: "variant:\(pair)"))
             variantMisses.remove(pair)
         }
         variantCache.removeObject(forKey: NSString(string: "variant:any:\(key)"))
         variantMisses.remove("any:\(key)")
+        revision &+= 1
+    }
+
+    /// Drop every cached answer that CloudKit can change underneath us, and bump
+    /// `revision` so views re-render.
+    ///
+    /// ## The negative caches are the reason this exists
+    ///
+    /// `variantMisses` and `overrideMisses` record "this key has no art", and
+    /// they have to: without them every render of every bundled tile — the vast
+    /// majority — issues a SwiftData fetch. But a miss is only true until another
+    /// device says otherwise.
+    ///
+    /// The bug: a phone showing the letter placeholder for a word has cached a
+    /// miss for it. Art made for that word on another device syncs down
+    /// correctly, and the phone keeps rendering the placeholder until it is
+    /// relaunched, because nothing ever retracts the miss. The data was there the
+    /// whole time — opening the tile's style strip showed it, since that asks
+    /// about sets the grid had never queried and so never poisoned.
+    ///
+    /// Everything is dropped rather than diffed against the import: the notice
+    /// says only that *something* changed, coalescing a burst of records. Bundled
+    /// art (`cache`) is deliberately kept — it ships in the binary and no sync can
+    /// alter it. What is dropped refills lazily on the next render.
+    func invalidateSyncedArt() {
+        variantCache.removeAllObjects()
+        variantMisses.removeAll()
+        overrideCache.removeAllObjects()
+        overrideMisses.removeAll()
         revision &+= 1
     }
 
@@ -297,19 +239,22 @@ final class TileImageResolver {
     /// sparse High Contrast tile shows the master art, and this placeholder is
     /// only reached for a key even P3D lacks. Cached on first load.
     private func placeholderImage(for imageSet: ImageSetID) -> UIImage? {
-        let prefix: String
-        switch imageSet {
-        case .highContrast: prefix = "hc"
-        case .arasaac, .playful3D, .classic: return nil
-        }
+        // Any set may ship a `{prefix}_missing` placeholder; only High Contrast
+        // does today. Driven by what is actually in the bundle rather than a
+        // hardcoded list, so an installed set can supply one too.
+        let prefix = ImageSetCatalog.bundlePrefix(for: imageSet)
         guard let placeholderName = Self.missingPlaceholderName(for: prefix) else { return nil }
         let cacheKey = NSString(string: placeholderName)
         if let cached = cache.object(forKey: cacheKey) { return cached }
-        if let url = Bundle.main.url(forResource: placeholderName, withExtension: "png"),
-           let data = try? Data(contentsOf: url),
-           let img = UIImage(data: data) {
-            cache.setObject(img, forKey: cacheKey)
-            return img
+        // Same extension order as real art — the placeholder is re-encoded by the
+        // same pipeline, so hardcoding .png here would break it silently.
+        for ext in Self.bundledExtensions {
+            if let url = Bundle.main.url(forResource: placeholderName, withExtension: ext),
+               let data = try? Data(contentsOf: url),
+               let img = UIImage(data: data) {
+                cache.setObject(img, forKey: cacheKey)
+                return img
+            }
         }
         return nil
     }
@@ -347,11 +292,20 @@ final class TileImageResolver {
 
     // MARK: - Private
 
-    /// Load a prefixed image's real art from the bundle root ({prefix}_{key}.png).
-    /// Non-asset-catalog images land at the bundle root with the synchronized
-    /// group build system. Uses NSCache to avoid repeated disk reads. Returns
-    /// nil on a miss — the master-set backfill and placeholder fallback are
-    /// handled by `image(for:)` / `placeholderImage(for:)`, not here.
+    /// Extensions tried, in order, for bundled tile art.
+    ///
+    /// **HEIC is what ships** — 512×512 at quality 65, which took the three sets
+    /// from 273 MB to 22 MB with no visible loss on screen or in a 2-inch print
+    /// proof (reviewed 2026-08-15). PNG stays in the list because a set built
+    /// before the re-encode, or one an open-source user generates themselves,
+    /// should still resolve rather than silently render a placeholder.
+    private static let bundledExtensions = ["heic", "png"]
+
+    /// Load a prefixed image's real art from the bundle root
+    /// ({prefix}_{key}.heic). Non-asset-catalog images land at the bundle root
+    /// with the synchronized group build system. Uses NSCache to avoid repeated
+    /// disk reads. Returns nil on a miss — the backfill and placeholder fallback
+    /// are handled by `image(for:)` / `placeholderImage(for:)`, not here.
     private func prefixedBundleImage(for key: String, prefix: String) -> UIImage? {
         let resourceName = "\(prefix)_\(key)"
         let cacheKey = NSString(string: resourceName)
@@ -360,11 +314,13 @@ final class TileImageResolver {
             return cached
         }
 
-        if let url = Bundle.main.url(forResource: resourceName, withExtension: "png"),
-           let data = try? Data(contentsOf: url),
-           let img = UIImage(data: data) {
-            cache.setObject(img, forKey: cacheKey)
-            return img
+        for ext in Self.bundledExtensions {
+            if let url = Bundle.main.url(forResource: resourceName, withExtension: ext),
+               let data = try? Data(contentsOf: url),
+               let img = UIImage(data: data) {
+                cache.setObject(img, forKey: cacheKey)
+                return img
+            }
         }
 
         return nil
@@ -374,9 +330,11 @@ final class TileImageResolver {
     /// Currently only the high-contrast set has a shared placeholder; the
     /// other sets fall through to TileImageView's letter-on-color rendering.
     private static func missingPlaceholderName(for prefix: String) -> String? {
+        // By convention any set may ship `{prefix}_missing`; the lookup below
+        // returns nil when it doesn't, so this needs no per-set list.
         switch prefix {
-        case "hc": return "hc_missing"
-        default:   return nil
+        case "": return nil
+        default: return "\(prefix)_missing"
         }
     }
 }

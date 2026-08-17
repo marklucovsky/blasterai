@@ -41,6 +41,10 @@ enum UsageCause: String, Codable, CaseIterable {
     /// result builds on the previous image) — named for what the caregiver did,
     /// not the endpoint, matching `sceneRefine` / `pageRefine` / `sentenceRefine`.
     case tileImageRefine
+    /// The vision check that decides whether a new picture even *has* skin to
+    /// recolour. Pennies against the art it gates, but recorded so a run's call
+    /// count adds up: one of these precedes every multi-variant style.
+    case tileArtClassify
 
     // MARK: Word audit — the "add a word" safety path
     //
@@ -75,6 +79,7 @@ enum UsageCause: String, Codable, CaseIterable {
         case .tileSuggest:       return "Word suggestions"
         case .tileImageGenerate: return "Tile art"
         case .tileImageRefine:   return "Art refines"
+        case .tileArtClassify:   return "Art checks"
         case .wordAuditRubric:   return "Word review"
         case .wordAuditScreen:   return "Word safety screen"
         case .keyValidation:     return "Key checks"

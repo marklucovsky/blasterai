@@ -145,12 +145,13 @@ struct claudeBlastApp: App {
         engine.voiceIdentifier = UserDefaults.standard.string(forKey: AppSettingsKey.speechVoiceIdentifier) ?? ""
         self._sentenceEngine = State(initialValue: engine)
 
-        // Restore image set preference
+        // Restore image set preference. Only restore a set this build can
+        // actually resolve: a stored id from a set that has since been removed —
+        // or from a build that had one this one doesn't — would otherwise leave
+        // every tile falling through to the backfill with no explanation.
         let resolver = TileImageResolver()
-        if let storedSet = UserDefaults.standard.string(forKey: AppSettingsKey.imageSet),
-           let setID = ImageSetID(rawValue: storedSet) {
-            resolver.activeSet = setID
-        }
+        resolver.activeSet = ImageSetID.resolved(
+            UserDefaults.standard.string(forKey: AppSettingsKey.imageSet))
         self._imageResolver = State(initialValue: resolver)
 
         // Configure audio session at launch so speech plays regardless of the
@@ -195,9 +196,13 @@ struct claudeBlastApp: App {
                     scriptRecorder.configure(engine: sentenceEngine, runner: scriptRunner, coordinator: navigationCoordinator)
                     // Keep collapsing CloudKit duplicates as they arrive via async
                     // import; refresh the active-profile cache if a pass changed it.
-                    syncCoordinator.configure(modelContext: modelContainer.mainContext) {
-                        profileResolver.refresh()
-                    }
+                    // Art and photos sync too, and the resolver's negative caches
+                    // would otherwise keep showing a placeholder for a word another
+                    // device has since illustrated.
+                    syncCoordinator.configure(
+                        modelContext: modelContainer.mainContext,
+                        onRemoteChange: { imageResolver.invalidateSyncedArt() },
+                        onReconciled: { profileResolver.refresh() })
                 }
                 .environment(importCoordinator)
                 .onChange(of: scenePhase) { _, phase in

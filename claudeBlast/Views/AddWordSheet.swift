@@ -304,11 +304,12 @@ struct AddWordSheet: View {
         // AI-generated art is the word's CANONICAL per-style art (synced), keyed to
         // the now-final tile key. The key isn't known until here, so it's held until
         // commit and upserted per style.
+        // No longer a failable lookup: any id is storable, because the art was
+        // generated for that set and a build that doesn't recognise the id must
+        // not throw the image away.
         for (setRaw, data) in generatedArt {
-            if let set = ImageSetID(rawValue: setRaw) {
-                TileArtVariant.upsert(tileKey: finalKey, imageSet: set,
-                                      imageData: data, context: modelContext)
-            }
+            TileArtVariant.upsert(tileKey: finalKey, imageSet: ImageSetID(setRaw),
+                                  imageData: data, context: modelContext)
         }
         try? modelContext.save()
         if processedPhoto != nil { resolver.invalidatePhoto(for: finalKey) }
@@ -363,25 +364,31 @@ struct AddWordSheet: View {
         isGenerating = true
         photoError = nil
         defer { isGenerating = false }
-        let targets = generateAllStyles
-            ? ImageSetID.generationTargets(preferring: resolver.activeSet)
-            : [resolver.activeSet]
-        for set in targets {
+        let plan = ArtPlan.plan(activeSet: resolver.activeSet, allStyles: generateAllStyles)
+        let expected = ArtPlan.expectedSets(plan)
+        let images = await TileImageGenerator.generate(
+            displayName: trimmedName, wordClass: wordClass,
+            plan: plan, detail: imageDetail, apiKey: apiKey)
+
+        for (set, image) in images {
             do {
-                let image = try await TileImageGenerator.generate(
-                    displayName: trimmedName, wordClass: wordClass,
-                    imageSet: set, detail: imageDetail, apiKey: apiKey)
                 let data = try TilePhotoProcessor.process(image)
                 generatedArt[set.rawValue] = data
                 if set == resolver.activeSet { photoPreview = UIImage(data: data) }
             } catch let err as TilePhotoProcessor.ProcessError {
                 photoError = err.errorDescription
             } catch {
-                photoError = (error as? LocalizedError)?.errorDescription ?? "Couldn't generate an image."
+                photoError = "Couldn't prepare the generated image."
             }
         }
+        if images.isEmpty {
+            photoError = "Couldn't generate an image."
+        } else if images.count < expected.count {
+            let missing = expected.filter { images[$0] == nil }.map(\.shortName)
+            photoError = "Couldn't generate: \(missing.joined(separator: ", "))."
+        }
         if photoPreview == nil, let first = generatedArt.values.first {
-            photoPreview = UIImage(data: first)   // active set wasn't a target (e.g. arasaac)
+            photoPreview = UIImage(data: first)   // active set wasn't among the targets
         }
     }
 

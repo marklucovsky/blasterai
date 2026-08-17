@@ -22,7 +22,7 @@ struct TileStyleStripView: View {
     @Environment(TileImageResolver.self) private var resolver
     @State private var showComparison = false
 
-    private var styles: [ImageSetID] { ImageSetID.selectable }
+    private var styles: [ImageSetID] { ImageSetCatalog.selectable.map(\.id) }
 
     var body: some View {
         let _ = resolver.revision   // re-render after art is (re)generated
@@ -103,7 +103,7 @@ struct TileArtComparisonView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var zoomed: ImageSetID?
 
-    private var styles: [ImageSetID] { ImageSetID.selectable }
+    private var styles: [ImageSetID] { ImageSetCatalog.selectable.map(\.id) }
     private let columns = [GridItem(.adaptive(minimum: 150, maximum: 240), spacing: 16)]
 
     var body: some View {

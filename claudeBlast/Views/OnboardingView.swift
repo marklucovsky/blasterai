@@ -18,11 +18,12 @@ struct OnboardingView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ChildProfileResolver.self) private var profileResolver
     @Environment(SentenceEngine.self) private var sentenceEngine
+    @Environment(TileImageResolver.self) private var resolver
 
     // Step machine -----------------------------------------------------------
 
     private enum Step: Int, CaseIterable {
-        case welcome, role, authorName, childProfile, apiKey, icloud, pinSetup, done
+        case welcome, role, authorName, childProfile, tileStyle, apiKey, icloud, pinSetup, done
     }
 
     @State private var step: Step = .welcome
@@ -41,6 +42,11 @@ struct OnboardingView: View {
     @State private var skipChildProfile: Bool = false
     /// Presents the OpenAI key setup guide from the welcome screen's prerequisite callout.
     @State private var showKeyGuide: Bool = false
+
+    /// Seeded from the registered default so the preselected card matches what
+    /// the app would use anyway if this step were skipped.
+    @State private var tileStyle: ImageSetID =
+        ImageSetID.resolved(UserDefaults.standard.string(forKey: AppSettingsKey.imageSet))
 
     @State private var apiKey: String = ""
     /// Seeded from the registered default (RELEASE: ON, DEBUG: OFF — see
@@ -87,6 +93,7 @@ struct OnboardingView: View {
                     case .role:          roleStep
                     case .authorName:    authorNameStep
                     case .childProfile:  childProfileStep
+                    case .tileStyle:     tileStyleStep
                     case .apiKey:        apiKeyStep
                     case .icloud:        icloudStep
                     case .pinSetup:      pinSetupStep
@@ -134,6 +141,13 @@ struct OnboardingView: View {
             // Caregiver mode uses the Sandbox profile until the user adds
             // a real patient from Admin → Profiles.
             return role == .patient
+        case .tileStyle:
+            // Caregiver setup only. A caregiver — often an SLP — can answer
+            // "which looks like what they already use" instantly, and knowing
+            // the answer matters most to them. Patient-device setup stays as
+            // short as possible so the child is talking sooner; that device
+            // takes the default and can change it in Admin → Now.
+            return role == .caregiver
         case .apiKey:       return !hasEnvKey
         case .icloud:
             // iCloud is on by default; we don't ask in release. DEBUG
@@ -556,6 +570,7 @@ struct OnboardingView: View {
         case .role:         return true
         case .authorName:   return true   // optional / deferrable
         case .childProfile: return !childName.trimmingCharacters(in: .whitespaces).isEmpty
+        case .tileStyle:    return true   // always has a valid selection
         case .apiKey:       return true
         case .icloud:       return true
         case .pinSetup:     return canAdvancePINSetup
@@ -627,6 +642,96 @@ struct OnboardingView: View {
         }
     }
 
+    // MARK: - Tile style
+
+    /// Sample words chosen so the styles are actually distinguishable: two people
+    /// (where style and skin tone read most strongly) and one object to show the
+    /// non-figure art. Trimmed from four — with five sets on screen, a fourth
+    /// thumbnail bought nothing and cost a lot of height.
+    private static let styleSampleKeys = ["happy", "eat", "apple"]
+
+    /// Sets offered here. Deliberately `selectable` rather than `allCases`, so a
+    /// release build never advertises a set the picker would then refuse.
+    private var styleChoices: [ImageSetID] { ImageSetCatalog.selectable.map(\.id) }
+
+    /// One compact row per set: samples on the left, name and description on the
+    /// right. The earlier layout stacked a full-width four-tile strip under each
+    /// heading, which ran to roughly 180pt per set — with five sets that is over
+    /// 900pt of scrolling and only two options visible at once, so a caregiver
+    /// could not compare the thing they were being asked to compare. Side-by-side
+    /// rows fit the whole list on an iPad and most of it on a phone.
+    private var tileStyleStep: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Pick a tile style")
+                .font(.title.bold())
+            Text("Choose the style closest to what this child already uses. You can change it any time.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            VStack(spacing: 8) {
+                ForEach(styleChoices) { set in
+                    styleCard(set)
+                }
+            }
+            .padding(.top, 2)
+        }
+    }
+
+    @ViewBuilder
+    private func styleCard(_ set: ImageSetID) -> some View {
+        let selected = tileStyle == set
+        Button {
+            tileStyle = set
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(selected ? Color.accentColor : Color.secondary)
+                    .font(.title3)
+
+                HStack(spacing: 4) {
+                    ForEach(Self.styleSampleKeys, id: \.self) { key in
+                        // Rendered per-set rather than via TileImageView, which
+                        // always draws the *active* set — the whole point here is
+                        // showing every set at once, before one is active.
+                        if let img = resolver.image(for: key, in: set) {
+                            Image(uiImage: img)
+                                .resizable()
+                                .scaledToFit()
+                                // 42 -> 52: the first compact pass over-corrected
+                                // from the original full-width strips. Skin tone
+                                // is the thing being compared here, and it needs
+                                // enough face to read at a glance.
+                                .frame(width: 52, height: 52)
+                        }
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(set.displayName).font(.subheadline.weight(.semibold))
+                    Text(styleBlurb(set))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(selected ? Color.accentColor : Color.secondary.opacity(0.22),
+                            lineWidth: selected ? 2 : 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// Description comes from the set's own descriptor, so an installed set
+    /// describes itself rather than falling through a switch it isn't in.
+    private func styleBlurb(_ set: ImageSetID) -> String { set.summary }
+
     // MARK: - Final commit
 
     private func commitAndFinish() {
@@ -643,6 +748,17 @@ struct OnboardingView: View {
             adminPIN: role == .patient ? pinInput : nil
         )
         OnboardingCommit.apply(inputs, context: modelContext)
+        // Written directly rather than through OnboardingInputs: the tile style
+        // is a device display preference (`@AppStorage`), not part of the
+        // profile/keychain/CloudKit state OnboardingCommit owns. Written
+        // unconditionally so a caregiver who accepted the default still gets an
+        // explicit value rather than an absent key.
+        UserDefaults.standard.set(tileStyle.rawValue, forKey: AppSettingsKey.imageSet)
+        // ...and tell the LIVE resolver. It reads this default only at launch, so
+        // writing the preference alone left the running session on the previous
+        // set: Settings reported Medium while every tile still rendered Classic,
+        // and the choice appeared to do nothing until the next cold start.
+        resolver.activeSet = tileStyle
         profileResolver.refresh()
         // Switch the running engine to OpenAI when the user just supplied a key.
         if let key = OpenAIKeyVault.currentKey() {

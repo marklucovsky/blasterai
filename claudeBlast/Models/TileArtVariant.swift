@@ -26,7 +26,13 @@ final class TileArtVariant {
     /// it means; it was `created` before the pre-promotion schema audit.
     var modified: Date = Date.now
 
-    var imageSet: ImageSetID { ImageSetID(rawValue: imageSetRaw) ?? .playful3D }
+    /// The stored id as-is — NOT resolved against the catalog.
+    ///
+    /// A variant generated for an installed set must keep pointing at that set on
+    /// a build that has never heard of it, so the art reappears when the set is
+    /// installed again. Substituting the default here would quietly re-file a
+    /// caregiver's generated art under the wrong set, permanently.
+    var imageSet: ImageSetID { ImageSetID(imageSetRaw) }
 
     init(tileKey: String, imageSet: ImageSetID, imageData: Data) {
         self.tileKey = tileKey
