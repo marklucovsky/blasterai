@@ -41,7 +41,9 @@ final class SentenceCacheManager {
     }
 
     /// Look up a cached sentence. Returns nil on miss; increments hitCount on hit.
-    func lookup(tiles: [TileSelection], grade: Int) -> SentenceCache? {
+    /// `at` dates the touch — synthetic load passes simulated time so `lastUsed`
+    /// stays consistent with the metric rows written alongside it.
+    func lookup(tiles: [TileSelection], grade: Int, at date: Date = .now) -> SentenceCache? {
         let key = Self.cacheKey(for: tiles, grade: grade)
         var descriptor = FetchDescriptor<SentenceCache>(
             predicate: #Predicate { $0.cacheKey == key }
@@ -53,7 +55,7 @@ final class SentenceCacheManager {
         }
 
         entry.hitCount += 1
-        entry.lastUsed = .now
+        entry.lastUsed = date
         return entry
     }
 
@@ -62,7 +64,7 @@ final class SentenceCacheManager {
     /// filter on it. Existing entries retain their original `childID`.
     /// Every write (re)stamps `keyVersion` with the current `CacheKeyPolicy`.
     func store(tiles: [TileSelection], grade: Int, sentence: String,
-               childID: String? = nil) {
+               childID: String? = nil, at date: Date = .now) {
         let key = Self.cacheKey(for: tiles, grade: grade)
         var descriptor = FetchDescriptor<SentenceCache>(
             predicate: #Predicate { $0.cacheKey == key }
@@ -71,11 +73,15 @@ final class SentenceCacheManager {
 
         if let existing = try? context.fetch(descriptor).first {
             existing.sentence = sentence
-            existing.lastUsed = .now
+            existing.lastUsed = date
             existing.keyVersion = CacheKeyPolicy.versionToken
         } else {
             let entry = SentenceCache(tiles: tiles, grade: grade, sentence: sentence,
                                       childID: childID)
+            // Set after init rather than through it: the model's dates default to
+            // now, and only synthetic history ever needs them to say otherwise.
+            entry.created = date
+            entry.lastUsed = date
             context.insert(entry)
         }
     }
@@ -328,8 +334,14 @@ final class SentenceCacheManager {
     }
 
     /// Log a MetricEvent.
-    func logEvent(subjectType: String, subjectKey: String, eventType: MetricType) {
-        let event = MetricEvent(subjectType: subjectType, subjectKey: subjectKey, eventType: eventType)
+    /// - Parameter at: when the event happened. Defaults to now; synthetic load
+    ///   passes a `SimulatedClock` date so a run that takes seconds can write
+    ///   history that spans months, which is the only way the month-granular
+    ///   paths in `MetricCompactor` can be exercised at all.
+    func logEvent(subjectType: String, subjectKey: String, eventType: MetricType,
+                  at date: Date = .now) {
+        let event = MetricEvent(subjectType: subjectType, subjectKey: subjectKey,
+                                eventType: eventType, timestamp: date)
         context.insert(event)
     }
 

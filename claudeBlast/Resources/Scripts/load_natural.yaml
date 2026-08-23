@@ -1,0 +1,66 @@
+name: Load — natural fold
+description: 400k backdated utterances — crosses the SHIPPING 205 MB high-water
+scene: "<default>"
+mode: sentence
+audio: off
+tileWait: .instant
+sentenceWait: .instant
+
+# The only run that exercises compaction at the numbers the app actually ships.
+#
+# load_compaction proves the mechanics — fold, delete, vacuum — but it does so
+# against a budget lowered to 8 MB, so every threshold it crosses is synthetic
+# and its freelist is ~15x smaller than a real one. This script changes nothing:
+# the budget stays at the shipping 256 MB and the high-water stays at 205 MB.
+# It just writes enough history to get there honestly.
+#
+# SETUP — the opposite of load_compaction. Make sure no override is left over
+# from an earlier soak, or you will cross a 6.4 MB mark and think you crossed
+# the real one:
+#
+#   xcrun simctl spawn booted defaults delete app.blasterai.ios compaction_budget_mb
+#
+# WHY 400,000. From the measured 148 B/row and 4 rows/utterance (see
+# load_sizing), an utterance costs ~594 B. The high-water is 205 MB, which is
+# ~1.45M rows or ~363,000 utterances. 400,000 gives ~1.6M rows and ~237 MB —
+# roughly 15% past the mark, enough that a modest error in the per-row figure
+# still lands over it rather than just under.
+#
+# WHY 400 DAYS. ~13 months of span, which is what makes the fold have three
+# distinct populations to reason about rather than one:
+#
+#   months 0-1    detail floor (keepDetailMonths) — never folded
+#   months 2-5    foldable, inside the 6-month coverage floor
+#   months 6-12   outside the coverage floor — legal to delete outright
+#
+# Expect the projection to land near 33 MB, well under the 154 MB low-water, and
+# expect "Floor held" NOT to appear. If it does, the fold is reclaiming far less
+# than the arithmetic says and that is the finding.
+#
+# RUN IT ON THE SIMULATOR, not a device. BulkCacheGenerator saves every 1000
+# utterances but never prunes the ModelContext, so all ~1.6M inserted objects
+# stay registered for the whole run — plausibly 300-700 MB resident on top of
+# the store. A Mac absorbs that; an iPad gets jetsammed partway through and the
+# run is lost. If this script ever needs to run on device, recycle the context
+# per batch first.
+#
+# TWO LAUNCHES, by design — same as load_compaction. Launch N folds and leaves a
+# note; launch N+1 reclaims the freelist before the ModelContainer opens, because
+# SQLite will not truncate a file another connection has open. Watch it:
+#
+#   xcrun simctl spawn booted log stream --predicate 'subsystem == "app.blasterai"'
+#
+# Vacuum time at this size is itself a result worth writing down. The 8 MB soak
+# cannot tell you it, and a multi-second stall before the first frame is a
+# launch-time regression even though nothing is functionally wrong.
+
+script:
+  - comment: 400k utterances over 400 days — roughly 1.6M rows, ~237 MB
+  - tiles:
+      count: 400000
+      source: most-common
+      length: "2-4"
+      days: 400
+      metricsOnly: true
+      seed: 20260822
+  - comment: Load complete — relaunch twice, then read Device -> About & Stats -> Compaction

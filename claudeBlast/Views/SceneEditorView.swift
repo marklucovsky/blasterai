@@ -51,6 +51,13 @@ struct SceneEditorView: View {
         return (flagged, blocked)
     }
 
+    /// Tile placements across the scene's pages — the sum of the per-page counts
+    /// shown in the list. Placements, not distinct words: a tile reused on three
+    /// pages is three, which is what the rows below add up to.
+    private var sceneTileCount: Int {
+        scene.pages.reduce(0) { $0 + $1.tiles.count }
+    }
+
     private func countChip(_ text: String, _ system: String, _ color: Color) -> some View {
         HStack(spacing: 3) {
             Image(systemName: system).font(.caption2)
@@ -216,7 +223,10 @@ struct SceneEditorView: View {
                 Text("Focused trims the board for 1:1 sessions: the topical tiles plus a short needs strip (hungry/thirsty, help, feelings) and the body & health page. Off uses the full familiar board (people, food, drinks, body & health).")
             }
 
-            Section("Pages (\(scene.pages.count))") {
+            // Page count, then the scene's total tile placements across them —
+            // the per-page rows below already give the breakdown, so the header
+            // carries the sum a caregiver would otherwise add up by hand.
+            Section("Pages (\(scene.pages.count), \(sceneTileCount))") {
                 ForEach(scene.pages, id: \.key) { page in
                     NavigationLink(destination: PageEditorView(scene: scene, pageKey: page.key)) {
                         VStack(alignment: .leading, spacing: 2) {

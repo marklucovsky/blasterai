@@ -1,0 +1,56 @@
+name: Load — sizing
+description: 10,000 metric events spread over 6 months, to measure real bytes/row
+scene: "<default>"
+mode: sentence
+audio: off
+tileWait: .instant
+sentenceWait: .instant
+
+# Answers the one number the compaction budget rests on: how many bytes does a
+# metric row actually cost? The plan estimated ~275 B from the schema, and the
+# thresholds are all derived from the resulting 6-month footprint — so if the
+# real figure is off by more than about 2x, the budget wants revisiting.
+#
+# HOW TO READ THE RESULT
+#   1. Note "Usage history" in Device -> About & Stats before running.
+#   2. Run this script.
+#   3. Note it again, and export the storage report (Compaction section).
+#      The export carries `history.rows`; divide the byte delta by it.
+#
+# Do NOT divide by 10000. Each iteration writes one `tile` row per selected
+# tile plus one sentence/cache row -- the same mix SentenceEngine writes -- so
+# 10,000 iterations produce roughly 40,000 rows, not 10,000.
+#
+# metricsOnly: growth is budgeted against the DEVICE-LOCAL store, and a cache
+# write lands in the synced one. Without this, measuring the metric log would
+# also push 10,000 cached sentences into iCloud — larger than what is being
+# measured, and the wrong store entirely.
+#
+# days: backdating is what makes the run meaningful rather than merely large.
+# Every consumer of this data reasons in calendar months.
+#
+# seed: fixed, so a re-run reproduces the same history and two measurements can
+# legitimately be compared.
+#
+# MEASURED — 2026-08-22, fresh install, iPad, this script unmodified:
+#
+#   rows            39,996 metric + 1 usage   (4.00 rows per utterance)
+#   device-local    5,934,392 B
+#   per row         ~148 B                    (estimate was ~275 B)
+#   budget used     3% of the 256 MB budget's 205 MB high-water
+#
+# 1.9x under the estimate, i.e. inside the 2x tolerance above, so the budget was
+# left at 256 MB. MetricCompactor's header carries the footprints derived from
+# these figures; if you re-run and get a materially different number, fix it
+# there too.
+
+script:
+  - comment: 10k events, 180 days of simulated history, metrics only
+  - tiles:
+      count: 10000
+      source: most-common
+      length: "2-4"
+      days: 180
+      metricsOnly: true
+      seed: 20260821
+  - comment: Sizing run complete — read Usage history in About & Stats

@@ -71,6 +71,19 @@ struct BulkTileSpec: Sendable {
     let source: BulkSource
     let minLength: Int
     let maxLength: Int
+    /// Spread the generated events back over this many days of simulated history
+    /// (`days:` in a script). Zero — the default — stamps everything `.now`, which
+    /// is what bulk generation did before `SimulatedClock` existed.
+    var spanDays: Int = 0
+    /// Write metric events only, skipping the sentence cache (`metricsOnly:`).
+    ///
+    /// Growth is budgeted against the **device-local** store, and a cache write
+    /// lands in the *synced* one — so filling the metric log the normal way drags
+    /// an equal number of cached sentences into iCloud, which is both far larger
+    /// and the wrong target. This mode grows only what the compactor measures.
+    var metricsOnly: Bool = false
+    /// Seed for combo selection and timestamps, so a run replays exactly.
+    var seed: UInt64 = 0x5EED
 
     enum BulkSource: String, Sendable {
         case mostCommon = "most-common"

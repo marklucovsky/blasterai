@@ -157,7 +157,7 @@ final class TileImageResolver {
         )
         descriptor.fetchLimit = 1
         if let variant = try? context.fetch(descriptor).first,
-           let img = UIImage(data: variant.imageData) {
+           let img = Self.decodedImage(from: variant.imageData) {
             variantCache.setObject(img, forKey: cacheKey)
             return img
         }
@@ -180,7 +180,7 @@ final class TileImageResolver {
             variantMisses.insert(missKey); return nil
         }
         let chosen = variants.first { $0.imageSetRaw == ImageSetID.universalBackfill.rawValue } ?? variants[0]
-        guard let img = UIImage(data: chosen.imageData) else {
+        guard let img = Self.decodedImage(from: chosen.imageData) else {
             variantMisses.insert(missKey); return nil
         }
         variantCache.setObject(img, forKey: cacheKey)
@@ -251,7 +251,7 @@ final class TileImageResolver {
         for ext in Self.bundledExtensions {
             if let url = Bundle.main.url(forResource: placeholderName, withExtension: ext),
                let data = try? Data(contentsOf: url),
-               let img = UIImage(data: data) {
+               let img = Self.decodedImage(from: data) {
                 cache.setObject(img, forKey: cacheKey)
                 return img
             }
@@ -274,7 +274,7 @@ final class TileImageResolver {
         descriptor.fetchLimit = 1
         if let tile = try? context?.fetch(descriptor).first,
            tile.hasUserImage,
-           let img = UIImage(data: tile.userImageData) {
+           let img = Self.decodedImage(from: tile.userImageData) {
             overrideCache.setObject(img, forKey: cacheKey)
             return img
         }
@@ -288,6 +288,46 @@ final class TileImageResolver {
         overrideCache.removeObject(forKey: NSString(string: "override:\(key)"))
         overrideMisses.remove(key)
         revision &+= 1
+    }
+
+    // MARK: - Decoding
+
+    /// Build a **fully decoded** image from encoded bytes.
+    ///
+    /// ## Why this exists: a 64-tile board deadlocked the app
+    ///
+    /// `UIImage(data:)` does not decode — it holds the encoded bytes and defers
+    /// the work until something needs pixels, which is SwiftUI's rendering pass.
+    /// SwiftUI does that on `com.apple.SwiftUI.prepare-image`, an **unbounded**
+    /// concurrent pool: one thread per image it wants, right now.
+    ///
+    /// With HEIC art that is not survivable. Every decode needs a session from
+    /// `CMPhotoCodecSessionPoolCreateDecompressionSession`, and that pool is
+    /// small. Launching straight onto a full board asks for 64 at once: measured
+    /// on an iPad (A16) simulator, 49 of 64 prepare-image threads sat in
+    /// `dispatch_semaphore_wait` inside the session pool, the main thread blocked
+    /// behind one of them in `CA::Render::copy_image`, and the app hung on a
+    /// white screen with layout already done. Not a slow launch — a deadlock.
+    ///
+    /// The format is not really the bug; the missing concurrency limit is. We
+    /// handed SwiftUI undecoded images and let it choose how many to decode at
+    /// once, and it chose all of them. Decoding here, on the main actor, means
+    /// **exactly one decode is ever in flight** and the pool cannot be
+    /// exhausted. SwiftUI then receives a bitmap and its prepare pass is a copy.
+    ///
+    /// Serial main-actor decoding is affordable because every result is cached:
+    /// a tile is decoded once per session, not once per render. If that ever
+    /// stops being true, the fix is a bounded queue here — the choke point is
+    /// what matters, not which thread it runs on.
+    ///
+    /// PNG art does not deadlock (no codec session pool), but it goes through
+    /// the same path deliberately: the concurrency decision should be ours for
+    /// every format, not only the one where losing it is fatal.
+    private static func decodedImage(from data: Data) -> UIImage? {
+        guard let image = UIImage(data: data) else { return nil }
+        // Nil means "could not prepare" (unsupported/corrupt); the undecoded
+        // image is still better than no tile at all.
+        return image.preparingForDisplay() ?? image
     }
 
     // MARK: - Private
@@ -317,7 +357,7 @@ final class TileImageResolver {
         for ext in Self.bundledExtensions {
             if let url = Bundle.main.url(forResource: resourceName, withExtension: ext),
                let data = try? Data(contentsOf: url),
-               let img = UIImage(data: data) {
+               let img = Self.decodedImage(from: data) {
                 cache.setObject(img, forKey: cacheKey)
                 return img
             }

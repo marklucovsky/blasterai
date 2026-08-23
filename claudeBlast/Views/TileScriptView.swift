@@ -509,13 +509,26 @@ struct TileScriptView: View {
     }
 
     private var curatedScripts: [ScriptInfo] {
-        [
+        var scripts = [
             ScriptInfo(name: "First Look", description: "Child, Grandpa, Mom, and a Playground", resourceName: "demo_basic"),
             ScriptInfo(name: "Single Word Mode", description: "Single Word Mode -- Visit to the Tidepool", resourceName: "demo_wordmode"),
             ScriptInfo(name: "Classic Tiles Showcase", description: "order food, then flip the whole board to the Classic tile set", resourceName: "demo_food"),
             ScriptInfo(name: "At Home — Chocolate", description: "\"Mom, I want chocolate\" — repetition escalates the want (iPad)", resourceName: "demo_home"),
             ScriptInfo(name: "On the Go — Bathroom", description: "\"Mom, I have a stomachache. Can I go to the bathroom?\" (iPhone)", resourceName: "demo_onthego"),
         ]
+        #if DEBUG
+        // Diagnostics, not demos: these write tens of thousands of backdated
+        // metric rows to measure real storage cost and to force the compactor to
+        // run. DEBUG-only because a caregiver has no reason to be one tap from
+        // filling their own usage history with synthetic data. Each script's
+        // header carries its setup and how to read the result.
+        scripts += [
+            ScriptInfo(name: "Load — sizing", description: "10k events over 6 months — measure real bytes/row", resourceName: "load_sizing"),
+            ScriptInfo(name: "Load — compaction", description: "25k utterances / ~100k rows over 400 days — force a fold (needs compaction_budget_mb)", resourceName: "load_compaction"),
+            ScriptInfo(name: "Load — natural fold", description: "400k utterances / ~1.6M rows — cross the shipping 205 MB high-water (simulator only)", resourceName: "load_natural"),
+        ]
+        #endif
+        return scripts
     }
 }
 

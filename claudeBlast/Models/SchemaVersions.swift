@@ -88,6 +88,9 @@ enum BlasterSchemaV1: VersionedSchema {
     ///   same reason as `MetricEvent`, and because the spend is incurred by *this*
     ///   device against *this* device's API key, which is also the more correct
     ///   meaning.
+    /// - `CompactionRun` — what each compaction pass measured and reclaimed. A
+    ///   fact about one device's disk; merging it across a family's iPads would
+    ///   be meaningless.
     ///
     /// Free to evolve without migration ceremony, since nothing here is
     /// frozen by a Production CloudKit schema.
@@ -96,6 +99,7 @@ enum BlasterSchemaV1: VersionedSchema {
             DeviceProfile.self,
             MetricEvent.self,
             APIUsageEvent.self,
+            CompactionRun.self,
         ]
     }
 

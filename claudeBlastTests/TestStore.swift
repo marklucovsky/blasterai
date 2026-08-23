@@ -37,16 +37,15 @@ enum TestStore {
         // DeviceProfile store, so inserting one (via a scene duplicate/fork)
         // trapped with "Can't assign an object to a store…". Matching the split
         // keeps the binding consistent.
-        let localSchema = Schema([DeviceProfile.self, MetricEvent.self])
-        let mainSchema = Schema([
-            TileModel.self, TileArtVariant.self, SentenceCache.self, BlasterScene.self,
-            RecordedScript.self, LoggedUtterance.self, ChildProfile.self,
-        ])
-        let allSchema = Schema([
-            TileModel.self, TileArtVariant.self, SentenceCache.self, BlasterScene.self,
-            MetricEvent.self, RecordedScript.self, LoggedUtterance.self,
-            ChildProfile.self, DeviceProfile.self,
-        ])
+        //
+        // The partitions come from BlasterSchemaV1, not from lists retyped here.
+        // They used to be retyped, and they drifted: APIUsageEvent shipped in the
+        // app's local partition and was simply absent from this store, so nothing
+        // could test against it. Reading the same source the app reads means a
+        // model added to the schema is in the test store by construction.
+        let localSchema = Schema(BlasterSchemaV1.localModels)
+        let mainSchema = Schema(BlasterSchemaV1.syncedModels)
+        let allSchema = Schema(BlasterSchemaV1.models)
         let localConfig = ModelConfiguration("DeviceLocal-Test", schema: localSchema,
                                              isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let mainConfig = ModelConfiguration(schema: mainSchema,
@@ -70,6 +69,7 @@ enum TestStore {
         wipe(TileModel.self); wipe(TileArtVariant.self); wipe(SentenceCache.self)
         wipe(BlasterScene.self); wipe(MetricEvent.self); wipe(RecordedScript.self)
         wipe(LoggedUtterance.self); wipe(ChildProfile.self); wipe(DeviceProfile.self)
+        wipe(APIUsageEvent.self); wipe(CompactionRun.self)
         try? ctx.save()
     }
 
