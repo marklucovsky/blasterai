@@ -204,14 +204,24 @@ struct TileScriptParser {
     }
 
     private static func parseTilesCommand(_ value: Any, lineComments: [String: String]) throws -> TileScriptCommand {
-        // Bulk spec: {count: N, source: ..., length: "2-4"}
+        // Bulk spec: {count: N, source: ..., length: "2-4", days: N,
+        //             metricsOnly: true, seed: N}
         if let dict = value as? [String: Any], dict["count"] != nil {
             let count = dict["count"] as? Int ?? 100
             let sourceStr = dict["source"] as? String ?? "random"
             let source = BulkTileSpec.BulkSource(rawValue: sourceStr) ?? .random
             let lengthStr = dict["length"] as? String ?? "2-4"
             let (minLen, maxLen) = parseLengthRange(lengthStr)
-            return .bulkTiles(spec: BulkTileSpec(count: count, source: source, minLength: minLen, maxLength: maxLen))
+            var spec = BulkTileSpec(count: count, source: source,
+                                    minLength: minLen, maxLength: maxLen)
+            // All three are optional and default to the pre-existing behaviour,
+            // so old scripts parse to exactly the same spec they always did.
+            if let days = dict["days"] as? Int { spec.spanDays = days }
+            if let metricsOnly = (dict["metricsOnly"] ?? dict["metrics_only"]) as? Bool {
+                spec.metricsOnly = metricsOnly
+            }
+            if let seed = dict["seed"] as? Int { spec.seed = UInt64(bitPattern: Int64(seed)) }
+            return .bulkTiles(spec: spec)
         }
 
         // Row array: list of strings

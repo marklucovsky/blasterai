@@ -53,6 +53,11 @@ struct claudeBlastApp: App {
         UserDefaults.standard.register(defaults: [AppSettingsKey.icloudEnabled: true])
         #endif
 
+        // Return disk freed by a previous launch's compaction. This is the ONLY
+        // moment it can happen: SQLite will not truncate a database file that
+        // another connection has open, so it must precede the ModelContainer.
+        MetricCompactor.reclaimPendingSpace()
+
         let icloudEnabled = UserDefaults.standard.bool(forKey: AppSettingsKey.icloudEnabled)
         let container = setModelContainer(icloudEnabled: icloudEnabled)
         self.modelContainer = container
@@ -113,6 +118,18 @@ struct claudeBlastApp: App {
         if cacheSwept > 0 {
             try? container.mainContext.save()
         }
+
+        // Keep the device-local usage history inside its space budget. Measures
+        // one file and returns; on any real device it is far under the mark and
+        // this does nothing at all. See MetricCompactor for why the trigger is
+        // measured bytes rather than a calendar. Any space this frees is handed
+        // back to the filesystem by reclaimPendingSpace on the NEXT launch.
+        // Collect what reclaimPendingSpace freed a moment ago (it ran before the
+        // container existed, so it could only park the number). Must come BEFORE
+        // run(), which starts a new record and would otherwise leave the previous
+        // one permanently missing its second half.
+        MetricCompactor.attachPendingReclaim(container: container)
+        MetricCompactor.run(container: container)
 
         // Stamp decentralized identity onto any pre-identity scenes so existing
         // installs show provenance + bind scripts by stable id. Idempotent.

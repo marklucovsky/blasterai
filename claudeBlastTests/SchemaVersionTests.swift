@@ -55,6 +55,7 @@ struct SchemaVersionTests {
             "DeviceProfile",
             "MetricEvent",
             "APIUsageEvent",
+            "CompactionRun",
         ])
     }
 

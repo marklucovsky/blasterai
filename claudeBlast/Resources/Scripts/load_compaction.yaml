@@ -1,0 +1,63 @@
+name: Load — compaction
+description: 25k backdated utterances — crosses a lowered budget and forces a fold
+scene: "<default>"
+mode: sentence
+audio: off
+tileWait: .instant
+sentenceWait: .instant
+
+# Proves the other half: that the app notices it is getting big and trims
+# correctly. Unlike load_sizing this needs the compactor to actually RUN, which
+# means crossing the high-water mark.
+#
+# SETUP — REQUIRED. Lower the budget first, or nothing happens:
+#
+#   xcrun simctl spawn booted defaults write <bundle-id> compaction_budget_mb -int 8
+#
+# The budget is a real setting now — Device -> About & Stats -> Usage history
+# budget — but the picker only offers 128 / 256 / 512, which are the values that
+# make sense for a caregiver. `resolved()` honours any value at or above 8 MB,
+# so a soak run writes the key directly.
+#
+# 8 MB rather than 128, because at the shipping 256 MB budget, honestly reaching
+# the 205 MB high-water takes roughly 750,000 rows. At 8 MB it takes a few tens
+# of thousands and every other part of the path stays real: real measured bytes,
+# real folding, real deletion, real vacuum. The retention floors do NOT scale
+# with the budget, deliberately — six months of history is a promise about the
+# child's data, not a function of disk — so expect "Floor held" to appear, and
+# that is the correct behaviour rather than a failure.
+#
+# WHAT TO EXPECT, and note it takes TWO launches by design:
+#
+#   Run this script, then relaunch:
+#     compaction: store=... over high-water — starting
+#     compaction: free pages queued for reclaim on next launch
+#   Relaunch again:
+#     the store file shrinks
+#
+#   The split is not laziness. SQLite will not truncate a database file that
+#   another connection has open — measured: with SwiftData attached,
+#   incremental_vacuum returned exactly one page out of a 22,016-page freelist.
+#   So launch N folds rows and leaves a note; launch N+1 reclaims before the
+#   ModelContainer exists. Watch it with:
+#
+#   xcrun simctl spawn booted log stream --predicate 'subsystem == "app.blasterai"'
+#
+# 400 days of span, so there is history outside the 6-month coverage floor and
+# the delete stage has something legal to remove after folding runs out.
+#
+# 25,000 iterations, not more: each writes one `tile` row per selected tile plus
+# one sentence row, so this is roughly 100,000 rows and ~27 MB -- comfortably
+# over an 8 MB budget's 6.4 MB high-water, without the insert time of a run
+# that would have to reach 205 MB.
+
+script:
+  - comment: 25k utterances over 400 days — roughly 100k rows, ~27 MB
+  - tiles:
+      count: 25000
+      source: most-common
+      length: "2-4"
+      days: 400
+      metricsOnly: true
+      seed: 20260821
+  - comment: Load complete — relaunch twice, then read Device -> About & Stats -> Compaction

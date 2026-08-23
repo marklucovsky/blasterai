@@ -69,6 +69,25 @@ enum AppSettingsKey {
     /// playback pill on a straight Run, and always shows the "Generating…" beat
     /// even when a result comes from cache, so demos read as live AI.
     static let demoMode              = "demo_mode"
+
+    // Compaction hand-off between launches. Freed SQLite pages can only be
+    // returned to the filesystem while nothing has the store open, which in this
+    // app's life is the moment before the ModelContainer is built — so the launch
+    // that folds rows leaves a note here for the next one to act on.
+    // See MetricCompactor.reclaimPendingSpace.
+    static let compactionReclaimPending = "compaction_reclaim_pending"
+    /// Written by SwiftData's own configuration rather than reconstructed, so a
+    /// guessed path can never silently reclaim nothing.
+    static let compactionStorePath      = "compaction_store_path"
+    /// Storage budget for the device-local metric store, in megabytes.
+    /// Zero means "use the shipping default". See `MetricCompactor.Policy`.
+    static let compactionBudgetMB       = "compaction_budget_mb"
+    /// The `CompactionRun` awaiting its reclaim numbers, and what the reclaim
+    /// freed. Reclamation happens before the app has a `ModelContainer`, so the
+    /// result is parked here and attached to the row once there is a store to
+    /// write to. See `MetricCompactor.attachPendingReclaim`.
+    static let compactionLastRunID      = "compaction_last_run_id"
+    static let compactionReclaimedBytes = "compaction_reclaimed_bytes"
 }
 
 /// Convenience accessor for the demo-mode flag from non-view code (engine, runner).

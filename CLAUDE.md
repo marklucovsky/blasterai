@@ -15,6 +15,25 @@ See `reference/` for the original Blaster models, screenshots, vocabulary, and l
 - Tests:
   xcodebuild -project claudeBlast.xcodeproj -scheme "claudeBlast" -destination "platform=iOS Simulator,name=iPad Pro 11-inch (M5),OS=26.2" test
 
+### Running one suite
+
+Most suites are nested inside `SerialTests`, so `-only-testing` needs the full
+path — `claudeBlastTests/SerialTests/MetricCompactorTests`, not
+`claudeBlastTests/MetricCompactorTests`.
+
+**A wrong path is not an error.** `xcodebuild` matches nothing, runs nothing, and
+still prints `** TEST SUCCEEDED **`. Always confirm tests actually executed:
+
+    xcodebuild ... -only-testing:claudeBlastTests/SerialTests/<Suite> test 2>&1 \
+      | grep -E "Test case .*(passed|failed)"
+
+or read the count out of the result bundle, which is the unambiguous check:
+
+    xcrun xcresulttool get test-results summary --path <path>.xcresult \
+      | grep -E "passedTests|failedTests|totalTestCount"
+
+`totalTestCount: 0` with `TEST SUCCEEDED` means the filter matched nothing.
+
 ## Rules
 - Do not change signing/team settings unless asked.
 - Prefer minimal diffs.

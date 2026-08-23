@@ -80,9 +80,12 @@ struct VocabManagerView: View {
         List {
             Section {
                 Picker("Show", selection: $scope) {
+                    // Every scope carries its count, including zero: "Needs
+                    // review (0)" is the answer to the question the tab is asked,
+                    // and hiding it makes an empty queue indistinguishable from
+                    // one that hasn't been counted.
                     ForEach(Scope.allCases) { s in
-                        let n = count(s)
-                        Text(n > 0 && s != .all ? "\(s.rawValue) (\(n))" : s.rawValue).tag(s)
+                        Text("\(s.rawValue) (\(count(s)))").tag(s)
                     }
                 }
                 .pickerStyle(.segmented)
