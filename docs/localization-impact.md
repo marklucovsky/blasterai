@@ -5,12 +5,14 @@ nonprofit that builds AAC systems in countries with no existing language system 
 Cambodia most recently, a new country each year).
 
 **Purpose:** predict the blast radius of non-English support *before* the CloudKit
-Production promotion in session 4 makes parts of it permanent. **Solving localization is
+Production promotion makes parts of it permanent. (That promotion was session 4 when this
+was written; the 2026-08-24 re-cut moved it to **S6** — see `final-countdown-plan.md`.) **Solving localization is
 not a launch gate. Predicting its impact is** — because one decision in here is
 irreversible and the rest are not.
 
-**Status:** assessment only. No code changes proposed for the pilot beyond the two-line
-insurance in §6.
+**Status:** assessment only when written. Superseded in two places by the 2026-08-24
+re-cut: Brown's Stages moved **into** S3 (§10 update), and print/PDF export anchors **S4**
+(§8 update).
 
 ---
 
@@ -464,6 +466,38 @@ No estimate offered yet, but this is now the most likely first piece of real loc
 — and notably, it is valuable to English-speaking US therapists on day one, independent of any
 localization at all.
 
+### Update 2026-08-24 — reassigned to session 4, and the resolution question got answered late
+
+Print export is no longer a session-3 item. It anchors its own session — **S4
+`cb-portable`** in [`final-countdown-plan.md`](final-countdown-plan.md) — alongside a
+unified share surface, tile-image export, OBF/OBZ export, and a caregiver usage report.
+The reasoning that put it in session 3 (the Mac is what a therapist prints from) still
+holds; the Mac now simply arrives one session earlier than the printing does.
+
+**Three decisions taken:**
+
+- **Layout presets, not separate features.** Multi-page board, single core board, and
+  PECS-style card sheet are three presets of one renderer. That answers the "what is the
+  artifact physically" question above without waiting on Brandi — we ship all three and
+  let her tell us which one gets used.
+- **Interop: OBF/OBZ export, one-way out.** A board should open in CoughDrop. Import is
+  post-pilot, because OBF's model is not ours and the lossy mappings multiply on the way
+  in.
+- **Authoring-only is a supported outcome.** A therapist who authors here and leaves with
+  a PDF, an OBF, and a folder of images has used the product correctly.
+
+**The resolution question was not checked before compressing.** This section asked for
+that explicitly — *"worth checking before we compress, not after"* — and session 2
+compressed first. The numbers, measured 2026-08-24:
+
+- Device art is **512×512 HEIC** (`claudeBlast/TileImageSets/`, 38 MB for five sets)
+- The **1024×1024 PNG masters** survive in LFS under `tools/tile_sets/`, off-device
+
+512 px prints cleanly to a ~2.5" tile (≈205 DPI) and acceptably to 3" (≈171 DPI). Typical
+AAC print tiles are 1–2.5", so this is very likely fine — but S4 must *decide* it (accept
+the ceiling, or build a print-quality path) rather than discover it. The masters not being
+destroyed is what keeps the second option open.
+
 ---
 
 ## 9. Handoff — the locals keep editing after the team leaves
@@ -613,6 +647,46 @@ change landing immediately before a pilot**, and it needs eval evidence that it 
 baseline before it ships — the same discipline that took escalation 38% → 85%. Don't let the
 second half get squeezed into a polish session by the first half's deadline; if it can't be done
 with eval backing, ship the pilot on grade and change the axis on pilot feedback.
+
+### Update 2026-08-24 — the second half moved *into* session 3, on a better argument
+
+The split above still stands, and the eval gate on the prompt wording still stands. What
+changed is the priority of the second half: it is now **3E** in
+[`final-countdown-plan.md`](final-countdown-plan.md), a first-class session-3 item rather
+than "session 3, or post-launch."
+
+Mark's argument, and it is stronger than scheduling: **a Brown's Stage selector does not
+add a caregiver knob, it removes two.** Today a caregiver separately sets
+
+- `interactionMode` — `.sentence` / `.singleWord` (`ChildProfile.swift:116`)
+- `maxSelectedTiles` — a 2...8 stepper (`:60`)
+- `ageGrade` — implicitly, by answering an age question in onboarding (`:111`)
+
+and none of the three means anything to an SLP. Stage I *is* single-word mode. Stage
+II/III *is* a four-tile cap. Stage IV+ is what you're already in when a caregiver raises
+the cap past four. So the stage selector isn't a new axis bolted alongside the old
+ones — it is the name for what those three knobs were clumsily approximating, and it
+retires the age math on the way through.
+
+That makes it a **polish** item as much as a language one, which is exactly why it belongs
+in the polish session.
+
+Two consequences recorded there and worth repeating here:
+
+- **`birthday` is deleted outright.** An earlier draft of this note said it "can never be
+  deleted" — wrong. CloudKit permanence starts at **promotion**, and ours has not
+  happened: Production has no schema, and Development gets reset by the S6 runbook anyway.
+  So removing a stored child **date of birth** is free today and impossible after S6
+  Phase 4. Mark's call, 2026-08-24, and the right one — a DOB is the most sensitive field
+  in the app, we only ever stored it to derive a grade number for a prompt, and Brown's
+  Stage deletes that reason. Tracked as **gate 9** in `final-countdown-plan.md` §3F.
+- **The cache key changes.** `CacheKeyPolicy` emits `…/g<grade>#…` *precisely so* a grade
+  difference stops serving stale sentences (`CacheKeyPolicy.swift:57`). `g<grade>` →
+  `b<stage>` invalidates cached sentences by design. Caregiver overrides key on the stable
+  combo key and survive.
+
+The eval gate is unchanged: the selector and plumbing ship regardless, the **prompt
+wording** ships only if it beats the grade baseline.
 
 ---
 
