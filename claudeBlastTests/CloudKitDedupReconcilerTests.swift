@@ -52,7 +52,7 @@ struct CloudKitDedupReconcilerTests {
     private func profile(_ name: String, id: String, isSystem: Bool,
                          active: Bool, modified: Date = .init(timeIntervalSinceReferenceDate: 0)) -> ChildProfile {
         let p = ChildProfile(displayName: name,
-                             birthday: ChildProfile.synthesizeBirthday(age: 7),
+                             brownsStage: .twoThree,
                              voiceIdentifier: "", maxSelectedTiles: 4, isActive: active)
         p.id = id
         p.isSystem = isSystem
@@ -150,7 +150,7 @@ struct CloudKitDedupReconcilerTests {
         ctx.insert(profile("Sandbox", id: "s1", isSystem: true, active: false))
         ctx.insert(profile("Sandbox", id: "s2", isSystem: true, active: false))
         let cache = SentenceCache(tiles: [TileSelection(key: "eat", value: "eat", wordClass: "actions")],
-                                  grade: 2, sentence: "hi", childID: "s2")  // refs the loser
+                                  stage: .twoThree, sentence: "hi", childID: "s2")  // refs the loser
         ctx.insert(cache)
 
         CloudKitDedupReconciler.reconcile(context: ctx)
@@ -213,9 +213,9 @@ struct CloudKitDedupReconcilerTests {
             TileSelection(key: "eat", value: "eat", wordClass: "actions"),
             TileSelection(key: "apple", value: "apple", wordClass: "food"),
         ]
-        let a = SentenceCache(tiles: eatApple, grade: 2, sentence: "one")
+        let a = SentenceCache(tiles: eatApple, stage: .twoThree, sentence: "one")
         a.hitCount = 2
-        let b = SentenceCache(tiles: eatApple.reversed(), grade: 2, sentence: "two")  // same cacheKey (order-independent)
+        let b = SentenceCache(tiles: eatApple.reversed(), stage: .twoThree, sentence: "two")  // same cacheKey (order-independent)
         b.hitCount = 9
         ctx.insert(a); ctx.insert(b)
 

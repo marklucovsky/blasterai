@@ -8,11 +8,11 @@
 //
 //  The cached sentence for a tile combination depends on more than the tile
 //  keys: it depends on the *model* that generated it, the *prompt* version that
-//  shaped it, the child's *grade* (the system prompt embeds "{grade}"), and each
+//  shaped it, the child's *Brown's Stage* (the system prompt embeds "{stage}"), and each
 //  tile's *word class* (the prompt annotates every tile — "pony (animal)" vs
 //  "pony (object)" — and the category-honor rule makes that annotation
 //  authoritative). The cache key folds in all of them, so a model swap, a prompt
-//  change, a grade difference, or a vocabulary *reclassification* stops serving
+//  change, a stage difference, or a vocabulary *reclassification* stops serving
 //  stale outputs instead of returning a sentence built under the old meaning.
 //
 //  `nonisolated` throughout: this is a pure policy helper (constants + pure
@@ -32,10 +32,14 @@ enum CacheKeyPolicy {
     /// sentence. Entries stamped with a different `versionToken` are swept:
     /// automatically at launch (`evictStale`) and on demand from Admin
     /// (`pruneStaleVersions`), regardless of TTL.
-    nonisolated static let promptVersion = 2   // v2: food-subclass collapse + object/animal/plant retag (2026-08)
+    // v3: Brown's Stages replace the birthday-derived grade level in the system
+    // prompt (2026-08). Every v2 entry was generated under "grammar and vocabulary
+    // of a {grade} student" and is stale by construction, so the bump is the point
+    // rather than a side effect — see BrownsStage.
+    nonisolated static let promptVersion = 3
 
     /// Stamped onto each cache entry (`SentenceCache.keyVersion`) and embedded in
-    /// the key. Excludes grade + word class on purpose — those are legitimate
+    /// the key. Excludes stage + word class on purpose — those are legitimate
     /// parallel entries, not staleness signals.
     nonisolated static var versionToken: String { "\(modelID)/v\(promptVersion)" }
 
@@ -50,24 +54,24 @@ enum CacheKeyPolicy {
 
     // MARK: - Key construction
 
-    /// Canonical key: `<model>/v<promptVersion>/g<grade>#<sorted key:class pairs>`.
+    /// Canonical key: `<model>/v<promptVersion>/b<stage>#<sorted key:class pairs>`.
     /// Tiles are deduplicated by key + sorted (selection order doesn't matter),
     /// and each carries its word class so a reclassification — e.g. `pony`
     /// object→animal — changes the key, missing the stale entry and regenerating.
-    nonisolated static func key(for tiles: [TileSelection], grade: Int) -> String {
+    nonisolated static func key(for tiles: [TileSelection], stage: BrownsStage) -> String {
         let pairs = tiles
             .reduce(into: [String: String]()) { $0[$1.key] = $1.wordClass }   // dedupe by key
             .sorted { $0.key < $1.key }
             .map { "\($0.key):\($0.value)" }
             .joined(separator: ",")
-        return "\(versionToken)/g\(grade)#\(pairs)"
+        return "\(versionToken)/b\(stage.rawValue)#\(pairs)"
     }
 
     /// Version-INDEPENDENT identity for a tile combination + child. Unlike `key`,
-    /// this excludes the model, prompt version, grade, and word class — it is just
+    /// this excludes the model, prompt version, stage, and word class — it is just
     /// the sorted, deduplicated tile keys plus the child. Durable caregiver
     /// overrides (hand-typed / suppressed / accepted-refine sentences) are matched
-    /// on this so they OUTLIVE a model swap, a `promptVersion` bump, a grade
+    /// on this so they OUTLIVE a model swap, a `promptVersion` bump, a stage
     /// change, or a reclassification — the things that intentionally rotate `key`
     /// and strand ordinary cache entries. A caregiver's correction is about *the
     /// words the child picked*, not the machinery that generated the sentence.

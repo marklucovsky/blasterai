@@ -21,16 +21,16 @@ final class SentenceCacheManager {
     }
 
     /// Build a canonical cache key. Folds in the model + prompt version and the
-    /// child's grade (both change the generated sentence), then the deduplicated,
+    /// child's stage (both change the generated sentence), then the deduplicated,
     /// sorted tile keys. See `CacheKeyPolicy`.
-    static func cacheKey(for tiles: [TileSelection], grade: Int) -> String {
-        CacheKeyPolicy.key(for: tiles, grade: grade)
+    static func cacheKey(for tiles: [TileSelection], stage: BrownsStage) -> String {
+        CacheKeyPolicy.key(for: tiles, stage: stage)
     }
 
     /// Increment hitCount for an existing cache entry without returning the sentence.
     /// Called on escalation paths that bypass the cache for generation but should still count usage.
-    func recordHit(tiles: [TileSelection], grade: Int) {
-        let key = Self.cacheKey(for: tiles, grade: grade)
+    func recordHit(tiles: [TileSelection], stage: BrownsStage) {
+        let key = Self.cacheKey(for: tiles, stage: stage)
         var descriptor = FetchDescriptor<SentenceCache>(
             predicate: #Predicate { $0.cacheKey == key }
         )
@@ -43,8 +43,8 @@ final class SentenceCacheManager {
     /// Look up a cached sentence. Returns nil on miss; increments hitCount on hit.
     /// `at` dates the touch — synthetic load passes simulated time so `lastUsed`
     /// stays consistent with the metric rows written alongside it.
-    func lookup(tiles: [TileSelection], grade: Int, at date: Date = .now) -> SentenceCache? {
-        let key = Self.cacheKey(for: tiles, grade: grade)
+    func lookup(tiles: [TileSelection], stage: BrownsStage, at date: Date = .now) -> SentenceCache? {
+        let key = Self.cacheKey(for: tiles, stage: stage)
         var descriptor = FetchDescriptor<SentenceCache>(
             predicate: #Predicate { $0.cacheKey == key }
         )
@@ -63,9 +63,9 @@ final class SentenceCacheManager {
     /// `childID` is stamped on new entries so future per-child analytics can
     /// filter on it. Existing entries retain their original `childID`.
     /// Every write (re)stamps `keyVersion` with the current `CacheKeyPolicy`.
-    func store(tiles: [TileSelection], grade: Int, sentence: String,
+    func store(tiles: [TileSelection], stage: BrownsStage, sentence: String,
                childID: String? = nil, at date: Date = .now) {
-        let key = Self.cacheKey(for: tiles, grade: grade)
+        let key = Self.cacheKey(for: tiles, stage: stage)
         var descriptor = FetchDescriptor<SentenceCache>(
             predicate: #Predicate { $0.cacheKey == key }
         )
@@ -76,7 +76,7 @@ final class SentenceCacheManager {
             existing.lastUsed = date
             existing.keyVersion = CacheKeyPolicy.versionToken
         } else {
-            let entry = SentenceCache(tiles: tiles, grade: grade, sentence: sentence,
+            let entry = SentenceCache(tiles: tiles, stage: stage, sentence: sentence,
                                       childID: childID)
             // Set after init rather than through it: the model's dates default to
             // now, and only synthetic history ever needs them to say otherwise.
@@ -93,7 +93,7 @@ final class SentenceCacheManager {
     }
 
     /// The durable caregiver override for this tile combination, if any. Matched
-    /// on the version-INDEPENDENT `stableKey`, so it outlives model/prompt/grade/
+    /// on the version-INDEPENDENT `stableKey`, so it outlives model/prompt/stage/
     /// class changes (unlike `lookup`, which keys on the versioned `cacheKey`).
     /// Returns hand-typed, suppressed, or accepted-refine entries — a hand-edit or
     /// suppress outranks an accepted refine. Checked BEFORE `lookup` in the engine.
@@ -116,12 +116,12 @@ final class SentenceCacheManager {
     /// Find-or-create the entry for this combination (by versioned `cacheKey`),
     /// so an override upserts onto any existing cached sentence rather than
     /// duplicating it.
-    private func entry(for tiles: [TileSelection], grade: Int, childID: String?) -> SentenceCache {
-        let key = Self.cacheKey(for: tiles, grade: grade)
+    private func entry(for tiles: [TileSelection], stage: BrownsStage, childID: String?) -> SentenceCache {
+        let key = Self.cacheKey(for: tiles, stage: stage)
         var descriptor = FetchDescriptor<SentenceCache>(predicate: #Predicate { $0.cacheKey == key })
         descriptor.fetchLimit = 1
         if let existing = try? context.fetch(descriptor).first { return existing }
-        let created = SentenceCache(tiles: tiles, grade: grade, sentence: "", childID: childID)
+        let created = SentenceCache(tiles: tiles, stage: stage, sentence: "", childID: childID)
         context.insert(created)
         return created
     }
@@ -129,8 +129,8 @@ final class SentenceCacheManager {
     /// Store a caregiver HAND-TYPED sentence as a durable, version-independent
     /// override — pinned (eviction-exempt) and authoritative. Served for this
     /// combination regardless of what the model would generate.
-    func setHandTyped(tiles: [TileSelection], grade: Int, sentence: String, childID: String?) {
-        let e = entry(for: tiles, grade: grade, childID: childID)
+    func setHandTyped(tiles: [TileSelection], stage: BrownsStage, sentence: String, childID: String?) {
+        let e = entry(for: tiles, stage: stage, childID: childID)
         e.sentence = sentence
         e.isCaregiverEdited = true
         e.isSuppressed = false
@@ -142,8 +142,8 @@ final class SentenceCacheManager {
     /// SUPPRESS a tile combination: the cached sentence is never served or
     /// re-stored as canonical; the engine regenerates live each time. Durable +
     /// pinned so a bad answer can't come back after eviction. Reversible.
-    func setSuppressed(tiles: [TileSelection], grade: Int, childID: String?) {
-        let e = entry(for: tiles, grade: grade, childID: childID)
+    func setSuppressed(tiles: [TileSelection], stage: BrownsStage, childID: String?) {
+        let e = entry(for: tiles, stage: stage, childID: childID)
         e.isSuppressed = true
         e.isCaregiverEdited = false
         e.isPinned = true
@@ -154,8 +154,8 @@ final class SentenceCacheManager {
     /// pinned, TTL-immune, version-independent override. Repeated refines reaffirm
     /// the same entry. `unsuppresses` so a re-refine of a suppressed combo restores
     /// a served sentence.
-    func setAcceptedRefine(tiles: [TileSelection], grade: Int, sentence: String, childID: String?) {
-        let e = entry(for: tiles, grade: grade, childID: childID)
+    func setAcceptedRefine(tiles: [TileSelection], stage: BrownsStage, sentence: String, childID: String?) {
+        let e = entry(for: tiles, stage: stage, childID: childID)
         e.sentence = sentence
         e.caregiverAccepted = true
         e.isSuppressed = false
@@ -239,7 +239,7 @@ final class SentenceCacheManager {
     }
 
     /// Extract the set of word classes encoded in a cache key. Key shape:
-    /// `<model>/v<n>/g<grade>#key1:class1,key2:class2` — we take the segment after
+    /// `<model>/v<n>/b<stage>#key1:class1,key2:class2` — we take the segment after
     /// `#`, split on `,`, and read the class after each pair's last `:`.
     nonisolated static func classes(in cacheKey: String) -> Set<String> {
         guard let hash = cacheKey.firstIndex(of: "#") else { return [] }

@@ -21,22 +21,33 @@ struct SentenceEngineTests {
 
     // MARK: - SentencePromptBuilder
 
-    @Test func promptBuilderIncludesGradeLevel() {
-        let builder = SentencePromptBuilder(ageGradeLevel: 2)
+    @Test func promptBuilderIncludesStage() {
+        let builder = SentencePromptBuilder(brownsStage: .twoThree)
         let prompt = builder.buildSystemPrompt()
-        #expect(prompt.contains(where: { $0.content.contains("2nd-grade") }))
+        #expect(prompt.contains(where: { $0.content.contains("Brown's Stage II-III") }))
     }
 
-    @Test func promptBuilderHonorsExplicitGradeLevel() {
-        // Catch silent regression to the old hardcoded grade default.
-        let builder = SentencePromptBuilder(ageGradeLevel: 5)
+    @Test func promptBuilderHonorsExplicitStage() {
+        // Catch silent regression to a hardcoded default: the stage the caller
+        // passed must reach the prompt, and no other stage may.
+        let builder = SentencePromptBuilder(brownsStage: .fourPlus)
         let prompt = builder.buildSystemPrompt()
-        #expect(prompt.contains(where: { $0.content.contains("5th-grade") }))
-        #expect(!prompt.contains(where: { $0.content.contains("2nd-grade") }))
+        #expect(prompt.contains(where: { $0.content.contains("Brown's Stage IV") }))
+        #expect(!prompt.contains(where: { $0.content.contains("Stage II-III") }))
+    }
+
+    /// The prompt must never describe the child by school grade again. Age
+    /// does not predict expressive language level for an AAC user, and the
+    /// grade phrasing is what the birthday field existed to feed.
+    @Test func promptBuilderNeverMentionsGrade() {
+        for stage in BrownsStage.allCases {
+            let prompt = SentencePromptBuilder(brownsStage: stage).buildSystemPrompt()
+            #expect(!prompt.contains(where: { $0.content.lowercased().contains("grade") }))
+        }
     }
 
     @Test func promptBuilderIncludesRepetition() {
-        var builder = SentencePromptBuilder(ageGradeLevel: 2)
+        var builder = SentencePromptBuilder(brownsStage: .twoThree)
         builder.repetitionCount = 2
         let prompt = builder.buildSystemPrompt()
         #expect(prompt.contains(where: { $0.content.contains("repeat #2") }))
@@ -45,7 +56,7 @@ struct SentenceEngineTests {
     }
 
     @Test func promptBuilderFormatsUserPrompt() {
-        let builder = SentencePromptBuilder(ageGradeLevel: 2)
+        let builder = SentencePromptBuilder(brownsStage: .twoThree)
         let tiles = [
             TileSelection(key: "eat", value: "eat", wordClass: "actions"),
             TileSelection(key: "pizza", value: "pizza", wordClass: "food"),
@@ -60,7 +71,7 @@ struct SentenceEngineTests {
         let container = try makeTestContainer()
         let cache = SentenceCacheManager(modelContext: container.mainContext)
         let tiles = [TileSelection(key: "eat", value: "eat", wordClass: "actions")]
-        let result = cache.lookup(tiles: tiles, grade: 2)
+        let result = cache.lookup(tiles: tiles, stage: .twoThree)
         #expect(result == nil)
     }
 
@@ -72,8 +83,8 @@ struct SentenceEngineTests {
             TileSelection(key: "pizza", value: "pizza", wordClass: "food"),
         ]
 
-        cache.store(tiles: tiles, grade: 2, sentence: "I want pizza!")
-        let hit = cache.lookup(tiles: tiles, grade: 2)
+        cache.store(tiles: tiles, stage: .twoThree, sentence: "I want pizza!")
+        let hit = cache.lookup(tiles: tiles, stage: .twoThree)
         #expect(hit != nil)
         #expect(hit?.sentence == "I want pizza!")
         #expect(hit?.hitCount == 1)
@@ -84,9 +95,9 @@ struct SentenceEngineTests {
         let cache = SentenceCacheManager(modelContext: container.mainContext)
         let tiles = [TileSelection(key: "eat", value: "eat", wordClass: "actions")]
 
-        cache.store(tiles: tiles, grade: 2, sentence: "I want to eat!")
-        _ = cache.lookup(tiles: tiles, grade: 2)
-        let second = cache.lookup(tiles: tiles, grade: 2)
+        cache.store(tiles: tiles, stage: .twoThree, sentence: "I want to eat!")
+        _ = cache.lookup(tiles: tiles, stage: .twoThree)
+        let second = cache.lookup(tiles: tiles, stage: .twoThree)
         #expect(second?.hitCount == 2)
     }
 
@@ -95,10 +106,10 @@ struct SentenceEngineTests {
         let cache = SentenceCacheManager(modelContext: container.mainContext)
         let tiles = [TileSelection(key: "eat", value: "eat", wordClass: "actions")]
 
-        cache.store(tiles: tiles, grade: 2, sentence: "Original")
-        cache.store(tiles: tiles, grade: 2, sentence: "Updated")
+        cache.store(tiles: tiles, stage: .twoThree, sentence: "Original")
+        cache.store(tiles: tiles, stage: .twoThree, sentence: "Updated")
 
-        let hit = cache.lookup(tiles: tiles, grade: 2)
+        let hit = cache.lookup(tiles: tiles, stage: .twoThree)
         #expect(hit?.sentence == "Updated")
     }
 
@@ -108,8 +119,8 @@ struct SentenceEngineTests {
         let tiles1 = [TileSelection(key: "eat", value: "eat", wordClass: "actions")]
         let tiles2 = [TileSelection(key: "drink", value: "drink", wordClass: "actions")]
 
-        cache.store(tiles: tiles1, grade: 2, sentence: "I want to eat!")
-        cache.store(tiles: tiles2, grade: 2, sentence: "I want to drink!")
+        cache.store(tiles: tiles1, stage: .twoThree, sentence: "I want to eat!")
+        cache.store(tiles: tiles2, stage: .twoThree, sentence: "I want to drink!")
         #expect(cache.allEntries().count == 2)
 
         cache.flushAll()
@@ -125,7 +136,7 @@ struct SentenceEngineTests {
             TileSelection(key: "eat", value: "eat", wordClass: "actions"),
             TileSelection(key: "pizza", value: "pizza", wordClass: "food"),
         ]
-        #expect(SentenceCacheManager.cacheKey(for: tilesA, grade: 2) == SentenceCacheManager.cacheKey(for: tilesB, grade: 2))
+        #expect(SentenceCacheManager.cacheKey(for: tilesA, stage: .twoThree) == SentenceCacheManager.cacheKey(for: tilesB, stage: .twoThree))
     }
 
     // MARK: - MockSentenceProvider

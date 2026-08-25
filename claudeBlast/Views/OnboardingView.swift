@@ -34,9 +34,7 @@ struct OnboardingView: View {
     @State private var authorName: String = ""
 
     @State private var childName: String = ""
-    @State private var childAgeYears: Int = 5
-    @State private var childBirthday: Date = ChildProfile.synthesizeBirthday(age: 5)
-    @State private var editingExactBirthday: Bool = false
+    @State private var childStage: BrownsStage = .one
     @State private var childVoiceID: String = ""
     @State private var childMaxTiles: Int = 4
     @State private var skipChildProfile: Bool = false
@@ -326,44 +324,38 @@ struct OnboardingView: View {
                     .autocorrectionDisabled()
             }
 
+            // Where the child is now, not how old they are. Age does not
+            // predict expressive language level for an AAC user, and asking for
+            // a birthday meant storing one. See BrownsStage.
             VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text("Age").font(.headline)
-                    Spacer()
-                    Text("\(childAgeYears) years old")
-                        .foregroundStyle(.secondary)
-                }
-                Stepper(value: $childAgeYears, in: 1...21) {
-                    EmptyView()
-                }
-                .labelsHidden()
-                .onChange(of: childAgeYears) { _, newValue in
-                    if !editingExactBirthday {
-                        childBirthday = ChildProfile.synthesizeBirthday(age: newValue)
+                Text("Where is your child now?").font(.headline)
+                Picker("Stage", selection: $childStage) {
+                    ForEach(BrownsStage.allCases) { stage in
+                        Text(stage.label).tag(stage)
                     }
                 }
-                Text("Birthday: \(birthdayDisplay) — age auto-updates from this date.")
+                .pickerStyle(.segmented)
+                Text(childStage.detail)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                DisclosureGroup("Edit exact birthday", isExpanded: $editingExactBirthday) {
-                    DatePicker("Birthday", selection: $childBirthday,
-                               in: ...Date.now,
-                               displayedComponents: .date)
+                Text("You can change this at any time in Admin. It is not a test — pick where they are today.")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                if childStage.allowsTileCapChoice {
+                    HStack {
+                        Text("Tiles per sentence").font(.subheadline)
+                        Spacer()
+                        Text("\(childMaxTiles)").foregroundStyle(.secondary)
+                    }
+                    Stepper(value: $childMaxTiles,
+                            in: childStage.tileCapRange) { EmptyView() }
+                        .labelsHidden()
                 }
-                .font(.caption)
             }
-
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text("Tiles per group").font(.headline)
-                    Spacer()
-                    Text("\(childMaxTiles)").foregroundStyle(.secondary)
-                }
-                Stepper(value: $childMaxTiles, in: 2...8) { EmptyView() }
-                    .labelsHidden()
-                Text("Maximum tiles selectable before the sentence is generated.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            .onChange(of: childStage) { _, newStage in
+                // Keep the cap coherent when the stage changes under it.
+                childMaxTiles = min(newStage.tileCapRange.upperBound,
+                                    max(newStage.tileCapRange.lowerBound, childMaxTiles))
             }
 
             VStack(alignment: .leading, spacing: 6) {
@@ -371,12 +363,6 @@ struct OnboardingView: View {
                 voicePicker
             }
         }
-    }
-
-    private var birthdayDisplay: String {
-        let f = DateFormatter()
-        f.dateStyle = .medium
-        return f.string(from: childBirthday)
     }
 
     private var voicePicker: some View {
@@ -630,11 +616,9 @@ struct OnboardingView: View {
         )) ?? []
         guard let legacy = realProfiles.first else { return }
         childName = legacy.displayName == "Legacy" ? "" : legacy.displayName
-        childBirthday = legacy.birthday
-        childAgeYears = ChildProfile.age(from: legacy.birthday, asOf: .now)
+        childStage = legacy.brownsStage
         childVoiceID = legacy.voiceIdentifier
         childMaxTiles = legacy.maxSelectedTiles
-        editingExactBirthday = legacy.displayName != "Legacy"
 
         // Pre-fill the device display name too if we can recover it.
         if let device = DeviceProfileStore.current(context: modelContext) {
@@ -740,7 +724,7 @@ struct OnboardingView: View {
             authorName: authorName,
             createChild: role == .patient && !skipChildProfile,
             childName: childName,
-            childBirthday: childBirthday,
+            childStage: childStage,
             childVoiceID: childVoiceID,
             childMaxTiles: childMaxTiles,
             apiKey: hasEnvKey ? nil : apiKey, // env-var path keeps its launch-persisted key

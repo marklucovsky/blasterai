@@ -19,7 +19,7 @@ final class SentenceCache {
 
     /// Version-INDEPENDENT identity (sorted tile keys + child) — see
     /// `CacheKeyPolicy.stableKey`. Set on every entry at creation so a durable
-    /// caregiver override can be matched regardless of the model/prompt/grade/class
+    /// caregiver override can be matched regardless of the model/prompt/stage/class
     /// that shaped `cacheKey`. Empty for legacy rows written before this field.
     var stableKey: String = ""
 
@@ -66,9 +66,9 @@ final class SentenceCache {
     /// for legacy entries written before this field existed → treated as stale.
     var keyVersion: String = ""
 
-    init(tiles: [TileSelection], grade: Int, sentence: String, childID: String? = nil) {
+    init(tiles: [TileSelection], stage: BrownsStage, sentence: String, childID: String? = nil) {
         self.tileKeys = tiles.map(\.key)
-        self.cacheKey = CacheKeyPolicy.key(for: tiles, grade: grade)
+        self.cacheKey = CacheKeyPolicy.key(for: tiles, stage: stage)
         self.stableKey = CacheKeyPolicy.stableKey(for: tiles, childID: childID)
         self.sentence = sentence
         self.childID = childID ?? ""

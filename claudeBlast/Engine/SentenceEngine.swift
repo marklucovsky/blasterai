@@ -424,7 +424,7 @@ final class SentenceEngine {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         let tiles = activeGroup.tiles
         guard !trimmed.isEmpty, !tiles.isEmpty else { return }
-        cacheManager?.setHandTyped(tiles: tiles, grade: currentGrade, sentence: trimmed,
+        cacheManager?.setHandTyped(tiles: tiles, stage: currentStage, sentence: trimmed,
                                    childID: profileResolver?.activeChildID)
         activeGroup.sentence = trimmed
         activeGroup.state = .locked
@@ -468,7 +468,7 @@ final class SentenceEngine {
     func suppressActive() {
         let tiles = activeGroup.tiles
         guard !tiles.isEmpty else { return }
-        cacheManager?.setSuppressed(tiles: tiles, grade: currentGrade,
+        cacheManager?.setSuppressed(tiles: tiles, stage: currentStage,
                                     childID: profileResolver?.activeChildID)
         speechSynthesizer.stop()
         let keys = Set(tiles.map(\.key))
@@ -718,15 +718,15 @@ final class SentenceEngine {
 
     // MARK: - Generation pipeline
 
-    /// The active child's grade level — folded into every cache key so a
-    /// sentence generated for one grade is never served to another. Stable
+    /// The active child's Brown's Stage — folded into every cache key so a
+    /// sentence generated for one stage is never served to another. Stable
     /// within a generation call (the resolver doesn't change mid-flight).
-    private var currentGrade: Int {
-        profileResolver?.ageGrade ?? ChildProfileResolver.fallbackAgeGrade
+    private var currentStage: BrownsStage {
+        profileResolver?.brownsStage ?? ChildProfileResolver.fallbackStage
     }
 
     private func updateRepetitionState(for tiles: [TileSelection]) -> Int {
-        let currentKey = SentenceCacheManager.cacheKey(for: tiles, grade: currentGrade)
+        let currentKey = SentenceCacheManager.cacheKey(for: tiles, stage: currentStage)
         if currentKey == lastTileKey {
             repetitionCount += 1
         } else {
@@ -874,7 +874,7 @@ final class SentenceEngine {
 
         // Escalation: still count the hit even though we bypass the cached sentence
         if repetition > 0 {
-            cacheManager?.recordHit(tiles: tiles, grade: currentGrade)
+            cacheManager?.recordHit(tiles: tiles, stage: currentStage)
         }
 
         // Durable hand-typed / accepted-refine override — served on first play.
@@ -894,7 +894,7 @@ final class SentenceEngine {
         }
 
         // Cache lookup (skip for replay/escalation/refine)
-        if repetition == 0, !refine, let cached = cacheManager?.lookup(tiles: tiles, grade: currentGrade) {
+        if repetition == 0, !refine, let cached = cacheManager?.lookup(tiles: tiles, stage: currentStage) {
             guard tiles == activeGroup.tiles else {
                 isThinking = false
                 return
@@ -917,10 +917,10 @@ final class SentenceEngine {
             return
         }
 
-        // Build prompt. Grade comes from the active child profile when
-        // resolver is wired; fallback keeps tests/preview paths working.
-        let grade = currentGrade
-        var promptBuilder = SentencePromptBuilder(ageGradeLevel: grade)
+        // Build prompt. The stage comes from the active child profile when
+        // the resolver is wired; the fallback keeps tests/preview paths working.
+        let stage = currentStage
+        var promptBuilder = SentencePromptBuilder(brownsStage: stage)
         promptBuilder.repetitionCount = repetition
         promptBuilder.conversationContext = conversationHistory
         var systemPrompt = promptBuilder.buildSystemPrompt()
@@ -999,12 +999,12 @@ final class SentenceEngine {
             if repetition == 0 {
                 if refine {
                     // Keep the fresh result as a durable, pinned accepted-refine override.
-                    cacheManager?.setAcceptedRefine(tiles: tiles, grade: grade,
+                    cacheManager?.setAcceptedRefine(tiles: tiles, stage: stage,
                                                     sentence: result.text, childID: childID)
                 } else {
-                    cacheManager?.store(tiles: tiles, grade: grade, sentence: result.text, childID: childID)
+                    cacheManager?.store(tiles: tiles, stage: stage, sentence: result.text, childID: childID)
                 }
-                let usedKey = SentenceCacheManager.cacheKey(for: tiles, grade: grade)
+                let usedKey = SentenceCacheManager.cacheKey(for: tiles, stage: stage)
                 cacheManager?.logEvent(subjectType: "sentence", subjectKey: usedKey, eventType: .used)
             }
 

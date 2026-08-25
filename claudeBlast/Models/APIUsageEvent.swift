@@ -17,7 +17,7 @@ import Foundation
 /// reading the report.
 ///
 /// Stored as a String raw value, matching `MetricEvent.eventTypeRaw` /
-/// `ChildProfile.interactionModeRaw`. Unknown values decode to `.unknown` so a
+/// `InteractionMode`, derived from `ChildProfile.brownsStage`. Unknown values decode to `.unknown` so a
 /// row written by a newer build degrades instead of failing.
 enum UsageCause: String, Codable, CaseIterable {
     // Child-facing — the hot path.

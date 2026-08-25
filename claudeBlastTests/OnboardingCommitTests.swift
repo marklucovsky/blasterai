@@ -30,14 +30,15 @@ struct OnboardingCommitTests {
         Calendar.current.date(from: DateComponents(year: y, month: m, day: d))!
     }
 
-    private func patientInputs(name: String = "Aubrey", age: Int = 5,
+    private func patientInputs(name: String = "Aubrey",
+                               stage: BrownsStage = .fourPlus,
                                pin: String? = "1234") -> OnboardingInputs {
         OnboardingInputs(
             role: .patient,
             authorName: "  Sammy  ",
             createChild: true,
             childName: name,
-            childBirthday: ChildProfile.synthesizeBirthday(age: age, asOf: date(2026, 6, 4)),
+            childStage: stage,
             childVoiceID: "com.apple.voice.Samantha",
             childMaxTiles: 6,
             apiKey: "sk-onboarding",
@@ -59,7 +60,7 @@ struct OnboardingCommitTests {
         // Seed the Sandbox the way ProfileMigration would.
         let sandbox = ChildProfile(
             displayName: "Sandbox",
-            birthday: ChildProfile.synthesizeBirthday(age: 8),
+            brownsStage: .one,
             isActive: true,
             isSystem: true
         )
@@ -142,7 +143,7 @@ struct OnboardingCommitTests {
         #expect(kids[0].isActive == true)
         #expect(kids[0].voiceIdentifier == "com.apple.voice.Samantha")
         #expect(kids[0].maxSelectedTiles == 6)
-        #expect(kids[0].age == 5)
+        #expect(kids[0].brownsStage == .fourPlus)
 
         #expect(secret.read() == "sk-onboarding")
         #expect(defaults.bool(forKey: AppSettingsKey.icloudEnabled) == false)
@@ -182,7 +183,7 @@ struct OnboardingCommitTests {
         // DeviceProfile already exist before onboarding runs.
         let legacy = ChildProfile(
             displayName: "Legacy",
-            birthday: ChildProfile.synthesizeBirthday(age: 7),
+            brownsStage: .twoThree,
             voiceIdentifier: "",
             maxSelectedTiles: 4,
             isActive: true
@@ -190,7 +191,7 @@ struct OnboardingCommitTests {
         ctx.insert(legacy)
         _ = DeviceProfileStore.ensure(context: ctx)
 
-        OnboardingCommit.apply(patientInputs(name: "Aubrey", age: 5),
+        OnboardingCommit.apply(patientInputs(name: "Aubrey"),
                                context: ctx, defaults: defaults, secretStore: secret)
 
         let kids = try ctx.fetch(FetchDescriptor<ChildProfile>())

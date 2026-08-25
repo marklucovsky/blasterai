@@ -84,7 +84,7 @@ extension AdminView {
                     }
                     Text(profile.isSystem
                          ? "Default when no real patient is active"
-                         : "Age \(profile.age) · grade \(profile.ageGrade) · max \(profile.maxSelectedTiles) tiles")
+                         : "\(profile.brownsStage.label) · max \(profile.effectiveTileCap) tiles")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

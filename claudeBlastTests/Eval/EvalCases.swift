@@ -79,5 +79,14 @@ enum EvalCases {
               probe: "PRD pinkfong example, deep ramp"),
         .init("go_home", [("go", "go", "actions"), ("home", "home", "places")], extraSteps: 3,
               probe: "insistence on leaving"),
+        // Control for the feeling-vs-thing frame split. Both items here are
+        // things a child can be given, so the need frame ("I need X") fits and
+        // must keep working — it is the frame that breaks `mom_hungry`, where
+        // the key word is a feeling. If a fix for one of these regresses the
+        // other, the ladder is applying one frame to every word class again.
+        .init("mom_snack", [("mom", "mom", "people"),
+                            ("chocolate_milk", "chocolate milk", "drinks"),
+                            ("graham_cracker", "graham cracker", "food")], extraSteps: 3,
+              probe: "multi-item request — the need frame must survive the feeling fix"),
     ]
 }

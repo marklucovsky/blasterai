@@ -72,7 +72,7 @@ final class BulkCacheGenerator {
         }
 
         let cacheManager = SentenceCacheManager(modelContext: modelContext)
-        let grade = ChildProfileResolver.fallbackAgeGrade
+        let stage = ChildProfileResolver.fallbackStage
 
         insertedCount = 0
         duplicateCount = 0
@@ -91,7 +91,7 @@ final class BulkCacheGenerator {
             let length = Int.random(in: spec.minLength...spec.maxLength, using: &rng)
             let combo = randomCombo(from: pool, length: length, using: &rng)
             let selections = combo.map { TileSelection(from: $0) }
-            let key = SentenceCacheManager.cacheKey(for: selections, grade: grade)
+            let key = SentenceCacheManager.cacheKey(for: selections, stage: stage)
 
             // One `tile`/`.selected` row per tile, exactly as SentenceEngine:252
             // writes on every tap. Without these the synthetic mix is nothing
@@ -114,7 +114,7 @@ final class BulkCacheGenerator {
             // Exercise the cache: lookup first, store on miss. Synthetic traffic
             // has no child profile, so all combos share the fallback grade — keeps
             // the combinatorial space small enough for combos to collide naturally.
-            else if cacheManager.lookup(tiles: selections, grade: grade, at: at) != nil {
+            else if cacheManager.lookup(tiles: selections, stage: stage, at: at) != nil {
                 // Cache hit — lookup already incremented hitCount
                 cacheManager.logEvent(subjectType: "cache", subjectKey: key,
                                       eventType: .hit, at: at)
@@ -122,7 +122,7 @@ final class BulkCacheGenerator {
             } else {
                 // Cache miss — generate mock sentence and store
                 let sentence = buildMockSentence(from: combo)
-                cacheManager.store(tiles: selections, grade: grade, sentence: sentence, at: at)
+                cacheManager.store(tiles: selections, stage: stage, sentence: sentence, at: at)
                 cacheManager.logEvent(subjectType: "sentence", subjectKey: key,
                                       eventType: .used, at: at)
                 insertedCount += 1

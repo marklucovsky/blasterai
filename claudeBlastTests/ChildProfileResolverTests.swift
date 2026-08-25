@@ -26,7 +26,7 @@ struct ChildProfileResolverTests {
     @Test func unconfigured_returnsFallbacks() {
         let resolver = ChildProfileResolver()
         #expect(resolver.active == nil)
-        #expect(resolver.ageGrade == ChildProfileResolver.fallbackAgeGrade)
+        #expect(resolver.brownsStage == ChildProfileResolver.fallbackStage)
         #expect(resolver.voiceIdentifier == "")
         #expect(resolver.ttsRate == ChildProfileResolver.fallbackTTSRate)
         #expect(resolver.ttsVolume == ChildProfileResolver.fallbackTTSVolume)
@@ -39,17 +39,16 @@ struct ChildProfileResolverTests {
         let resolver = ChildProfileResolver()
         resolver.configure(modelContext: container.mainContext)
         #expect(resolver.active == nil)
-        #expect(resolver.ageGrade == ChildProfileResolver.fallbackAgeGrade)
+        #expect(resolver.brownsStage == ChildProfileResolver.fallbackStage)
     }
 
     @Test func singleActive_resolvesAndExposesGetters() throws {
         let container = try makeContainer()
         let ctx = container.mainContext
 
-        let bday = ChildProfile.synthesizeBirthday(age: 7, asOf: date(2026, 6, 4))
         let aubrey = ChildProfile(
             displayName: "Aubrey",
-            birthday: bday,
+            brownsStage: .fourPlus,
             voiceIdentifier: "com.apple.voice.Samantha",
             maxSelectedTiles: 5,
             isActive: true
@@ -62,7 +61,7 @@ struct ChildProfileResolverTests {
         resolver.configure(modelContext: ctx)
 
         #expect(resolver.active?.displayName == "Aubrey")
-        #expect(resolver.ageGrade == 2) // age 7 → 7-5=2 grade
+        #expect(resolver.brownsStage == .fourPlus)
         #expect(resolver.voiceIdentifier == "com.apple.voice.Samantha")
         #expect(resolver.maxSelectedTiles == 5)
         #expect(resolver.ttsRate == 0.45)
@@ -74,8 +73,8 @@ struct ChildProfileResolverTests {
         let container = try makeContainer()
         let ctx = container.mainContext
 
-        let a = ChildProfile(displayName: "A", birthday: date(2020, 1, 1), isActive: true)
-        let b = ChildProfile(displayName: "B", birthday: date(2021, 1, 1), isActive: false)
+        let a = ChildProfile(displayName: "A", isActive: true)
+        let b = ChildProfile(displayName: "B", isActive: false)
         ctx.insert(a)
         ctx.insert(b)
 
@@ -97,9 +96,9 @@ struct ChildProfileResolverTests {
         let container = try makeContainer()
         let ctx = container.mainContext
 
-        let older = ChildProfile(displayName: "Older", birthday: date(2020, 1, 1), isActive: true)
+        let older = ChildProfile(displayName: "Older", isActive: true)
         older.modifiedAt = date(2026, 1, 1)
-        let newer = ChildProfile(displayName: "Newer", birthday: date(2020, 1, 1), isActive: true)
+        let newer = ChildProfile(displayName: "Newer", isActive: true)
         newer.modifiedAt = date(2026, 6, 1)
         ctx.insert(older)
         ctx.insert(newer)
@@ -118,14 +117,12 @@ struct ChildProfileResolverTests {
 
         let sandbox = ChildProfile(
             displayName: "Sandbox",
-            birthday: date(2018, 1, 1),
             isActive: false, // intentionally false; resolver still picks it
             isSystem: true
         )
         ctx.insert(sandbox)
         let inactive = ChildProfile(
             displayName: "Aubrey",
-            birthday: date(2020, 1, 1),
             isActive: false
         )
         ctx.insert(inactive)
@@ -145,14 +142,12 @@ struct ChildProfileResolverTests {
 
         let sandbox = ChildProfile(
             displayName: "Sandbox",
-            birthday: date(2018, 1, 1),
             isActive: true,
             isSystem: true
         )
         ctx.insert(sandbox)
         let aubrey = ChildProfile(
             displayName: "Aubrey",
-            birthday: date(2020, 1, 1),
             isActive: true
         )
         ctx.insert(aubrey)
@@ -168,7 +163,7 @@ struct ChildProfileResolverTests {
         let container = try makeContainer()
         let ctx = container.mainContext
 
-        let a = ChildProfile(displayName: "A", birthday: date(2020, 1, 1), isActive: true)
+        let a = ChildProfile(displayName: "A", isActive: true)
         ctx.insert(a)
 
         let resolver = ChildProfileResolver()
@@ -178,7 +173,7 @@ struct ChildProfileResolverTests {
         // External mutation — onboarding completes and creates a new profile,
         // overriding the legacy seed.
         a.isActive = false
-        let b = ChildProfile(displayName: "B", birthday: date(2021, 1, 1), isActive: true)
+        let b = ChildProfile(displayName: "B", isActive: true)
         ctx.insert(b)
         try ctx.save()
 

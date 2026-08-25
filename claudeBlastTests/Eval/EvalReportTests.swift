@@ -21,7 +21,7 @@ struct EvalReportTests {
     // MARK: - Judge JSON tolerance
 
     @Test func decodesPlainSentenceVerdict() throws {
-        let raw = #"{"faithfulness":5,"firstPerson":4,"ageFit":5,"naturalness":4,"rationale":"good"}"#
+        let raw = #"{"faithfulness":5,"firstPerson":4,"stageFit":5,"naturalness":4,"rationale":"good"}"#
         let v = try judge().decodeJSON(SentenceVerdict.self, from: raw)
         #expect(v.faithfulness == 5)
         #expect(v.mean == 4.5)
@@ -62,9 +62,9 @@ struct EvalReportTests {
             timestamp: "2026-06-20T00:00:00Z",
             sentences: [
                 SentenceCaseResult(id: "a", output: "Mom, I'm hungry.", tier1Passed: true, tier1Issues: [],
-                                   judge: SentenceVerdict(faithfulness: 5, firstPerson: 5, ageFit: 5, naturalness: 5, rationale: "")),
+                                   judge: SentenceVerdict(faithfulness: 5, firstPerson: 5, stageFit: 5, naturalness: 5, rationale: "")),
                 SentenceCaseResult(id: "b", output: "hungry (feeling)", tier1Passed: false, tier1Issues: ["wordClass leaked"],
-                                   judge: SentenceVerdict(faithfulness: 2, firstPerson: 2, ageFit: 3, naturalness: 1, rationale: "")),
+                                   judge: SentenceVerdict(faithfulness: 2, firstPerson: 2, stageFit: 3, naturalness: 1, rationale: "")),
             ],
             escalations: [
                 EscalationCaseResult(id: "x", ladder: ["a", "b", "c"], intensities: [1, 3, 6], tier1Passed: true, tier1Issues: [],

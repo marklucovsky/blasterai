@@ -4,7 +4,7 @@
 //  CacheEvictionTests.swift
 //  claudeBlastTests
 //
-//  A3: versioned + grade-aware cache key, TTL/eviction, on-demand stale sweep.
+//  A3: versioned + stage-aware cache key, TTL/eviction, on-demand stale sweep.
 //
 
 import Testing
@@ -27,44 +27,44 @@ struct CacheEvictionTests {
 
     // MARK: - Key composition
 
-    @Test func keyFoldsInModelPromptGradeAndClass() {
-        let key = CacheKeyPolicy.key(for: tiles("eat", "pizza"), grade: 3)
-        // <model>/v<promptVersion>/g<grade>#<sorted key:class pairs>
-        #expect(key == "\(CacheKeyPolicy.versionToken)/g3#eat:actions,pizza:actions")
+    @Test func keyFoldsInModelPromptStageAndClass() {
+        let key = CacheKeyPolicy.key(for: tiles("eat", "pizza"), stage: .fourPlus)
+        // <model>/v<promptVersion>/b<stage>#<sorted key:class pairs>
+        #expect(key == "\(CacheKeyPolicy.versionToken)/bIV+#eat:actions,pizza:actions")
         #expect(key.hasPrefix(CacheKeyPolicy.versionToken))
     }
 
-    @Test func keyIsOrderIndependentButGradeAndClassSensitive() {
-        let a = CacheKeyPolicy.key(for: tiles("pizza", "eat"), grade: 2)
-        let b = CacheKeyPolicy.key(for: tiles("eat", "pizza"), grade: 2)
-        let g = CacheKeyPolicy.key(for: tiles("eat", "pizza"), grade: 5)
+    @Test func keyIsOrderIndependentButStageAndClassSensitive() {
+        let a = CacheKeyPolicy.key(for: tiles("pizza", "eat"), stage: .twoThree)
+        let b = CacheKeyPolicy.key(for: tiles("eat", "pizza"), stage: .twoThree)
+        let g = CacheKeyPolicy.key(for: tiles("eat", "pizza"), stage: .fourPlus)
         // Same keys, different word class → different cache key (reclassification invalidates).
         let c = CacheKeyPolicy.key(for: [
             TileSelection(key: "eat", value: "eat", wordClass: "actions"),
             TileSelection(key: "pizza", value: "pizza", wordClass: "object"),
-        ], grade: 2)
+        ], stage: .twoThree)
         #expect(a == b)       // order doesn't matter
-        #expect(a != g)       // grade does
+        #expect(a != g)       // stage does
         #expect(a != c)       // word class does
     }
 
-    @Test func differentGradesGetSeparateEntries() throws {
+    @Test func differentStagesGetSeparateEntries() throws {
         let container = try makeTestContainer()
         let cache = SentenceCacheManager(modelContext: container.mainContext)
         let t = tiles("eat", "pizza")
 
-        cache.store(tiles: t, grade: 2, sentence: "I want pizza.")
-        cache.store(tiles: t, grade: 5, sentence: "I would like some pizza, please.")
+        cache.store(tiles: t, stage: .twoThree, sentence: "I want pizza.")
+        cache.store(tiles: t, stage: .fourPlus, sentence: "I would like some pizza, please.")
 
         #expect(cache.allEntries().count == 2)
-        #expect(cache.lookup(tiles: t, grade: 2)?.sentence == "I want pizza.")
-        #expect(cache.lookup(tiles: t, grade: 5)?.sentence == "I would like some pizza, please.")
+        #expect(cache.lookup(tiles: t, stage: .twoThree)?.sentence == "I want pizza.")
+        #expect(cache.lookup(tiles: t, stage: .fourPlus)?.sentence == "I would like some pizza, please.")
     }
 
     @Test func storeStampsCurrentKeyVersion() throws {
         let container = try makeTestContainer()
         let cache = SentenceCacheManager(modelContext: container.mainContext)
-        cache.store(tiles: tiles("eat"), grade: 2, sentence: "Eat.")
+        cache.store(tiles: tiles("eat"), stage: .twoThree, sentence: "Eat.")
         #expect(cache.allEntries().first?.keyVersion == CacheKeyPolicy.versionToken)
     }
 
@@ -72,10 +72,10 @@ struct CacheEvictionTests {
 
     /// Build an entry with controlled staleness fields and insert it.
     @discardableResult
-    private func insert(_ ctx: ModelContext, tileKey: String, grade: Int = 2,
+    private func insert(_ ctx: ModelContext, tileKey: String, stage: BrownsStage = .twoThree,
                         version: String? = nil, lastUsed: Date = .now,
                         pinned: Bool = false) -> SentenceCache {
-        let e = SentenceCache(tiles: tiles(tileKey), grade: grade, sentence: tileKey)
+        let e = SentenceCache(tiles: tiles(tileKey), stage: stage, sentence: tileKey)
         e.keyVersion = version ?? CacheKeyPolicy.versionToken
         e.lastUsed = lastUsed
         e.isPinned = pinned
@@ -160,12 +160,12 @@ struct CacheEvictionTests {
         let cache = SentenceCacheManager(modelContext: container.mainContext)
         let t = tiles("go", "home")
 
-        cache.store(tiles: t, grade: 2, sentence: "I want to go home.")
+        cache.store(tiles: t, stage: .twoThree, sentence: "I want to go home.")
         // Escalation path in the engine bypasses store and only records a hit.
-        cache.recordHit(tiles: t, grade: 2)
-        cache.recordHit(tiles: t, grade: 2)
+        cache.recordHit(tiles: t, stage: .twoThree)
+        cache.recordHit(tiles: t, stage: .twoThree)
 
-        let entry = cache.lookup(tiles: t, grade: 2)
+        let entry = cache.lookup(tiles: t, stage: .twoThree)
         #expect(cache.allEntries().count == 1)                 // no escalated variant stored
         #expect(entry?.sentence == "I want to go home.")       // base sentence unchanged
         #expect(entry?.hitCount == 3)                          // 2 recordHits + 1 lookup
@@ -178,7 +178,7 @@ struct CacheEvictionTests {
     }
 
     @Test func classesParsesPairsFromCacheKey() {
-        let key = CacheKeyPolicy.key(for: classed(("carrot", "food"), ("pony", "animal")), grade: 3)
+        let key = CacheKeyPolicy.key(for: classed(("carrot", "food"), ("pony", "animal")), stage: .fourPlus)
         #expect(SentenceCacheManager.classes(in: key) == ["food", "animal"])
         #expect(SentenceCacheManager.classes(in: "no-hash-here").isEmpty)
     }
@@ -188,9 +188,9 @@ struct CacheEvictionTests {
         let ctx = container.mainContext
         let cache = SentenceCacheManager(modelContext: ctx)
 
-        cache.store(tiles: classed(("carrot", "food")), grade: 2, sentence: "I want a carrot.")
-        cache.store(tiles: classed(("carrot", "food"), ("eat", "actions")), grade: 2, sentence: "Eat the carrot.")
-        cache.store(tiles: classed(("apple", "food")), grade: 2, sentence: "I want an apple.")
+        cache.store(tiles: classed(("carrot", "food")), stage: .twoThree, sentence: "I want a carrot.")
+        cache.store(tiles: classed(("carrot", "food"), ("eat", "actions")), stage: .twoThree, sentence: "Eat the carrot.")
+        cache.store(tiles: classed(("apple", "food")), stage: .twoThree, sentence: "I want an apple.")
         // Even a pinned/curated entry must be purged for a content-safety pull.
         cache.allEntries().forEach { $0.isPinned = true }
 
@@ -206,9 +206,9 @@ struct CacheEvictionTests {
         let ctx = container.mainContext
         let cache = SentenceCacheManager(modelContext: ctx)
 
-        cache.store(tiles: classed(("carrot", "food")), grade: 2, sentence: "I want a carrot.")
-        cache.store(tiles: classed(("pony", "animal")), grade: 2, sentence: "Look, a pony.")
-        cache.store(tiles: classed(("run", "actions"), ("pony", "animal")), grade: 2, sentence: "The pony runs.")
+        cache.store(tiles: classed(("carrot", "food")), stage: .twoThree, sentence: "I want a carrot.")
+        cache.store(tiles: classed(("pony", "animal")), stage: .twoThree, sentence: "Look, a pony.")
+        cache.store(tiles: classed(("run", "actions"), ("pony", "animal")), stage: .twoThree, sentence: "The pony runs.")
 
         let removed = cache.invalidate(wordClass: "animal")
         #expect(removed == 2)                                   // both entries touching an animal tile
@@ -223,28 +223,28 @@ struct CacheEvictionTests {
         let cache = SentenceCacheManager(modelContext: container.mainContext)
         let t = classed(("mom", "people"), ("juice", "drinks"))
 
-        cache.setHandTyped(tiles: t, grade: 2, sentence: "Mom, may I have juice please?", childID: "kid1")
+        cache.setHandTyped(tiles: t, stage: .twoThree, sentence: "Mom, may I have juice please?", childID: "kid1")
 
-        // Found by the override path for the same child, regardless of grade
-        // (grade is in cacheKey but NOT in stableKey).
+        // Found by the override path for the same child, regardless of stage
+        // (stage is in cacheKey but NOT in stableKey).
         let o2 = cache.overrideLookup(tiles: t, childID: "kid1")
-        let o5 = cache.overrideLookup(tiles: t, childID: "kid1")   // grade-agnostic
+        let o5 = cache.overrideLookup(tiles: t, childID: "kid1")   // stage-agnostic
         #expect(o2?.sentence == "Mom, may I have juice please?")
         #expect(o2?.isCaregiverEdited == true)
         #expect(o2?.isPinned == true)
         #expect(o5 != nil)
         // A different child does not see it.
         #expect(cache.overrideLookup(tiles: t, childID: "kid2") == nil)
-        // Normal (version+grade-dependent) lookup at a different grade misses it,
+        // Normal (version+stage-dependent) lookup at a different stage misses it,
         // proving the override path is what makes it durable.
-        #expect(cache.lookup(tiles: t, grade: 5) == nil)
+        #expect(cache.lookup(tiles: t, stage: .fourPlus) == nil)
     }
 
     @Test func overrideSurvivesStaleVersionSweep() throws {
         let container = try makeTestContainer()
         let cache = SentenceCacheManager(modelContext: container.mainContext)
         let t = classed(("go", "actions"), ("park", "places"))
-        cache.setHandTyped(tiles: t, grade: 2, sentence: "Let's go to the park!", childID: "kid1")
+        cache.setHandTyped(tiles: t, stage: .twoThree, sentence: "Let's go to the park!", childID: "kid1")
         // Simulate a prompt-version bump having stamped the entry as stale.
         cache.allEntries().forEach { $0.keyVersion = "old/v0" }
 
@@ -257,11 +257,11 @@ struct CacheEvictionTests {
         let cache = SentenceCacheManager(modelContext: container.mainContext)
         let t = classed(("no", "social"))
 
-        cache.setSuppressed(tiles: t, grade: 2, childID: "kid1")
+        cache.setSuppressed(tiles: t, stage: .twoThree, childID: "kid1")
         #expect(cache.overrideLookup(tiles: t, childID: "kid1")?.isSuppressed == true)
 
         // A re-refine restores a served sentence and outranks nothing else here.
-        cache.setAcceptedRefine(tiles: t, grade: 2, sentence: "No thank you.", childID: "kid1")
+        cache.setAcceptedRefine(tiles: t, stage: .twoThree, sentence: "No thank you.", childID: "kid1")
         let o = cache.overrideLookup(tiles: t, childID: "kid1")
         #expect(o?.isSuppressed == false)
         #expect(o?.caregiverAccepted == true)
@@ -274,8 +274,8 @@ struct CacheEvictionTests {
         let cache = SentenceCacheManager(modelContext: container.mainContext)
         let t = classed(("more", "core"))
 
-        cache.setAcceptedRefine(tiles: t, grade: 2, sentence: "I want more.", childID: "kid1")
-        cache.setHandTyped(tiles: t, grade: 2, sentence: "More, please!", childID: "kid1")
+        cache.setAcceptedRefine(tiles: t, stage: .twoThree, sentence: "I want more.", childID: "kid1")
+        cache.setHandTyped(tiles: t, stage: .twoThree, sentence: "More, please!", childID: "kid1")
         // Same entry upserts, so edited wins on the single record.
         #expect(cache.overrideLookup(tiles: t, childID: "kid1")?.sentence == "More, please!")
         #expect(cache.overrideLookup(tiles: t, childID: "kid1")?.overrideRank == 3)

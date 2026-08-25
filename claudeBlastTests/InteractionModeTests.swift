@@ -29,8 +29,12 @@ struct InteractionModeTests {
                             _ body: (SentenceEngine) throws -> Void) throws {
         let container = try makeContainer()
         let ctx = container.mainContext
-        let profile = ChildProfile(displayName: "Test", birthday: .now, isActive: true)
-        profile.interactionMode = mode
+        // Interaction mode is no longer stored — it is a projection of the
+        // child's Brown's Stage. Stage I is single words; Stage IV+ builds
+        // sentences with room for the multi-tile cases below.
+        let profile = ChildProfile(displayName: "Test",
+                                   brownsStage: mode == .singleWord ? .one : .fourPlus,
+                                   isActive: true)
         ctx.insert(profile)
         try? ctx.save()
         let resolver = ChildProfileResolver()
@@ -43,18 +47,143 @@ struct InteractionModeTests {
 
     // MARK: - Model
 
-    @Test func interactionModeRawRoundTrips() {
-        let p = ChildProfile(displayName: "A", birthday: .now)
-        #expect(p.interactionMode == .sentence) // default
-        p.interactionMode = .singleWord
-        #expect(p.interactionModeRaw == "singleWord")
+    /// Mode is derived from the stage, not stored. Stage I *is* single-word
+    /// mode; every later stage builds sentences.
+    @Test func interactionModeIsDerivedFromStage() {
+        let p = ChildProfile(displayName: "A")
+        #expect(p.brownsStage == .one)          // default
+        #expect(p.interactionMode == .singleWord)
+
+        p.brownsStage = .twoThree
+        #expect(p.interactionMode == .sentence)
+
+        p.brownsStage = .fourPlus
+        #expect(p.interactionMode == .sentence)
+    }
+
+    /// An unknown raw value falls back to Stage I rather than to sentences.
+    /// That is the safe direction: a child shown one word at a time is
+    /// under-served, whereas one handed sentences they cannot parse is being
+    /// spoken *for* rather than *with*.
+    @Test func unknownStageRawFallsBackToStageOne() {
+        let p = ChildProfile(displayName: "A")
+        p.brownsStageRaw = "somethingFuture"
+        #expect(p.brownsStage == .one)
         #expect(p.interactionMode == .singleWord)
     }
 
-    @Test func unknownRawFallsBackToSentence() {
-        let p = ChildProfile(displayName: "A", birthday: .now)
-        p.interactionModeRaw = "somethingFuture"
+    /// The stage pins the tile cap at I and II-III, and only leaves a choice
+    /// at IV+.
+    @Test func stageConstrainsTileCap() {
+        let p = ChildProfile(displayName: "A", brownsStage: .one)
+        #expect(p.effectiveTileCap == 1)
+
+        p.brownsStage = .twoThree
+        #expect(p.effectiveTileCap == 4)
+
+        p.brownsStage = .fourPlus
+        p.setTileCap(6)
+        #expect(p.effectiveTileCap == 6)
+    }
+
+    /// Widening past four tiles promotes the stage instead of being clamped —
+    /// a caregiver who does that is telling us the child combines more words.
+    @Test func wideningTileCapPromotesStage() {
+        let p = ChildProfile(displayName: "A", brownsStage: .twoThree)
+        p.setTileCap(6)
+        #expect(p.brownsStage == .fourPlus)
+        #expect(p.effectiveTileCap == 6)
         #expect(p.interactionMode == .sentence)
+    }
+
+    /// And narrowing to a single tile is Stage I, mode included.
+    @Test func narrowingTileCapDemotesToStageOne() {
+        let p = ChildProfile(displayName: "A", brownsStage: .fourPlus, maxSelectedTiles: 7)
+        p.setTileCap(1)
+        #expect(p.brownsStage == .one)
+        #expect(p.interactionMode == .singleWord)
+    }
+
+    // MARK: - Device-local single-word override
+
+    /// The caregiver-menu override changes this device without touching the
+    /// child's stage — the whole point of moving it off the synced profile.
+    /// See `DeviceProfile.modeOverrideRaw`.
+    @Test func deviceOverrideForcesSingleWordsWithoutChangingStage() throws {
+        let container = try makeContainer()
+        let ctx = container.mainContext
+        let profile = ChildProfile(displayName: "Test", brownsStage: .fourPlus,
+                                   maxSelectedTiles: 6, isActive: true)
+        ctx.insert(profile)
+        try? ctx.save()
+
+        let resolver = ChildProfileResolver()
+        resolver.configure(modelContext: ctx)
+        #expect(resolver.interactionMode == .sentence)
+        #expect(resolver.maxSelectedTiles == 6)
+
+        resolver.requestMode(.singleWord)
+        #expect(resolver.interactionMode == .singleWord)
+        #expect(resolver.maxSelectedTiles == 1)
+        // The child's clinical record is untouched.
+        #expect(profile.brownsStage == .fourPlus)
+        #expect(profile.effectiveTileCap == 6)
+
+        resolver.requestMode(.sentence)
+        #expect(resolver.interactionMode == .sentence)
+        #expect(resolver.maxSelectedTiles == 6)
+        // Asking for what the stage already implies clears the override rather
+        // than pinning a redundant one.
+        #expect(resolver.modeOverride == nil)
+
+        withExtendedLifetime(container) {}
+    }
+
+    /// The override works in **both** directions. A Stage I child already
+    /// resolves to single words, so an override that could only force single
+    /// words *on* left the caregiver menu's toggle a no-op in exactly the
+    /// default configuration — which is how it shipped broken the first time.
+    @Test func deviceOverrideCanForceSentencesForAStageOneChild() throws {
+        let container = try makeContainer()
+        let ctx = container.mainContext
+        let profile = ChildProfile(displayName: "Test", brownsStage: .one, isActive: true)
+        ctx.insert(profile)
+        try? ctx.save()
+
+        let resolver = ChildProfileResolver()
+        resolver.configure(modelContext: ctx)
+        #expect(resolver.interactionMode == .singleWord)
+
+        resolver.requestMode(.sentence)
+        #expect(resolver.interactionMode == .sentence)
+        #expect(resolver.maxSelectedTiles >= 2)   // one tile cannot make a sentence
+        #expect(profile.brownsStage == .one)      // stage untouched
+
+        resolver.requestMode(.singleWord)
+        #expect(resolver.interactionMode == .singleWord)
+        #expect(resolver.modeOverride == nil)     // back to following the stage
+
+        withExtendedLifetime(container) {}
+    }
+
+    /// The override is device-local and survives a resolver rebuild, which is
+    /// what "persists until changed back" means in practice.
+    @Test func deviceOverridePersistsAcrossResolverRebuild() throws {
+        let container = try makeContainer()
+        let ctx = container.mainContext
+        ctx.insert(ChildProfile(displayName: "Test", brownsStage: .twoThree, isActive: true))
+        try? ctx.save()
+
+        let first = ChildProfileResolver()
+        first.configure(modelContext: ctx)
+        first.requestMode(.singleWord)
+
+        let second = ChildProfileResolver()
+        second.configure(modelContext: ctx)
+        #expect(second.modeOverride == .singleWord)
+        #expect(second.interactionMode == .singleWord)
+
+        withExtendedLifetime(container) {}
     }
 
     // MARK: - Universal: grid tap adds, never deletes (sentence mode)
@@ -129,7 +258,7 @@ struct InteractionModeTests {
         let container = try makeContainer()
         let ctx = container.mainContext
         // Default profile is .sentence mode.
-        let profile = ChildProfile(displayName: "Test", birthday: .now, isActive: true)
+        let profile = ChildProfile(displayName: "Test", brownsStage: .fourPlus, isActive: true)
         ctx.insert(profile)
         try? ctx.save()
         let resolver = ChildProfileResolver()

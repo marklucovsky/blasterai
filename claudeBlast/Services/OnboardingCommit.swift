@@ -21,7 +21,7 @@ struct OnboardingInputs {
     /// as the active fallback.
     var createChild: Bool
     var childName: String
-    var childBirthday: Date
+    var childStage: BrownsStage
     var childVoiceID: String
     var childMaxTiles: Int
     /// `nil` = don't touch the vault (env-var path is in play — the launch
@@ -83,15 +83,18 @@ enum OnboardingCommit {
             )) ?? []
             if let kid = realProfiles.first {
                 kid.displayName = inputs.childName.trimmingCharacters(in: .whitespaces)
-                kid.birthday = inputs.childBirthday
+                kid.brownsStage = inputs.childStage
                 kid.voiceIdentifier = inputs.childVoiceID
-                kid.maxSelectedTiles = inputs.childMaxTiles
+                // setTileCap after the stage so the two reconcile — and so a
+                // caregiver who picked a wider cap promotes the stage rather
+                // than silently having the number clamped back.
+                kid.setTileCap(inputs.childMaxTiles)
                 kid.isActive = true
                 kid.modifiedAt = .now
             } else {
                 let kid = ChildProfile(
                     displayName: inputs.childName.trimmingCharacters(in: .whitespaces),
-                    birthday: inputs.childBirthday,
+                    brownsStage: inputs.childStage,
                     voiceIdentifier: inputs.childVoiceID,
                     maxSelectedTiles: inputs.childMaxTiles,
                     isActive: true

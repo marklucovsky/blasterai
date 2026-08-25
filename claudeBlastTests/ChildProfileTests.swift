@@ -23,100 +23,24 @@ struct ChildProfileTests {
         Calendar.current.date(from: DateComponents(year: y, month: m, day: d))!
     }
 
-    // MARK: - Birthday synthesis
-
-    @Test func synthesizeBirthday_wrapMonth_preservesAge() throws {
-        // Today 2026-06-04, age 5 → synth birthday 2021-02-04 (Mark's worked
-        // example). On 2026-06-04 the child should still read as age 5.
-        let now = date(2026, 6, 4)
-        let bday = ChildProfile.synthesizeBirthday(age: 5, asOf: now)
-        let comps = Calendar.current.dateComponents([.year, .month, .day], from: bday)
-        #expect(comps.year == 2021)
-        #expect(comps.month == 2)
-        #expect(comps.day == 4)
-        #expect(ChildProfile.age(from: bday, asOf: now) == 5)
-    }
-
-    @Test func synthesizeBirthday_noWrap_preservesAge() throws {
-        // Today 2026-03-04, age 5 → synth birthday 2020-11-04. The +8 month
-        // offset doesn't wrap the year, but the birthYear formula still has
-        // to back off by an extra year to keep the kid actually age 5 today.
-        let now = date(2026, 3, 4)
-        let bday = ChildProfile.synthesizeBirthday(age: 5, asOf: now)
-        let comps = Calendar.current.dateComponents([.year, .month, .day], from: bday)
-        #expect(comps.year == 2020)
-        #expect(comps.month == 11)
-        #expect(comps.day == 4)
-        #expect(ChildProfile.age(from: bday, asOf: now) == 5)
-    }
-
-    @Test func synthesizeBirthday_ageTicksOverAtSyntheticBirthday() throws {
-        // The whole point of the synth: ~8 months from now, the displayed
-        // age increments without any admin action.
-        let now = date(2026, 6, 4)
-        let bday = ChildProfile.synthesizeBirthday(age: 5, asOf: now)
-        // Same age on the synthesis date.
-        #expect(ChildProfile.age(from: bday, asOf: now) == 5)
-        // Still 5 the day before the synthetic birthday.
-        let dayBefore = date(2027, 2, 3)
-        #expect(ChildProfile.age(from: bday, asOf: dayBefore) == 5)
-        // 6 on the synthetic birthday.
-        let onBday = date(2027, 2, 4)
-        #expect(ChildProfile.age(from: bday, asOf: onBday) == 6)
-    }
-
-    @Test func synthesizeBirthday_clampsLeapDay() throws {
-        // Today 2024-06-29 (leap year). +8 months would land on Feb 29 2025
-        // which doesn't exist. Calendar pre-clamps to Feb 28, so the synth
-        // should produce Feb 28.
-        let now = date(2024, 6, 29)
-        let bday = ChildProfile.synthesizeBirthday(age: 5, asOf: now)
-        let comps = Calendar.current.dateComponents([.month, .day], from: bday)
-        #expect(comps.month == 2)
-        #expect(comps.day == 28)
-    }
-
-    // MARK: - Age grade derivation
-
-    @Test func ageGrade_followsAge() throws {
-        // 6yo → 1st grade. 7yo → 2nd. Clamp at 1 below, 12 above.
-        let now = date(2026, 6, 4)
-        let bday6 = ChildProfile.synthesizeBirthday(age: 6, asOf: now)
-        let profile6 = ChildProfile(displayName: "A", birthday: bday6)
-        #expect(profile6.age == 6)
-        #expect(profile6.ageGrade == 1)
-
-        let bday7 = ChildProfile.synthesizeBirthday(age: 7, asOf: now)
-        let profile7 = ChildProfile(displayName: "B", birthday: bday7)
-        #expect(profile7.ageGrade == 2)
-
-        let bday3 = ChildProfile.synthesizeBirthday(age: 3, asOf: now)
-        let profile3 = ChildProfile(displayName: "C", birthday: bday3)
-        #expect(profile3.ageGrade == 1) // floor
-
-        let bday20 = ChildProfile.synthesizeBirthday(age: 20, asOf: now)
-        let profile20 = ChildProfile(displayName: "D", birthday: bday20)
-        #expect(profile20.ageGrade == 12) // ceiling
-    }
-
     // MARK: - Active resolution (tiebreaker for CloudKit races)
 
     @Test func resolveActive_noneActive_returnsNil() throws {
-        let a = ChildProfile(displayName: "A", birthday: date(2020, 1, 1))
-        let b = ChildProfile(displayName: "B", birthday: date(2020, 1, 1))
+        let a = ChildProfile(displayName: "A")
+        let b = ChildProfile(displayName: "B")
         #expect(ChildProfile.resolveActive(from: [a, b]) == nil)
     }
 
     @Test func resolveActive_oneActive_returnsIt() throws {
-        let a = ChildProfile(displayName: "A", birthday: date(2020, 1, 1), isActive: false)
-        let b = ChildProfile(displayName: "B", birthday: date(2020, 1, 1), isActive: true)
+        let a = ChildProfile(displayName: "A", isActive: false)
+        let b = ChildProfile(displayName: "B", isActive: true)
         #expect(ChildProfile.resolveActive(from: [a, b])?.displayName == "B")
     }
 
     @Test func resolveActive_multipleActive_picksMostRecentlyModified() throws {
-        let older = ChildProfile(displayName: "Older", birthday: date(2020, 1, 1), isActive: true)
+        let older = ChildProfile(displayName: "Older", isActive: true)
         older.modifiedAt = date(2026, 1, 1)
-        let newer = ChildProfile(displayName: "Newer", birthday: date(2020, 1, 1), isActive: true)
+        let newer = ChildProfile(displayName: "Newer", isActive: true)
         newer.modifiedAt = date(2026, 6, 1)
         let picked = ChildProfile.resolveActive(from: [older, newer])
         #expect(picked?.displayName == "Newer")
@@ -125,10 +49,10 @@ struct ChildProfileTests {
     @Test func resolveActive_tiedModifiedAt_picksLowestId() throws {
         // Deterministic tiebreaker — same modifiedAt → lowest id wins.
         let stamp = date(2026, 6, 1)
-        let a = ChildProfile(displayName: "A", birthday: date(2020, 1, 1), isActive: true)
+        let a = ChildProfile(displayName: "A", isActive: true)
         a.id = "aaaa"
         a.modifiedAt = stamp
-        let b = ChildProfile(displayName: "B", birthday: date(2020, 1, 1), isActive: true)
+        let b = ChildProfile(displayName: "B", isActive: true)
         b.id = "zzzz"
         b.modifiedAt = stamp
         let picked = ChildProfile.resolveActive(from: [b, a])
@@ -141,10 +65,9 @@ struct ChildProfileTests {
         let container = try makeContainer()
         let ctx = container.mainContext
 
-        let bday = ChildProfile.synthesizeBirthday(age: 5, asOf: date(2026, 6, 4))
         let profile = ChildProfile(
             displayName: "Aubrey",
-            birthday: bday,
+            brownsStage: .fourPlus,
             voiceIdentifier: "com.apple.voice.compact.en-US.Samantha",
             maxSelectedTiles: 5,
             defaultSceneKey: "core_first",
@@ -156,9 +79,63 @@ struct ChildProfileTests {
         let fetched = try ctx.fetch(FetchDescriptor<ChildProfile>())
         #expect(fetched.count == 1)
         #expect(fetched[0].displayName == "Aubrey")
-        #expect(fetched[0].age == 5)
+        #expect(fetched[0].brownsStage == .fourPlus)
         #expect(fetched[0].maxSelectedTiles == 5)
         #expect(fetched[0].isActive == true)
+    }
+
+    // MARK: - Pre-promotion insurance fields
+
+    /// `languageRaw` and `brownsStageRaw` exist, carry their intended defaults,
+    /// and survive a save/fetch cycle.
+    ///
+    /// This is the *whole* assertion the insurance PR is buying, and nothing
+    /// else covers it: `SchemaVersionTests` guards which **models** are in the
+    /// synced partition, not which **fields** are on them. The synced schema
+    /// becomes additive-only at promotion, so a field that isn't here before
+    /// S6 Phase 4 cannot be added to Production later without a new field plus
+    /// a backfill of every tester's records.
+    ///
+    /// Round-tripping matters as much as existence. Per the no-optionals rule
+    /// on `BlasterSchemaV1`, a property must be written on every save for its
+    /// CloudKit field to materialize at all — an unwritten field never appears
+    /// in the Development schema and therefore never exists in Production.
+    @Test func insuranceFieldsDefaultAndRoundTrip() throws {
+        let container = try makeContainer()
+        let ctx = container.mainContext
+
+        let profile = ChildProfile(displayName: "Aubrey")
+        // Empty ⇒ unspecified ⇒ English.
+        #expect(profile.languageRaw == "")
+        // A real stage, not an "unset" sentinel: every profile that will ever
+        // exist is created after the 3E selector does, so there is no
+        // pre-existing state to distinguish a default from a choice.
+        #expect(profile.brownsStageRaw == "I")
+
+        ctx.insert(profile)
+        try ctx.save()
+
+        let fetched = try ctx.fetch(FetchDescriptor<ChildProfile>())
+        #expect(fetched.count == 1)
+        #expect(fetched[0].languageRaw == "")
+        #expect(fetched[0].brownsStageRaw == "I")
+    }
+
+    /// Both fields accept and persist a non-default value, which is what proves
+    /// they are writable stored properties rather than constants.
+    @Test func insuranceFieldsPersistAssignedValues() throws {
+        let container = try makeContainer()
+        let ctx = container.mainContext
+
+        let profile = ChildProfile(displayName: "Aubrey")
+        profile.languageRaw = "km"
+        profile.brownsStageRaw = "IV+"
+        ctx.insert(profile)
+        try ctx.save()
+
+        let fetched = try ctx.fetch(FetchDescriptor<ChildProfile>())
+        #expect(fetched[0].languageRaw == "km")
+        #expect(fetched[0].brownsStageRaw == "IV+")
     }
 
     // MARK: - DeviceProfile + Store
