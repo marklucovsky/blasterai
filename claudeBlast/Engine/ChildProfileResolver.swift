@@ -121,14 +121,34 @@ final class ChildProfileResolver {
     var voiceIdentifier: String { active?.voiceIdentifier ?? "" }
     var ttsRate: Float { active?.ttsRate ?? Self.fallbackTTSRate }
     var ttsVolume: Float { active?.ttsVolume ?? Self.fallbackTTSVolume }
-    /// Tile cap in force. A device forced to single words pins this to 1,
-    /// matching what Stage I means, without disturbing the child's stored cap.
-    /// A device forced *up* to sentences uses the child's cap, or the fallback
-    /// when their stage would otherwise allow only one tile.
+    /// Tile cap in force.
+    ///
+    /// With no override this is simply the child's own cap. When a device
+    /// override *is* in force it borrows the cap of the lowest stage that
+    /// override's mode belongs to, because a mode and a tile count are not
+    /// independent — they are two faces of the same stage:
+    ///
+    /// - forced to single words → 1, what Stage I means
+    /// - forced to sentences → 4, what Stage II-III means
+    ///
+    /// The second case is the one that matters. A Stage I child switched to
+    /// sentence mode has a stored cap of 1, and simply honouring it (or nudging
+    /// it to a floor of 2) generates a sentence on the second tap — which is not
+    /// sentence mode in any useful sense. Borrowing Stage II-III's 4 gives the
+    /// caregiver the board they actually asked for.
+    ///
+    /// The child's stored cap is never touched by any of this.
     var maxSelectedTiles: Int {
-        if interactionMode == .singleWord { return 1 }
         let stored = active?.effectiveTileCap ?? Self.fallbackMaxTiles
-        return max(stored, 2)
+        guard let override = modeOverride, override != stageMode else { return stored }
+        switch override {
+        case .singleWord:
+            return BrownsStage.one.tileCapRange.lowerBound
+        case .sentence:
+            // Only borrow when the child's own cap is too small to build a
+            // sentence with; a IV+ child dropped to I and back keeps their 7.
+            return max(stored, BrownsStage.twoThree.tileCapRange.lowerBound)
+        }
     }
 
     /// Interaction mode in force: this device's temporary override if set,

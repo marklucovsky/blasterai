@@ -156,12 +156,41 @@ struct InteractionModeTests {
 
         resolver.requestMode(.sentence)
         #expect(resolver.interactionMode == .sentence)
-        #expect(resolver.maxSelectedTiles >= 2)   // one tile cannot make a sentence
+        // Borrows Stage II-III's cap. A loose `>= 2` here is what let the real
+        // bug through: the cap fell back to a floor of 2, so the second tap
+        // generated a sentence — not sentence mode in any useful sense.
+        #expect(resolver.maxSelectedTiles == 4)
         #expect(profile.brownsStage == .one)      // stage untouched
+        #expect(profile.effectiveTileCap == 1)    // stored cap untouched
 
         resolver.requestMode(.singleWord)
         #expect(resolver.interactionMode == .singleWord)
         #expect(resolver.modeOverride == nil)     // back to following the stage
+
+        withExtendedLifetime(container) {}
+    }
+
+    /// A child who already builds long sentences keeps their own cap when the
+    /// device is flipped down to single words and back — the override borrows
+    /// Stage II-III's 4 only when the child's own cap is smaller.
+    @Test func overrideDoesNotShrinkAWideCap() throws {
+        let container = try makeContainer()
+        let ctx = container.mainContext
+        let profile = ChildProfile(displayName: "Test", brownsStage: .fourPlus,
+                                   maxSelectedTiles: 7, isActive: true)
+        ctx.insert(profile)
+        try? ctx.save()
+
+        let resolver = ChildProfileResolver()
+        resolver.configure(modelContext: ctx)
+        #expect(resolver.maxSelectedTiles == 7)
+
+        resolver.requestMode(.singleWord)
+        #expect(resolver.maxSelectedTiles == 1)
+
+        resolver.requestMode(.sentence)
+        #expect(resolver.maxSelectedTiles == 7)   // not clamped down to 4
+        #expect(resolver.modeOverride == nil)
 
         withExtendedLifetime(container) {}
     }
