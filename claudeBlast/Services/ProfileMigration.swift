@@ -42,7 +42,7 @@ enum ProfileMigration {
     ///     `bootstrapInstalled` flag was set before this launch), `false`
     ///     for fresh installs.
     ///   - defaults: injected for test isolation. Defaults to `.standard`.
-    ///   - now: clock injection for the Legacy birthday synthesis.
+    ///   - now: clock injection for the Legacy profile's seed timestamp.
     static func ensureProfilesAfterBootstrap(
         context: ModelContext,
         seedLegacy: Bool,
@@ -66,9 +66,13 @@ enum ProfileMigration {
 
         let isoFormatter = ISO8601DateFormatter()
         isoFormatter.formatOptions = [.withInternetDateTime]
+        // The prior install's tile cap is the only signal we have about how
+        // this child communicates, and it happens to be exactly what a stage
+        // encodes — so derive rather than guess. A returning user on 6 tiles
+        // was building long sentences; one on 4 was not.
         let legacy = ChildProfile(
             displayName: "Legacy",
-            birthday: ChildProfile.synthesizeBirthday(age: 7, asOf: now),
+            brownsStage: BrownsStage.implied(byTileCap: tileCap),
             voiceIdentifier: voiceID,
             maxSelectedTiles: tileCap,
             defaultSceneKey: "",
@@ -95,11 +99,14 @@ enum ProfileMigration {
         )) ?? []
         let anyRealActive = realProfiles.contains(where: { $0.isActive })
 
+        // Stage I is the floor and the safe direction to fail: a device with
+        // no real child yet speaks one word per tap rather than generating
+        // sentences for a child nobody has described. Onboarding replaces this
+        // with a stage a caregiver actually chose.
         let sandbox = ChildProfile(
             displayName: kSandboxProfileDefaultName,
-            birthday: ChildProfile.synthesizeBirthday(age: 8, asOf: now),
+            brownsStage: .one,
             voiceIdentifier: "",
-            maxSelectedTiles: 4,
             defaultSceneKey: "",
             notes: "Default profile used when no real child is active.",
             // Sandbox is active iff no real profile owns the slot already.

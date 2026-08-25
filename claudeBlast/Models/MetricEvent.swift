@@ -37,7 +37,7 @@ final class MetricEvent {
     var subjectType: String = ""
     var subjectKey: String = ""
     /// `MetricType.rawValue`. Stored as a String rather than the enum directly,
-    /// matching `ChildProfile.interactionModeRaw` / `DeviceProfile.roleRaw`.
+    /// matching `ChildProfile.brownsStageRaw` / `DeviceProfile.roleRaw`.
     /// Unknown values fall back to `.selected` so an older build reading a newer
     /// event type degrades instead of failing.
     var eventTypeRaw: String = MetricType.selected.rawValue

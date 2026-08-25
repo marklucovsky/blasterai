@@ -72,26 +72,37 @@ extension AdminView {
                 } else {
                     LabeledContent("Profile", value: active.displayName)
                 }
-                LabeledContent("Age",
-                               value: "\(active.age) (grade \(active.ageGrade))")
-
                 VStack(alignment: .leading, spacing: 4) {
-                    Picker("Mode", selection: Binding(
-                        get: { active.interactionMode },
-                        set: { newMode in
-                            active.interactionMode = newMode // bumps modifiedAt
-                            // Start the new mode with a clean tray/strip.
+                    Picker("Stage", selection: Binding(
+                        get: { active.brownsStage },
+                        set: { newStage in
+                            active.brownsStage = newStage // reconciles cap, bumps modifiedAt
+                            // Start the new stage with a clean tray/strip.
+                            sentenceEngine.clearSelection()
+                            sentenceEngine.clearStrip()
+                            profileResolver.refresh()
+                        }
+                    )) {
+                        ForEach(BrownsStage.allCases) { stage in
+                            Text(stage.label).tag(stage)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    Text(active.brownsStage.detail)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    if let override = profileResolver.modeOverride {
+                        Label("This device is temporarily set to \(override.label), overriding the stage.",
+                              systemImage: "exclamationmark.triangle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                        Button("Follow the stage again") {
+                            profileResolver.setModeOverride(nil)
                             sentenceEngine.clearSelection()
                             sentenceEngine.clearStrip()
                         }
-                    )) {
-                        ForEach(InteractionMode.allCases) { mode in
-                            Text(mode.label).tag(mode)
-                        }
-                    }
-                    Text(active.interactionMode.detail)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                    }
                 }
 
                 NavigationLink {
@@ -133,14 +144,16 @@ extension AdminView {
                     ), in: 0.0...1.0)
                 }
 
+                // Widening past the current stage's range promotes the stage
+                // rather than clamping — see ChildProfile.setTileCap.
                 Stepper(value: Binding(
-                    get: { active.maxSelectedTiles },
-                    set: { active.maxSelectedTiles = $0; active.modifiedAt = .now }
-                ), in: 2...8) {
+                    get: { active.effectiveTileCap },
+                    set: { active.setTileCap($0); profileResolver.refresh() }
+                ), in: 1...8) {
                     HStack {
-                        Text("Tiles per group")
+                        Text("Tiles per sentence")
                         Spacer()
-                        Text("\(active.maxSelectedTiles)")
+                        Text("\(active.effectiveTileCap)")
                             .foregroundStyle(.secondary)
                     }
                 }

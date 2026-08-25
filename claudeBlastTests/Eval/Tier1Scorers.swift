@@ -66,11 +66,30 @@ enum Tier1 {
     }
 
     /// Run all sentence checks, collecting issues. `tiles` is the input combo.
-    static func scoreSentence(_ text: String, tiles: [TileSelection]) -> SentenceSanity {
+    ///
+    /// `stage` gates the raw-echo rule only. At Brown's Stage I and II-III a
+    /// near-verbatim output is the *correct* answer, not a failure: the child's
+    /// mean utterance length is 1-3 words, so "dad, help" for the tiles
+    /// `dad + help` is exactly what that child would say. `looksLikeRawTileEcho`
+    /// strips punctuation before comparing, so it cannot tell "dad help" from
+    /// "Dad, help!" — and at these stages it should not try.
+    ///
+    /// The rule still applies in full at Stage IV+, where an echo really does
+    /// mean the model added nothing. Defaulting to `.fourPlus` keeps every
+    /// existing caller as strict as it was.
+    ///
+    /// This was found by the live eval after Brown's Stages replaced the
+    /// grade-level prompt: `dad_help` began failing precisely because the model
+    /// started obeying the stage. The check was encoding "always expand", which
+    /// was an artifact of the old "2nd-grade student" phrasing.
+    static func scoreSentence(_ text: String, tiles: [TileSelection],
+                              stage: BrownsStage = .fourPlus) -> SentenceSanity {
         var s = SentenceSanity()
         if isEmptyOrDegenerate(text) { s.issues.append("empty/degenerate output") }
         if containsWordClassEcho(text) { s.issues.append("wordClass annotation leaked into output") }
-        if looksLikeRawTileEcho(text, tiles: tiles) { s.issues.append("output is a raw echo of the tiles") }
+        if stage == .fourPlus, looksLikeRawTileEcho(text, tiles: tiles) {
+            s.issues.append("output is a raw echo of the tiles")
+        }
         let lower = text.lowercased()
         for bad in unsafeFragments where lower.contains(bad) {
             s.issues.append("unsafe fragment: \"\(bad)\"")
@@ -109,12 +128,13 @@ enum Tier1 {
     /// - any per-tile sanity failure on a rung,
     /// - a strict regression (a rung less insistent than the one before),
     /// - a totally flat ladder (no escalation at all across the whole ramp).
-    static func scoreEscalation(_ ladder: [String], tiles: [TileSelection]) -> EscalationSanity {
+    static func scoreEscalation(_ ladder: [String], tiles: [TileSelection],
+                                stage: BrownsStage = .fourPlus) -> EscalationSanity {
         var issues: [String] = []
         let intensities = ladder.map(intensity)
 
         for (i, text) in ladder.enumerated() {
-            let s = scoreSentence(text, tiles: tiles)
+            let s = scoreSentence(text, tiles: tiles, stage: stage)
             if !s.passed { issues.append("step \(i): \(s.issues.joined(separator: ", "))") }
         }
         for i in 1..<max(ladder.count, 1) where i < intensities.count {

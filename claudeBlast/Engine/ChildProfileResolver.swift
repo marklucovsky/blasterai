@@ -29,10 +29,15 @@ final class ChildProfileResolver {
 
     private var context: ModelContext?
 
+    /// This device's temporary interaction-mode override, or `nil` to follow the
+    /// active child's stage. Cached from `DeviceProfile` on `refresh()` rather
+    /// than fetched per read, because `interactionMode` sits on the tile-tap path.
+    private(set) var modeOverride: InteractionMode?
+
     /// Fallbacks for the no-active-profile case. Sized for a safe baseline
-    /// rather than a "best guess" — better to be conservative than to send
-    /// a 12-year-old prompt to a 4-year-old.
-    static let fallbackAgeGrade: Int = 2
+    /// rather than a "best guess" — better to under-serve than to hand a child
+    /// sentences they cannot parse.
+    static let fallbackStage: BrownsStage = .one
     static let fallbackMaxTiles: Int = 4
     static let fallbackTTSRate: Float = 0.5
     static let fallbackTTSVolume: Float = 1.0
@@ -58,6 +63,7 @@ final class ChildProfileResolver {
     /// 3. If neither exists (bootstrap hasn't run yet), `active` is nil
     ///    and the synchronous getters use safe fallbacks.
     func refresh() {
+        refreshOverride()
         guard let ctx = context else {
             active = nil
             return
@@ -77,16 +83,78 @@ final class ChildProfileResolver {
         active = sandboxes.first
     }
 
+    /// Re-read this device's interaction-mode override.
+    private func refreshOverride() {
+        guard let ctx = context else {
+            modeOverride = nil
+            return
+        }
+        modeOverride = DeviceProfileStore.current(context: ctx)?.modeOverride
+    }
+
+    /// The mode the active child's stage implies, ignoring any device override.
+    var stageMode: InteractionMode { active?.interactionMode ?? .sentence }
+
+    /// Set (or clear, with `nil`) this device's temporary mode override.
+    /// Deliberately does **not** touch the active child's Brown's Stage — see
+    /// `DeviceProfile.modeOverrideRaw` for why those are different facts.
+    func setModeOverride(_ mode: InteractionMode?) {
+        guard let ctx = context else { return }
+        let device = DeviceProfileStore.ensure(context: ctx)
+        device.modeOverride = mode
+        try? ctx.save()
+        modeOverride = mode
+    }
+
+    /// Switch this device to `mode`. Clears the override when the requested mode
+    /// is already what the child's stage implies, so the device goes back to
+    /// simply following the profile rather than pinning a redundant override.
+    func requestMode(_ mode: InteractionMode) {
+        setModeOverride(mode == stageMode ? nil : mode)
+    }
+
     // MARK: - Synchronous getters with safe fallbacks
 
-    var ageGrade: Int { active?.ageGrade ?? Self.fallbackAgeGrade }
+    /// The active child's developmental stage, or the conservative floor when
+    /// no profile is active (Sandbox / pre-onboarding).
+    var brownsStage: BrownsStage { active?.brownsStage ?? Self.fallbackStage }
     var voiceIdentifier: String { active?.voiceIdentifier ?? "" }
     var ttsRate: Float { active?.ttsRate ?? Self.fallbackTTSRate }
     var ttsVolume: Float { active?.ttsVolume ?? Self.fallbackTTSVolume }
-    var maxSelectedTiles: Int { active?.maxSelectedTiles ?? Self.fallbackMaxTiles }
-    /// Interaction mode of the active child; defaults to AI sentences when no
-    /// real profile is active (Sandbox/pre-onboarding).
-    var interactionMode: InteractionMode { active?.interactionMode ?? .sentence }
+    /// Tile cap in force.
+    ///
+    /// With no override this is simply the child's own cap. When a device
+    /// override *is* in force it borrows the cap of the lowest stage that
+    /// override's mode belongs to, because a mode and a tile count are not
+    /// independent — they are two faces of the same stage:
+    ///
+    /// - forced to single words → 1, what Stage I means
+    /// - forced to sentences → 4, what Stage II-III means
+    ///
+    /// The second case is the one that matters. A Stage I child switched to
+    /// sentence mode has a stored cap of 1, and simply honouring it (or nudging
+    /// it to a floor of 2) generates a sentence on the second tap — which is not
+    /// sentence mode in any useful sense. Borrowing Stage II-III's 4 gives the
+    /// caregiver the board they actually asked for.
+    ///
+    /// The child's stored cap is never touched by any of this.
+    var maxSelectedTiles: Int {
+        let stored = active?.effectiveTileCap ?? Self.fallbackMaxTiles
+        guard let override = modeOverride, override != stageMode else { return stored }
+        switch override {
+        case .singleWord:
+            return BrownsStage.one.tileCapRange.lowerBound
+        case .sentence:
+            // Only borrow when the child's own cap is too small to build a
+            // sentence with; a IV+ child dropped to I and back keeps their 7.
+            return max(stored, BrownsStage.twoThree.tileCapRange.lowerBound)
+        }
+    }
+
+    /// Interaction mode in force: this device's temporary override if set,
+    /// otherwise the projection of the active child's Brown's Stage. Defaults
+    /// to AI sentences when no real profile is active (Sandbox/pre-onboarding).
+    var interactionMode: InteractionMode { modeOverride ?? stageMode }
     var activeChildID: String? { active?.id }
 
     // MARK: - Mutation

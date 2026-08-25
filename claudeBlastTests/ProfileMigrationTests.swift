@@ -93,7 +93,7 @@ struct ProfileMigrationTests {
         #expect(legacy.isActive == true)
         #expect(legacy.voiceIdentifier == "com.apple.voice.compact.en-US.Samantha")
         #expect(legacy.maxSelectedTiles == 5)
-        #expect(legacy.age == 7)
+        #expect(legacy.brownsStage == .fourPlus)   // seeded cap of 5 implies IV+
         // Sandbox exists but is NOT active (Legacy owns the active slot).
         let sandbox = kids.first(where: { $0.isSystem })!
         #expect(sandbox.isActive == false)
@@ -166,7 +166,7 @@ struct ProfileMigrationTests {
         // synced device).
         let existing = ChildProfile(
             displayName: "Aubrey",
-            birthday: ChildProfile.synthesizeBirthday(age: 5),
+            brownsStage: .twoThree,
             voiceIdentifier: "real-voice",
             maxSelectedTiles: 6,
             isActive: true

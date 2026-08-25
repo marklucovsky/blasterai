@@ -73,8 +73,9 @@ private struct VoiceHelpPopover: View {
 // MARK: - Child profile form sheet
 
 /// Compact create/edit form for a `ChildProfile`. Used by the Admin
-/// Profiles section. Captures age in years and synthesizes
-/// `ChildProfile.birthday` via the same helper as onboarding.
+/// Profiles section. Captures the child's Brown's Stage, which decides both
+/// the interaction mode and the tile cap — see `BrownsStage`. There is no age
+/// or birthday field: the app does not store a child's date of birth.
 struct ChildProfileFormSheet: View {
     enum Mode {
         case create
@@ -88,14 +89,11 @@ struct ChildProfileFormSheet: View {
     @Environment(ChildProfileResolver.self) private var profileResolver
 
     @State private var name: String = ""
-    @State private var ageYears: Int = 5
-    @State private var birthday: Date = ChildProfile.synthesizeBirthday(age: 5)
-    @State private var editingExactBirthday: Bool = false
+    @State private var stage: BrownsStage = .one
     @State private var voiceID: String = ""
     @State private var maxTiles: Int = 4
     @State private var ttsRate: Float = 0.5
     @State private var ttsVolume: Float = 1.0
-    @State private var interactionMode: InteractionMode = .sentence
     @State private var makeActive: Bool = false
 
     private var titleText: String {
@@ -125,22 +123,6 @@ struct ChildProfileFormSheet: View {
                 Section("Basics") {
                     TextField("Name", text: $name)
                         .textInputAutocapitalization(.words)
-                    Stepper(value: $ageYears, in: 1...21) {
-                        HStack {
-                            Text("Age")
-                            Spacer()
-                            Text("\(ageYears)").foregroundStyle(.secondary)
-                        }
-                    }
-                    .onChange(of: ageYears) { _, newValue in
-                        if !editingExactBirthday {
-                            birthday = ChildProfile.synthesizeBirthday(age: newValue)
-                        }
-                    }
-                    DisclosureGroup("Exact birthday", isExpanded: $editingExactBirthday) {
-                        DatePicker("Birthday", selection: $birthday,
-                                   in: ...Date.now, displayedComponents: .date)
-                    }
                 }
 
                 Section("Voice") {
@@ -150,24 +132,39 @@ struct ChildProfileFormSheet: View {
                     )
                 }
 
-                Section("Mode") {
-                    Picker("Interaction", selection: $interactionMode) {
-                        ForEach(InteractionMode.allCases) { mode in
-                            Text(mode.label).tag(mode)
+                Section("Stage") {
+                    Picker("Stage", selection: $stage) {
+                        ForEach(BrownsStage.allCases) { s in
+                            Text(s.label).tag(s)
                         }
                     }
-                    Text(interactionMode.detail)
+                    .pickerStyle(.segmented)
+                    Text(stage.detail)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                    Text("Stage decides how tiles become speech: Stage I speaks one word per tap, later stages build sentences.")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+                .onChange(of: stage) { _, newStage in
+                    maxTiles = min(newStage.tileCapRange.upperBound,
+                                   max(newStage.tileCapRange.lowerBound, maxTiles))
                 }
 
                 Section("Tiles + Audio") {
-                    Stepper(value: $maxTiles, in: 2...8) {
-                        HStack {
-                            Text("Tiles per group")
-                            Spacer()
-                            Text("\(maxTiles)").foregroundStyle(.secondary)
+                    // Only Stage IV+ leaves a number to choose — earlier stages
+                    // pin the count, because the count is part of the stage.
+                    if stage.allowsTileCapChoice {
+                        Stepper(value: $maxTiles, in: stage.tileCapRange) {
+                            HStack {
+                                Text("Tiles per sentence")
+                                Spacer()
+                                Text("\(maxTiles)").foregroundStyle(.secondary)
+                            }
                         }
+                    } else {
+                        LabeledContent("Tiles per sentence",
+                                       value: "\(stage.tileCapRange.lowerBound) (set by \(stage.label))")
                     }
                     VStack(alignment: .leading) {
                         Text("Speech rate \(String(format: "%.2f", ttsRate))")
@@ -204,14 +201,11 @@ struct ChildProfileFormSheet: View {
     private func load() {
         if case let .edit(profile) = mode {
             name = profile.displayName
-            birthday = profile.birthday
-            ageYears = ChildProfile.age(from: profile.birthday, asOf: .now)
-            editingExactBirthday = true
+            stage = profile.brownsStage
             voiceID = profile.voiceIdentifier
-            maxTiles = profile.maxSelectedTiles
+            maxTiles = profile.effectiveTileCap
             ttsRate = profile.ttsRate
             ttsVolume = profile.ttsVolume
-            interactionMode = profile.interactionMode
         }
     }
 
@@ -221,26 +215,24 @@ struct ChildProfileFormSheet: View {
         case .create:
             let profile = ChildProfile(
                 displayName: trimmed,
-                birthday: birthday,
+                brownsStage: stage,
                 voiceIdentifier: voiceID,
                 maxSelectedTiles: maxTiles,
                 isActive: false
             )
             profile.ttsRate = ttsRate
             profile.ttsVolume = ttsVolume
-            profile.interactionMode = interactionMode
             modelContext.insert(profile)
             if makeActive {
                 profileResolver.setActive(id: profile.id)
             }
         case .edit(let profile):
             profile.displayName = trimmed
-            profile.birthday = birthday
+            profile.brownsStage = stage
             profile.voiceIdentifier = voiceID
-            profile.maxSelectedTiles = maxTiles
+            profile.setTileCap(maxTiles)
             profile.ttsRate = ttsRate
             profile.ttsVolume = ttsVolume
-            profile.interactionMode = interactionMode
             profile.modifiedAt = .now
             profileResolver.refresh()
         }

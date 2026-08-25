@@ -108,14 +108,18 @@ struct EvalChatClient {
 /// same messages — while letting the harness vary the model.
 struct SubjectRunner {
     let client: EvalChatClient
-    /// Grade level used for the prompt; mirrors the resolver's fallback so the
-    /// eval isn't coupled to a specific child profile.
-    var ageGradeLevel: Int = ChildProfileResolver.fallbackAgeGrade
+    /// Brown's Stage used for the prompt; mirrors the resolver's fallback so
+    /// the eval isn't coupled to a specific child profile. Override it to
+    /// compare stages against each other.
+    ///
+    /// Stage I is the resolver's floor but makes no API call in the app, so
+    /// the eval defaults to II-III — the first stage that actually generates.
+    var brownsStage: BrownsStage = .twoThree
 
     /// Single-shot generation for one tile combination.
     func generate(tiles: [TileSelection], repetition: Int = 0,
                   priorSentences: [String] = []) async throws -> String {
-        var builder = SentencePromptBuilder(ageGradeLevel: ageGradeLevel)
+        var builder = SentencePromptBuilder(brownsStage: brownsStage)
         builder.repetitionCount = repetition
         builder.conversationContext = priorSentences
         let system = builder.buildSystemPrompt().map { EvalChatMessage(role: "system", content: $0.content) }
@@ -163,4 +167,35 @@ enum EvalEnv {
     static var judgeModel: String {
         ProcessInfo.processInfo.environment["EVAL_JUDGE_MODEL"] ?? "gpt-4o"
     }
+
+    /// Optional file to append generated ladders/sentences to
+    /// (EVAL_TRANSCRIPT_PATH).
+    ///
+    /// A live run that *passes* produces no failure message, and `print` from a
+    /// test never reaches the `.xcresult` bundle — so from the command line a
+    /// green run is completely opaque. That is the wrong way round: escalation
+    /// quality is a judgement about wording, and the wording is exactly what a
+    /// pass hides. Point this at a file to read what the model actually said.
+    static var transcriptPath: String? {
+        ProcessInfo.processInfo.environment["EVAL_TRANSCRIPT_PATH"]?
+            .trimmingCharacters(in: .whitespaces)
+            .nilIfEmpty
+    }
+
+    /// Append a block to the transcript file, if one was requested.
+    static func appendTranscript(_ text: String) {
+        guard let path = transcriptPath else { return }
+        let block = text + "\n"
+        if let handle = FileHandle(forWritingAtPath: path) {
+            handle.seekToEndOfFile()
+            handle.write(Data(block.utf8))
+            try? handle.close()
+        } else {
+            try? block.write(toFile: path, atomically: true, encoding: .utf8)
+        }
+    }
+}
+
+private extension String {
+    var nilIfEmpty: String? { isEmpty ? nil : self }
 }

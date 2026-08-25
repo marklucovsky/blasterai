@@ -31,8 +31,10 @@ struct LiveTier1EvalTests {
 
         for c in EvalCases.sentences {
             let text = try await runner.generate(tiles: c.tiles)
-            let score = Tier1.scoreSentence(text, tiles: c.tiles)
-            print("[eval/sentence] \(c.id): \"\(text)\"  \(score.passed ? "OK" : "FAIL \(score.issues)")")
+            let score = Tier1.scoreSentence(text, tiles: c.tiles, stage: runner.brownsStage)
+            let line = "[sentence] \(c.id): \"\(text)\"  \(score.passed ? "OK" : "FAIL \(score.issues)")"
+            print(line)
+            EvalEnv.appendTranscript(line)
             if !score.passed { failures.append("\(c.id): \(score.issues.joined(separator: "; "))") }
         }
 
@@ -43,20 +45,33 @@ struct LiveTier1EvalTests {
     func liveEscalationSanity() async throws {
         let runner = makeSubjectRunner()
         var failures: [String] = []
+        // Every ladder, pass or fail, folded into the expectation message.
+        // `print` from a test does not survive into the .xcresult bundle, so a
+        // CLI run could see *that* a ladder regressed but never *what it said* —
+        // which is the only thing that tells you whether the wording is any
+        // good. Escalation quality is a judgement about sentences, so the
+        // sentences have to reach the reader.
+        var transcript: [String] = []
 
         for c in EvalCases.escalations {
             let ladder = try await runner.generateEscalationLadder(tiles: c.tiles, extraSteps: c.extraSteps)
-            let score = Tier1.scoreEscalation(ladder, tiles: c.tiles)
-            print("[eval/escalation] \(c.id) intensities=\(score.intensities)")
-            for (i, rung) in ladder.enumerated() { print("    [\(i)] \"\(rung)\"") }
+            let score = Tier1.scoreEscalation(ladder, tiles: c.tiles, stage: runner.brownsStage)
+            transcript.append("\(c.id) [\(runner.brownsStage.label)] intensities=\(score.intensities)")
+            for (i, rung) in ladder.enumerated() {
+                transcript.append("    [\(i)] \"\(rung)\"")
+            }
             if !score.passed {
-                print("    -> FAIL \(score.issues)")
+                transcript.append("    -> FAIL \(score.issues)")
                 failures.append("\(c.id): \(score.issues.joined(separator: "; "))")
             }
         }
+        print(transcript.joined(separator: "\n"))
+        EvalEnv.appendTranscript("=== escalation ===\n" + transcript.joined(separator: "\n"))
 
         // Tier 1 is a floor: a regression or flat ramp here is a real signal that
         // escalation is broken — exactly the failure mode this milestone targets.
-        #expect(failures.isEmpty, Comment(rawValue: "Tier-1 escalation failures:\n" + failures.joined(separator: "\n")))
+        #expect(failures.isEmpty, Comment(rawValue:
+            "Tier-1 escalation failures:\n" + failures.joined(separator: "\n")
+            + "\n\nLadders:\n" + transcript.joined(separator: "\n")))
     }
 }

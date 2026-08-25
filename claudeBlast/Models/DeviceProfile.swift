@@ -26,6 +26,44 @@ final class DeviceProfile {
     var adminPINHash: Data?
     var adminPINSalt: Data?
     var onboardingCompleted: Bool = false
+    /// Temporarily run **this device** in a different interaction mode than the
+    /// active child's Brown's Stage implies. `InteractionMode.rawValue`, or
+    /// empty for "follow the stage". Persists until changed back — it does not
+    /// time out, because there is no defined session boundary to time out on,
+    /// and a mode that changes by itself mid-session is worse than one that
+    /// doesn't.
+    ///
+    /// **Both directions, deliberately.** A first version stored a
+    /// `singleWordOverride: Bool` that could only force single words *on*. With
+    /// Stage I as the default, a child profile already resolves to single words,
+    /// so "Switch to AI Sentences" cleared a flag that was never set and the
+    /// toggle did nothing at all — a no-op in exactly the default configuration.
+    /// A one-way override cannot back a two-way control.
+    ///
+    /// ## Why this lives here and not on `ChildProfile`
+    ///
+    /// A caregiver removing the sentence button for Thursday's session is
+    /// making a statement about *this afternoon on this iPad* — not about the
+    /// child's development. Until 2026-08-24 the toggle wrote
+    /// `ChildProfile.interactionMode`, a **synced** field, so a situational
+    /// flip propagated to every device the child's profile touched and
+    /// overwrote a clinical setting with a scheduling one.
+    ///
+    /// `DeviceProfile` is `cloudKitDatabase: .none`, so this never leaves the
+    /// device. The child's Brown's Stage stays the durable answer and is
+    /// untouched; this is the transient one. Two settings, two lifetimes, two
+    /// homes.
+    var modeOverrideRaw: String = ""
+
+    /// Typed accessor over `modeOverrideRaw`. `nil` means "follow the active
+    /// child's stage".
+    var modeOverride: InteractionMode? {
+        get { InteractionMode(rawValue: modeOverrideRaw) }
+        set {
+            modeOverrideRaw = newValue?.rawValue ?? ""
+            modifiedAt = .now
+        }
+    }
     var createdAt: Date = Date.now
     var modifiedAt: Date = Date.now
 

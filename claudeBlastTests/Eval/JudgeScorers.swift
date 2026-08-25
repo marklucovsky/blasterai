@@ -23,13 +23,13 @@ import Foundation
 struct SentenceVerdict: Codable {
     let faithfulness: Int   // says what the tiles mean, nothing invented
     let firstPerson: Int    // framed as the child's own voice/request
-    let ageFit: Int         // vocabulary/grammar for the target grade
+    let stageFit: Int         // vocabulary/grammar for the target Brown's Stage
     let naturalness: Int    // sounds like a real person, not word salad
     let rationale: String
 
     /// Simple mean for at-a-glance aggregation.
     var mean: Double {
-        Double(faithfulness + firstPerson + ageFit + naturalness) / 4.0
+        Double(faithfulness + firstPerson + stageFit + naturalness) / 4.0
     }
 }
 
@@ -55,7 +55,7 @@ struct EscalationVerdict: Codable {
 
 struct Judge {
     let client: EvalChatClient
-    var ageGradeLevel: Int = ChildProfileResolver.fallbackAgeGrade
+    var brownsStage: BrownsStage = .twoThree
 
     /// Score one generated sentence against the rubric.
     func scoreSentence(tiles: [TileSelection], output: String) async throws -> SentenceVerdict {
@@ -66,10 +66,10 @@ struct Judge {
         (5 best) for each dimension:
         - faithfulness: conveys exactly what the tiles mean, invents no new intent.
         - firstPerson: framed as the child's own voice/request (self-centered is correct here).
-        - ageFit: vocabulary and grammar suit a \(gradeWord(ageGradeLevel)) child.
+        - ststageFit: vocabulary and grammar suit a child \(brownsStage.promptDescriptor()).
         - naturalness: sounds like a real person, not concatenated words or echoed tile list.
         Respond with STRICT JSON only, no prose: \
-        {"faithfulness":N,"firstPerson":N,"ageFit":N,"naturalness":N,"rationale":"one short sentence"}
+        {"faithfulness":N,"firstPerson":N,"stageFit":N,"naturalness":N,"rationale":"one short sentence"}
         """
         let user = "Tiles: \(tileList)\nGenerated sentence: \"\(output)\""
         let raw = try await client.complete(
@@ -108,15 +108,6 @@ struct Judge {
     }
 
     // MARK: - Helpers
-
-    private func gradeWord(_ grade: Int) -> String {
-        switch grade {
-        case 1: return "1st-grade"
-        case 2: return "2nd-grade"
-        case 3: return "3rd-grade"
-        default: return "\(grade)th-grade"
-        }
-    }
 
     /// Decode JSON the judge returned, tolerating ```json fences / surrounding
     /// prose by slicing to the outermost braces (same trick as GeneratedScene).

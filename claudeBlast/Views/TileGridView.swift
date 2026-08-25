@@ -594,8 +594,27 @@ struct TileGridView: View {
 
     // MARK: - Caregiver menu
 
-    /// Compact menu shown in the Home-anchored popover: flip mode, or open a
-    /// gated destination. Kept small so the popover stays near Home.
+    /// Is this device in a child's hands? Patient devices get a deliberately
+    /// smaller caregiver menu — see `caregiverMenuContent`.
+    private var isPatientDevice: Bool {
+        DeviceProfileStore.current(context: modelContext)?.role == .patient
+    }
+
+    /// Compact menu shown in the Home-anchored popover.
+    ///
+    /// ## What appears depends on who is holding the device
+    ///
+    /// On a **patient** device this shows **Admin only**. The other two entries
+    /// are unguarded actions sitting one long-press away from the child whose
+    /// device it is: "Switch modes" changes how their board behaves, and
+    /// TileScript starts a scripted playback over the top of it. Neither is
+    /// something a child should be able to trigger, and neither is urgent enough
+    /// for a caregiver to need outside the gate — both are reachable in Admin,
+    /// which is exactly what the gate is for.
+    ///
+    /// On a **caregiver** device all three stay. That device is for authoring,
+    /// demoing and testing, its Admin is ungated by default, and flipping modes
+    /// quickly is the point of having the shortcut at all.
     private var caregiverMenuContent: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Caregiver Menu")
@@ -604,21 +623,25 @@ struct TileGridView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
                 .padding(.bottom, 4)
-            caregiverMenuRow(
-                engine.interactionMode == .singleWord ? "Switch to AI Sentences" : "Switch to Single Words",
-                systemImage: "arrow.left.arrow.right"
-            ) {
-                showCaregiverMenu = false
-                toggleInteractionMode()
+            if !isPatientDevice {
+                caregiverMenuRow(
+                    engine.interactionMode == .singleWord ? "Switch to AI Sentences" : "Switch to Single Words",
+                    systemImage: "arrow.left.arrow.right"
+                ) {
+                    showCaregiverMenu = false
+                    toggleInteractionMode()
+                }
+                Divider()
             }
-            Divider()
             caregiverMenuRow("Admin", systemImage: "lock.fill") {
                 showCaregiverMenu = false
                 caregiverMenu.requested = .admin
             }
-            caregiverMenuRow("TileScript", systemImage: "play.rectangle.fill") {
-                showCaregiverMenu = false
-                caregiverMenu.requested = .tileScript
+            if !isPatientDevice {
+                caregiverMenuRow("TileScript", systemImage: "play.rectangle.fill") {
+                    showCaregiverMenu = false
+                    caregiverMenu.requested = .tileScript
+                }
             }
         }
         .frame(minWidth: 240)
@@ -638,15 +661,25 @@ struct TileGridView: View {
         .buttonStyle(.plain)
     }
 
-    /// Toggle the active child between AI-sentence and single-word mode.
-    /// Wired to the "Switch to…" item in the caregiver menu (long-press Home) —
-    /// a quick way to flip the device for a side-by-side demo without opening
-    /// Admin. Persists to the profile and resets the tray.
+    /// Flip **this device** to the other interaction mode. Wired to the
+    /// "Switch to…" item in the caregiver menu (long-press Home), which only
+    /// appears on caregiver devices.
+    ///
+    /// This writes `DeviceProfile.modeOverrideRaw`, which is device-local and
+    /// never syncs, and it deliberately does **not** touch the child's Brown's
+    /// Stage: a caregiver flipping modes for one session is describing that
+    /// session, not the child's development. `requestMode` clears the override
+    /// when the requested mode is what the stage already implies, so flipping
+    /// back leaves the device simply following the profile again.
+    ///
+    /// Until 2026-08-24 this wrote `ChildProfile.interactionMode` — a synced
+    /// field — so a situational flip on one iPad rewrote a clinical setting on
+    /// every device the child's profile touched. Changing a child's stage is a
+    /// deliberate act and lives in Admin → Now.
     private func toggleInteractionMode() {
-        guard let profile = profileResolver.active else { return }
-        profile.interactionMode = (profile.interactionMode == .sentence) ? .singleWord : .sentence
-        try? modelContext.save()
-        profileResolver.refresh()
+        let target: InteractionMode =
+            engine.interactionMode == .singleWord ? .sentence : .singleWord
+        profileResolver.requestMode(target)
         engine.clearSelection()
         engine.clearStrip()
         UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
