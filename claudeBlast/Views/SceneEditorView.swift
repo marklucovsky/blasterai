@@ -93,6 +93,7 @@ struct SceneEditorView: View {
     /// SwiftData entities.
     @State private var navigateToNewPageKey: String? = nil
     @State private var pickerKeysForNewPage: Set<String> = []
+    @Environment(\.horizontalSizeClass) private var hSizeClass
     @State private var sceneToExport: BlasterSceneFile?
 
     var body: some View {
@@ -282,31 +283,7 @@ struct SceneEditorView: View {
         }
         .navigationTitle(scene.name.isEmpty ? "New Scene" : scene.name)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    showPreview = true
-                } label: {
-                    Image(systemName: "eye")
-                }
-                .accessibilityLabel("Preview scene")
-            }
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    isRefining = true
-                } label: {
-                    Image(systemName: "sparkles")
-                }
-                .accessibilityLabel("Refine with AI")
-            }
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    exportScene()
-                } label: {
-                    Image(systemName: "square.and.arrow.up")
-                }
-            }
-        }
+        .toolbar { sceneEditorToolbar }
         .sheet(item: $sceneToExport) { file in
             ActivityView(items: [file.temporaryFileURL()])
         }
@@ -353,6 +330,62 @@ struct SceneEditorView: View {
         }
         .sheet(item: $pageToLink) { target in
             PageLinkPlacementSheet(scene: scene, target: target, allTiles: allTiles)
+        }
+    }
+
+    // MARK: - Toolbar
+
+    /// Preview, refine and share all sit in the navigation bar beside an inline
+    /// title. At a narrow width SwiftUI protects the title and **drops** the
+    /// items it cannot fit, with no indication they ever existed — the same
+    /// failure the page editor hit on a resized Mac window.
+    ///
+    /// Below regular width they collapse into an explicit overflow menu, which
+    /// also gives them real labels instead of bare glyphs.
+    @ToolbarContentBuilder
+    private var sceneEditorToolbar: some ToolbarContent {
+        if hSizeClass == .compact {
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    Button { showPreview = true } label: {
+                        Label("Preview Scene", systemImage: "eye")
+                    }
+                    Button { isRefining = true } label: {
+                        Label("Refine with AI", systemImage: "sparkles")
+                    }
+                    Button { exportScene() } label: {
+                        Label("Share Scene", systemImage: "square.and.arrow.up")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+                .accessibilityLabel("Scene actions")
+            }
+        } else {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    showPreview = true
+                } label: {
+                    Image(systemName: "eye")
+                }
+                .accessibilityLabel("Preview scene")
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    isRefining = true
+                } label: {
+                    Image(systemName: "sparkles")
+                }
+                .accessibilityLabel("Refine with AI")
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    exportScene()
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                }
+                .accessibilityLabel("Share scene")
+            }
         }
     }
 

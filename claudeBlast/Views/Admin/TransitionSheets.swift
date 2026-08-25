@@ -254,7 +254,7 @@ struct PatientTransitionSheet: View {
             Text("Admin PIN")
                 .font(.headline)
             Text(pinStage == .enter
-                 ? "Enter a 4–6 digit PIN. Used to unlock Admin when Face ID isn't available."
+                 ? "Enter a 4–6 digit PIN. Used to unlock Admin\(Biometry.capability().hasHardware ? " when \(Biometry.displayName) isn't available" : "")."
                  : "Enter the same PIN again to confirm.")
                 .font(.caption)
                 .foregroundStyle(.secondary)

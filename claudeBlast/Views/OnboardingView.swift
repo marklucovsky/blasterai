@@ -431,7 +431,7 @@ struct OnboardingView: View {
             Text("Set an Admin PIN")
                 .font(.title.bold())
                 .frame(maxWidth: .infinity, alignment: .leading)
-            Text("Used to unlock Admin when Face ID isn't available. Pick a number you'll remember — recovering a forgotten PIN means reinstalling.")
+            Text("Used to unlock Admin\(Biometry.capability().hasHardware ? " when \(Biometry.displayName) isn't available" : ""). Pick a number you'll remember — recovering a forgotten PIN means reinstalling.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)

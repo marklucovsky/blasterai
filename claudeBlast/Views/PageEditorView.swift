@@ -28,6 +28,11 @@ struct PageEditorView: View {
 
     // Undo/redo: snapshots of the page's tile array (reorder / add / remove / bulk).
     // Deep enough to not think about; snapshots are tiny so the memory is moot.
+    @Environment(\.horizontalSizeClass) private var hSizeClass
+    /// True on iPhone, and on any Mac window narrow enough that the navigation
+    /// bar can no longer hold four controls beside the title.
+    private var isCompactWidth: Bool { hSizeClass == .compact }
+
     @State private var undoStack: [[TileEntry]] = []
     @State private var redoStack: [[TileEntry]] = []
     @State private var prePickerSnapshot: [TileEntry]? = nil
@@ -150,24 +155,7 @@ struct PageEditorView: View {
         }
         .navigationTitle(pageKey)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItemGroup(placement: .navigationBarLeading) {
-                Button { undo() } label: { Image(systemName: "arrow.uturn.backward") }
-                    .disabled(undoStack.isEmpty)
-                Button { redo() } label: { Image(systemName: "arrow.uturn.forward") }
-                    .disabled(redoStack.isEmpty)
-            }
-            ToolbarItemGroup(placement: .navigationBarTrailing) {
-                if isSelecting {
-                    Button("Done") { isSelecting = false }
-                } else {
-                    if page.map({ !$0.tiles.isEmpty }) == true {
-                        Button { isSelecting = true } label: { Image(systemName: "checkmark.circle") }
-                    }
-                    Button { openPicker() } label: { Image(systemName: "plus") }
-                }
-            }
-        }
+        .toolbar { pageEditorToolbar }
         .sheet(isPresented: $isPickingTiles, onDismiss: pickerDismissed) {
             TilePickerView(scene: scene, pageKey: pageKey, initialSelectedKeys: pickerInitialKeys)
         }
@@ -206,6 +194,68 @@ struct PageEditorView: View {
         pages[idx].tiles.removeAll { $0.key == key }
         scene.pages = pages
         try? modelContext.save()
+    }
+
+    // MARK: - Toolbar
+
+    /// Four controls compete for the navigation bar: undo, redo, select and add.
+    ///
+    /// At a narrow width SwiftUI protects the inline title and **drops** toolbar
+    /// items rather than collapsing them — undo/redo (leading) vanish first,
+    /// then the "+". Nothing tells the user those actions still exist; they are
+    /// simply gone. A resizable Mac window makes this trivial to hit, and an
+    /// iPhone is permanently in that state.
+    ///
+    /// So when width is compact the bar keeps exactly one thing — **add**, the
+    /// primary action — and everything else moves into an explicit overflow
+    /// menu, where it stays reachable and visibly present.
+    @ToolbarContentBuilder
+    private var pageEditorToolbar: some ToolbarContent {
+        if isCompactWidth {
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                if isSelecting {
+                    Button("Done") { isSelecting = false }
+                } else {
+                    Button { openPicker() } label: { Image(systemName: "plus") }
+                    Menu {
+                        Button { undo() } label: {
+                            Label("Undo", systemImage: "arrow.uturn.backward")
+                        }
+                        .disabled(undoStack.isEmpty)
+                        Button { redo() } label: {
+                            Label("Redo", systemImage: "arrow.uturn.forward")
+                        }
+                        .disabled(redoStack.isEmpty)
+                        if page.map({ !$0.tiles.isEmpty }) == true {
+                            Divider()
+                            Button { isSelecting = true } label: {
+                                Label("Select Tiles", systemImage: "checkmark.circle")
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                    .accessibilityLabel("More page actions")
+                }
+            }
+        } else {
+            ToolbarItemGroup(placement: .navigationBarLeading) {
+                Button { undo() } label: { Image(systemName: "arrow.uturn.backward") }
+                    .disabled(undoStack.isEmpty)
+                Button { redo() } label: { Image(systemName: "arrow.uturn.forward") }
+                    .disabled(redoStack.isEmpty)
+            }
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                if isSelecting {
+                    Button("Done") { isSelecting = false }
+                } else {
+                    if page.map({ !$0.tiles.isEmpty }) == true {
+                        Button { isSelecting = true } label: { Image(systemName: "checkmark.circle") }
+                    }
+                    Button { openPicker() } label: { Image(systemName: "plus") }
+                }
+            }
+        }
     }
 
     // MARK: - Undo / redo (snapshot stack)

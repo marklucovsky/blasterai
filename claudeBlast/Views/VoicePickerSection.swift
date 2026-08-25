@@ -65,13 +65,22 @@ struct VoicePickerSection: View {
                 Text("Enhanced and Premium voices sound much more natural.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Text("Settings → Accessibility → Spoken Content → Voices")
+                // The path differs by machine, and a wrong path is worse than
+                // none — the caregiver follows it, finds nothing, and concludes
+                // the app is broken.
+                Text(RuntimePlatform.spokenContentSettingsPath)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Button("Open Settings") {
-                    UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
+                // openSettingsURLString deep-links to *this app's* settings
+                // pane, which does not exist on Mac (Designed for iPad). Rather
+                // than offer a button that silently does nothing, the Mac gets
+                // the path in words and opens System Settings itself.
+                if !RuntimePlatform.isMac {
+                    Button("Open Settings") {
+                        UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
+                    }
+                    .font(.caption)
                 }
-                .font(.caption)
             }
             .padding(.vertical, 2)
         }
