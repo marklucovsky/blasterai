@@ -32,7 +32,12 @@ struct SingleWordTrayView: View {
 
     /// Fixed strip height — sized to fit a word chip (image + label) so the
     /// tray's height is identical whether the strip is empty or full.
-    private static let stripHeight: CGFloat = 84
+    ///
+    /// **Home and Clear share it.** They were 64pt against an 84pt strip, which
+    /// left them visibly short of the tray they sit in and gave two frequently
+    /// used controls a smaller target than they needed. Deriving both from one
+    /// constant is what stops them drifting apart again.
+    static let stripHeight: CGFloat = 84
 
     var body: some View {
         HStack(spacing: 8) {
@@ -140,6 +145,8 @@ private struct WordChip: View {
 // MARK: - End buttons
 
 private struct HomeButton: View {
+    /// Matches `SingleWordTrayView.stripHeight` so the row reads as one band.
+    var height: CGFloat = SingleWordTrayView.stripHeight
     let isEnabled: Bool
     let action: () -> Void
     let onOpenMenu: () -> Void
@@ -152,7 +159,7 @@ private struct HomeButton: View {
                 Text("Home").font(.system(size: 10, weight: .semibold))
             }
             .foregroundStyle(isEnabled ? .primary : .secondary)
-            .frame(width: 60, height: 64)
+            .frame(width: 60, height: height)
             .background(TrayCardBackground(cornerRadius: 12))
             .opacity(isEnabled ? 1 : 0.5)
         }
@@ -170,6 +177,8 @@ private struct HomeButton: View {
 }
 
 private struct ClearButton: View {
+    /// Matches `SingleWordTrayView.stripHeight` so the row reads as one band.
+    var height: CGFloat = SingleWordTrayView.stripHeight
     let isEnabled: Bool
     let action: () -> Void
 
@@ -181,7 +190,7 @@ private struct ClearButton: View {
                 Text("Clear").font(.system(size: 10, weight: .semibold))
             }
             .foregroundStyle(isEnabled ? .red : .secondary)
-            .frame(width: 60, height: 64)
+            .frame(width: 60, height: height)
             .background(TrayCardBackground(cornerRadius: 12))
             .opacity(isEnabled ? 1 : 0.5)
         }

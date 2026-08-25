@@ -16,6 +16,8 @@ struct ActivityLogView: View {
     private var allEntries: [LoggedUtterance]
     @Query(sort: \TileModel.key) private var allTiles: [TileModel]
 
+    @Environment(\.horizontalSizeClass) private var hSizeClass
+
     @State private var filter: Filter = .today
 
     /// Time-window filters group entries by day (newest first). `mostUsed` flattens entries
@@ -26,6 +28,23 @@ struct ActivityLogView: View {
         case all      = "All Time"
         case mostUsed = "Most Used"
         var id: String { rawValue }
+
+        /// Shorter labels for a compact width. Four segments share about 335pt
+        /// on a phone — roughly 84pt each — and "Past Week" / "Most Used" do
+        /// not fit, so iOS truncates them to ellipses that read as broken.
+        ///
+        /// Shortening beats collapsing into a menu here: this is the control a
+        /// caregiver changes most often on this screen, and it is worth keeping
+        /// one tap away. The words that get dropped ("Past", "Time") are the
+        /// ones carrying the least meaning.
+        var compactLabel: String {
+            switch self {
+            case .today:    return "Today"
+            case .week:     return "Week"
+            case .all:      return "All"
+            case .mostUsed: return "Top Words"
+            }
+        }
 
         /// Lower bound (inclusive) for time-based filtering; nil = no bound or non-time mode.
         func earliest(now: Date = .now) -> Date? {
@@ -82,7 +101,8 @@ struct ActivityLogView: View {
             Section {
                 Picker("Filter", selection: $filter) {
                     ForEach(Filter.allCases) { mode in
-                        Text(mode.rawValue).tag(mode)
+                        Text(hSizeClass == .compact ? mode.compactLabel : mode.rawValue)
+                            .tag(mode)
                     }
                 }
                 .pickerStyle(.segmented)

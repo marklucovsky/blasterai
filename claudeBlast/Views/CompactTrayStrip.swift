@@ -16,7 +16,6 @@
 //    Bottom row (persistent nav strip): three glass cards.
 //      • Home — left. Tap returns to the active scene's home page.
 //        Dims when already at home.
-//      • History card — middle, flex-width. Holds the most recent
 //        committed group's inline pills plus a chevron at the right
 //        edge — the whole card is tappable to open the dense
 //        GlassHistoryOverlay. Dims when there's no history yet.
@@ -37,7 +36,6 @@ struct CompactTrayStrip: View {
     let onPlaySingle: () -> Void
     let onCommitActive: () -> Void
     let onShowSentence: () -> Void
-    let onShowHistory: () -> Void
     let onShowFavorites: () -> Void
     let onHome: () -> Void
     /// Long-press Home to open the caregiver menu (mode toggle + gated Admin).
@@ -45,7 +43,6 @@ struct CompactTrayStrip: View {
     let isAtHome: Bool
     let favoritesCount: Int
     let isSentenceShown: Bool
-    let isHistoryShown: Bool
     let isFavoritesShown: Bool
 
     // Caregiver editor sheets (refine / hand-type override of a generated sentence).
@@ -102,10 +99,6 @@ struct CompactTrayStrip: View {
                 isAtHome: isAtHome,
                 onHome: onHome,
                 onOpenMenu: onOpenMenu,
-                latestGroup: engine.groupHistory.first,
-                historyCount: engine.groupHistory.count,
-                isHistoryShown: isHistoryShown,
-                onShowHistory: onShowHistory,
                 favoritesCount: favoritesCount,
                 isFavoritesShown: isFavoritesShown,
                 onShowFavorites: onShowFavorites
@@ -138,9 +131,7 @@ struct CompactTrayStrip: View {
         .onChange(of: showBubbleActions || editSheet != nil) { _, editing in
             editing ? engine.beginCaregiverEdit() : engine.endCaregiverEdit()
         }
-        .animation(.easeInOut(duration: 0.22), value: engine.groupHistory.first?.id)
         .animation(.easeInOut(duration: 0.22), value: engine.activeGroup.sentence)
-        .animation(.easeInOut(duration: 0.22), value: isHistoryShown)
         .animation(.easeInOut(duration: 0.22), value: isFavoritesShown)
         .animation(.easeInOut(duration: 0.22), value: isAtHome)
     }
@@ -406,11 +397,6 @@ private struct NavStrip: View {
     let onHome: () -> Void
     let onOpenMenu: () -> Void
 
-    let latestGroup: TileGroup?
-    let historyCount: Int
-    let isHistoryShown: Bool
-    let onShowHistory: () -> Void
-
     let favoritesCount: Int
     let isFavoritesShown: Bool
     let onShowFavorites: () -> Void
@@ -419,13 +405,7 @@ private struct NavStrip: View {
         HStack(spacing: 6) {
             HomeCard(isEnabled: !isAtHome, action: onHome, onOpenMenu: onOpenMenu)
 
-            HistoryCard(
-                group: latestGroup,
-                count: historyCount,
-                isEnabled: historyCount > 0 && !isHistoryShown,
-                action: onShowHistory
-            )
-            .frame(maxWidth: .infinity)
+            Spacer(minLength: 0)
 
             FavoritesCard(
                 count: favoritesCount,
@@ -504,75 +484,6 @@ private struct FavoritesCard: View {
 /// inline TilePills previewing the most recent committed group, followed
 /// by a chevron-down at the right edge. The whole card is one tappable
 /// surface that opens the dense GlassHistoryOverlay.
-private struct HistoryCard: View {
-    let group: TileGroup?
-    /// Total number of groups in history. Surfaced as a 3-digit counter
-    /// (capped at "999+") next to the chevron so the caregiver can see
-    /// how much is queued up without opening the full overlay.
-    let count: Int
-    let isEnabled: Bool
-    let action: () -> Void
-
-    private let maxPreview: Int = 4
-
-    private var countLabel: String {
-        count > 999 ? "999+" : "\(count)"
-    }
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                if let group = group {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 5) {
-                            ForEach(Array(group.tiles.prefix(maxPreview).enumerated()), id: \.offset) { _, tile in
-                                TilePill(tile: tile)
-                            }
-                            if group.tiles.count > maxPreview {
-                                Text("+\(group.tiles.count - maxPreview)")
-                                    .font(.system(size: 10, weight: .semibold))
-                                    .foregroundStyle(.secondary)
-                                    .padding(.horizontal, 4)
-                            }
-                        }
-                        .padding(.horizontal, 2)
-                    }
-                } else {
-                    Text("No history yet")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.tertiary)
-                        .padding(.horizontal, 4)
-                    Spacer(minLength: 0)
-                }
-
-                HStack(spacing: 3) {
-                    if count > 0 {
-                        Text(countLabel)
-                            .font(.system(size: 10, weight: .semibold).monospacedDigit())
-                            .foregroundStyle(isEnabled ? .secondary : .tertiary)
-                    }
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(isEnabled ? .secondary : .tertiary)
-                }
-                .padding(.trailing, 4)
-            }
-            .padding(.horizontal, 6)
-            .frame(maxWidth: .infinity, minHeight: kNavCardHeight, alignment: .leading)
-            .background(navCardBackground)
-            .opacity(isEnabled ? 1.0 : 0.7)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .disabled(!isEnabled)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("History — \(count) \(count == 1 ? "row" : "rows")")
-        .accessibilityHint(isEnabled ? "Opens history" : "No history yet")
-    }
-}
-
-/// Inline pill — small circular tile thumbnail + label, color-tinted to
-/// match its wordClass. Glass capsule background with tile-colored tint.
 private struct TilePill: View {
     let tile: TileSelection
 

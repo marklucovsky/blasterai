@@ -28,8 +28,22 @@ private let kCardVerticalPadding: CGFloat = 6
 private let kActiveRowHeight: CGFloat = kCardHeight
 private let kActiveImageSize: CGFloat = 56
 private let kPlayButtonWidth: CGFloat = 82
-private let kPlayButtonHeight: CGFloat = 54
-private let kDoneButtonHeight: CGFloat = 28
+
+/// Play and Clear are the **same** height, splitting the card evenly.
+///
+/// Play used to be 54pt and Clear 28pt — barely half a target. For an AAC user
+/// motor precision is the constraint that matters most, and Clear is not a
+/// lesser action: it is what a child reaches for when the sentence is wrong,
+/// which is exactly the moment they are least able to be precise. Halving the
+/// card gives Clear 41pt, a ~46% larger target, at no cost to Play.
+private let kPlayButtonHeight: CGFloat = (kCardHeight - kPlayDoneSpacing) / 2
+private let kDoneButtonHeight: CGFloat = kPlayButtonHeight
+
+/// Same split for the compact (iPhone) tray.
+private let kCompactPlayColumnHeight: CGFloat = 72
+private let kCompactPlayDoneSpacing: CGFloat = 4
+private let kCompactButtonHeight: CGFloat =
+    (kCompactPlayColumnHeight - kCompactPlayDoneSpacing) / 2
 private let kPlayDoneSpacing: CGFloat = 6
 private let kHistoryTileSize: CGFloat = 22
 
@@ -39,8 +53,6 @@ struct SentenceTrayView: View {
     let onTileTap: (Int) -> Void
     let onGo: () -> Void
     let onReplay: () -> Void
-    let onReopenHistory: (UUID) -> Void
-    let onDeleteHistory: (UUID) -> Void
     /// Tap the inline sentence bubble to pop out the full sentence overlay.
     /// On iPad this is rarely needed (the inline bubble has plenty of room)
     /// but the affordance stays for parity with the iPhone tray.
@@ -191,19 +203,20 @@ struct SentenceTrayView: View {
         .frame(height: kActiveRowHeight)
     }
 
-    // MARK: - Bottom nav strip (Home + History scroll + Favorites)
+    // MARK: - Bottom nav strip (Home + Favorites)
 
-    /// Replaces the old plain history row + the standalone TileGridView
-    /// navBar. Home and Favorites are the same-family cards from the
-    /// iPhone tray, sized up for iPad. History stays as a horizontal
-    /// scroll of TileGroupBubble chips — the existing iPad pattern that
-    /// makes sense given the available width.
+    /// Home and Favorites, sized up from the iPhone tray cards.
+    ///
+    /// A horizontal scroll of history chips used to sit between them. It was
+    /// removed in session 3: it never scrolled new entries into view, it
+    /// reordered itself on use, and tapping a chip *deleted* that entry from
+    /// the buffer. The reclaimed width is why Play and Clear can now be equal
+    /// height — see `playColumn`.
     private var navStrip: some View {
         HStack(alignment: .center, spacing: 8) {
             IPadHomeCard(isEnabled: !isAtHome, action: onHome, onOpenMenu: onOpenMenu)
 
-            historyScroll
-                .frame(maxWidth: .infinity)
+            Spacer(minLength: 0)
 
             IPadFavoritesCard(
                 count: favoritesCount,
@@ -212,31 +225,6 @@ struct SentenceTrayView: View {
             )
         }
         .frame(height: kIPadNavCardHeight)
-    }
-
-    private var historyScroll: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(alignment: .center, spacing: 8) {
-                if engine.groupHistory.isEmpty {
-                    Text("No history yet")
-                        .font(.subheadline)
-                        .foregroundStyle(.tertiary)
-                        .padding(.horizontal, 8)
-                } else {
-                    // Closed groups: oldest first (left), newest last (right).
-                    ForEach(Array(engine.groupHistory.reversed()), id: \.id) { group in
-                        HistoryGroupChip(
-                            group: group,
-                            onTap: { onReopenHistory(group.id) },
-                            onDelete: { onDeleteHistory(group.id) }
-                        )
-                        .id(group.id)
-                        .transition(.scale.combined(with: .opacity))
-                    }
-                }
-            }
-            .padding(.horizontal, 4)
-        }
     }
 
     /// Play button + Done (commit) button stacked vertically. Total height = kCardHeight.
@@ -685,7 +673,7 @@ struct PrimaryPlayButton: View {
     let action: () -> Void
 
     private var buttonWidth: CGFloat { compact ? 60 : kPlayButtonWidth }
-    private var buttonHeight: CGFloat { compact ? 44 : kPlayButtonHeight }
+    private var buttonHeight: CGFloat { compact ? kCompactButtonHeight : kPlayButtonHeight }
     private var iconSize: CGFloat { compact ? 22 : 30 }
     private var cornerRadius: CGFloat { compact ? 10 : 14 }
 
@@ -833,8 +821,15 @@ struct ReplayBadge: View {
     }
 }
 
-// MARK: - Done / commit button
+// MARK: - Clear / commit button
 
+/// Clears the tray and starts a fresh utterance.
+///
+/// It was labelled "Done" when its job was to *commit the group to the
+/// child-facing history strip*. That strip is gone, so "Done" described a
+/// mechanism the user could no longer see, and "Clear" is now simply what the
+/// button does. The finalized utterance still reaches `LoggedUtterance` for
+/// Admin → Activity Log — that never depended on the label.
 struct DoneButton: View {
     let isEnabled: Bool
     /// Single binary trigger from the engine. Once true, the button drives its own escalating
@@ -846,7 +841,7 @@ struct DoneButton: View {
     let action: () -> Void
 
     private var buttonWidth: CGFloat { compact ? 60 : kPlayButtonWidth }
-    private var buttonHeight: CGFloat { compact ? 22 : kDoneButtonHeight }
+    private var buttonHeight: CGFloat { compact ? kCompactButtonHeight : kDoneButtonHeight }
     private var cornerRadius: CGFloat { compact ? 10 : 8 }
 
     @State private var nudgeScale: CGFloat = 1.0
@@ -933,7 +928,7 @@ struct DoneButton: View {
             HStack(spacing: 4) {
                 Image(systemName: "checkmark")
                     .font(.system(size: 11, weight: iconWeight))
-                Text("Done")
+                Text("Clear")
                     .font(.caption.weight(textWeight))
             }
             .foregroundStyle(foreground)
@@ -1001,7 +996,7 @@ struct SingleWordPlayButton: View {
     let action: () -> Void
 
     private var buttonWidth: CGFloat { compact ? 60 : kPlayButtonWidth }
-    private var buttonHeight: CGFloat { compact ? 22 : kDoneButtonHeight }
+    private var buttonHeight: CGFloat { compact ? kCompactButtonHeight : kDoneButtonHeight }
     private var cornerRadius: CGFloat { compact ? 10 : 8 }
 
     var body: some View {
@@ -1034,29 +1029,7 @@ struct SingleWordPlayButton: View {
     }
 }
 
-// MARK: - History group chip
-
-private struct HistoryGroupChip: View {
-    let group: TileGroup
-    let onTap: () -> Void
-    let onDelete: () -> Void
-
-    var body: some View {
-        Button(action: onTap) {
-            TileGroupBubble(tiles: group.tiles)
-        }
-        .buttonStyle(.plain)
-        .contextMenu {
-            Button(role: .destructive, action: onDelete) {
-                Label("Delete", systemImage: "trash")
-            }
-        }
-    }
-}
-
-// MARK: - TileGroupBubble (shared)
-
-/// The "bubble of tiles" used by both the in-app sentence tray history row and the AdminView
+/// The "bubble of tiles" used by the AdminView
 /// Activity Log. Each tile is a tinted capsule chip (image + label colored by wordClass),
 /// wrapped in a rounded card with a soft shadow.
 struct TileGroupBubble: View {

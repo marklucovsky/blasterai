@@ -64,7 +64,6 @@ struct TileGridView: View {
     enum CompactOverlay: Equatable {
         case none
         case sentence
-        case history
         case favorites
     }
 
@@ -95,115 +94,133 @@ struct TileGridView: View {
         return scene.pages.first { $0.key == key }
     }
 
+    // MARK: - Tray
+
+    /// The tray varies by interaction mode and width, and each variant takes a
+    /// dozen closures. Inlining all three in `body` pushed the expression past
+    /// what the Swift type-checker will solve — it gave up outright when the
+    /// history parameters were removed. Splitting them is what keeps compile
+    /// times sane, and each variant now reads on its own.
+    @ViewBuilder
+    private var trayForCurrentMode: some View {
+        if engine.interactionMode == .singleWord {
+            singleWordTray
+        } else if isCompact {
+            compactTray
+        } else {
+            padTray
+        }
+    }
+
+    /// Classic AAC: a running FIFO strip of spoken words, no AI. One adaptive
+    /// view for both form factors.
+    private var singleWordTray: some View {
+            SingleWordTrayView(
+                onRemove: { index in engine.removeStripWord(at: index) },
+                onClear: { engine.clearStrip() },
+                onHome: {
+                    coordinator.navigateToRoot()
+                    currentDisplayPage = 0
+                },
+                onOpenMenu: { showCaregiverMenu = true },
+                isAtHome: coordinator.navigationPath.count <= 1
+            )
+            .padding(.top, 8)
+    }
+
+    private var compactTray: some View {
+            CompactTrayStrip(
+                onTileTap: { index in engine.removeTile(at: index) },
+                onGo: {
+                    if recorder.state == .recording { recorder.recordPlay() }
+                    engine.triggerGo()
+                },
+                onReplay: {
+                    if recorder.state == .recording { recorder.recordReplay() }
+                    engine.replay()
+                },
+                onCancelSingle: { engine.clearSelection() },
+                onPlaySingle: { engine.playSingleTile() },
+                onCommitActive: { engine.commitActiveAndStartNew() },
+                onShowSentence: { showCompactOverlay(.sentence) },
+                onShowFavorites: { showCompactOverlay(.favorites) },
+                onHome: {
+                    coordinator.navigateToRoot()
+                    currentDisplayPage = 0
+                },
+                onOpenMenu: { showCaregiverMenu = true },
+                isAtHome: coordinator.navigationPath.count <= 1,
+                favoritesCount: min(promotedEntries.count, 99),
+                isSentenceShown: compactOverlay == .sentence,
+                isFavoritesShown: compactOverlay == .favorites
+            )
+    }
+
+    private var padTray: some View {
+            SentenceTrayView(
+                onTileTap: { index in
+                    engine.removeTile(at: index)
+                },
+                onGo: {
+                    if recorder.state == .recording {
+                        recorder.recordPlay()
+                    }
+                    engine.triggerGo()
+                },
+                onReplay: {
+                    if recorder.state == .recording {
+                        recorder.recordReplay()
+                    }
+                    engine.replay()
+                },
+                onExpandSentence: { showCompactOverlay(.sentence) },
+                onHome: {
+                    coordinator.navigateToRoot()
+                    currentDisplayPage = 0
+                },
+                onOpenMenu: { showCaregiverMenu = true },
+                onShowFavorites: { showCompactOverlay(.favorites) },
+                isAtHome: coordinator.navigationPath.count <= 1,
+                favoritesCount: min(promotedEntries.count, 99),
+                isSentenceShown: compactOverlay == .sentence,
+                isFavoritesShown: compactOverlay == .favorites,
+                onDismissActive: {
+                    engine.clearSelection()
+                },
+                onCommitActive: {
+                    engine.commitActiveAndStartNew()
+                },
+                onCancelSingle: {
+                    engine.clearSelection()
+                },
+                onPlaySingle: {
+                    engine.playSingleTile()
+                }
+            )
+            .padding(.top, 8)
+    }
+
+    /// The board itself, or an empty state when no scene is active.
+    @ViewBuilder
+    private var gridContent: some View {
+        if let page = currentPage {
+            pagedGrid(for: page)
+                .overlay(alignment: .top) {
+                    compactOverlayContent
+                }
+        } else {
+            ContentUnavailableView(
+                "No Active Scene",
+                systemImage: "questionmark.square",
+                description: Text("No scene is currently active.")
+            )
+        }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            if engine.interactionMode == .singleWord {
-                // Classic AAC: a running FIFO strip of spoken words, no AI.
-                // One adaptive view for both form factors.
-                SingleWordTrayView(
-                    onRemove: { index in engine.removeStripWord(at: index) },
-                    onClear: { engine.clearStrip() },
-                    onHome: {
-                        coordinator.navigateToRoot()
-                        currentDisplayPage = 0
-                    },
-                    onOpenMenu: { showCaregiverMenu = true },
-                    isAtHome: coordinator.navigationPath.count <= 1
-                )
-                .padding(.top, 8)
-            } else if isCompact {
-                CompactTrayStrip(
-                    onTileTap: { index in engine.removeTile(at: index) },
-                    onGo: {
-                        if recorder.state == .recording { recorder.recordPlay() }
-                        engine.triggerGo()
-                    },
-                    onReplay: {
-                        if recorder.state == .recording { recorder.recordReplay() }
-                        engine.replay()
-                    },
-                    onCancelSingle: { engine.clearSelection() },
-                    onPlaySingle: { engine.playSingleTile() },
-                    onCommitActive: { engine.commitActiveAndStartNew() },
-                    onShowSentence: { showCompactOverlay(.sentence) },
-                    onShowHistory: { showCompactOverlay(.history) },
-                    onShowFavorites: { showCompactOverlay(.favorites) },
-                    onHome: {
-                        coordinator.navigateToRoot()
-                        currentDisplayPage = 0
-                    },
-                    onOpenMenu: { showCaregiverMenu = true },
-                    isAtHome: coordinator.navigationPath.count <= 1,
-                    favoritesCount: min(promotedEntries.count, 99),
-                    isSentenceShown: compactOverlay == .sentence,
-                    isHistoryShown: compactOverlay == .history,
-                    isFavoritesShown: compactOverlay == .favorites
-                )
-            } else {
-                SentenceTrayView(
-                    onTileTap: { index in
-                        engine.removeTile(at: index)
-                    },
-                    onGo: {
-                        if recorder.state == .recording {
-                            recorder.recordPlay()
-                        }
-                        engine.triggerGo()
-                    },
-                    onReplay: {
-                        if recorder.state == .recording {
-                            recorder.recordReplay()
-                        }
-                        engine.replay()
-                    },
-                    onReopenHistory: { id in
-                        if recorder.state == .recording {
-                            recorder.recordReplay()
-                        }
-                        engine.reopenHistoryGroup(id: id)
-                    },
-                    onDeleteHistory: { id in
-                        engine.deleteHistoryGroup(id: id)
-                    },
-                    onExpandSentence: { showCompactOverlay(.sentence) },
-                    onHome: {
-                        coordinator.navigateToRoot()
-                        currentDisplayPage = 0
-                    },
-                    onOpenMenu: { showCaregiverMenu = true },
-                    onShowFavorites: { showCompactOverlay(.favorites) },
-                    isAtHome: coordinator.navigationPath.count <= 1,
-                    favoritesCount: min(promotedEntries.count, 99),
-                    isSentenceShown: compactOverlay == .sentence,
-                    isFavoritesShown: compactOverlay == .favorites,
-                    onDismissActive: {
-                        engine.clearSelection()
-                    },
-                    onCommitActive: {
-                        engine.commitActiveAndStartNew()
-                    },
-                    onCancelSingle: {
-                        engine.clearSelection()
-                    },
-                    onPlaySingle: {
-                        engine.playSingleTile()
-                    }
-                )
-                .padding(.top, 8)
-            }
-
-            if let page = currentPage {
-                pagedGrid(for: page)
-                    .overlay(alignment: .top) {
-                        compactOverlayContent
-                    }
-            } else {
-                ContentUnavailableView(
-                    "No Active Scene",
-                    systemImage: "questionmark.square",
-                    description: Text("No scene is currently active.")
-                )
-            }
+            trayForCurrentMode
+            gridContent
         }
         .overlay(alignment: .bottom) {
             if scriptRunner.state == .idle {
@@ -229,15 +246,13 @@ struct TileGridView: View {
         .onChange(of: engine.canReplay) { _, isReady in
             guard isCompact else { return }
             if isReady {
-                // Auto-pop the sentence overlay when a sentence becomes ready,
-                // unless the caregiver is currently browsing history (don't interrupt).
-                if compactOverlay != .history { showCompactOverlay(.sentence) }
+                showCompactOverlay(.sentence)
             } else if compactOverlay == .sentence {
                 dismissCompactOverlay()
             }
         }
         .task(id: overlayEpoch) {
-            // Only the sentence overlay auto-dismisses. History stays until tapped.
+            // Only the sentence overlay auto-dismisses; Favorites stays until tapped.
             guard isCompact, compactOverlay == .sentence else { return }
             try? await Task.sleep(for: .seconds(5))
             guard !Task.isCancelled else { return }
@@ -454,21 +469,6 @@ struct TileGridView: View {
             if let sentence = engine.activeGroup.sentence {
                 GlassSentencePopover(
                     sentence: sentence,
-                    onDismiss: { dismissCompactOverlay() }
-                )
-                .allowsHitTesting(true)
-            }
-        case .history:
-            let groups = engine.groupHistory.filter { $0.sentence != nil }
-            if !groups.isEmpty {
-                GlassHistoryOverlay(
-                    groups: groups,
-                    onReopen: { id in
-                        if recorder.state == .recording { recorder.recordReplay() }
-                        engine.reopenHistoryGroup(id: id)
-                        dismissCompactOverlay()
-                    },
-                    onDelete: { id in engine.deleteHistoryGroup(id: id) },
                     onDismiss: { dismissCompactOverlay() }
                 )
                 .allowsHitTesting(true)
