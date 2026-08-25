@@ -58,13 +58,10 @@ struct SentenceTrayView: View {
     /// but the affordance stays for parity with the iPhone tray.
     let onExpandSentence: () -> Void
     /// Tap the Home card. Wired to navigate to the active scene's root page.
-    let onHome: () -> Void
     /// Long-press Home to open the caregiver menu (mode toggle + gated Admin).
-    let onOpenMenu: () -> Void
     /// Tap the Favorites card. Opens the GlassFavoritesOverlay.
     let onShowFavorites: () -> Void
     /// True when the user is at the home page — dims the Home card.
-    let isAtHome: Bool
     /// Number of promoted SentenceCache entries — shown next to the star.
     let favoritesCount: Int
     /// True when the sentence popover is currently visible (so the inline
@@ -138,10 +135,7 @@ struct SentenceTrayView: View {
     // MARK: - Body
 
     var body: some View {
-        VStack(spacing: 6) {
-            activeRow
-            navStrip
-        }
+        activeRow
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .background(
@@ -180,8 +174,14 @@ struct SentenceTrayView: View {
     // MARK: - Top row
 
     /// Active card on the left (chips + inline speech bubble bound as one
-    /// surface, mirroring the iPhone tray's ActiveCard), and the Play/Done
-    /// stack on the right.
+    /// surface, mirroring the iPhone tray's ActiveCard), then Favorites, then
+    /// the Play/Clear stack on the right.
+    ///
+    /// This used to be two rows: the active card + play column on top, and a
+    /// nav strip beneath holding Home, a history scroll and Favorites. History
+    /// is gone and Home moved into the board as cell 0, which left an entire
+    /// 38pt row carrying one small card. Folding Favorites up here deletes that
+    /// row — the tray is shorter, which is the whole point of the exercise.
     private var activeRow: some View {
         HStack(alignment: .center, spacing: 12) {
             ActiveTrayCard(
@@ -195,36 +195,18 @@ struct SentenceTrayView: View {
             )
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            // Play and Done handle their own enabled/disabled rendering —
-            // no outer opacity wrap so they stay visible even when the
-            // active group is empty (matches the iPhone tray).
-            playColumn
-        }
-        .frame(height: kActiveRowHeight)
-    }
-
-    // MARK: - Bottom nav strip (Home + Favorites)
-
-    /// Home and Favorites, sized up from the iPhone tray cards.
-    ///
-    /// A horizontal scroll of history chips used to sit between them. It was
-    /// removed in session 3: it never scrolled new entries into view, it
-    /// reordered itself on use, and tapping a chip *deleted* that entry from
-    /// the buffer. The reclaimed width is why Play and Clear can now be equal
-    /// height — see `playColumn`.
-    private var navStrip: some View {
-        HStack(alignment: .center, spacing: 8) {
-            IPadHomeCard(isEnabled: !isAtHome, action: onHome, onOpenMenu: onOpenMenu)
-
-            Spacer(minLength: 0)
-
             IPadFavoritesCard(
                 count: favoritesCount,
                 isEnabled: favoritesCount > 0 && !isFavoritesShown,
                 action: onShowFavorites
             )
+
+            // Play and Clear handle their own enabled/disabled rendering —
+            // no outer opacity wrap so they stay visible even when the
+            // active group is empty (matches the iPhone tray).
+            playColumn
         }
-        .frame(height: kIPadNavCardHeight)
+        .frame(height: kActiveRowHeight)
     }
 
     /// Play button + Done (commit) button stacked vertically. Total height = kCardHeight.
@@ -552,36 +534,6 @@ private struct IPadThinkingBubble: View {
 }
 
 // MARK: - iPad nav cards (Home / Favorites)
-
-private struct IPadHomeCard: View {
-    let isEnabled: Bool
-    let action: () -> Void
-    let onOpenMenu: () -> Void
-
-    var body: some View {
-        Button(action: { if isEnabled { action() } }) {
-            HStack(spacing: 6) {
-                Image(systemName: "house.fill")
-                    .font(.system(size: 13, weight: .semibold))
-                Text("Home")
-                    .font(.system(size: 13, weight: .semibold))
-            }
-            .foregroundStyle(isEnabled ? .primary : .secondary)
-            .frame(width: kIPadNavCardWidth, height: kIPadNavCardHeight)
-            .background(TrayCardBackground(cornerRadius: kIPadNavCornerRadius))
-            .opacity(isEnabled ? 1.0 : 0.5)
-        }
-        .buttonStyle(.plain)
-        // Not `.disabled` — long-press while at home toggles interaction mode.
-        .simultaneousGesture(
-            LongPressGesture(minimumDuration: 0.6).onEnded { _ in
-                onOpenMenu()
-            }
-        )
-        .accessibilityLabel("Go home")
-        .accessibilityHint(isEnabled ? "Returns to home page" : "Already at home. Press and hold for caregiver options.")
-    }
-}
 
 private struct IPadFavoritesCard: View {
     let count: Int

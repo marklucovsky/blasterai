@@ -37,10 +37,7 @@ struct CompactTrayStrip: View {
     let onCommitActive: () -> Void
     let onShowSentence: () -> Void
     let onShowFavorites: () -> Void
-    let onHome: () -> Void
     /// Long-press Home to open the caregiver menu (mode toggle + gated Admin).
-    let onOpenMenu: () -> Void
-    let isAtHome: Bool
     let favoritesCount: Int
     let isSentenceShown: Bool
     let isFavoritesShown: Bool
@@ -64,6 +61,14 @@ struct CompactTrayStrip: View {
                     isSuppressed: engine.activeIsSuppressed
                 )
                 .frame(maxWidth: .infinity, alignment: .leading)
+
+                // Favorites folded up from the nav strip, which is gone: Home
+                // is now cell 0 of the board and the history card was removed.
+                FavoritesCard(
+                    count: favoritesCount,
+                    isEnabled: favoritesCount > 0 && !isFavoritesShown,
+                    action: onShowFavorites
+                )
 
                 VStack(spacing: 4) {
                     PrimaryPlayButton(
@@ -95,14 +100,6 @@ struct CompactTrayStrip: View {
                 }
             }
 
-            NavStrip(
-                isAtHome: isAtHome,
-                onHome: onHome,
-                onOpenMenu: onOpenMenu,
-                favoritesCount: favoritesCount,
-                isFavoritesShown: isFavoritesShown,
-                onShowFavorites: onShowFavorites
-            )
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 4)
@@ -133,7 +130,6 @@ struct CompactTrayStrip: View {
         }
         .animation(.easeInOut(duration: 0.22), value: engine.activeGroup.sentence)
         .animation(.easeInOut(duration: 0.22), value: isFavoritesShown)
-        .animation(.easeInOut(duration: 0.22), value: isAtHome)
     }
 
     // MARK: - Derived state
@@ -392,61 +388,7 @@ struct LeftTailBubble: Shape {
 
 // MARK: - Nav strip (Home + History card + Favorites card)
 
-private struct NavStrip: View {
-    let isAtHome: Bool
-    let onHome: () -> Void
-    let onOpenMenu: () -> Void
-
-    let favoritesCount: Int
-    let isFavoritesShown: Bool
-    let onShowFavorites: () -> Void
-
-    var body: some View {
-        HStack(spacing: 6) {
-            HomeCard(isEnabled: !isAtHome, action: onHome, onOpenMenu: onOpenMenu)
-
-            Spacer(minLength: 0)
-
-            FavoritesCard(
-                count: favoritesCount,
-                isEnabled: favoritesCount > 0 && !isFavoritesShown,
-                action: onShowFavorites
-            )
-        }
-    }
-}
-
 // MARK: - Home / Favorites end cards
-
-private struct HomeCard: View {
-    let isEnabled: Bool
-    let action: () -> Void
-    let onOpenMenu: () -> Void
-
-    var body: some View {
-        Button(action: { if isEnabled { action() } }) {
-            HStack(spacing: 4) {
-                Image(systemName: "house.fill")
-                    .font(.system(size: 11, weight: .semibold))
-                Text("Home")
-                    .font(.system(size: 11, weight: .semibold))
-            }
-            .foregroundStyle(isEnabled ? .primary : .secondary)
-            .frame(width: kNavCardWidth, height: kNavCardHeight)
-            .background(navCardBackground)
-            .opacity(isEnabled ? 1.0 : 0.5)
-        }
-        .buttonStyle(.plain)
-        // Not `.disabled` — long-press while at home toggles interaction mode.
-        .simultaneousGesture(
-            LongPressGesture(minimumDuration: 0.6).onEnded { _ in
-                onOpenMenu()
-            }
-        )
-        .accessibilityLabel("Go home")
-        .accessibilityHint(isEnabled ? "Returns to home page" : "Already at home. Press and hold for caregiver options.")
-    }
-}
 
 private struct FavoritesCard: View {
     let count: Int

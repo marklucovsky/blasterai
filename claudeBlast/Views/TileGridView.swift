@@ -118,12 +118,6 @@ struct TileGridView: View {
             SingleWordTrayView(
                 onRemove: { index in engine.removeStripWord(at: index) },
                 onClear: { engine.clearStrip() },
-                onHome: {
-                    coordinator.navigateToRoot()
-                    currentDisplayPage = 0
-                },
-                onOpenMenu: { showCaregiverMenu = true },
-                isAtHome: coordinator.navigationPath.count <= 1
             )
             .padding(.top, 8)
     }
@@ -144,12 +138,6 @@ struct TileGridView: View {
                 onCommitActive: { engine.commitActiveAndStartNew() },
                 onShowSentence: { showCompactOverlay(.sentence) },
                 onShowFavorites: { showCompactOverlay(.favorites) },
-                onHome: {
-                    coordinator.navigateToRoot()
-                    currentDisplayPage = 0
-                },
-                onOpenMenu: { showCaregiverMenu = true },
-                isAtHome: coordinator.navigationPath.count <= 1,
                 favoritesCount: min(promotedEntries.count, 99),
                 isSentenceShown: compactOverlay == .sentence,
                 isFavoritesShown: compactOverlay == .favorites
@@ -174,13 +162,7 @@ struct TileGridView: View {
                     engine.replay()
                 },
                 onExpandSentence: { showCompactOverlay(.sentence) },
-                onHome: {
-                    coordinator.navigateToRoot()
-                    currentDisplayPage = 0
-                },
-                onOpenMenu: { showCaregiverMenu = true },
                 onShowFavorites: { showCompactOverlay(.favorites) },
-                isAtHome: coordinator.navigationPath.count <= 1,
                 favoritesCount: min(promotedEntries.count, 99),
                 isSentenceShown: compactOverlay == .sentence,
                 isFavoritesShown: compactOverlay == .favorites,
@@ -231,12 +213,12 @@ struct TileGridView: View {
                 TileScriptPlaybackOverlay()
             }
         }
-        // Caregiver menu — opened by long-pressing Home. Replaces the old hidden
-        // triple-tap → hamburger → menu chain. Anchored to the top-leading corner
-        // (where the tray's Home button sits) so it pops up next to Home rather
-        // than centered mid-screen — the caregiver's reaching arm doesn't occlude
-        // it. Mode toggle is direct; Admin is gated by AdminGate (Face ID / PIN)
-        // when ContentView presents it.
+        // Caregiver menu — opened by long-pressing Home, which is now cell 0 of
+        // the board rather than a tray button. Anchored top-leading, the corner
+        // Home sits nearest, so it pops up beside it rather than centered
+        // mid-screen where the caregiver's reaching arm would occlude it.
+        // Admin is gated by AdminGate when ContentView presents it; on a
+        // patient device it is the only entry the menu offers.
         .popover(isPresented: $showCaregiverMenu,
                  attachmentAnchor: .point(.topLeading),
                  arrowEdge: .top) {
@@ -422,9 +404,15 @@ struct TileGridView: View {
             // render for the child — both stay invisible in running scenes until
             // the caregiver resolves them. A missing tile stays a no-op as before.
             let lookup = tileLookup
+            // Cell 0 of every page is Home, so each page carries one fewer
+            // vocabulary tile. Reserving it here — rather than only on page 1 —
+            // is what makes the position invariant: Home is in the same place
+            // on page 4 of a long board as on page 1. `max(1,)` guards a
+            // pathologically small grid.
+            let vocabPerPage = max(1, spec.perPage - 1)
             let chunkedTiles = page.tiles
                 .filter { lookup[$0.key]?.isHiddenFromChild != true }
-                .chunked(into: spec.perPage)
+                .chunked(into: vocabPerPage)
             Group {
                 if isLandscape {
                     landscapeTabView(chunks: chunkedTiles, spec: spec)
@@ -450,7 +438,8 @@ struct TileGridView: View {
                 // first, so the tile is always somewhere on `page`.)
                 guard let key,
                       let idx = page.tiles.firstIndex(where: { $0.key == key }) else { return }
-                let chunk = idx / max(1, spec.perPage)
+                // Pages hold `perPage - 1` vocabulary tiles; cell 0 is Home.
+                let chunk = idx / max(1, spec.perPage - 1)
                 if currentDisplayPage != chunk {
                     withAnimation { currentDisplayPage = chunk }
                 }
@@ -515,6 +504,7 @@ struct TileGridView: View {
         TabView(selection: $currentDisplayPage) {
             ForEach(Array(chunks.enumerated()), id: \.offset) { index, tiles in
                 LazyVGrid(columns: columns, spacing: spec.verticalSpacing) {
+                    homeCell(spec: spec)
                     ForEach(tiles, id: \.key) { entry in
                         tileCellView(for: entry, labelFontSize: spec.labelFontSize)
                     }
@@ -541,6 +531,7 @@ struct TileGridView: View {
             VStack(spacing: 0) {
                 ForEach(Array(chunks.enumerated()), id: \.offset) { index, tiles in
                     LazyVGrid(columns: columns, spacing: spec.verticalSpacing) {
+                        homeCell(spec: spec)
                         ForEach(tiles, id: \.key) { entry in
                             tileCellView(for: entry, labelFontSize: spec.labelFontSize)
                         }
@@ -561,6 +552,20 @@ struct TileGridView: View {
                 haptic.impactOccurred()
             }
         }
+    }
+
+    /// Home, at cell 0 of every page. See `HomeGridCell` for why it is in the
+    /// grid rather than the tray.
+    private func homeCell(spec: GridLayoutSpec) -> some View {
+        HomeGridCell(
+            isEnabled: coordinator.navigationPath.count > 1 || currentDisplayPage != 0,
+            action: {
+                coordinator.navigateToRoot()
+                currentDisplayPage = 0
+            },
+            onOpenMenu: { showCaregiverMenu = true },
+            labelFontSize: spec.labelFontSize
+        )
     }
 
     @ViewBuilder

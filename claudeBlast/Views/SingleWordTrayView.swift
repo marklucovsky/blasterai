@@ -23,10 +23,6 @@ struct SingleWordTrayView: View {
     /// Clear the whole strip.
     let onClear: () -> Void
     /// Return to the active scene's home page.
-    let onHome: () -> Void
-    /// Long-press Home to open the caregiver menu (mode toggle + gated Admin).
-    let onOpenMenu: () -> Void
-    let isAtHome: Bool
 
     private var strip: [TileSelection] { engine.spokenStrip }
 
@@ -41,8 +37,6 @@ struct SingleWordTrayView: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            HomeButton(isEnabled: !isAtHome, action: onHome, onOpenMenu: onOpenMenu)
-
             stripCard
                 .frame(maxWidth: .infinity)
 
@@ -143,38 +137,6 @@ private struct WordChip: View {
 }
 
 // MARK: - End buttons
-
-private struct HomeButton: View {
-    /// Matches `SingleWordTrayView.stripHeight` so the row reads as one band.
-    var height: CGFloat = SingleWordTrayView.stripHeight
-    let isEnabled: Bool
-    let action: () -> Void
-    let onOpenMenu: () -> Void
-
-    var body: some View {
-        Button(action: { if isEnabled { action() } }) {
-            VStack(spacing: 3) {
-                Image(systemName: "house.fill")
-                    .font(.system(size: 15, weight: .semibold))
-                Text("Home").font(.system(size: 10, weight: .semibold))
-            }
-            .foregroundStyle(isEnabled ? .primary : .secondary)
-            .frame(width: 60, height: height)
-            .background(TrayCardBackground(cornerRadius: 12))
-            .opacity(isEnabled ? 1 : 0.5)
-        }
-        .buttonStyle(.plain)
-        // Not `.disabled` — when at home (button dimmed) a long-press toggles
-        // interaction mode; a tap is a harmless no-op.
-        .simultaneousGesture(
-            LongPressGesture(minimumDuration: 0.6).onEnded { _ in
-                onOpenMenu()
-            }
-        )
-        .accessibilityLabel("Go home")
-        .accessibilityHint(isEnabled ? "Returns to home page" : "Already at home. Press and hold for caregiver options.")
-    }
-}
 
 private struct ClearButton: View {
     /// Matches `SingleWordTrayView.stripHeight` so the row reads as one band.
