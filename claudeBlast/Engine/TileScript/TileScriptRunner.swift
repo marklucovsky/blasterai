@@ -387,6 +387,17 @@ final class TileScriptRunner {
         case .setSentenceWait(let value):
             sentenceWait = value
 
+        case .screenshot(let name):
+            // One frame of settle time. The command usually follows a state
+            // change, and drawHierarchy captures what is on screen *now* —
+            // without yielding, that can be the frame before the change lands.
+            try? await Task.sleep(for: .milliseconds(120))
+            let url = ScreenCapture.capture(named: name)
+            if loggingEnabled {
+                runLog.event("screenshot", ["name": name,
+                                            "file": url?.lastPathComponent ?? "failed"])
+            }
+
         case .setProvider(let name):
             applyProvider(name)
 
@@ -782,6 +793,8 @@ final class TileScriptRunner {
             return "scene: \(name)"
         case .setTileSet(let imageSet):
             return "tileSet: \(imageSet.displayName)"
+        case .screenshot(let name):
+            return "screenshot: \(name)"
         }
     }
 

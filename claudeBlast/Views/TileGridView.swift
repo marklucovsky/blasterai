@@ -20,13 +20,6 @@ struct TileGridView: View {
     /// underlying TileModel for display (image, label, wordClass).
     @Query(sort: \TileModel.key) private var allTiles: [TileModel]
 
-    @Query(
-        filter: #Predicate<SentenceCache> { entry in
-            entry.hitCount >= promotedHitThreshold || entry.isPinned
-        },
-        sort: \SentenceCache.hitCount, order: .reverse
-    )
-    private var promotedEntries: [SentenceCache]
 
     private var tileLookup: [String: TileModel] {
         Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
@@ -45,7 +38,6 @@ struct TileGridView: View {
     @State private var haptic = UIImpactFeedbackGenerator(style: .heavy)
     @State private var pendingNote: String = ""
     @State private var showNoteAlert: Bool = false
-    @State private var promotedExpanded: Bool = false
     /// The tile that most recently fired a press pulse — lifted above its grid
     /// neighbors (via cell zIndex) so the grow animation isn't clipped by the
     /// adjacent cell. LazyVGrid ignores zIndex set inside the cell's subtree, so
@@ -64,7 +56,6 @@ struct TileGridView: View {
     enum CompactOverlay: Equatable {
         case none
         case sentence
-        case favorites
     }
 
     private var activeScene: BlasterScene? { activeScenes.first }
@@ -137,10 +128,7 @@ struct TileGridView: View {
                 onPlaySingle: { engine.playSingleTile() },
                 onCommitActive: { engine.commitActiveAndStartNew() },
                 onShowSentence: { showCompactOverlay(.sentence) },
-                onShowFavorites: { showCompactOverlay(.favorites) },
-                favoritesCount: min(promotedEntries.count, 99),
                 isSentenceShown: compactOverlay == .sentence,
-                isFavoritesShown: compactOverlay == .favorites
             )
     }
 
@@ -162,10 +150,7 @@ struct TileGridView: View {
                     engine.replay()
                 },
                 onExpandSentence: { showCompactOverlay(.sentence) },
-                onShowFavorites: { showCompactOverlay(.favorites) },
-                favoritesCount: min(promotedEntries.count, 99),
                 isSentenceShown: compactOverlay == .sentence,
-                isFavoritesShown: compactOverlay == .favorites,
                 onDismissActive: {
                     engine.clearSelection()
                 },
@@ -273,125 +258,6 @@ struct TileGridView: View {
         }
     }
 
-    // Precomputed breadcrumb steps — avoids @ViewBuilder let-binding type-inference pitfalls.
-    private struct BreadcrumbStep: Identifiable {
-        let id: String        // unique per render (index + segment)
-        let segment: String
-        let isFirst: Bool
-        let isLast: Bool
-        let label: String
-    }
-
-    private var breadcrumbSteps: [BreadcrumbStep] {
-        coordinator.navigationPath.enumerated().map { i, seg in
-            BreadcrumbStep(
-                id: "\(i)-\(seg)",
-                segment: seg,
-                isFirst: i == 0,
-                isLast: i == coordinator.navigationPath.count - 1,
-                label: i == 0 ? "Home" : seg.replacingOccurrences(of: "_", with: " ").capitalized
-            )
-        }
-    }
-
-    // Combined nav bar: breadcrumbs (leading) + frequent toggle (trailing).
-    // Shares a single row of vertical space when both are active.
-    private var navBar: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 0) {
-                // Breadcrumbs — leading
-                if coordinator.navigationPath.count > 1 {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 0) {
-                            ForEach(breadcrumbSteps, id: \.id) { step in
-                                breadcrumbStepView(step)
-                            }
-                        }
-                    }
-                }
-
-                Spacer(minLength: 4)
-
-                // Frequent toggle — trailing
-                if !promotedEntries.isEmpty {
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            promotedExpanded.toggle()
-                        }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "star.fill")
-                                .font(.caption2)
-                                .foregroundStyle(.orange)
-                            Text("\(promotedEntries.prefix(8).count)")
-                                .font(.caption2.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                            Image(systemName: "chevron.right")
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
-                                .rotationEffect(.degrees(promotedExpanded ? 90 : 0))
-                        }
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, 16)
-            .frame(height: 26)
-
-            // Expanded chip strip
-            if promotedExpanded && !promotedEntries.isEmpty {
-                PromotedChipStrip(
-                    entries: Array(promotedEntries.prefix(8)),
-                    sceneKeySet: sceneKeySet,
-                    tileWordClass: tileWordClass
-                ) { entry in
-                    engine.speakPromoted(entry)
-                }
-            }
-
-            Divider()
-        }
-    }
-
-    @ViewBuilder
-    private func breadcrumbStepView(_ step: BreadcrumbStep) -> some View {
-        if !step.isFirst {
-            Image(systemName: "chevron.right")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .padding(.horizontal, 5)
-        }
-        if step.isLast {
-            Text(step.label)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .padding(.vertical, 8)
-        } else {
-            Button {
-                if step.isFirst {
-                    coordinator.navigateToRoot()
-                } else {
-                    coordinator.navigate(to: step.segment)
-                }
-            } label: {
-                HStack(spacing: 3) {
-                    if step.isFirst {
-                        Image(systemName: "house.fill")
-                            .font(.caption2)
-                    }
-                    Text(step.label)
-                        .font(.caption)
-                }
-                .foregroundStyle(.tertiary)
-                .padding(.vertical, 8)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
-    @ViewBuilder
     private func pagedGrid(for page: PageSpec) -> some View {
         GeometryReader { geo in
             let isLandscape = geo.size.width > geo.size.height
@@ -462,15 +328,6 @@ struct TileGridView: View {
                 )
                 .allowsHitTesting(true)
             }
-        case .favorites:
-            GlassFavoritesOverlay(
-                entries: Array(promotedEntries.prefix(12)),
-                sceneKeySet: sceneKeySet,
-                tileWordClass: tileWordClass,
-                onPlay: { entry in engine.speakPromoted(entry) },
-                onDismiss: { dismissCompactOverlay() }
-            )
-            .allowsHitTesting(true)
         }
     }
 
@@ -735,90 +592,6 @@ struct TileGridView: View {
                 }
             }
         }
-    }
-}
-
-// MARK: - Promoted Tile Strip
-
-/// Horizontal scroll of promoted chips — shown when expanded from the nav bar.
-struct PromotedChipStrip: View {
-    let entries: [SentenceCache]
-    let sceneKeySet: Set<String>
-    let tileWordClass: [String: String]
-    let onTap: (SentenceCache) -> Void
-
-    private func isInScene(_ entry: SentenceCache) -> Bool {
-        entry.tileKeys.allSatisfy { sceneKeySet.contains($0) }
-    }
-
-    private var inScene: [SentenceCache] { entries.filter { isInScene($0) } }
-    private var outOfScene: [SentenceCache] { entries.filter { !isInScene($0) } }
-
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(inScene) { entry in
-                    PromotedChip(entry: entry, isInScene: true,
-                                 tileWordClass: tileWordClass, onTap: onTap)
-                }
-
-                if !outOfScene.isEmpty {
-                    if !inScene.isEmpty {
-                        Rectangle()
-                            .fill(.separator)
-                            .frame(width: 1, height: 36)
-                            .padding(.horizontal, 4)
-                    }
-                    Text("other")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-
-                    ForEach(outOfScene) { entry in
-                        PromotedChip(entry: entry, isInScene: false,
-                                     tileWordClass: tileWordClass, onTap: onTap)
-                    }
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 6)
-        }
-    }
-}
-
-private struct PromotedChip: View {
-    let entry: SentenceCache
-    let isInScene: Bool
-    let tileWordClass: [String: String]
-    let onTap: (SentenceCache) -> Void
-
-    private let iconSize: CGFloat = 30
-    private let cornerRadius: CGFloat = 10
-
-    private var borderColor: Color {
-        if entry.isPinned && isInScene { return .orange.opacity(0.7) }
-        if isInScene { return .primary.opacity(0.15) }
-        return .secondary.opacity(0.25)
-    }
-
-    var body: some View {
-        Button { onTap(entry) } label: {
-            HStack(spacing: 3) {
-                ForEach(entry.tileKeys.prefix(4), id: \.self) { key in
-                    let wordClass = tileWordClass[key] ?? "default"
-                    TileImageView(key: key, wordClass: wordClass)
-                    .frame(width: iconSize, height: iconSize)
-                    .clipShape(RoundedRectangle(cornerRadius: 5))
-                }
-            }
-            .padding(6)
-            .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: cornerRadius))
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .strokeBorder(borderColor, lineWidth: 1.5)
-            )
-            .opacity(isInScene ? 1 : 0.6)
-        }
-        .buttonStyle(.plain)
     }
 }
 

@@ -59,16 +59,12 @@ struct SentenceTrayView: View {
     let onExpandSentence: () -> Void
     /// Tap the Home card. Wired to navigate to the active scene's root page.
     /// Long-press Home to open the caregiver menu (mode toggle + gated Admin).
-    /// Tap the Favorites card. Opens the GlassFavoritesOverlay.
-    let onShowFavorites: () -> Void
     /// True when the user is at the home page — dims the Home card.
     /// Number of promoted SentenceCache entries — shown next to the star.
-    let favoritesCount: Int
     /// True when the sentence popover is currently visible (so the inline
     /// bubble can mute its expand affordance).
     let isSentenceShown: Bool
     /// True when the favorites overlay is currently visible — dims the card.
-    let isFavoritesShown: Bool
     /// Currently unused in iPad layout; reserved for the phone/responsive variant where the
     /// bubble becomes a dismissible overlay (the "×" → clearSelection).
     let onDismissActive: () -> Void
@@ -194,12 +190,6 @@ struct SentenceTrayView: View {
                 isSuppressed: engine.activeIsSuppressed
             )
             .frame(maxWidth: .infinity, alignment: .leading)
-
-            IPadFavoritesCard(
-                count: favoritesCount,
-                isEnabled: favoritesCount > 0 && !isFavoritesShown,
-                action: onShowFavorites
-            )
 
             // Play and Clear handle their own enabled/disabled rendering —
             // no outer opacity wrap so they stay visible even when the
@@ -534,36 +524,6 @@ private struct IPadThinkingBubble: View {
 }
 
 // MARK: - iPad nav cards (Home / Favorites)
-
-private struct IPadFavoritesCard: View {
-    let count: Int
-    let isEnabled: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 4) {
-                Image(systemName: "star.fill")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(isEnabled ? .orange : Color.orange.opacity(0.5))
-                Text("\(count)")
-                    .font(.system(size: 13, weight: .semibold).monospacedDigit())
-                    .foregroundStyle(isEnabled ? .primary : .secondary)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(isEnabled ? .secondary : .tertiary)
-            }
-            .frame(width: kIPadNavCardWidth, height: kIPadNavCardHeight)
-            .background(TrayCardBackground(cornerRadius: kIPadNavCornerRadius))
-            .opacity(isEnabled ? 1.0 : 0.55)
-        }
-        .buttonStyle(.plain)
-        .disabled(!isEnabled)
-        .accessibilityLabel("Favorites")
-        .accessibilityValue("\(count)")
-        .accessibilityHint(isEnabled ? "Opens favorites" : "No favorites yet")
-    }
-}
 
 // MARK: - Active tile card
 

@@ -19,7 +19,6 @@
 //        committed group's inline pills plus a chevron at the right
 //        edge — the whole card is tappable to open the dense
 //        GlassHistoryOverlay. Dims when there's no history yet.
-//      • Favorites — right. Tap opens the GlassFavoritesOverlay
 //        listing promoted SentenceCache entries. Dims when empty.
 //
 
@@ -36,11 +35,8 @@ struct CompactTrayStrip: View {
     let onPlaySingle: () -> Void
     let onCommitActive: () -> Void
     let onShowSentence: () -> Void
-    let onShowFavorites: () -> Void
     /// Long-press Home to open the caregiver menu (mode toggle + gated Admin).
-    let favoritesCount: Int
     let isSentenceShown: Bool
-    let isFavoritesShown: Bool
 
     // Caregiver editor sheets (refine / hand-type override of a generated sentence).
     @State private var editSheet: TrayEditSheet?
@@ -61,14 +57,6 @@ struct CompactTrayStrip: View {
                     isSuppressed: engine.activeIsSuppressed
                 )
                 .frame(maxWidth: .infinity, alignment: .leading)
-
-                // Favorites folded up from the nav strip, which is gone: Home
-                // is now cell 0 of the board and the history card was removed.
-                FavoritesCard(
-                    count: favoritesCount,
-                    isEnabled: favoritesCount > 0 && !isFavoritesShown,
-                    action: onShowFavorites
-                )
 
                 VStack(spacing: 4) {
                     PrimaryPlayButton(
@@ -129,7 +117,6 @@ struct CompactTrayStrip: View {
             editing ? engine.beginCaregiverEdit() : engine.endCaregiverEdit()
         }
         .animation(.easeInOut(duration: 0.22), value: engine.activeGroup.sentence)
-        .animation(.easeInOut(duration: 0.22), value: isFavoritesShown)
     }
 
     // MARK: - Derived state
@@ -389,36 +376,6 @@ struct LeftTailBubble: Shape {
 // MARK: - Nav strip (Home + History card + Favorites card)
 
 // MARK: - Home / Favorites end cards
-
-private struct FavoritesCard: View {
-    let count: Int
-    let isEnabled: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 3) {
-                Image(systemName: "star.fill")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(isEnabled ? .orange : Color.orange.opacity(0.5))
-                Text("\(count)")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(isEnabled ? .primary : .secondary)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(isEnabled ? .secondary : .tertiary)
-            }
-            .frame(width: kNavCardWidth, height: kNavCardHeight)
-            .background(navCardBackground)
-            .opacity(isEnabled ? 1.0 : 0.55)
-        }
-        .buttonStyle(.plain)
-        .disabled(!isEnabled)
-        .accessibilityLabel("Favorites")
-        .accessibilityValue("\(count)")
-        .accessibilityHint(isEnabled ? "Opens favorites" : "No favorites yet")
-    }
-}
 
 // MARK: - History card (pills + inline chevron)
 

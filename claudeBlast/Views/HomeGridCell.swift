@@ -71,14 +71,14 @@ struct HomeGridCell: View {
             VStack(spacing: 0) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color(.secondarySystemBackground))
+                        .fill(Color(.systemGray4))
                         .overlay(
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .stroke(Color.primary.opacity(0.14), lineWidth: 1)
+                                .stroke(Color.primary.opacity(0.18), lineWidth: 1)
                         )
                     Image(systemName: "house.fill")
                         .font(.system(size: glyphSize, weight: .semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.primary.opacity(0.65))
                 }
                 .aspectRatio(1, contentMode: .fit)
 

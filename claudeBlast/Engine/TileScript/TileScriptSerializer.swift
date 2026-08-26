@@ -64,6 +64,9 @@ struct TileScriptSerializer {
         case .comment(let text):
             return ["  - comment: \(text)"]
 
+        case .screenshot(let name):
+            return ["  - screenshot: \(name)"]
+
         case .wait(let duration):
             let ms = Int(duration.components.seconds * 1000)
                 + Int(duration.components.attoseconds / 1_000_000_000_000_000)

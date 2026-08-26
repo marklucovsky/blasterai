@@ -172,6 +172,12 @@ struct TileScriptParser {
             let duration = parseDurationString(waitValue)
             return [.wait(duration: duration)]
         }
+        // `screenshot: name`, or a bare `screenshot:` which auto-names by index.
+        if dict.keys.contains("screenshot") {
+            let raw = dict["screenshot"] as? String ?? ""
+            let name = raw.trimmingCharacters(in: .whitespaces)
+            return [.screenshot(name: name.isEmpty ? "screen" : name)]
+        }
         if dict["clear"] != nil {
             return [.clear]
         }

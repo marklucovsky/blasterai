@@ -122,4 +122,12 @@ enum TileScriptCommand: Sendable {
     case setProvider(name: String)
     case setScene(name: String)
     case setTileSet(imageSet: ImageSetID)
+    /// Write a PNG of the current screen to `Documents/Screenshots/`.
+    ///
+    /// The point of capturing from *inside* a script rather than externally is
+    /// timing: the states worth photographing — an overlay up, a sentence
+    /// mid-generation, a board on page 3 — last a few hundred milliseconds and
+    /// are reached by the script itself. It also works on a real device, which
+    /// is where App Store assets have to come from.
+    case screenshot(name: String)
 }
