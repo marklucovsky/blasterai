@@ -78,7 +78,10 @@ struct claudeBlastApp: App {
             // the initial import hasn't landed yet the device still seeds, and
             // CloudKitDedupReconciler collapses the resulting duplicates below.
             if BootstrapLoader.storeAlreadySeeded(context: container.mainContext) {
-                BootstrapLoader.markBootstrapComplete()
+                // Seeding was skipped, so this device has NOT applied the current
+                // bundle — don't stamp its hash. Stamping here would make the
+                // bundle-update check below a no-op and swallow the update.
+                BootstrapLoader.markBootstrapComplete(appliedBundledContent: false)
             } else {
                 BootstrapLoader.wipeAllData(context: container.mainContext)
                 _ = BootstrapLoader.loadDefaultVocabulary(context: container.mainContext)
