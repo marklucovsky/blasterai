@@ -1,0 +1,50 @@
+name: Screenshots — Activity
+description: Generates repeated and one-off utterances, then captures the activity log.
+scene: "<default>"
+audio: off
+provider: mock
+tileWait: .instant
+sentenceWait: .instant
+
+# Seeds the shape the activity log is designed to read: one want said many
+# times (the signal), a couple of moderate repeats, and a tail of one-offs
+# (the noise the clustering exists to prune).
+
+script:
+  - demo: on
+
+  # Interleaved on purpose. Repeating the SAME combination back-to-back is
+  # escalation — one utterance with a repetitionCount — not five utterances.
+  # Recurrence only happens when a want is raised again *later*, so the seed
+  # has to put something else in between or it produces the wrong shape
+  # entirely. (Learned by seeding it the naive way and getting 5 rows instead
+  # of 15.)
+  - tiles:
+    - mom, <body_health>, tired
+    - <food>, pizza
+    - <home>, mom, <body_health>, tired
+    - <drinks>, water
+    - <home>, mom, <body_health>, tired
+    - <food>, cookie
+    - <home>, mom, <body_health>, tired
+    - <food>, pizza
+    - <home>, mom, <body_health>, tired
+    - <drinks>, water
+    - <food>, pizza
+    - <social>, please
+    - <places>, playground
+    - <play_activities>, ball
+    - <food>, banana
+
+  - comment: Activity — clustered, this is the default reading
+  - screen: admin/activity
+  - wait: 1s
+  - screenshot: act-01-admin-snippet
+
+  - comment: Full log
+  - screen: admin/activity
+  - wait: 1s
+  - screenshot: act-02-full-log
+
+  - demo: off
+  - comment: Activity capture complete

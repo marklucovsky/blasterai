@@ -24,6 +24,7 @@ struct BundledScriptTests {
         "shots_child_surface",
         "shots_admin",
         "shots_full",
+        "shots_activity",
         "demo_basic",
         "demo_home",
         "demo_onthego",
