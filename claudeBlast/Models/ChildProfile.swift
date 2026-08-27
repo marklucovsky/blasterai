@@ -62,6 +62,31 @@ enum BrownsStage: String, CaseIterable, Identifiable {
         }
     }
 
+    /// What the *app* does at this stage.
+    ///
+    /// Kept separate from `detail` on purpose. `detail` describes the child, so
+    /// a caregiver picking a stage is answering a question about their child
+    /// rather than choosing a feature — but having answered it, they deserve to
+    /// know what they just turned on. Two sentences, two jobs.
+    var appBehavior: String {
+        switch self {
+        case .one:
+            return "Classic AAC: each tap speaks its own word. No AI, and no key needed."
+        case .twoThree:
+            return "AI turns up to 4 tiles into a spoken sentence. Needs an OpenAI key."
+        case .fourPlus:
+            return "AI builds longer sentences from the tiles you allow. Needs an OpenAI key."
+        }
+    }
+
+    /// Whether this stage's sentence-building depends on an OpenAI key.
+    ///
+    /// Without one the app falls back to a mock provider, which answers with
+    /// placeholder text rather than failing — usable for a demo, useless for a
+    /// child. Worth saying out loud before someone picks a stage they cannot
+    /// yet run.
+    var requiresAPIKey: Bool { self != .one }
+
     /// How tile taps turn into communication at this stage. Stage I is single
     /// words by definition; every later stage is building sentences.
     var interactionMode: InteractionMode {

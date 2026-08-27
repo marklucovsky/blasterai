@@ -52,8 +52,12 @@ if [[ -n "${BLASTER_DEVICES:-}" ]]; then
   for d in "${DEVICES[@]}"; do
     [[ "$d" == "$BLASTER_DEVICES" ]] && filtered+=("$d")
   done
+  # Anchored: the simulator's name must BE this, not merely contain it.
+  # A loose match accepted "16e", which is not a device name — xcodebuild then
+  # failed with a wall of destinations rather than a usable error.
   if [[ ${#filtered[@]} -eq 0 ]] \
-     && xcrun simctl list devices available | grep -qF "$BLASTER_DEVICES ("; then
+     && xcrun simctl list devices available \
+        | grep -qE "^ *$(printf '%s' "$BLASTER_DEVICES" | sed 's/[][\.*^$()+?{}|]/\\&/g') \("; then
     filtered=("$BLASTER_DEVICES")
   fi
   if [[ ${#filtered[@]} -eq 0 ]]; then

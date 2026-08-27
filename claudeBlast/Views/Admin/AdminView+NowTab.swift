@@ -88,9 +88,11 @@ extension AdminView {
                         }
                     }
                     .pickerStyle(.segmented)
-                    Text(active.brownsStage.detail)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    // The intro only. This is a switch flipped by someone who
+                    // has already decided; the full comparison lives where the
+                    // decision is made — onboarding and the profile editor.
+                    StageIntro(stage: active.brownsStage,
+                               keyHint: "Add one in Admin → Device.")
                     if let override = profileResolver.modeOverride {
                         Label("This device is temporarily set to \(override.label), overriding the stage.",
                               systemImage: "exclamationmark.triangle.fill")

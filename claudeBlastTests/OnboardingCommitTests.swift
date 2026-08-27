@@ -26,6 +26,41 @@ struct OnboardingCommitTests {
         return d
     }
 
+    // MARK: - Defaults that two places have to agree on
+
+    /// A device that never finishes onboarding still has a role, and the card
+    /// onboarding preselects has to be that same role.
+    ///
+    /// They drifted apart: the model defaulted to `caregiver` while onboarding
+    /// started on `patient`, so an abandoned setup produced a caregiver device —
+    /// ungated Admin, full long-press menu — behind a screen showing Patient
+    /// selected. Both now read `DeviceProfile.defaultRole`; this test fails if
+    /// either grows its own answer again.
+    @Test func unconfiguredDeviceTakesTheDefaultRole() throws {
+        let container = try makeContainer()
+        let context = ModelContext(container)
+        let device = DeviceProfileStore.ensure(context: context)
+        #expect(device.role == DeviceProfile.defaultRole)
+        #expect(device.onboardingCompleted == false)
+    }
+
+    /// Caregiver is the safe answer for an unconfigured device: wrongly marked
+    /// patient means PIN-gated with no PIN enrolled, which locks out the adult
+    /// who is the one actually holding a device that has not been set up.
+    @Test func defaultRoleIsCaregiver() {
+        #expect(DeviceProfile.defaultRole == .caregiver)
+    }
+
+    /// An unconfigured device must not be gated, because nothing has enrolled a
+    /// PIN yet and biometry alone cannot be recovered from.
+    @Test func unconfiguredDeviceIsNotAdminGated() throws {
+        let container = try makeContainer()
+        let context = ModelContext(container)
+        let device = DeviceProfileStore.ensure(context: context)
+        #expect(device.requireFaceIDForAdmin == false)
+        #expect(device.adminPINHash == nil)
+    }
+
     private func date(_ y: Int, _ m: Int, _ d: Int) -> Date {
         Calendar.current.date(from: DateComponents(year: y, month: m, day: d))!
     }

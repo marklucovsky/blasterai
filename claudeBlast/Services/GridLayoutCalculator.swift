@@ -70,7 +70,21 @@ enum GridLayoutCalculator {
     /// Maximum extra inter-row spacing added to consume vertical slack.
     private static let maxRowSpacingBoost: CGFloat = 14
 
-    static func compute(screenSize: CGSize, geo: CGSize, userStep: Int) -> GridLayoutSpec {
+    /// - Parameter textScale: the reader's Dynamic Type multiplier, 1.0 at the
+    ///   default setting. Passed in rather than read from the environment so
+    ///   this stays a pure function; `TileGridView` gets it from
+    ///   `UIFontMetrics`, which is the system's own answer rather than a table
+    ///   of guesses.
+    ///
+    ///   The board honours it. A caregiver evaluating this app is often the one
+    ///   who turned text up system-wide, and a board that ignored that would be
+    ///   telling them what it thinks of their settings. Labels grow, cells grow
+    ///   with them, and fewer tiles fit a page — the tile *size* they dialled in
+    ///   is preserved, because that is the setting they chose deliberately.
+    static func compute(screenSize: CGSize,
+                        geo: CGSize,
+                        userStep: Int,
+                        textScale: CGFloat = 1) -> GridLayoutSpec {
         let screenMin = min(screenSize.width, screenSize.height)
         let base: CGFloat = {
             if screenMin < phoneMinDimMax { return phoneBaseSize }
@@ -85,7 +99,9 @@ enum GridLayoutCalculator {
 
         guard availW > 0 && availH > 0 else {
             return GridLayoutSpec(
-                tileSize: pref, labelFontSize: 11, labelHeight: 13,
+                tileSize: pref,
+                labelFontSize: labelFontSize(forTile: pref, scale: textScale),
+                labelHeight: labelFontSize(forTile: pref, scale: textScale) + 2,
                 cols: 1, rows: 1, verticalSpacing: spacing
             )
         }
@@ -102,7 +118,7 @@ enum GridLayoutCalculator {
             let tileW = renderTile(forCols: cols, availW: availW)
             guard tileW >= minAcceptable && tileW <= maxAcceptable else { continue }
 
-            let cellH = tileW + labelFontSize(forTile: tileW) + 2
+            let cellH = tileW + labelFontSize(forTile: tileW, scale: textScale) + 2
             let rows = max(1, Int((availH + spacing) / (cellH + spacing)))
             let capacity = cols * rows
 
@@ -122,12 +138,12 @@ enum GridLayoutCalculator {
             if let b = best { return b }
             let cols = colsForTile(pref, availW: availW)
             let tileW = renderTile(forCols: cols, availW: availW)
-            let cellH = tileW + labelFontSize(forTile: tileW) + 2
+            let cellH = tileW + labelFontSize(forTile: tileW, scale: textScale) + 2
             let rows = max(1, Int((availH + spacing) / (cellH + spacing)))
             return (cols, rows, tileW, cols * rows)
         }()
 
-        let labelF = labelFontSize(forTile: result.tileW)
+        let labelF = labelFontSize(forTile: result.tileW, scale: textScale)
         let cellH = result.tileW + labelF + 2
 
         // Distribute vertical slack as inter-row spacing, capped so gaps
@@ -165,8 +181,17 @@ enum GridLayoutCalculator {
         return (availW - CGFloat(cols - 1) * spacing) / CGFloat(cols)
     }
 
-    /// Label font tracks tile width but stays in a legible band.
-    private static func labelFontSize(forTile tile: CGFloat) -> CGFloat {
-        max(9, min(16, tile * 0.14))
+    /// Label font tracks tile width, stays in a legible band, and then honours
+    /// the reader's Dynamic Type setting on top of that.
+    ///
+    /// The ceiling is relative to the tile rather than absolute: a label is a
+    /// caption for a picture, and past roughly half the picture's width it has
+    /// stopped captioning and started competing. At ordinary tile sizes the
+    /// ceiling never binds — an 85pt tile allows 35pt of label, and even the
+    /// largest accessibility setting asks for less than that — so it exists to
+    /// keep small tiles sane, not to overrule the reader.
+    static func labelFontSize(forTile tile: CGFloat, scale: CGFloat = 1) -> CGFloat {
+        let base = max(9, min(16, tile * 0.14))
+        return min(base * max(1, scale), max(base, tile * 0.42))
     }
 }

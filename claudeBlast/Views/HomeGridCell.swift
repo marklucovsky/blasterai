@@ -94,19 +94,33 @@ struct HomeGridCell: View {
             .scaleEffect(isPressed && isEnabled ? 0.94 : 1)
             .animation(.spring(response: 0.25, dampingFraction: 0.6), value: isPressed)
         }
-        .buttonStyle(.plain)
+        // Same reason as `TileView`: a zero-distance drag claims the touch
+        // before the scroll view can pan. Home sits in the same scrolling grid
+        // as every other cell, so it carries the same obligation not to eat the
+        // gesture — being one cell, it simply never showed the fault alone.
+        .buttonStyle(HomePressButtonStyle(isPressed: $isPressed))
         .simultaneousGesture(
             LongPressGesture(minimumDuration: 0.5)
                 .onEnded { _ in onOpenMenu() }
-        )
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in isPressed = true }
-                .onEnded { _ in isPressed = false }
         )
         .accessibilityLabel("Home")
         .accessibilityHint(isEnabled
                            ? "Goes to the first page of this board"
                            : "Already on the home page")
+    }
+}
+
+/// Plain button that reports its pressed state outward, so the scale can live
+/// on the view rather than inside the style. Mirrors `TileView`'s; both are
+/// file-private, which is the only reason there are two.
+private struct HomePressButtonStyle: ButtonStyle {
+    @Binding var isPressed: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .contentShape(Rectangle())
+            .onChange(of: configuration.isPressed) { _, pressed in
+                isPressed = pressed
+            }
     }
 }

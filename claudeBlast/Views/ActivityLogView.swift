@@ -25,7 +25,12 @@ struct ActivityLogView: View {
     /// same reason.
     @AppStorage(AppSettingsKey.activityRange) private var rangeRaw = Window.today.rawValue
     @AppStorage(AppSettingsKey.activityClusterByName) private var clusterByName = true
-    @AppStorage(AppSettingsKey.activityGroupByHour) private var groupByHour = false
+    /// On by default. Clusters answer "what kept happening"; hour bands answer
+    /// "when" — and a caregiver reading a day mostly wants both at once, since
+    /// the same word at breakfast and at bedtime is a different observation
+    /// from the same word twice in ten minutes. Silent hours are dropped, so
+    /// the banding costs almost no vertical space on a quiet day.
+    @AppStorage(AppSettingsKey.activityGroupByHour) private var groupByHour = true
 
     @State private var expanded: Set<String> = []
     @State private var showInfrequent = false

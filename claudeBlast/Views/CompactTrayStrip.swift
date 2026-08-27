@@ -177,6 +177,8 @@ struct CompactTrayStrip: View {
 let kCompactTrayCardHeight: CGFloat = 92
 
 private struct ActiveCard: View {
+    @ScaledMetric(relativeTo: .caption) private var promptSize: CGFloat = 12
+
     let tiles: [TileSelection]
     let sentence: String?
     let isThinking: Bool
@@ -187,6 +189,16 @@ private struct ActiveCard: View {
     /// True when this combination is suppressed (shows a muted bubble instead).
     let isSuppressed: Bool
 
+    /// Both floors below are `@ScaledMetric`, and that is not decoration.
+    ///
+    /// They were measured against 12pt text. Letting the sentence scale while
+    /// the width it must fit into stayed fixed would reproduce the "I / s / e"
+    /// column exactly — at a large accessibility setting the caption more than
+    /// doubles, so 110pt holds about four characters a line. Scaling the floor
+    /// with the text means the tray hands over to the button *sooner* as text
+    /// grows, and the popover — which is `.title3` and has the room — becomes
+    /// the reading surface. The tray is a glance; the popover is the read.
+    ///
     /// Width the sentence needs before it is worth rendering as text.
     ///
     /// Below this the bubble degrades into a column of single letters, which
@@ -201,13 +213,13 @@ private struct ActiveCard: View {
     /// button at two tiles while a Pro Max kept the sentence. The band that
     /// holds "bubble at one or two, button at three or four" on every current
     /// phone is roughly 100...129; 110 sits in the middle of it.
-    private let minimumSentenceWidth: CGFloat = 110
+    @ScaledMetric(relativeTo: .caption) private var minimumSentenceWidth: CGFloat = 110
 
     /// What the fallback button needs. Smaller than the bubble's floor by a
     /// long way — that is the point of having it — but not zero: squeezed
     /// below this it renders as "Sen / tenc / e", which is the exact failure
     /// the button existed to avoid, reproduced one control later.
-    private let minimumSentenceButtonWidth: CGFloat = 68
+    @ScaledMetric(relativeTo: .caption) private var minimumSentenceButtonWidth: CGFloat = 68
 
     var body: some View {
         // Width-driven, not count-driven. An iPad has room for four full-size
@@ -266,7 +278,7 @@ private struct ActiveCard: View {
         HStack(spacing: 6) {
             if tiles.isEmpty {
                 Text("Tap tiles below to start")
-                    .font(.system(size: 12))
+                    .font(.system(size: promptSize))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 8)
@@ -347,18 +359,36 @@ private struct ChipsRow: View {
 /// two characters looks broken, while a button that says "Sentence" is simply
 /// compact.
 private struct SentenceButton: View {
+    @ScaledMetric(relativeTo: .caption2) private var glyphSize: CGFloat = 15
+    @ScaledMetric(relativeTo: .caption2) private var labelSize: CGFloat = 9
+
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 2) {
+            // At an accessibility size the word "Sentence" is wider than what
+            // the chips have left, and a button that swells to fit it takes the
+            // room the chips need to stay recognisable. The glyph alone is
+            // enough: the control sits where the sentence always sits, and its
+            // accessibility label still reads "Show sentence".
+            ViewThatFits(in: .horizontal) {
+                VStack(spacing: 2) {
+                    Image(systemName: "text.bubble.fill")
+                        .font(.system(size: glyphSize, weight: .semibold))
+                    Text("Sentence")
+                        .font(.system(size: labelSize, weight: .semibold))
+                        .lineLimit(1)
+                }
                 Image(systemName: "text.bubble.fill")
-                    .font(.system(size: 15, weight: .semibold))
-                Text("Sentence")
-                    .font(.system(size: 9, weight: .semibold))
-                    .lineLimit(1)
+                    .font(.system(size: glyphSize, weight: .semibold))
             }
-            .fixedSize()
+            // Deliberately NOT .fixedSize(). That was here to stop the label
+            // being squeezed into "Sen / tenc / e", but it also denied
+            // ViewThatFits the one thing it needs — a proposal narrower than
+            // the ideal — so the button held its full width and the whole card
+            // overflowed underneath the Play/Clear column instead. The glyph
+            // fallback above is the better answer to the same problem.
+            .frame(maxWidth: .infinity)
             .foregroundStyle(.secondary)
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
@@ -373,20 +403,23 @@ private struct SentenceButton: View {
 }
 
 private struct SentenceBubble: View {
+    @ScaledMetric(relativeTo: .caption) private var textSize: CGFloat = 12
+    @ScaledMetric(relativeTo: .caption) private var glyphSize: CGFloat = 10
+
     let text: String
     let onExpand: () -> Void
 
     var body: some View {
         HStack(alignment: .top, spacing: 6) {
             Text(text)
-                .font(.system(size: 12, weight: .regular).italic())
+                .font(.system(size: textSize, weight: .regular).italic())
                 .foregroundStyle(.primary)
                 .lineLimit(3)
                 .truncationMode(.tail)
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
             Image(systemName: "arrow.up.left.and.arrow.down.right")
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(size: glyphSize, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .padding(.top, 1)
         }
@@ -417,13 +450,16 @@ private struct SentenceBubble: View {
 /// Muted-state bubble for a suppressed combination — signals the set is
 /// intentionally blocked (not broken) and long-presses to un-suppress.
 private struct CompactMutedBubble: View {
+    @ScaledMetric(relativeTo: .caption) private var textSize: CGFloat = 12
+    @ScaledMetric(relativeTo: .caption) private var glyphSize: CGFloat = 10
+
     var body: some View {
         HStack(spacing: 5) {
             Image(systemName: "speaker.slash.fill")
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(size: glyphSize, weight: .semibold))
                 .foregroundStyle(.secondary)
             Text("Muted")
-                .font(.system(size: 12).italic())
+                .font(.system(size: textSize).italic())
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -504,6 +540,8 @@ struct LeftTailBubble: Shape {
 /// by a chevron-down at the right edge. The whole card is one tappable
 /// surface that opens the dense GlassHistoryOverlay.
 private struct TilePill: View {
+    @ScaledMetric(relativeTo: .caption) private var labelSize: CGFloat = 12
+
     let tile: TileSelection
 
     private let iconSize: CGFloat = 22
@@ -523,7 +561,7 @@ private struct TilePill: View {
             )
 
             Text(tile.value)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(size: labelSize, weight: .semibold))
                 .foregroundStyle(.primary.opacity(0.85))
                 .lineLimit(1)
         }

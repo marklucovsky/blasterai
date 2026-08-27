@@ -18,6 +18,8 @@ import SwiftUI
 struct SingleWordTrayView: View {
     @Environment(SentenceEngine.self) private var engine
 
+    @ScaledMetric(relativeTo: .caption) private var promptSize: CGFloat = 13
+
     /// Remove one word from the strip (its chip was tapped).
     let onRemove: (Int) -> Void
     /// Clear the whole strip.
@@ -55,7 +57,7 @@ struct SingleWordTrayView: View {
                 HStack(spacing: 6) {
                     if strip.isEmpty {
                         Text("Tap tiles to speak words")
-                            .font(.system(size: 13))
+                            .font(.system(size: promptSize))
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 8)
@@ -104,6 +106,10 @@ struct SingleWordTrayView: View {
 /// One spoken word: image over its label, tinted by word class. Tapping removes
 /// it from the strip.
 private struct WordChip: View {
+    /// The strip is a fixed-height band, so the word shrinks to fit rather
+    /// than clipping — see the `minimumScaleFactor` below.
+    @ScaledMetric(relativeTo: .caption2) private var wordSize: CGFloat = 11
+
     let tile: TileSelection
     let onTap: () -> Void
 
@@ -125,7 +131,9 @@ private struct WordChip: View {
                 )
 
                 Text(tile.value)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: wordSize, weight: .semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                     .foregroundStyle(.primary.opacity(0.85))
                     .lineLimit(1)
                     .frame(maxWidth: size + 6)
@@ -139,6 +147,9 @@ private struct WordChip: View {
 // MARK: - End buttons
 
 private struct ClearButton: View {
+    @ScaledMetric(relativeTo: .caption) private var clearGlyphSize: CGFloat = 15
+    @ScaledMetric(relativeTo: .caption2) private var clearLabelSize: CGFloat = 10
+
     /// Matches `SingleWordTrayView.stripHeight` so the row reads as one band.
     var height: CGFloat = SingleWordTrayView.stripHeight
     let isEnabled: Bool
@@ -148,8 +159,11 @@ private struct ClearButton: View {
         Button(action: action) {
             VStack(spacing: 3) {
                 Image(systemName: "xmark")
-                    .font(.system(size: 15, weight: .bold))
-                Text("Clear").font(.system(size: 10, weight: .semibold))
+                    .font(.system(size: clearGlyphSize, weight: .bold))
+                Text("Clear")
+                    .font(.system(size: clearLabelSize, weight: .semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
             }
             .foregroundStyle(isEnabled ? .red : .secondary)
             .frame(width: 60, height: height)
