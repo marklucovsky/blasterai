@@ -58,6 +58,15 @@ struct TileScriptView: View {
                     nowPlayingSection
                 }
             }
+            .task {
+                // Unattended run: `-TileScriptAutorun <resourceName>`.
+                // Guarded on .idle so a re-render mid-run cannot restart it.
+                guard let name = Self.autorunScriptName, runner.state == .idle else { return }
+                // Let the view settle before the script starts driving it,
+                // otherwise the first capture photographs a half-laid-out screen.
+                try? await Task.sleep(for: .milliseconds(600))
+                loadAndRun(resourceName: name)
+            }
             .navigationTitle("TileScript")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -336,6 +345,27 @@ struct TileScriptView: View {
 
     // MARK: - Curated Demos
 
+    // MARK: - Unattended runs
+
+    /// A bundled script named by launch argument, e.g.
+    /// `-TileScriptAutorun shots_child_surface`.
+    ///
+    /// Everything else here needs a finger: someone opens Admin, finds the
+    /// script, taps Run. That makes a screenshot sweep across form factors a
+    /// manual chore, and it is the one thing standing between "we have a
+    /// capture tool" and "capture is automatic". A launch argument is how a
+    /// simulator run gets driven from a shell.
+    ///
+    /// Launch-argument only, never a stored setting: it cannot be left switched
+    /// on by accident, and it does not exist for anyone who did not type it.
+    static var autorunScriptName: String? {
+        let args = ProcessInfo.processInfo.arguments
+        guard let idx = args.firstIndex(of: "-TileScriptAutorun"),
+              idx + 1 < args.count else { return nil }
+        let name = args[idx + 1].trimmingCharacters(in: .whitespaces)
+        return name.isEmpty ? nil : name
+    }
+
     private var curatedSection: some View {
         Section("Curated Demos") {
             ForEach(curatedScripts, id: \.name) { info in
@@ -517,6 +547,22 @@ struct TileScriptView: View {
             ScriptInfo(name: "On the Go — Bathroom", description: "\"Mom, I have a stomachache. Can I go to the bathroom?\" (iPhone)", resourceName: "demo_onthego"),
         ]
         #if DEBUG
+        // Screenshot runs: drive the app to each state worth photographing and
+        // capture it. DEBUG-only for now because a caregiver has no reason to
+        // find these among the demos — but note that DEBUG builds also draw the
+        // grid diagnostic badge, so App Store assets will need this list opened
+        // up to a release build (S5).
+        scripts += [
+            ScriptInfo(name: "Screenshots — Child Surface",
+                       description: "Five board states, captured to Documents/Screenshots",
+                       resourceName: "shots_child_surface"),
+            ScriptInfo(name: "Screenshots — Admin",
+                       description: "Every Admin tab, captured to Documents/Screenshots",
+                       resourceName: "shots_admin"),
+            ScriptInfo(name: "Screenshots — Full Sweep",
+                       description: "Board + every caregiver surface, in demo mode",
+                       resourceName: "shots_full"),
+        ]
         // Diagnostics, not demos: these write tens of thousands of backdated
         // metric rows to measure real storage cost and to force the compactor to
         // run. DEBUG-only because a caregiver has no reason to be one tap from

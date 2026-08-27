@@ -130,4 +130,15 @@ enum TileScriptCommand: Sendable {
     /// are reached by the script itself. It also works on a real device, which
     /// is where App Store assets have to come from.
     case screenshot(name: String)
+    /// Navigate to a named destination — see `ScriptScreen`. Scripts name
+    /// *where to be*, never how to get there, which is what keeps them working
+    /// across layout changes.
+    case screen(ScriptScreen)
+    /// Turn demo mode on or off for the run.
+    ///
+    /// Demo mode suppresses the developer furniture a capture must not contain —
+    /// the grid diagnostic badge, and the playback pill on a straight run. A
+    /// screenshot script should set it for the same reason a screen recording
+    /// does: what is on screen IS the artifact.
+    case setDemoMode(enabled: Bool)
 }

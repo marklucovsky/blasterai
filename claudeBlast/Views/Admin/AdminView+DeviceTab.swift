@@ -23,6 +23,12 @@ extension AdminView {
         return device.requireFaceIDForAdmin && !biometry.hasHardware
     }
 
+    /// Pull a pending `admin/device/...` request off the coordinator.
+    func consumePendingDeviceDetail() {
+        guard let detail = adminRoute.consumeDetail(for: .device) else { return }
+        deviceDetail = detail
+    }
+
     var deviceTab: some View {
         NavigationStack {
             List {
@@ -35,6 +41,15 @@ extension AdminView {
                 #endif
             }
             .navigationTitle("Device")
+            .navigationDestination(item: $deviceDetail) { detail in
+                switch detail {
+                case .about:      AboutStatsView()
+                case .tileScript: TileScriptView()
+                case .vocabulary: EmptyView()   // not a Device destination
+                }
+            }
+            .onAppear { consumePendingDeviceDetail() }
+            .onChange(of: adminRoute.pendingDetail) { _, _ in consumePendingDeviceDetail() }
             .toolbar { adminDoneToolbar }
         }
         .tabItem { Label("Device", systemImage: "gear") }
@@ -262,8 +277,17 @@ extension AdminView {
             } label: {
                 Label("About & Stats", systemImage: "chart.bar.doc.horizontal")
             }
+            // TileScript's only other entry point is the caregiver menu, which a
+            // patient device deliberately trims to Admin alone — leaving scripts
+            // unreachable on the very device you would demo on. Admin is the
+            // gated door both paths should lead through anyway.
+            NavigationLink {
+                TileScriptView()
+            } label: {
+                Label("TileScript", systemImage: "play.rectangle.fill")
+            }
         } footer: {
-            Text("Vocabulary, board, and activity counts — plus CloudKit sync health.")
+            Text("Vocabulary, board, and activity counts — plus CloudKit sync health. TileScript records and replays board sessions.")
         }
     }
 

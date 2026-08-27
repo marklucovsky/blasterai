@@ -1,6 +1,6 @@
 name: Screenshots — Child Surface
 description: Drives the board through the states worth photographing and captures each one.
-scene: "Core-First"
+scene: "<default>"   # the bundled board, whatever it is named
 audio: off
 provider: mock
 tileWait: .fast

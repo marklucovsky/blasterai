@@ -12,6 +12,14 @@ import Foundation
 import UIKit
 @testable import claudeBlast
 
+private extension TileScriptCommand {
+    /// Test helper: is this a `.screen` for exactly this destination?
+    func isScreen(_ expected: ScriptScreen) -> Bool {
+        if case .screen(let s) = self { return s == expected }
+        return false
+    }
+}
+
 extension SerialTests {
 @MainActor
 @Suite(.serialized)
@@ -151,6 +159,72 @@ struct ScreenshotCommandTests {
 
         #expect(first != second)
         #expect(second.lastPathComponent.contains("dup-test-2"))
+    }
+
+    // MARK: - screen: routes
+
+    @Test func parsesAdminRoutes() throws {
+        for route in AdminRoute.allCases {
+            let script = try parse(header + "\n  - screen: admin/\(route.rawValue)\n")
+            guard case .screen(let screen) = script.commands[0] else {
+                Issue.record("expected .screen for admin/\(route.rawValue)")
+                return
+            }
+            #expect(screen == .admin(route))
+        }
+    }
+
+    @Test func parsesBoardAndBareAdmin() throws {
+        let board = try parse(header + "\n  - screen: board\n")
+        #expect(board.commands[0].isScreen(.board))
+
+        // A bare `admin` lands on the tab Admin opens to on its own.
+        let admin = try parse(header + "\n  - screen: admin\n")
+        #expect(admin.commands[0].isScreen(.admin(.now)))
+    }
+
+    @Test func routeParsingIsCaseAndWhitespaceInsensitive() throws {
+        let script = try parse(header + "\n  - screen: \"  Admin/Scenes  \"\n")
+        #expect(script.commands[0].isScreen(.admin(.scenes)))
+    }
+
+    /// An unknown route must fail at **parse** time, before the run starts.
+    ///
+    /// A screenshot script that silently photographs the wrong screen is worse
+    /// than one that refuses to run — the pictures look plausible and the error
+    /// is discovered much later, in whatever they were used for. A typo is far
+    /// likelier than a genuinely missing destination.
+    @Test func unknownRouteFailsAtParseTime() {
+        #expect(throws: (any Error).self) {
+            try parse(header + "\n  - screen: admin/nonsense\n")
+        }
+        #expect(throws: (any Error).self) {
+            try parse(header + "\n  - screen: admin/scenes/extra\n")
+        }
+        #expect(throws: (any Error).self) {
+            try parse(header + "\n  - screen: \n")
+        }
+    }
+
+    /// The error names the legal routes, so an author who typos one is told what
+    /// they could have written instead of just that they were wrong.
+    @Test func unknownRouteErrorListsTheLegalRoutes() {
+        do {
+            _ = try parse(header + "\n  - screen: admin/nonsense\n")
+            Issue.record("expected a parse error")
+        } catch {
+            let text = "\(error)"
+            #expect(text.contains("admin/scenes"))
+            #expect(text.contains("board"))
+        }
+    }
+
+    @Test func screenRoundTripsThroughSerializer() throws {
+        let original = try parse(header + "\n  - screen: admin/activity\n")
+        let yaml = TileScriptSerializer.serialize(original)
+        #expect(yaml.contains("screen: admin/activity"))
+        let reparsed = try parse(yaml)
+        #expect(reparsed.commands[0].isScreen(.admin(.activity)))
     }
 
     // MARK: - Filename handling

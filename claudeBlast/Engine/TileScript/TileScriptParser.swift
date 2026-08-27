@@ -25,6 +25,10 @@ struct TileScriptParser {
         }
     }
 
+    /// Commands that carry no argument, so a bare `- clear` is legal alongside
+    /// the `- clear:` mapping form.
+    private static let noArgumentCommands: Set<String> = ["clear"]
+
     /// Parse a YAML string into a TileScript.
     static func parse(_ yaml: String) throws -> TileScript {
         // Pre-extract line comments from tile row lines before Yams strips them.
@@ -43,8 +47,33 @@ struct TileScriptParser {
         let scene = root["scene"] as? String
         let mode = parseInteractionMode(root["mode"])
 
-        guard let scriptArray = root["script"] as? [[String: Any]] else {
+        // Accept both `- clear:` (a mapping) and a bare `- clear` (a scalar).
+        //
+        // The docs list no-argument commands without a colon, so authors write
+        // them that way — and a single bare scalar used to make the whole
+        // `[[String: Any]]` cast fail, surfacing as `missing field: script`.
+        // That error points at the one line that was fine and says nothing about
+        // the line that wasn't.
+        guard let rawItems = root["script"] as? [Any] else {
             throw ParseError.missingField("script")
+        }
+
+        // Scalars become single-key mappings so the command parser sees one shape.
+        let scriptArray: [[String: Any]] = try rawItems.map { item in
+            if let dict = item as? [String: Any] { return dict }
+            if let bare = item as? String {
+                let key = bare.trimmingCharacters(in: .whitespaces)
+                guard Self.noArgumentCommands.contains(key) else {
+                    throw ParseError.invalidCommand(
+                        "'\(key)' takes no arguments only if it is one of: " +
+                        Self.noArgumentCommands.sorted().joined(separator: ", ") +
+                        ". Did you mean '\(key): …'?")
+                }
+                return [key: ""]
+            }
+            throw ParseError.invalidCommand(
+                "each script entry must be a command mapping (e.g. `- comment: hi`) " +
+                "or a bare no-argument command (e.g. `- clear`)")
         }
 
         let commands = try scriptArray.flatMap { try parseCommand($0, lineComments: lineComments) }
@@ -171,6 +200,20 @@ struct TileScriptParser {
         if let waitValue = dict["wait"] {
             let duration = parseDurationString(waitValue)
             return [.wait(duration: duration)]
+        }
+        if let demo = dict["demo"] {
+            return [.setDemoMode(enabled: parseAudioValue(demo) ?? true)]
+        }
+        if dict.keys.contains("screen") {
+            let raw = (dict["screen"] as? String ?? "").trimmingCharacters(in: .whitespaces)
+            // Rejected at PARSE time, not at run time: a screenshot script that
+            // silently photographs the wrong screen is worse than one that
+            // refuses to start, and a typo is far likelier than a real gap.
+            guard let screen = ScriptScreen.parse(raw) else {
+                throw ParseError.invalidCommand(
+                    "unknown screen '\(raw)'. Known: \(ScriptScreen.allRouteNames.joined(separator: ", "))")
+            }
+            return [.screen(screen)]
         }
         // `screenshot: name`, or a bare `screenshot:` which auto-names by index.
         if dict.keys.contains("screenshot") {

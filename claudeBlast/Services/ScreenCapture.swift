@@ -9,6 +9,7 @@
 
 import Foundation
 import UIKit
+import Photos
 import os
 
 /// Writes a PNG of the app's current window to a known directory.
@@ -25,11 +26,20 @@ import os
 /// assets have to come from real hardware, and the same script that verifies a
 /// layout can produce the picture of it.
 ///
-/// ## Where the files go
+/// ## Where the captures go
 ///
-/// `Documents/Screenshots/`, which is reachable three ways: on a simulator by
-/// path, on a device through the Files app (the target declares
-/// `UIFileSharingEnabled`), and in either case through a share sheet.
+/// **Both** the photo library and `Documents/Screenshots/`, because the two
+/// answer different questions.
+///
+/// The photo library is how a *person* gets at them: open Photos on the device
+/// or the simulator, and AirDrop or drag them out. Digging a container path out
+/// of `xcrun simctl` is not a workflow, and on a device it isn't possible at
+/// all without the Files app.
+///
+/// The file copy is how a *script* gets at them — a test or a build step can
+/// read the directory without going through PhotoKit — and it is the fallback
+/// when photo-library permission is refused. Neither is a substitute for the
+/// other, and writing both costs one extra `write`.
 enum ScreenCapture {
 
     private static let logger = Logger(subsystem: "com.blaster.app", category: "ScreenCapture")
@@ -76,6 +86,7 @@ enum ScreenCapture {
             let url = uniqueURL(for: name)
             try data.write(to: url, options: .atomic)
             logger.info("captured \(url.lastPathComponent, privacy: .public)")
+            saveToPhotoLibrary(image)
             return url
         } catch {
             logger.error("capture(\(name, privacy: .public)) failed: \(error.localizedDescription, privacy: .public)")
@@ -102,6 +113,33 @@ enum ScreenCapture {
         let urls = existing()
         for url in urls { try? FileManager.default.removeItem(at: url) }
         return urls.count
+    }
+
+    // MARK: - Photo library
+
+    /// Add the capture to the photo library, best-effort.
+    ///
+    /// Deliberately fire-and-forget: a refused or restricted library must not
+    /// fail a capture that already succeeded on disk. `addOnly` authorization is
+    /// used rather than full access — the app writes screenshots and never reads
+    /// the user's photos, and asking for less is the honest request.
+    @MainActor
+    private static func saveToPhotoLibrary(_ image: UIImage) {
+        PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
+            guard status == .authorized || status == .limited else {
+                logger.info("photo library not authorized (\(status.rawValue, privacy: .public)); file copy still written")
+                return
+            }
+            PHPhotoLibrary.shared().performChanges {
+                PHAssetChangeRequest.creationRequestForAsset(from: image)
+            } completionHandler: { ok, error in
+                if let error {
+                    logger.error("photo library save failed: \(error.localizedDescription, privacy: .public)")
+                } else if ok {
+                    logger.info("saved capture to photo library")
+                }
+            }
+        }
     }
 
     // MARK: - Helpers

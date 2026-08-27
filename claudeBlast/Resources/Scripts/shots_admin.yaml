@@ -1,0 +1,40 @@
+name: Screenshots — Admin
+description: Walks every Admin tab and captures each one.
+audio: off
+provider: mock
+
+# Screens are named, never described as taps — see ScriptScreen. That is what
+# keeps this script working after a layout change.
+#
+# No PIN prompt interrupts the run: TileScriptView is itself behind AdminGate,
+# so starting this script already required a caregiver.
+#
+# Captures land in Documents/Screenshots/. On a simulator:
+#   open "$(xcrun simctl get_app_container booted app.blasterai.ios data)/Documents/Screenshots"
+
+script:
+  - comment: Now — the tab a parent lands on
+  - screen: admin/now
+  - screenshot: admin-01-now
+
+  - comment: Profiles — the child roster
+  - screen: admin/profiles
+  - screenshot: admin-02-profiles
+
+  - comment: Scenes — board library
+  - screen: admin/scenes
+  - screenshot: admin-03-scenes
+
+  - comment: Device — provider, key, role, PIN
+  - screen: admin/device
+  - screenshot: admin-04-device
+
+  - comment: Activity — what the child said, and what it cost
+  - screen: admin/activity
+  - screenshot: admin-05-activity
+
+  - comment: Back to the board
+  - screen: board
+  - screenshot: admin-06-board
+
+  - comment: Admin screenshot run complete

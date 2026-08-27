@@ -67,6 +67,12 @@ struct TileScriptSerializer {
         case .screenshot(let name):
             return ["  - screenshot: \(name)"]
 
+        case .screen(let screen):
+            return ["  - screen: \(screen.description)"]
+
+        case .setDemoMode(let enabled):
+            return ["  - demo: \(enabled ? "on" : "off")"]
+
         case .wait(let duration):
             let ms = Int(duration.components.seconds * 1000)
                 + Int(duration.components.attoseconds / 1_000_000_000_000_000)

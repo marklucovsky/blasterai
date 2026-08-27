@@ -22,6 +22,7 @@ struct claudeBlastApp: App {
     @State private var profileResolver = ChildProfileResolver()
     @State private var sceneArtCoordinator = SceneArtCoordinator()
     @State private var caregiverMenu = CaregiverMenuCoordinator()
+    @State private var adminRoute = AdminRouteCoordinator()
     @State private var syncCoordinator = CloudKitSyncCoordinator()
     @Environment(\.scenePhase) private var scenePhase
 
@@ -104,6 +105,19 @@ struct claudeBlastApp: App {
             context: container.mainContext,
             seedLegacy: wasInstalled
         )
+
+        // An unattended run cannot tap through onboarding, and onboarding is
+        // the first thing a fresh install shows — so `-TileScriptAutorun` marks
+        // the device set up. Launch-argument only: it cannot be left switched on
+        // and does not exist for anyone who did not type it.
+        if TileScriptView.autorunScriptName != nil {
+            let device = DeviceProfileStore.ensure(context: container.mainContext)
+            if !device.onboardingCompleted {
+                device.onboardingCompleted = true
+                device.modifiedAt = .now
+                try? container.mainContext.save()
+            }
+        }
 
         // One-time: mark bundled tiles as system on installs that predate
         // TileModel.isSystem. No-op on fresh bootstraps (already flagged).
@@ -197,6 +211,7 @@ struct claudeBlastApp: App {
                 .environment(profileResolver)
                 .environment(sceneArtCoordinator)
                 .environment(caregiverMenu)
+                .environment(adminRoute)
                 .onAppear {
                     profileResolver.configure(modelContext: modelContainer.mainContext)
                     imageResolver.configure(modelContext: modelContainer.mainContext)

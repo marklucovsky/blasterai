@@ -117,6 +117,9 @@ final class TileScriptRunner {
 
     /// Tab switching callback — runner sets this to switch to Home tab on play.
     var onSwitchToHome: (() -> Void)?
+    /// Present a named destination. Wired by `ContentView`, which owns the
+    /// full-screen cover and the Admin tab selection.
+    var onNavigateToScreen: ((ScriptScreen) -> Void)?
 
     // MARK: - Configuration
 
@@ -386,6 +389,24 @@ final class TileScriptRunner {
 
         case .setSentenceWait(let value):
             sentenceWait = value
+
+        case .setDemoMode(let enabled):
+            UserDefaults.standard.set(enabled, forKey: AppSettingsKey.demoMode)
+            if loggingEnabled { runLog.event("demo", ["enabled": "\(enabled)"]) }
+
+        case .screen(let screen):
+            guard let navigate = onNavigateToScreen else {
+                Self.logger.error("TileScript: screen: \(screen.description) ignored — no navigator wired")
+                if loggingEnabled {
+                    runLog.event("screen", ["to": screen.description, "result": "no-navigator"])
+                }
+                return
+            }
+            navigate(screen)
+            // Presenting a full-screen cover and settling its first layout takes
+            // longer than a tile tap, and a `screenshot:` usually follows.
+            try? await Task.sleep(for: .milliseconds(450))
+            if loggingEnabled { runLog.event("screen", ["to": screen.description]) }
 
         case .screenshot(let name):
             // One frame of settle time. The command usually follows a state
@@ -795,6 +816,10 @@ final class TileScriptRunner {
             return "tileSet: \(imageSet.displayName)"
         case .screenshot(let name):
             return "screenshot: \(name)"
+        case .screen(let screen):
+            return "screen: \(screen.description)"
+        case .setDemoMode(let enabled):
+            return "demo: \(enabled ? "on" : "off")"
         }
     }
 
