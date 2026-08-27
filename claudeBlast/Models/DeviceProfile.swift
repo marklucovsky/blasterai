@@ -17,7 +17,7 @@ final class DeviceProfile {
     var id: String = UUID().uuidString
     /// `DeviceRole.rawValue`. Stored as String for SwiftData/CloudKit compat
     /// even though this entity is local-only — keeps modeling consistent.
-    var roleRaw: String = DeviceRole.caregiver.rawValue
+    var roleRaw: String = DeviceProfile.defaultRole.rawValue
     /// Patient devices: always true (forced at onboarding). Caregiver
     /// devices: false by default; the therapist can opt in.
     var requireFaceIDForAdmin: Bool = false
@@ -78,6 +78,17 @@ final class DeviceProfile {
     /// packs it creates ("by Greta"); travels inside exported files. May stay
     /// empty; captured (skippably) at caregiver setup or set later in Scenes.
     var authorName: String = ""
+
+    /// What a device is until someone says otherwise, and the value onboarding
+    /// preselects. One constant, because two independent "defaults" for the
+    /// same field is how they came to disagree.
+    ///
+    /// Caregiver, because it is the safe answer for a device that never
+    /// finishes setup: a device wrongly marked patient is PIN-gated with no PIN
+    /// enrolled, while one wrongly marked caregiver is merely more open than it
+    /// should be — and the person holding an unconfigured device is the adult
+    /// setting it up, not the child.
+    static let defaultRole: DeviceRole = .caregiver
 
     var role: DeviceRole {
         get { DeviceRole.fromRawValue(roleRaw) }

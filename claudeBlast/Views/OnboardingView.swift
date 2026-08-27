@@ -30,7 +30,15 @@ struct OnboardingView: View {
 
     // Collected answers ------------------------------------------------------
 
-    @State private var role: DeviceRole = .patient
+    /// Seeded from the model's own default so the preselected card matches what
+    /// the app would be if this step were never reached.
+    ///
+    /// These used to disagree: `DeviceProfile.roleRaw` defaults to `caregiver`,
+    /// while this started on `patient`. A device that abandoned onboarding was
+    /// therefore a caregiver device — ungated Admin, full long-press menu —
+    /// while the screen in front of the user showed Patient selected. Whichever
+    /// answer is right, the two have to be the same one.
+    @State private var role: DeviceRole = DeviceProfile.defaultRole
     @State private var authorName: String = ""
 
     @State private var childName: String = ""
@@ -140,12 +148,16 @@ struct OnboardingView: View {
             // a real patient from Admin → Profiles.
             return role == .patient
         case .tileStyle:
-            // Caregiver setup only. A caregiver — often an SLP — can answer
-            // "which looks like what they already use" instantly, and knowing
-            // the answer matters most to them. Patient-device setup stays as
-            // short as possible so the child is talking sooner; that device
-            // takes the default and can change it in Admin → Now.
-            return role == .caregiver
+            // Asked in both flows.
+            //
+            // It was caregiver-only, on the reasoning that patient setup should
+            // stay short so the child is talking sooner. But the art *is* what
+            // the child reads — a child who already uses one symbol set at
+            // school does not recognise another — so of the two flows this is
+            // the one where the answer matters most, and it was the one not
+            // being asked. A patient device took the default silently and
+            // nobody was told it was a choice.
+            return true
         case .apiKey:       return !hasEnvKey
         case .icloud:
             // iCloud is on by default; we don't ask in release. DEBUG
@@ -335,9 +347,13 @@ struct OnboardingView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                Text(childStage.detail)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+
+                // Shared with Admin → Now and the profile editor. See StageHelp.
+                StageIntro(stage: childStage,
+                           keyHint: hasEnvKey ? nil : "You'll be asked for one in a moment.")
+                StageGuide()
+                    .padding(.top, 4)
+
                 Text("You can change this at any time in Admin. It is not a test — pick where they are today.")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)

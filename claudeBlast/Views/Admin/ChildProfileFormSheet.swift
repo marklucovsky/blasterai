@@ -139,12 +139,13 @@ struct ChildProfileFormSheet: View {
                         }
                     }
                     .pickerStyle(.segmented)
-                    Text(stage.detail)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text("Stage decides how tiles become speech: Stage I speaks one word per tap, later stages build sentences.")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                    // Was a hand-written sentence that said roughly what
+                    // `BrownsStage.appBehavior` says, differently, and omitted
+                    // the key requirement entirely.
+                    StageIntro(stage: stage,
+                               keyHint: "Add one in Admin → Device.",
+                               namesTheScale: false)
+                    StageGuide()
                 }
                 .onChange(of: stage) { _, newStage in
                     maxTiles = min(newStage.tileCapRange.upperBound,
