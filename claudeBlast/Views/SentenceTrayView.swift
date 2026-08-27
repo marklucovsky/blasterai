@@ -29,12 +29,36 @@ import UIKit
 private let kCardHeight: CGFloat = kMinimumTouchTarget * 2 + kPlayDoneSpacing
 private let kCardVerticalPadding: CGFloat = 6
 private let kActiveRowHeight: CGFloat = kCardHeight
-/// Tile image inside a tray chip. Derived from the row height minus the card's
-/// padding and its label, so the chip fills the card rather than floating in
-/// it — when the row grew to fit 44pt buttons, a fixed image size would have
-/// left the tray looking mostly empty.
-private let kActiveImageSize: CGFloat = kCardHeight - (kCardVerticalPadding * 2) - 20
+/// Vertical padding the row puts around its contents. Named because the chip
+/// height is derived from it — the two used to be independent numbers, and a
+/// chip exactly as tall as the card then stood proud of it by however much
+/// padding the row happened to add.
+private let kActiveRowInset: CGFloat = 2
+
+/// Height of a tray chip: the card, less the padding it sits inside. A chip
+/// cannot overflow the tray because it is defined as what fits in it.
+private let kActiveCardHeight: CGFloat = kCardHeight - (kActiveRowInset * 2)
+
+/// Largest the picture may be. It is a *maximum*, not a fixed size: the label
+/// is laid out first and the image takes what is left, so a caregiver running
+/// large text gets a smaller picture rather than a chip bursting out of the
+/// tray.
+private let kActiveImageSize: CGFloat = kActiveCardHeight - (kCardVerticalPadding * 2) - 20
+/// Hard width for a tray chip, so a chip is the size of its picture and not
+/// the size of its word.
+///
+/// The chips used to size themselves to their labels. "graham crackers" is a
+/// far wider chip than "milk", so four verbose tiles could take most of the
+/// row and leave the sentence a sliver — the same starvation the compact tray
+/// had, arriving by a different route. The label truncates instead; the child
+/// identifies a chip by its image, and the full word is one tap away.
+private let kActiveCardWidth: CGFloat = kActiveImageSize + 12
 private let kPlayButtonWidth: CGFloat = 82
+
+/// Width the sentence needs before it is worth rendering as text rather than
+/// as a button. Matches the compact tray's rule so both trays degrade the same
+/// way.
+private let kMinimumSentenceWidth: CGFloat = 180
 
 
 /// Apple's minimum comfortable hit target, from the Human Interface Guidelines.
@@ -277,6 +301,34 @@ private struct ActiveTrayCard: View {
     let isSuppressed: Bool
 
     var body: some View {
+        // Measured, because "is there room for the sentence" is a question
+        // about this device's width and this selection's size together. An
+        // 13" iPad has room for four chips and a sentence; an iPad mini in
+        // portrait does not.
+        GeometryReader { geo in
+            content(width: geo.size.width)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        }
+        .frame(height: kCardHeight)
+        .background(TrayCardBackground(cornerRadius: 14))
+        // Belt and braces. The heights above are derived so they cannot
+        // overflow, but this row has drifted out of its card once already and
+        // the failure is very visible — tiles floating over the board.
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    /// Width left for the sentence once the chips have taken theirs.
+    private func sentenceWidth(in width: CGFloat) -> CGFloat {
+        let chips = CGFloat(tiles.count) * kActiveCardWidth
+            + CGFloat(max(0, tiles.count - 1)) * 8
+            + 8   // the chip group's own horizontal padding
+        return width - chips - 12 - 10   // card padding + HStack spacing
+    }
+
+    @ViewBuilder
+    private func content(width: CGFloat) -> some View {
+        let room = sentenceWidth(in: width)
+
         HStack(alignment: .center, spacing: 10) {
             if tiles.isEmpty {
                 Text("Tap tiles to build a sentence")
@@ -295,7 +347,6 @@ private struct ActiveTrayCard: View {
                             .transition(.scale.combined(with: .opacity))
                     }
                 }
-                .padding(.vertical, 2)
                 .padding(.horizontal, 4)
                 .fixedSize(horizontal: true, vertical: false)
                 .animation(.easeInOut(duration: 0.18), value: tiles.count)
@@ -304,8 +355,13 @@ private struct ActiveTrayCard: View {
                     IPadMutedBubble()
                         .onLongPressGesture(minimumDuration: 0.4, perform: onBubbleLongPress)
                 } else if let sentence = sentence {
-                    IPadSentenceBubble(text: sentence, onExpand: onExpandSentence)
-                        .onLongPressGesture(minimumDuration: 0.4, perform: onBubbleLongPress)
+                    if room < kMinimumSentenceWidth {
+                        IPadSentenceButton(action: onExpandSentence)
+                            .onLongPressGesture(minimumDuration: 0.4, perform: onBubbleLongPress)
+                    } else {
+                        IPadSentenceBubble(text: sentence, onExpand: onExpandSentence)
+                            .onLongPressGesture(minimumDuration: 0.4, perform: onBubbleLongPress)
+                    }
                 } else if isThinking {
                     IPadThinkingBubble()
                 } else {
@@ -314,9 +370,36 @@ private struct ActiveTrayCard: View {
             }
         }
         .padding(.horizontal, 6)
-        .padding(.vertical, 4)
-        .frame(height: kCardHeight)
-        .background(TrayCardBackground(cornerRadius: 14))
+        .padding(.vertical, kActiveRowInset)
+    }
+}
+
+/// Stand-in for the iPad sentence bubble when the row has no width left.
+///
+/// Deliberately a control rather than a shrunken bubble: a bubble narrowed to
+/// two characters per line looks broken, and — because it is what a caregiver
+/// then taps — it was how they reached a popover that had no way out.
+private struct IPadSentenceButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 2) {
+                Image(systemName: "text.bubble.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                Text("Sentence")
+                    .font(.caption2.weight(.semibold))
+            }
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color(.tertiarySystemFill))
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Show sentence")
     }
 }
 
@@ -552,16 +635,24 @@ private struct ActiveTileCard: View {
         Button(action: onTap) {
             VStack(spacing: 3) {
                 TileImageView(key: tile.key, wordClass: tile.wordClass)
-                    .frame(width: kActiveImageSize, height: kActiveImageSize)
+                    // maxHeight, not height. The label is laid out at whatever
+                    // the reader's text size makes it and the picture absorbs
+                    // the difference; with a fixed size the two together simply
+                    // exceeded the chip and spilled over its edges.
+                    .frame(maxWidth: kActiveImageSize, maxHeight: kActiveImageSize)
+                    .aspectRatio(1, contentMode: .fit)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                 Text(tile.value)
                     .font(.caption)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
+                    .truncationMode(.tail)
+                    .minimumScaleFactor(0.8)
+                    .layoutPriority(1)
             }
             .padding(.horizontal, 6)
             .padding(.vertical, kCardVerticalPadding)
-            .frame(height: kCardHeight)
+            .frame(width: kActiveCardWidth, height: kActiveCardHeight)
             .background(
                 RoundedRectangle(cornerRadius: 12)
                     .fill(Color(.systemBackground))

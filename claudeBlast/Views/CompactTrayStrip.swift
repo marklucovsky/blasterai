@@ -187,29 +187,36 @@ private struct ActiveCard: View {
     /// True when this combination is suppressed (shows a muted bubble instead).
     let isSuppressed: Bool
 
+    /// Width the sentence needs before it is worth rendering as text.
+    ///
+    /// Below this the bubble degrades into a column of single letters, which
+    /// looks broken rather than merely small. Above it, three lines of 12pt
+    /// italic hold roughly forty characters — enough for what one or two tiles
+    /// produce.
+    ///
+    /// The number is measured, not chosen. A 402pt phone gives this card 299pt
+    /// of content (the GeometryReader sits inside the card's own 5pt
+    /// horizontal padding), so two 80pt chips leave exactly 129 — which a
+    /// floor of 132 rejected by three points, dropping an iPhone 17 Pro to the
+    /// button at two tiles while a Pro Max kept the sentence. The band that
+    /// holds "bubble at one or two, button at three or four" on every current
+    /// phone is roughly 100...129; 110 sits in the middle of it.
+    private let minimumSentenceWidth: CGFloat = 110
+
+    /// What the fallback button needs. Smaller than the bubble's floor by a
+    /// long way — that is the point of having it — but not zero: squeezed
+    /// below this it renders as "Sen / tenc / e", which is the exact failure
+    /// the button existed to avoid, reproduced one control later.
+    private let minimumSentenceButtonWidth: CGFloat = 68
+
     var body: some View {
-        HStack(spacing: 6) {
-            if tiles.isEmpty {
-                Text("Tap tiles below to start")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 8)
-            } else {
-                ChipsRow(tiles: tiles, onTap: onTileTap)
-                if isSuppressed {
-                    CompactMutedBubble()
-                        .layoutPriority(1)
-                        .onLongPressGesture(minimumDuration: 0.4, perform: onBubbleLongPress)
-                } else if let sentence = sentence {
-                    SentenceBubble(text: sentence, onExpand: onExpandSentence)
-                        .layoutPriority(1)
-                        .onLongPressGesture(minimumDuration: 0.4, perform: onBubbleLongPress)
-                } else if isThinking {
-                    ThinkingBubble()
-                        .layoutPriority(1)
-                }
-            }
+        // Width-driven, not count-driven. An iPad has room for four full-size
+        // chips *and* the sentence; a 16e does not have room for three. Sizing
+        // off the tile count alone would shrink the iPad's chips to solve a
+        // phone's problem.
+        GeometryReader { geo in
+            cardContent(width: geo.size.width)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         }
         // The tray card and the Play/Clear column are one row and should read
         // as one band. The column is two 44pt targets plus their gap; a card
@@ -227,18 +234,84 @@ private struct ActiveCard: View {
                 .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
         )
     }
+
+    /// Chips take what is left after the sentence is served, down to a floor.
+    /// Past the floor they stop shrinking and the sentence gives way instead —
+    /// a chip is the child's feedback that a tap landed, so it is the last
+    /// thing that should become unreadable.
+    private func chipSize(for width: CGFloat) -> CGFloat {
+        let maximum = kCompactTrayCardHeight - 12
+        guard !tiles.isEmpty else { return maximum }
+        // Chips reserve room for the *button*, never for the bubble. The
+        // sentence gets text only when it happens to fit above its floor after
+        // the chips have taken their share.
+        //
+        // Reserving the bubble's larger floor at four tiles — the obvious
+        // alternative — made a Pro Max read bubble, button, bubble as tiles
+        // were added: raising the reservation squeezed the chips enough that
+        // the bubble fitted again. A tray that reverts to an earlier state on
+        // the way to being full is worse than one that simply degrades, so
+        // there is one reservation and it is the small one.
+        let spacing = CGFloat(tiles.count - 1) * 4 + 6
+        let free = width - minimumSentenceButtonWidth - spacing
+        return min(maximum, max(44, free / CGFloat(tiles.count)))
+    }
+
+    @ViewBuilder
+    private func cardContent(width: CGFloat) -> some View {
+        let chip = chipSize(for: width)
+        let sentenceWidth = width - (chip * CGFloat(tiles.count))
+            - CGFloat(max(0, tiles.count - 1)) * 4 - 6
+
+        HStack(spacing: 6) {
+            if tiles.isEmpty {
+                Text("Tap tiles below to start")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 8)
+            } else {
+                ChipsRow(tiles: tiles, chipSize: chip, onTap: onTileTap)
+                if isSuppressed {
+                    CompactMutedBubble()
+                        .layoutPriority(1)
+                        .onLongPressGesture(minimumDuration: 0.4, perform: onBubbleLongPress)
+                } else if let sentence = sentence {
+                    // With a full tray there is no width left for readable text.
+                    // Show a control that says so, rather than a bubble squeezed
+                    // past legibility.
+                    //
+                    // Deliberately NOT an automatic popover: that behaviour was
+                    // removed because it covered the board and the Home cell,
+                    // and bringing it back as a crowding fallback would restore
+                    // the same problem at the worst moment. The sentence is the
+                    // caregiver's read, so an explicit tap is the honest cost.
+                    if sentenceWidth < minimumSentenceWidth {
+                        SentenceButton(action: onExpandSentence)
+                            .onLongPressGesture(minimumDuration: 0.4, perform: onBubbleLongPress)
+                    } else {
+                        SentenceBubble(text: sentence, onExpand: onExpandSentence)
+                            .layoutPriority(1)
+                            .onLongPressGesture(minimumDuration: 0.4, perform: onBubbleLongPress)
+                    }
+                } else if isThinking {
+                    ThinkingBubble()
+                        .layoutPriority(1)
+                }
+            }
+        }
+    }
 }
 
 // MARK: - Chip strip (active)
 
 private struct ChipsRow: View {
     let tiles: [TileSelection]
+    /// Measured by the card, which is the only view that knows how much width
+    /// the sentence still needs.
+    let chipSize: CGFloat
     let onTap: (Int) -> Void
 
-    /// Chips fill the taller card rather than floating in it. Derived from the
-    /// card height so the two cannot drift apart: whatever the row height
-    /// becomes, a chip is that minus the card's padding.
-    private let chipSize: CGFloat = kCompactTrayCardHeight - 12
     private let cornerRadius: CGFloat = 8
 
     var body: some View {
@@ -268,6 +341,37 @@ private struct ChipsRow: View {
 
 // MARK: - Inline sentence bubble
 
+/// Stand-in for the sentence bubble when the tray is too full to show text.
+///
+/// Reads as a thing to press rather than a truncated sentence: a bubble showing
+/// two characters looks broken, while a button that says "Sentence" is simply
+/// compact.
+private struct SentenceButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 2) {
+                Image(systemName: "text.bubble.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                Text("Sentence")
+                    .font(.system(size: 9, weight: .semibold))
+                    .lineLimit(1)
+            }
+            .fixedSize()
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color.secondary.opacity(0.12))
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Show sentence")
+    }
+}
+
 private struct SentenceBubble: View {
     let text: String
     let onExpand: () -> Void
@@ -289,6 +393,10 @@ private struct SentenceBubble: View {
         .padding(.leading, 12)
         .padding(.trailing, 8)
         .padding(.vertical, 6)
+        // A floor, so the bubble cannot be squeezed into a column of single
+        // letters. If the row genuinely cannot spare this much, the caller
+        // swaps in `SentenceButton` instead of rendering an unreadable sliver.
+        .frame(minWidth: 96, alignment: .leading)
         .background(
             LeftTailBubble()
                 .fill(Color(.tertiarySystemFill))

@@ -44,4 +44,33 @@ script:
     - <describe>
   - screenshot: 05-describe-page
 
+  - clear
+
+  # The tray under pressure: three chips still leave room for the bubble,
+  # four swap it for an explicit control rather than a squeezed sliver.
+  # The tray's degradation ladder, one capture per rung. Where the bubble
+  # gives way to the button is a width question, so it has to be photographed
+  # per device rather than reasoned about.
+  - comment: Two tiles — bubble
+  - tiles:
+    - mom, <food>, pizza
+  - wait: 2s
+  - screenshot: 05b-tray-two-tiles
+
+  - clear
+
+  - comment: Three tiles — bubble still readable
+  - tiles:
+    - mom, <food>, pizza, cookie
+  - wait: 2s
+  - screenshot: 06-tray-three-tiles
+
+  - clear
+
+  - comment: Four tiles — bubble becomes a button
+  - tiles:
+    - mom, <food>, pizza, cookie, banana
+  - wait: 2s
+  - screenshot: 07-tray-four-tiles
+
   - comment: Screenshot run complete

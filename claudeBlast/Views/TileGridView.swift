@@ -235,8 +235,12 @@ struct TileGridView: View {
             }
         }
         .task(id: overlayEpoch) {
-            // Only the sentence overlay auto-dismisses; Favorites stays until tapped.
-            guard isCompact, compactOverlay == .sentence else { return }
+            // Auto-dismiss is NOT compact-only. It used to be, which meant the
+            // popover — reachable on iPad by tapping the tray bubble — had no
+            // timer, no tap-out, and one small × as its only exit. On an iPad
+            // mini in portrait, where the bubble is small enough that a
+            // caregiver actually taps it, that stuck.
+            guard compactOverlay == .sentence else { return }
             try? await Task.sleep(for: .seconds(5))
             guard !Task.isCancelled else { return }
             withAnimation(.easeOut(duration: 0.3)) {

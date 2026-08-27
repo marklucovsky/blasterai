@@ -14,8 +14,14 @@
 //  Visually: a glass card slides down from the top of the tile grid,
 //  overlapping the top row of tiles so the Liquid Glass material has
 //  colorful content to refract. A large circular glass dismiss button
-//  sits in the top-right corner with a 44pt hit target. The whole
-//  popover rect blocks taps from falling through to the tiles below.
+//  sits in the top-right corner with a 44pt hit target.
+//
+//  Tapping anywhere on the popover dismisses it. It is read-only — there
+//  is nothing under a tap to preserve — and it previously *swallowed*
+//  every tap outside the × to stop them reaching the tiles below. On an
+//  iPad that produced a full-width band of glass that ate input and had
+//  exactly one 32pt exit, which reads as a stuck app rather than a
+//  deliberate modal.
 //
 
 import SwiftUI
@@ -43,10 +49,15 @@ struct GlassSentencePopover: View {
                     .accessibilityLabel("Dismiss")
             }
         }
+        // Capped rather than edge-to-edge. The popover exists to make one
+        // sentence big and legible; stretched across an iPad it becomes a
+        // banner spanning the whole board for the sake of six words.
+        .frame(maxWidth: 620)
+        .frame(maxWidth: .infinity)
         .padding(.horizontal, 12)
         .padding(.top, 8)
         .contentShape(Rectangle())
-        .onTapGesture { /* swallow taps that fall outside the glass shape */ }
+        .onTapGesture { onDismiss() }
         .transition(.move(edge: .top).combined(with: .opacity))
     }
 }
