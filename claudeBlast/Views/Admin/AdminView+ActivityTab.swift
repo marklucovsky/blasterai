@@ -13,12 +13,11 @@ extension AdminView {
         NavigationStack {
             List {
                 // Activity-first: what the child actually said leads; AI usage,
-                // cache, and promoted-tile diagnostics are secondary, below it.
+                // and cache diagnostics are secondary, below it.
                 activitySummarySection
                 recentActivitySection
                 aiUsageSection
                 cachePerformanceSection
-                promotedTilesSection
                 sentenceCacheSection
                 #if DEBUG
                 developerSection
@@ -152,30 +151,6 @@ extension AdminView {
                     .foregroundStyle(.secondary)
             }
             Text(utterance.sentence)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-        }
-        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-    }
-
-    // MARK: - Promoted tiles helpers
-
-    func promotedTileRow(_ entry: SentenceCache) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            HStack(spacing: 8) {
-                LogTileStrip(tiles: tileSelections(for: entry))
-                Spacer(minLength: 8)
-                if entry.isPinned {
-                    Image(systemName: "pin.fill")
-                        .font(.caption2)
-                        .foregroundStyle(.orange)
-                }
-                Text("\(entry.hitCount) hits")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-            Text(entry.sentence)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -365,31 +340,6 @@ extension AdminView {
             cacheStatsView
         } header: {
             Text("Cache Performance")
-        }
-    }
-
-    @ViewBuilder
-    var promotedTilesSection: some View {
-        Section {
-            if promotedCandidates.isEmpty {
-                Text("No promoted tiles yet — use the same tile combo 3+ times")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            } else {
-                ForEach(promotedCandidates.prefix(5)) { entry in
-                    promotedTileRow(entry)
-                }
-                if promotedCandidates.count > 5 {
-                    NavigationLink {
-                        PromotedTilesDetailView(entries: promotedCandidates, tileLookup: tileLookup)
-                    } label: {
-                        Text("View All (\(promotedCandidates.count))")
-                            .font(.caption)
-                    }
-                }
-            }
-        } header: {
-            Text("Promoted Tiles (\(promotedCandidates.count))")
         }
     }
 

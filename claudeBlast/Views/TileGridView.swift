@@ -53,6 +53,14 @@ struct TileGridView: View {
 
     private var isCompact: Bool { hSizeClass == .compact }
 
+    /// Roughly what the compact tray's bubble can show before truncating.
+    /// Deliberately a blunt character count: the exact threshold matters far
+    /// less than not covering the board for a sentence the caregiver can
+    /// already read.
+    private static func isTooLongForTray(_ sentence: String) -> Bool {
+        sentence.count > 60
+    }
+
     enum CompactOverlay: Equatable {
         case none
         case sentence
@@ -212,9 +220,17 @@ struct TileGridView: View {
         }
         .onChange(of: engine.canReplay) { _, isReady in
             guard isCompact else { return }
-            if isReady {
+            // Only auto-present the popover when the tray cannot show the
+            // sentence itself.
+            //
+            // The compact tray already renders the sentence in its bubble, so
+            // popping a duplicate over the board hid the top row — including
+            // the Home cell, the one control whose whole value is being in the
+            // same place every time. A caregiver reads the tray; the popover is
+            // for the sentence too long to fit there, and stays available on tap.
+            if isReady, engine.activeGroup.sentence.map(Self.isTooLongForTray) == true {
                 showCompactOverlay(.sentence)
-            } else if compactOverlay == .sentence {
+            } else if !isReady, compactOverlay == .sentence {
                 dismissCompactOverlay()
             }
         }

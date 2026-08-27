@@ -16,12 +16,6 @@ struct AdminView: View {
     @Query var deviceProfiles: [DeviceProfile]
     @Query(sort: \ChildProfile.displayName) var childProfiles: [ChildProfile]
     @Environment(ChildProfileResolver.self) var profileResolver
-    @Query(
-        filter: #Predicate<SentenceCache> { entry in
-            entry.hitCount >= 3 || entry.isPinned
-        },
-        sort: \SentenceCache.hitCount, order: .reverse
-    ) var promotedCandidates: [SentenceCache]
 
     // Cache hit/miss metrics from MetricEvent log
     @Query(sort: \MetricEvent.timestamp) var allMetricEvents: [MetricEvent]

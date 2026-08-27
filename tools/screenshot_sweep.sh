@@ -19,9 +19,15 @@ BUNDLE_ID="app.blasterai.ios"
 SCHEME="claudeBlast"
 OS_VER="26.2"
 
+# Sizes App Store Connect actually accepts. The store requires a 6.9" iPhone
+# and a 13" iPad; an 11" iPad or a 6.1" iPhone produces images it will reject,
+# which is a thing you discover at upload time rather than here.
+#
+# Mac needs no entry: a Designed-for-iPad app has no separate Mac screenshot
+# set — the Mac App Store listing reuses the iPad images.
 DEVICES=(
-  "iPad Pro 11-inch (M5)"
-  "iPhone 16e"
+  "iPad Pro 13-inch (M5)"     # 2064 x 2752
+  "iPhone 17 Pro Max"         # 1320 x 2868
 )
 
 cd "$(dirname "$0")/.."
@@ -87,6 +93,14 @@ for DEVICE in "${DEVICES[@]}"; do
   xcrun simctl privacy "$UDID" grant photos-add "$BUNDLE_ID" 2>/dev/null || true
   xcrun simctl privacy "$UDID" grant photos "$BUNDLE_ID" 2>/dev/null || true
 
+  # A store screenshot should not advertise 47% battery and one bar. Apple's
+  # own marketing convention is a full, uncluttered status bar.
+  xcrun simctl status_bar "$UDID" override \
+    --time "9:41" \
+    --dataNetwork wifi --wifiMode active --wifiBars 3 \
+    --cellularMode active --cellularBars 4 \
+    --batteryState charged --batteryLevel 100 2>/dev/null || true
+
   xcrun simctl launch "$UDID" "$BUNDLE_ID" -TileScriptAutorun "$SCRIPT_NAME" > /dev/null
 
   echo "  running $SCRIPT_NAME…"
@@ -126,6 +140,7 @@ for DEVICE in "${DEVICES[@]}"; do
     echo "  !! no Screenshots directory — did the script run?"
   fi
 
+  xcrun simctl status_bar "$UDID" clear 2>/dev/null || true
   xcrun simctl shutdown "$UDID" 2>/dev/null || true
 done
 

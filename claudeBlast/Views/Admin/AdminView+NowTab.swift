@@ -144,18 +144,29 @@ extension AdminView {
                     ), in: 0.0...1.0)
                 }
 
-                // Widening past the current stage's range promotes the stage
-                // rather than clamping — see ChildProfile.setTileCap.
-                Stepper(value: Binding(
-                    get: { active.effectiveTileCap },
-                    set: { active.setTileCap($0); profileResolver.refresh() }
-                ), in: 1...8) {
-                    HStack {
-                        Text("Tiles per sentence")
-                        Spacer()
-                        Text("\(active.effectiveTileCap)")
-                            .foregroundStyle(.secondary)
+                // Only Stage IV+ leaves a number to choose. Stages I and
+                // II-III pin the count because the count is part of what the
+                // stage means — and at Stage I "tiles per sentence" describes
+                // nothing at all, since each tile speaks the moment it is
+                // tapped. Showing a live stepper reading "1" there invited a
+                // caregiver to adjust a setting that had no effect they could
+                // see. This now matches ChildProfileFormSheet, which already
+                // hid it; the two surfaces disagreeing was the actual bug.
+                if active.brownsStage.allowsTileCapChoice {
+                    Stepper(value: Binding(
+                        get: { active.effectiveTileCap },
+                        set: { active.setTileCap($0); profileResolver.refresh() }
+                    ), in: active.brownsStage.tileCapRange) {
+                        HStack {
+                            Text("Tiles per sentence")
+                            Spacer()
+                            Text("\(active.effectiveTileCap)")
+                                .foregroundStyle(.secondary)
+                        }
                     }
+                } else if active.brownsStage != .one {
+                    LabeledContent("Tiles per sentence",
+                                   value: "\(active.effectiveTileCap) (set by \(active.brownsStage.label))")
                 }
             } header: {
                 Text("Active Profile — \(active.displayName)")
