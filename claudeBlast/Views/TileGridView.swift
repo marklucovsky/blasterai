@@ -48,10 +48,36 @@ struct TileGridView: View {
     @AppStorage(AppSettingsKey.tileSizeStep) private var tileSizeStep: Int = 0
 
     @Environment(\.horizontalSizeClass) private var hSizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var compactOverlay: CompactOverlay = .none
     @State private var overlayEpoch: Int = 0
 
     private var isCompact: Bool { hSizeClass == .compact }
+
+    /// Which way the board is travelling, so the transition can say so.
+    ///
+    /// Going deeper comes in from the trailing edge; coming back — Home, or a
+    /// link to a page already on the path — comes from the leading edge.
+    /// Without this a page change was instant and silent, which on a shared
+    /// tablet is the moment a child most needs to be told that the board they
+    /// were looking at is not the board in front of them any more.
+    ///
+    /// Derived from the path depth rather than set by each caller. Setting it
+    /// at the call sites covered the two the child touches and silently missed
+    /// TileScript, which drives the coordinator directly — so a scripted trip
+    /// Home slid the wrong way, in exactly the recordings made to show the app
+    /// off.
+    @State private var navDirection: Edge = .trailing
+
+    /// The reader's Dynamic Type multiplier, taken from the system rather than
+    /// from a hand-written table of category → factor. Reading
+    /// `dynamicTypeSize` as well is what makes SwiftUI re-run this when the
+    /// setting changes; `UIFontMetrics` alone is a snapshot and would leave the
+    /// grid at whatever scale it was built with.
+    private var textScale: CGFloat {
+        _ = dynamicTypeSize
+        return UIFontMetrics.default.scaledValue(for: 100) / 100
+    }
 
     /// Roughly what the compact tray's bubble can show before truncating.
     /// Deliberately a blunt character count: the exact threshold matters far
@@ -180,6 +206,23 @@ struct TileGridView: View {
     private var gridContent: some View {
         if let page = currentPage {
             pagedGrid(for: page)
+                // Keyed by page, so a page change is an insertion and a removal
+                // — which is what gives the transition below something to
+                // animate — and so no tile view is ever reused across pages.
+                .id(page.key)
+                // A short push and a crossfade, not a full-width slide.
+                //
+                // `.move(edge:)` travels the whole screen, which at 0.26s reads
+                // as the board being yanked sideways — and it dwarfed the tile
+                // press that was supposed to precede it. 40pt of movement under
+                // a crossfade still says "this went that way" without the board
+                // appearing to bolt.
+                .transition(.asymmetric(
+                    insertion: .opacity.combined(
+                        with: .offset(x: navDirection == .trailing ? 40 : -40)),
+                    removal: .opacity.combined(
+                        with: .offset(x: navDirection == .trailing ? -40 : 40))
+                ))
                 .overlay(alignment: .top) {
                     compactOverlayContent
                 }
@@ -268,7 +311,12 @@ struct TileGridView: View {
             // Reset display page position when tile count changes significantly
             currentDisplayPage = 0
         }
+        .onChange(of: coordinator.navigationPath.count) { old, new in
+            navDirection = new >= old ? .trailing : .leading
+        }
         .onChange(of: coordinator.currentPageKey) { _, _ in
+            // The lift belongs to the tap that caused it, and that tap is over.
+            lastTappedKey = nil
             currentDisplayPage = 0
         }
         .alert("Add Note", isPresented: $showNoteAlert) {
@@ -284,7 +332,8 @@ struct TileGridView: View {
             let spec = GridLayoutCalculator.compute(
                 screenSize: UIScreen.main.bounds.size,
                 geo: geo.size,
-                userStep: tileSizeStep
+                userStep: tileSizeStep,
+                textScale: textScale
             )
             // Retired (hidden) and unreviewed (moderation-flagged) tiles never
             // render for the child — both stay invisible in running scenes until
@@ -437,12 +486,20 @@ struct TileGridView: View {
         HomeGridCell(
             isEnabled: coordinator.navigationPath.count > 1 || currentDisplayPage != 0,
             action: {
-                coordinator.navigateToRoot()
+                withAnimation(.easeOut(duration: 0.30)) {
+                    coordinator.navigateToRoot()
+                }
                 currentDisplayPage = 0
             },
             onOpenMenu: { showCaregiverMenu = true },
             labelFontSize: spec.labelFontSize
         )
+    }
+
+    /// Page a tile is rendered on, used to scope its identity. Falls back the
+    /// same way `currentPage` does so the two cannot disagree.
+    private var identityPageKey: String {
+        coordinator.currentPageKey ?? activeScene?.homePageKey ?? "home"
     }
 
     @ViewBuilder
@@ -471,6 +528,20 @@ struct TileGridView: View {
             // neighbors so the grow animation draws on top — not half-under the
             // cell to its right.
             .zIndex(lastTappedKey == entry.key || scriptRunner.tapPulseKey == entry.key ? 1 : 0)
+            // Identity is scoped to the page, not just the tile key.
+            //
+            // `ForEach(tiles, id: \.key)` alone made a tile the *same view* on
+            // every page it appeared on, so its `@State` survived navigation —
+            // including a press animation still in flight. Tapping a link then
+            // finished the bounce on the destination page, on the tile that
+            // happens to share the link's key.
+            //
+            // That is not a rare coincidence: pages are built by wordClass
+            // expansion, and a link tile is keyed for the class it opens, so
+            // `people`, `social`, `actions`, `describe`, `drinks`, `places` and
+            // `weather` all land on a page containing a tile of their own name.
+            // Seven of the home board's links reproduce it.
+            .id("\(identityPageKey)/\(entry.key)")
         }
     }
 
@@ -603,7 +674,9 @@ struct TileGridView: View {
             }
         }
         if !resolvedLink.isEmpty {
-            coordinator.navigate(to: resolvedLink)
+            withAnimation(.easeOut(duration: 0.30)) {
+                coordinator.navigate(to: resolvedLink)
+            }
             if recorder.state == .recording {
                 // Skip a separate navigate record if we already recorded an audible-nav for
                 // this gesture (it covers both the tile and the navigation).
