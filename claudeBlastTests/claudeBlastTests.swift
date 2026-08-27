@@ -177,16 +177,39 @@ struct claudeBlastTests {
         #expect(allScenes.count == 1)
     }
 
-    @Test func bundledTopicPagesKeepHomeLinkLiteral() throws {
-        // Step J: <home> is no longer rewritten at scene-build time. Topic-page
-        // back tiles store the literal "<home>" token; TileGridView resolves it
-        // to the active scene's homePageKey at navigation time.
+    /// `<home>` is never rewritten at scene-build time. A tile stores the literal
+    /// token and the destination is resolved against the *active* scene's
+    /// `homePageKey` at navigation time, so a board stays portable between scenes
+    /// with differently-named home pages.
+    ///
+    /// This used to assert the property against the bundled Core-First scene,
+    /// whose topic pages each carried a back-to-home tile. Those were removed
+    /// when Home became cell 0 of every page — a pinned control makes an in-grid
+    /// back tile redundant. The **mechanism** is still live for caregiver-authored
+    /// boards, so the test now exercises it directly instead of relying on a
+    /// bundled board that happened to use it.
+    @Test func homeLinkTokenIsStoredLiterally() throws {
+        let scene = BlasterScene(name: "Therapy", homePageKey: "start")
+        scene.pages = [
+            PageSpec(key: "start", tiles: [TileEntry(key: "eat")]),
+            PageSpec(key: "food", tiles: [TileEntry(key: "home", link: "<home>")]),
+        ]
+        let backTile = scene.pages
+            .first { $0.key == "food" }?
+            .tiles.first { $0.key == "home" }
+        #expect(backTile?.link == "<home>")
+        #expect(backTile?.link != scene.homePageKey)   // not pre-resolved
+    }
+
+    /// The bundled scene no longer ships back-to-home tiles: Home is cell 0 of
+    /// every page, so an in-grid duplicate is redundant and costs a slot.
+    @Test func bundledSceneHasNoBackToHomeTiles() throws {
         let container = try makeTestContainer()
         let result = BootstrapLoader.loadDefaultVocabulary(context: container.mainContext)
-        let people = result.scene.pages.first { $0.key == "people" }
-        #expect(people != nil)
-        let backTile = people?.tiles.first { $0.key == "home" }
-        #expect(backTile?.link == "<home>")
+        let homeLinks = result.scene.pages.flatMap { page in
+            page.tiles.filter { $0.link == "<home>" }
+        }
+        #expect(homeLinks.isEmpty)
     }
 
     @Test func userSceneHasNoSystemKey() throws {

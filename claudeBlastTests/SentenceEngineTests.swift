@@ -301,39 +301,19 @@ struct SentenceEngineTests {
         let engine = SentenceEngine(provider: MockSentenceProvider(minLatency: 0, maxLatency: 0))
         let container = try makeTestContainer()
         engine.configure(modelContext: container.mainContext)
-        // Build + commit a group so it lands in history (Done flushes the tile
-        // values as the sentence when none was generated).
+        // Build + commit a group so it lands in the engine's history buffer
+        // (Clear flushes the tile values as the sentence when none was generated).
         engine.addTile(TileModel(key: "i", wordClass: "core"))
         engine.addTile(TileModel(key: "all_done", wordClass: "core"))
         engine.commitActiveAndStartNew()
         #expect(engine.groupHistory.count == 1)
 
-        // Re-select the same set and suppress it — the history bubble must go.
+        // Re-select the same set and suppress it — the buffered group must go.
         engine.addTile(TileModel(key: "i", wordClass: "core"))
         engine.addTile(TileModel(key: "all_done", wordClass: "core"))
         engine.suppressActive()
         #expect(engine.groupHistory.isEmpty)
     }
 
-    @Test func reopenHistoryGroupHonorsHandTypedOverride() throws {
-        let engine = SentenceEngine(provider: MockSentenceProvider(minLatency: 0, maxLatency: 0))
-        let container = try makeTestContainer()
-        engine.configure(modelContext: container.mainContext)
-        engine.addTile(TileModel(key: "sister", wordClass: "people"))
-        engine.addTile(TileModel(key: "toilet", wordClass: "body"))
-        engine.commitActiveAndStartNew()   // stored snapshot = "sister toilet"
-        let groupID = try #require(engine.groupHistory.first?.id)
-
-        // Caregiver hand-types a correction for this combination.
-        engine.addTile(TileModel(key: "sister", wordClass: "people"))
-        engine.addTile(TileModel(key: "toilet", wordClass: "body"))
-        engine.handTypeActive("My sister needs to use the bathroom.")
-        engine.commitActiveAndStartNew()
-
-        // Replaying the ORIGINAL history bubble must serve the override, not the
-        // stale stored snapshot.
-        engine.reopenHistoryGroup(id: groupID)
-        #expect(engine.activeGroup.sentence == "My sister needs to use the bathroom.")
-    }
 }
 }

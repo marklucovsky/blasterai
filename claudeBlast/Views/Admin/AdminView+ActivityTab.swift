@@ -13,12 +13,11 @@ extension AdminView {
         NavigationStack {
             List {
                 // Activity-first: what the child actually said leads; AI usage,
-                // cache, and promoted-tile diagnostics are secondary, below it.
+                // and cache diagnostics are secondary, below it.
                 activitySummarySection
                 recentActivitySection
                 aiUsageSection
                 cachePerformanceSection
-                promotedTilesSection
                 sentenceCacheSection
                 #if DEBUG
                 developerSection
@@ -111,15 +110,36 @@ extension AdminView {
         }
     }
 
+    /// The week's repeated combinations, from the same function the full log
+    /// uses.
+    ///
+    /// A snippet that computes its own answer is a second implementation that
+    /// can disagree with the screen it links to — and a caregiver who notices
+    /// the two disagreeing is right to distrust both. This is literally the top
+    /// of the list `ActivityLogView` renders.
+    var topClusters: [ActivityCluster] {
+        let cal = Calendar.current
+        guard let cutoff = cal.date(byAdding: .day, value: -7, to: cal.startOfDay(for: .now)) else {
+            return Array(ActivityGrouping.clusters(loggedUtterances).clusters.prefix(3))
+        }
+        let recent = loggedUtterances.filter { $0.createdAt >= cutoff }
+        return Array(ActivityGrouping.clusters(recent).clusters.prefix(3))
+    }
+
     @ViewBuilder
     var recentActivitySection: some View {
         Section {
-            if recentUtterances.isEmpty {
+            if loggedUtterances.isEmpty {
                 Text("No utterances logged yet.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(recentUtterances) { utterance in
+                // Repetition first: a caregiver scanning this tab wants what
+                // kept happening, not the last five things that happened.
+                ForEach(topClusters) { cluster in
+                    clusterSnippetRow(cluster)
+                }
+                ForEach(recentUtterances.prefix(3)) { utterance in
                     recentUtteranceRow(utterance)
                 }
             }
@@ -131,7 +151,30 @@ extension AdminView {
         } header: {
             Text("Recent")
         } footer: {
-            Text("Finalized utterances from the sentence tray. Read-only review for therapists and partners.")
+            Text("What was repeated this week, then the latest utterances. Read-only review for therapists and partners.")
+        }
+    }
+
+    /// Collapsed cluster row. Deliberately the same shape as the full log's, so
+    /// the two screens read as one report rather than two.
+    func clusterSnippetRow(_ cluster: ActivityCluster) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 8) {
+                LogTileStrip(tiles: tileSelections(forKeys: cluster.tileKeys))
+                Spacer(minLength: 8)
+                if cluster.escalatedCount > 0 {
+                    Label("\(cluster.escalatedCount)", systemImage: "flame.fill")
+                        .font(.caption2)
+                        .foregroundStyle(.orange)
+                }
+                Text("\(cluster.count)×")
+                    .font(.caption2.monospacedDigit().bold())
+                    .foregroundStyle(.blue)
+            }
+            Text(cluster.latestSentence.isEmpty ? "—" : cluster.latestSentence)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
         }
     }
 
@@ -152,30 +195,6 @@ extension AdminView {
                     .foregroundStyle(.secondary)
             }
             Text(utterance.sentence)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-        }
-        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-    }
-
-    // MARK: - Promoted tiles helpers
-
-    func promotedTileRow(_ entry: SentenceCache) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            HStack(spacing: 8) {
-                LogTileStrip(tiles: tileSelections(for: entry))
-                Spacer(minLength: 8)
-                if entry.isPinned {
-                    Image(systemName: "pin.fill")
-                        .font(.caption2)
-                        .foregroundStyle(.orange)
-                }
-                Text("\(entry.hitCount) hits")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-            Text(entry.sentence)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -365,31 +384,6 @@ extension AdminView {
             cacheStatsView
         } header: {
             Text("Cache Performance")
-        }
-    }
-
-    @ViewBuilder
-    var promotedTilesSection: some View {
-        Section {
-            if promotedCandidates.isEmpty {
-                Text("No promoted tiles yet — use the same tile combo 3+ times")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            } else {
-                ForEach(promotedCandidates.prefix(5)) { entry in
-                    promotedTileRow(entry)
-                }
-                if promotedCandidates.count > 5 {
-                    NavigationLink {
-                        PromotedTilesDetailView(entries: promotedCandidates, tileLookup: tileLookup)
-                    } label: {
-                        Text("View All (\(promotedCandidates.count))")
-                            .font(.caption)
-                    }
-                }
-            }
-        } header: {
-            Text("Promoted Tiles (\(promotedCandidates.count))")
         }
     }
 

@@ -27,14 +27,23 @@ import Foundation
 
 enum SceneNavigation {
     /// Symbolic link token resolved at navigation time to the active scene's
-    /// homePageKey (see TileGridView).
+    /// homePageKey (see `TileGridView`).
+    ///
+    /// **Nothing authors this any more.** Every page renders a Home control at
+    /// cell 0 (`HomeGridCell`), so a back-to-home tile inside the grid is
+    /// redundant by construction — it costs a vocabulary slot to duplicate a
+    /// control that is already there, and gives the child two things to learn
+    /// for one action.
+    ///
+    /// The token is still *resolved* because a board can arrive from elsewhere —
+    /// an import from another BlasterAI user, or an older export. Rendering
+    /// someone else's tile correctly is three lines; silently deleting tiles
+    /// from their board would be worse than showing a redundant one.
     static let homeLinkToken = "<home>"
 
-    /// `home` is a navigation-class tile that ships in the default vocabulary;
-    /// used as the image for auto-inserted "back home" tiles.
-    private static let homeTileKey = "home"
-
     /// Structural navigation keys that must never appear as AI-authored tiles.
+    /// `home` stays on the list: the scaffolder no longer injects a home tile,
+    /// and the model must not invent one either.
     private static let structuralNavKeys: Set<String> = ["next_page", "previous_page", "home"]
 
     /// A familiar Core-First category page, rebuilt by word class. `crossLinks`
@@ -147,7 +156,9 @@ enum SceneNavigation {
                 .map { GeneratedTile(key: $0.key, isAudible: true, link: "") }
             guard !contentTiles.isEmpty else { continue }
 
-            var pageTiles = [GeneratedTile(key: homeTileKey, isAudible: false, link: homeLinkToken)]
+            // No home tile: `HomeGridCell` occupies cell 0 of every page, so an
+            // authored one would be a duplicate control costing a word slot.
+            var pageTiles: [GeneratedTile] = []
             for sibling in category.crossLinks where sibling != homeKey {
                 pageTiles.append(GeneratedTile(key: sibling, isAudible: false, link: sibling))
             }

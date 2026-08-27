@@ -58,7 +58,45 @@ script:
 | `clear` | Explicit clearSelection() |
 | `comment` | Show text overlay on HUD |
 | `wait` | Explicit pause |
+| `screenshot` | Capture the screen to `Documents/Screenshots/<name>.png` |
 | Settings | Override globals mid-script |
+
+### Screenshots
+
+`- screenshot: name` writes a PNG of the current screen.
+
+```yaml
+  - tiles:
+    - mom, <food>, pizza
+  - screenshot: 03-sentence-ready
+```
+
+**Why capture from inside the app.** `xcrun simctl io … screenshot` can
+photograph a simulator at any moment, but it cannot know *when* the app has
+reached the state worth photographing. The interesting states — an overlay up, a
+sentence mid-generation, a board scrolled past page 1 — last a few hundred
+milliseconds and are reached by the script itself. Capturing in-script means the
+script picks the moment. It also works on a **real device**, which matters
+because App Store assets have to come from real hardware.
+
+Captures are full native resolution (bounds × screen scale), rendered with
+`drawHierarchy` so blurs, materials and popovers appear — `layer.render(in:)`
+drops exactly those, which is most of what a screenshot is for.
+
+Repeating a name never overwrites: the second capture becomes `name-2.png`, so
+re-running a script cannot destroy the evidence from the run before it.
+
+Retrieving them:
+
+```bash
+# simulator
+open "$(xcrun simctl get_app_container booted app.blasterai.ios data)/Documents/Screenshots"
+```
+
+On a device: Files → On My iPad → Blaster → Screenshots.
+
+`Resources/Scripts/shots_child_surface.yaml` is a worked example that walks the
+board through five states and captures each.
 
 ## Demo Sources
 

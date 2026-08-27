@@ -1,0 +1,75 @@
+name: Screenshots — Full Sweep
+description: Every caregiver surface plus the board, captured in demo mode.
+scene: "<default>"
+audio: off
+provider: mock
+tileWait: .fast
+sentenceWait: .fast
+
+# Demo mode is on for the whole run: it suppresses the grid diagnostic badge
+# and the playback pill, which must not appear in a capture. What is on screen
+# IS the artifact — the same reason a screen recording runs in demo mode.
+#
+# Captures go to the photo library and to Documents/Screenshots/.
+
+script:
+  - demo: on
+
+  # ---- child surface ----
+  - comment: Board at rest
+  - screen: board
+  - screenshot: 01-board-empty
+
+  - comment: One tile selected
+  - tiles:
+    - mom
+  - screenshot: 02-board-one-tile
+  - clear
+
+  - comment: A sentence in the tray
+  - tiles:
+    - mom, <food>, pizza
+  - screenshot: 03-board-sentence
+  - clear
+
+  - comment: A category page — Home holds cell 0
+  - tiles:
+    - <food>
+  - screenshot: 04-board-category
+  - clear
+
+  # ---- admin tabs ----
+  - comment: Now
+  - screen: admin/now
+  - screenshot: 05-admin-now
+
+  - comment: Profiles
+  - screen: admin/profiles
+  - screenshot: 06-admin-profiles
+
+  - comment: Scenes
+  - screen: admin/scenes
+  - screenshot: 07-admin-scenes
+
+  - comment: Manage Vocabulary — the filter row that had to be rebuilt for phones
+  - screen: admin/scenes/vocabulary
+  - screenshot: 08-admin-vocabulary
+
+  - comment: Device
+  - screen: admin/device
+  - screenshot: 09-admin-device
+
+  - comment: About & Stats
+  - screen: admin/device/about
+  - screenshot: 10-admin-about
+
+  - comment: Activity
+  - screen: admin/activity
+  - screenshot: 11-admin-activity
+
+  - comment: Back to the board
+  - screen: board
+  - screenshot: 12-board-final
+
+  - demo: off
+  - comment: Full sweep complete

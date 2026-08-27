@@ -16,11 +16,9 @@
 //    Bottom row (persistent nav strip): three glass cards.
 //      • Home — left. Tap returns to the active scene's home page.
 //        Dims when already at home.
-//      • History card — middle, flex-width. Holds the most recent
 //        committed group's inline pills plus a chevron at the right
 //        edge — the whole card is tappable to open the dense
 //        GlassHistoryOverlay. Dims when there's no history yet.
-//      • Favorites — right. Tap opens the GlassFavoritesOverlay
 //        listing promoted SentenceCache entries. Dims when empty.
 //
 
@@ -37,16 +35,8 @@ struct CompactTrayStrip: View {
     let onPlaySingle: () -> Void
     let onCommitActive: () -> Void
     let onShowSentence: () -> Void
-    let onShowHistory: () -> Void
-    let onShowFavorites: () -> Void
-    let onHome: () -> Void
     /// Long-press Home to open the caregiver menu (mode toggle + gated Admin).
-    let onOpenMenu: () -> Void
-    let isAtHome: Bool
-    let favoritesCount: Int
     let isSentenceShown: Bool
-    let isHistoryShown: Bool
-    let isFavoritesShown: Bool
 
     // Caregiver editor sheets (refine / hand-type override of a generated sentence).
     @State private var editSheet: TrayEditSheet?
@@ -98,18 +88,6 @@ struct CompactTrayStrip: View {
                 }
             }
 
-            NavStrip(
-                isAtHome: isAtHome,
-                onHome: onHome,
-                onOpenMenu: onOpenMenu,
-                latestGroup: engine.groupHistory.first,
-                historyCount: engine.groupHistory.count,
-                isHistoryShown: isHistoryShown,
-                onShowHistory: onShowHistory,
-                favoritesCount: favoritesCount,
-                isFavoritesShown: isFavoritesShown,
-                onShowFavorites: onShowFavorites
-            )
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 4)
@@ -138,11 +116,7 @@ struct CompactTrayStrip: View {
         .onChange(of: showBubbleActions || editSheet != nil) { _, editing in
             editing ? engine.beginCaregiverEdit() : engine.endCaregiverEdit()
         }
-        .animation(.easeInOut(duration: 0.22), value: engine.groupHistory.first?.id)
         .animation(.easeInOut(duration: 0.22), value: engine.activeGroup.sentence)
-        .animation(.easeInOut(duration: 0.22), value: isHistoryShown)
-        .animation(.easeInOut(duration: 0.22), value: isFavoritesShown)
-        .animation(.easeInOut(duration: 0.22), value: isAtHome)
     }
 
     // MARK: - Derived state
@@ -197,6 +171,11 @@ struct CompactTrayStrip: View {
 /// when a sentence exists, the bubble appears to the right of the chips
 /// with a tail pointing at the last chip. Whole bubble is tappable to
 /// expand into the GlassSentencePopover.
+/// Height of the compact tray's active card — matched to the Play/Clear
+/// column so the two sit as one band. Exposed here rather than derived inside
+/// the view so `ChipsRow` can size its chips from the same number.
+let kCompactTrayCardHeight: CGFloat = 92
+
 private struct ActiveCard: View {
     let tiles: [TileSelection]
     let sentence: String?
@@ -208,31 +187,42 @@ private struct ActiveCard: View {
     /// True when this combination is suppressed (shows a muted bubble instead).
     let isSuppressed: Bool
 
+    /// Width the sentence needs before it is worth rendering as text.
+    ///
+    /// Below this the bubble degrades into a column of single letters, which
+    /// looks broken rather than merely small. Above it, three lines of 12pt
+    /// italic hold roughly forty characters — enough for what one or two tiles
+    /// produce.
+    ///
+    /// The number is measured, not chosen. A 402pt phone gives this card 299pt
+    /// of content (the GeometryReader sits inside the card's own 5pt
+    /// horizontal padding), so two 80pt chips leave exactly 129 — which a
+    /// floor of 132 rejected by three points, dropping an iPhone 17 Pro to the
+    /// button at two tiles while a Pro Max kept the sentence. The band that
+    /// holds "bubble at one or two, button at three or four" on every current
+    /// phone is roughly 100...129; 110 sits in the middle of it.
+    private let minimumSentenceWidth: CGFloat = 110
+
+    /// What the fallback button needs. Smaller than the bubble's floor by a
+    /// long way — that is the point of having it — but not zero: squeezed
+    /// below this it renders as "Sen / tenc / e", which is the exact failure
+    /// the button existed to avoid, reproduced one control later.
+    private let minimumSentenceButtonWidth: CGFloat = 68
+
     var body: some View {
-        HStack(spacing: 6) {
-            if tiles.isEmpty {
-                Text("Tap tiles below to start")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 8)
-            } else {
-                ChipsRow(tiles: tiles, onTap: onTileTap)
-                if isSuppressed {
-                    CompactMutedBubble()
-                        .layoutPriority(1)
-                        .onLongPressGesture(minimumDuration: 0.4, perform: onBubbleLongPress)
-                } else if let sentence = sentence {
-                    SentenceBubble(text: sentence, onExpand: onExpandSentence)
-                        .layoutPriority(1)
-                        .onLongPressGesture(minimumDuration: 0.4, perform: onBubbleLongPress)
-                } else if isThinking {
-                    ThinkingBubble()
-                        .layoutPriority(1)
-                }
-            }
+        // Width-driven, not count-driven. An iPad has room for four full-size
+        // chips *and* the sentence; a 16e does not have room for three. Sizing
+        // off the tile count alone would shrink the iPad's chips to solve a
+        // phone's problem.
+        GeometryReader { geo in
+            cardContent(width: geo.size.width)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         }
-        .frame(minHeight: 56)
+        // The tray card and the Play/Clear column are one row and should read
+        // as one band. The column is two 44pt targets plus their gap; a card
+        // sized independently (it was minHeight 56) left the row visibly
+        // ragged once the buttons grew to meet the touch-target minimum.
+        .frame(height: kCompactTrayCardHeight)
         .padding(.horizontal, 5)
         .padding(.vertical, 3)
         .background(
@@ -244,15 +234,84 @@ private struct ActiveCard: View {
                 .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
         )
     }
+
+    /// Chips take what is left after the sentence is served, down to a floor.
+    /// Past the floor they stop shrinking and the sentence gives way instead —
+    /// a chip is the child's feedback that a tap landed, so it is the last
+    /// thing that should become unreadable.
+    private func chipSize(for width: CGFloat) -> CGFloat {
+        let maximum = kCompactTrayCardHeight - 12
+        guard !tiles.isEmpty else { return maximum }
+        // Chips reserve room for the *button*, never for the bubble. The
+        // sentence gets text only when it happens to fit above its floor after
+        // the chips have taken their share.
+        //
+        // Reserving the bubble's larger floor at four tiles — the obvious
+        // alternative — made a Pro Max read bubble, button, bubble as tiles
+        // were added: raising the reservation squeezed the chips enough that
+        // the bubble fitted again. A tray that reverts to an earlier state on
+        // the way to being full is worse than one that simply degrades, so
+        // there is one reservation and it is the small one.
+        let spacing = CGFloat(tiles.count - 1) * 4 + 6
+        let free = width - minimumSentenceButtonWidth - spacing
+        return min(maximum, max(44, free / CGFloat(tiles.count)))
+    }
+
+    @ViewBuilder
+    private func cardContent(width: CGFloat) -> some View {
+        let chip = chipSize(for: width)
+        let sentenceWidth = width - (chip * CGFloat(tiles.count))
+            - CGFloat(max(0, tiles.count - 1)) * 4 - 6
+
+        HStack(spacing: 6) {
+            if tiles.isEmpty {
+                Text("Tap tiles below to start")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 8)
+            } else {
+                ChipsRow(tiles: tiles, chipSize: chip, onTap: onTileTap)
+                if isSuppressed {
+                    CompactMutedBubble()
+                        .layoutPriority(1)
+                        .onLongPressGesture(minimumDuration: 0.4, perform: onBubbleLongPress)
+                } else if let sentence = sentence {
+                    // With a full tray there is no width left for readable text.
+                    // Show a control that says so, rather than a bubble squeezed
+                    // past legibility.
+                    //
+                    // Deliberately NOT an automatic popover: that behaviour was
+                    // removed because it covered the board and the Home cell,
+                    // and bringing it back as a crowding fallback would restore
+                    // the same problem at the worst moment. The sentence is the
+                    // caregiver's read, so an explicit tap is the honest cost.
+                    if sentenceWidth < minimumSentenceWidth {
+                        SentenceButton(action: onExpandSentence)
+                            .onLongPressGesture(minimumDuration: 0.4, perform: onBubbleLongPress)
+                    } else {
+                        SentenceBubble(text: sentence, onExpand: onExpandSentence)
+                            .layoutPriority(1)
+                            .onLongPressGesture(minimumDuration: 0.4, perform: onBubbleLongPress)
+                    }
+                } else if isThinking {
+                    ThinkingBubble()
+                        .layoutPriority(1)
+                }
+            }
+        }
+    }
 }
 
 // MARK: - Chip strip (active)
 
 private struct ChipsRow: View {
     let tiles: [TileSelection]
+    /// Measured by the card, which is the only view that knows how much width
+    /// the sentence still needs.
+    let chipSize: CGFloat
     let onTap: (Int) -> Void
 
-    private let chipSize: CGFloat = 50
     private let cornerRadius: CGFloat = 8
 
     var body: some View {
@@ -282,6 +341,37 @@ private struct ChipsRow: View {
 
 // MARK: - Inline sentence bubble
 
+/// Stand-in for the sentence bubble when the tray is too full to show text.
+///
+/// Reads as a thing to press rather than a truncated sentence: a bubble showing
+/// two characters looks broken, while a button that says "Sentence" is simply
+/// compact.
+private struct SentenceButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 2) {
+                Image(systemName: "text.bubble.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                Text("Sentence")
+                    .font(.system(size: 9, weight: .semibold))
+                    .lineLimit(1)
+            }
+            .fixedSize()
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color.secondary.opacity(0.12))
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Show sentence")
+    }
+}
+
 private struct SentenceBubble: View {
     let text: String
     let onExpand: () -> Void
@@ -303,6 +393,10 @@ private struct SentenceBubble: View {
         .padding(.leading, 12)
         .padding(.trailing, 8)
         .padding(.vertical, 6)
+        // A floor, so the bubble cannot be squeezed into a column of single
+        // letters. If the row genuinely cannot spare this much, the caller
+        // swaps in `SentenceButton` instead of rendering an unreadable sliver.
+        .frame(minWidth: 96, alignment: .leading)
         .background(
             LeftTailBubble()
                 .fill(Color(.tertiarySystemFill))
@@ -401,102 +495,7 @@ struct LeftTailBubble: Shape {
 
 // MARK: - Nav strip (Home + History card + Favorites card)
 
-private struct NavStrip: View {
-    let isAtHome: Bool
-    let onHome: () -> Void
-    let onOpenMenu: () -> Void
-
-    let latestGroup: TileGroup?
-    let historyCount: Int
-    let isHistoryShown: Bool
-    let onShowHistory: () -> Void
-
-    let favoritesCount: Int
-    let isFavoritesShown: Bool
-    let onShowFavorites: () -> Void
-
-    var body: some View {
-        HStack(spacing: 6) {
-            HomeCard(isEnabled: !isAtHome, action: onHome, onOpenMenu: onOpenMenu)
-
-            HistoryCard(
-                group: latestGroup,
-                count: historyCount,
-                isEnabled: historyCount > 0 && !isHistoryShown,
-                action: onShowHistory
-            )
-            .frame(maxWidth: .infinity)
-
-            FavoritesCard(
-                count: favoritesCount,
-                isEnabled: favoritesCount > 0 && !isFavoritesShown,
-                action: onShowFavorites
-            )
-        }
-    }
-}
-
 // MARK: - Home / Favorites end cards
-
-private struct HomeCard: View {
-    let isEnabled: Bool
-    let action: () -> Void
-    let onOpenMenu: () -> Void
-
-    var body: some View {
-        Button(action: { if isEnabled { action() } }) {
-            HStack(spacing: 4) {
-                Image(systemName: "house.fill")
-                    .font(.system(size: 11, weight: .semibold))
-                Text("Home")
-                    .font(.system(size: 11, weight: .semibold))
-            }
-            .foregroundStyle(isEnabled ? .primary : .secondary)
-            .frame(width: kNavCardWidth, height: kNavCardHeight)
-            .background(navCardBackground)
-            .opacity(isEnabled ? 1.0 : 0.5)
-        }
-        .buttonStyle(.plain)
-        // Not `.disabled` — long-press while at home toggles interaction mode.
-        .simultaneousGesture(
-            LongPressGesture(minimumDuration: 0.6).onEnded { _ in
-                onOpenMenu()
-            }
-        )
-        .accessibilityLabel("Go home")
-        .accessibilityHint(isEnabled ? "Returns to home page" : "Already at home. Press and hold for caregiver options.")
-    }
-}
-
-private struct FavoritesCard: View {
-    let count: Int
-    let isEnabled: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 3) {
-                Image(systemName: "star.fill")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(isEnabled ? .orange : Color.orange.opacity(0.5))
-                Text("\(count)")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(isEnabled ? .primary : .secondary)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(isEnabled ? .secondary : .tertiary)
-            }
-            .frame(width: kNavCardWidth, height: kNavCardHeight)
-            .background(navCardBackground)
-            .opacity(isEnabled ? 1.0 : 0.55)
-        }
-        .buttonStyle(.plain)
-        .disabled(!isEnabled)
-        .accessibilityLabel("Favorites")
-        .accessibilityValue("\(count)")
-        .accessibilityHint(isEnabled ? "Opens favorites" : "No favorites yet")
-    }
-}
 
 // MARK: - History card (pills + inline chevron)
 
@@ -504,75 +503,6 @@ private struct FavoritesCard: View {
 /// inline TilePills previewing the most recent committed group, followed
 /// by a chevron-down at the right edge. The whole card is one tappable
 /// surface that opens the dense GlassHistoryOverlay.
-private struct HistoryCard: View {
-    let group: TileGroup?
-    /// Total number of groups in history. Surfaced as a 3-digit counter
-    /// (capped at "999+") next to the chevron so the caregiver can see
-    /// how much is queued up without opening the full overlay.
-    let count: Int
-    let isEnabled: Bool
-    let action: () -> Void
-
-    private let maxPreview: Int = 4
-
-    private var countLabel: String {
-        count > 999 ? "999+" : "\(count)"
-    }
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                if let group = group {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 5) {
-                            ForEach(Array(group.tiles.prefix(maxPreview).enumerated()), id: \.offset) { _, tile in
-                                TilePill(tile: tile)
-                            }
-                            if group.tiles.count > maxPreview {
-                                Text("+\(group.tiles.count - maxPreview)")
-                                    .font(.system(size: 10, weight: .semibold))
-                                    .foregroundStyle(.secondary)
-                                    .padding(.horizontal, 4)
-                            }
-                        }
-                        .padding(.horizontal, 2)
-                    }
-                } else {
-                    Text("No history yet")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.tertiary)
-                        .padding(.horizontal, 4)
-                    Spacer(minLength: 0)
-                }
-
-                HStack(spacing: 3) {
-                    if count > 0 {
-                        Text(countLabel)
-                            .font(.system(size: 10, weight: .semibold).monospacedDigit())
-                            .foregroundStyle(isEnabled ? .secondary : .tertiary)
-                    }
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(isEnabled ? .secondary : .tertiary)
-                }
-                .padding(.trailing, 4)
-            }
-            .padding(.horizontal, 6)
-            .frame(maxWidth: .infinity, minHeight: kNavCardHeight, alignment: .leading)
-            .background(navCardBackground)
-            .opacity(isEnabled ? 1.0 : 0.7)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .disabled(!isEnabled)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("History — \(count) \(count == 1 ? "row" : "rows")")
-        .accessibilityHint(isEnabled ? "Opens history" : "No history yet")
-    }
-}
-
-/// Inline pill — small circular tile thumbnail + label, color-tinted to
-/// match its wordClass. Glass capsule background with tile-colored tint.
 private struct TilePill: View {
     let tile: TileSelection
 

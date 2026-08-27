@@ -9,8 +9,14 @@ import SwiftUI
 import SwiftData
 import LocalAuthentication
 
-/// Wraps Admin content with a Face ID / PIN challenge when the active
+/// Wraps Admin content with a biometric / PIN challenge when the active
 /// `DeviceProfile.requireFaceIDForAdmin` flag is set.
+///
+/// The biometry is whatever the device actually has — Face ID, Touch ID, or
+/// none at all on a Mac running this as Designed-for-iPad. All user-facing copy
+/// comes from `Biometry`; nothing here says "Face ID" unconditionally, because
+/// on the devices where that is false it is exactly the copy a locked-out
+/// caregiver has to rely on.
 ///
 /// Flow on first appearance:
 /// 1. If gating isn't required (Personal device, or Therapist that didn't
@@ -29,7 +35,7 @@ struct AdminGate<Content: View>: View {
 
     @State private var didAuth = false
     @State private var biometricsAttempted = false
-    @State private var biometricsAvailable = false
+    @State private var biometry = Biometry.Capability(type: .none, isAvailable: false)
     @State private var showingPIN = false
     @State private var pinInput = ""
     @State private var pinConfirm = ""
@@ -102,7 +108,7 @@ struct AdminGate<Content: View>: View {
                 if showingPIN {
                     pinSection
                 } else {
-                    Button("Try Face ID") {
+                    Button("Try \(biometry.displayName)") {
                         Task { await tryBiometrics() }
                     }
                     .buttonStyle(.borderedProminent)
@@ -153,15 +159,21 @@ struct AdminGate<Content: View>: View {
     }
 
     private var challengeSubtitle: String {
+        let name = biometry.displayName
         if hasPIN {
-            return biometricsAvailable
-                ? "Use Face ID, or enter your PIN."
+            return biometry.isAvailable
+                ? "Use \(name), or enter your PIN."
                 : "Enter your PIN."
-        } else {
-            return biometricsAvailable
-                ? "Use Face ID. Set up a PIN now as a backup for when Face ID isn't available."
-                : "Face ID isn't enrolled on this device. Set up a PIN to unlock Admin."
         }
+        if biometry.isAvailable {
+            return "Use \(name). Set up a PIN now as a backup for when \(name) isn't available."
+        }
+        // Distinguish "you have the hardware but haven't enrolled" from "this
+        // device has no biometry" — telling a Mac owner to enrol Touch ID they
+        // do not have is how a caregiver concludes they are locked out.
+        return biometry.hasHardware
+            ? "\(name) isn't enrolled on this device. Set up a PIN to unlock Admin."
+            : "This device has no biometric unlock. Set up a PIN to unlock Admin."
     }
 
     @ViewBuilder
@@ -232,7 +244,10 @@ struct AdminGate<Content: View>: View {
 
     private var pinSetupCopy: String {
         switch pinSetupStage {
-        case .enter:   return "Choose a 4–6 digit PIN. Use it when Face ID isn't available."
+        case .enter:
+            return biometry.hasHardware
+                ? "Choose a 4–6 digit PIN. Use it when \(biometry.displayName) isn't available."
+                : "Choose a 4–6 digit PIN. It is how you unlock Admin on this device."
         case .confirm: return "Enter the same PIN again to confirm."
         }
     }
@@ -248,7 +263,8 @@ struct AdminGate<Content: View>: View {
         var policyError: NSError?
         let canEval = ctx.canEvaluatePolicy(
             .deviceOwnerAuthenticationWithBiometrics, error: &policyError)
-        biometricsAvailable = canEval
+        // biometryType is only populated after canEvaluatePolicy — see Biometry.
+        biometry = Biometry.Capability(type: ctx.biometryType, isAvailable: canEval)
         guard canEval else {
             // No biometric hardware enrolled — go straight to PIN.
             showingPIN = true

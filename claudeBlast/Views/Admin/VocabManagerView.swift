@@ -28,6 +28,9 @@ struct VocabManagerView: View {
         var id: String { rawValue }
     }
 
+    @Environment(\.horizontalSizeClass) private var hSizeClass
+    private var isCompactWidth: Bool { hSizeClass == .compact }
+
     @State private var search = ""
     @State private var scope: Scope = .all
     @State private var classFilter: String? = nil
@@ -79,35 +82,7 @@ struct VocabManagerView: View {
     var body: some View {
         List {
             Section {
-                Picker("Show", selection: $scope) {
-                    // Every scope carries its count, including zero: "Needs
-                    // review (0)" is the answer to the question the tab is asked,
-                    // and hiding it makes an empty queue indistinguishable from
-                    // one that hasn't been counted.
-                    ForEach(Scope.allCases) { s in
-                        Text("\(s.rawValue) (\(count(s)))").tag(s)
-                    }
-                }
-                .pickerStyle(.segmented)
-
-                HStack {
-                    Menu {
-                        Button("All classes") { classFilter = nil }
-                        Divider()
-                        ForEach(presentClasses, id: \.self) { c in
-                            Button(c.capitalized) { classFilter = c }
-                        }
-                    } label: {
-                        Label(classFilter?.capitalized ?? "All classes", systemImage: "line.3.horizontal.decrease.circle")
-                            .font(.subheadline)
-                    }
-                    Spacer()
-                    Picker("Sort", selection: $order) {
-                        ForEach(Order.allCases) { Text($0.rawValue).tag($0) }
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(width: 150)
-                }
+                if isCompactWidth { compactFilters } else { regularFilters }
             }
 
             Section {
@@ -123,6 +98,99 @@ struct VocabManagerView: View {
         .searchable(text: $search, prompt: "Search words")
         .navigationTitle("Vocabulary")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    // MARK: - Filters
+
+    /// Four scopes carrying counts — "All (492)", "Needs review (3)",
+    /// "Hidden (0)", "Added by you (7)" — plus a class filter and a sort. That
+    /// is far more than a ~350pt phone can show as segmented controls: UIKit
+    /// compresses the segment labels until the counts, and then the words, are
+    /// unreadable. The old layout also pinned the sort picker to a fixed 150pt,
+    /// which is most of a phone's width on its own.
+    ///
+    /// On compact width every control becomes a menu. A menu costs one tap to
+    /// open but shows its options at full length, which is the right trade when
+    /// the alternative is a truncated label the caregiver has to guess at.
+    @ViewBuilder
+    private var compactFilters: some View {
+        Menu {
+            Picker("Show", selection: $scope) {
+                ForEach(Scope.allCases) { s in
+                    Text("\(s.rawValue) (\(count(s)))").tag(s)
+                }
+            }
+        } label: {
+            filterLabel("Show", value: "\(scope.rawValue) (\(count(scope)))",
+                        systemImage: "line.3.horizontal.decrease.circle")
+        }
+
+        Menu {
+            Button("All classes") { classFilter = nil }
+            Divider()
+            ForEach(presentClasses, id: \.self) { c in
+                Button(c.capitalized) { classFilter = c }
+            }
+        } label: {
+            filterLabel("Class", value: classFilter?.capitalized ?? "All classes",
+                        systemImage: "tag")
+        }
+
+        Menu {
+            Picker("Sort", selection: $order) {
+                ForEach(Order.allCases) { Text($0.rawValue).tag($0) }
+            }
+        } label: {
+            filterLabel("Sort", value: order.rawValue,
+                        systemImage: "arrow.up.arrow.down")
+        }
+    }
+
+    /// A menu row that reads like a settings row: what it controls on the left,
+    /// what it is currently set to on the right. Without the trailing value the
+    /// caregiver cannot see the active filter without opening the menu.
+    private func filterLabel(_ title: String, value: String, systemImage: String) -> some View {
+        HStack {
+            Label(title, systemImage: systemImage)
+            Spacer()
+            Text(value)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        .font(.subheadline)
+    }
+
+    @ViewBuilder
+    private var regularFilters: some View {
+        Picker("Show", selection: $scope) {
+            // Every scope carries its count, including zero: "Needs review (0)"
+            // is the answer to the question the tab is asked, and hiding it
+            // makes an empty queue indistinguishable from one that hasn't been
+            // counted.
+            ForEach(Scope.allCases) { s in
+                Text("\(s.rawValue) (\(count(s)))").tag(s)
+            }
+        }
+        .pickerStyle(.segmented)
+
+        HStack {
+            Menu {
+                Button("All classes") { classFilter = nil }
+                Divider()
+                ForEach(presentClasses, id: \.self) { c in
+                    Button(c.capitalized) { classFilter = c }
+                }
+            } label: {
+                Label(classFilter?.capitalized ?? "All classes", systemImage: "line.3.horizontal.decrease.circle")
+                    .font(.subheadline)
+            }
+            Spacer()
+            Picker("Sort", selection: $order) {
+                ForEach(Order.allCases) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .frame(width: 150)
+        }
     }
 
     @ViewBuilder

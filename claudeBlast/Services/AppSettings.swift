@@ -37,6 +37,12 @@ enum AppSettingsKey {
     // so a newer bundled board is applied silently at launch — there is nothing
     // of the caregiver's inside one to save a copy of first.
     static let icloudEnabled     = "icloud_enabled"
+
+    // Activity log view options. Persisted because a caregiver who turns on
+    // hour grouping and comes back to find it off will just turn it on again.
+    static let activityRange       = "activity_range"
+    static let activityClusterByName = "activity_cluster_by_name"
+    static let activityGroupByHour   = "activity_group_by_hour"
     static let openaiApiKey      = "openai_api_key"
     static let providerChoice    = "provider_choice"
     static let audioEnabled          = "audio_enabled"

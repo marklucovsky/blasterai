@@ -23,13 +23,68 @@ import UIKit
 /// Shared height for the three top-row elements (active tile card, play+Done column, sentence
 /// bubble). Each gets the same explicit frame height and a matching inner vertical padding so
 /// they read as a single horizontal row.
-private let kCardHeight: CGFloat = 88
+/// Height of the tray's top row. Derived from the Play/Clear pair so the
+/// buttons can meet the minimum touch target — previously a fixed 88, which
+/// silently squeezed them to 41pt.
+private let kCardHeight: CGFloat = kMinimumTouchTarget * 2 + kPlayDoneSpacing
 private let kCardVerticalPadding: CGFloat = 6
 private let kActiveRowHeight: CGFloat = kCardHeight
-private let kActiveImageSize: CGFloat = 56
+/// Vertical padding the row puts around its contents. Named because the chip
+/// height is derived from it — the two used to be independent numbers, and a
+/// chip exactly as tall as the card then stood proud of it by however much
+/// padding the row happened to add.
+private let kActiveRowInset: CGFloat = 2
+
+/// Height of a tray chip: the card, less the padding it sits inside. A chip
+/// cannot overflow the tray because it is defined as what fits in it.
+private let kActiveCardHeight: CGFloat = kCardHeight - (kActiveRowInset * 2)
+
+/// Largest the picture may be. It is a *maximum*, not a fixed size: the label
+/// is laid out first and the image takes what is left, so a caregiver running
+/// large text gets a smaller picture rather than a chip bursting out of the
+/// tray.
+private let kActiveImageSize: CGFloat = kActiveCardHeight - (kCardVerticalPadding * 2) - 20
+/// Hard width for a tray chip, so a chip is the size of its picture and not
+/// the size of its word.
+///
+/// The chips used to size themselves to their labels. "graham crackers" is a
+/// far wider chip than "milk", so four verbose tiles could take most of the
+/// row and leave the sentence a sliver — the same starvation the compact tray
+/// had, arriving by a different route. The label truncates instead; the child
+/// identifies a chip by its image, and the full word is one tap away.
+private let kActiveCardWidth: CGFloat = kActiveImageSize + 12
 private let kPlayButtonWidth: CGFloat = 82
-private let kPlayButtonHeight: CGFloat = 54
-private let kDoneButtonHeight: CGFloat = 28
+
+/// Width the sentence needs before it is worth rendering as text rather than
+/// as a button. Matches the compact tray's rule so both trays degrade the same
+/// way.
+private let kMinimumSentenceWidth: CGFloat = 180
+
+
+/// Apple's minimum comfortable hit target, from the Human Interface Guidelines.
+///
+/// Treated here as a floor rather than a suggestion. This app's users have, by
+/// definition, motor and communication difficulties; a control that is merely
+/// *usually* hittable is a control that fails at the moment it is needed most.
+private let kMinimumTouchTarget: CGFloat = 44
+
+/// Play and Clear are the **same** height, and never below the minimum target.
+///
+/// The pair started at 54pt / 28pt — Clear barely half a target. Splitting the
+/// card evenly fixed the asymmetry but landed both at 41pt, still under the
+/// guideline, and 34pt in the compact tray. Both now sit at 44pt and the card
+/// grows to fit them, rather than the buttons shrinking to fit the card.
+///
+/// Clear is not the lesser control: it is what a child reaches for when the
+/// sentence came out wrong, which is exactly when they are least able to be
+/// precise.
+private let kPlayButtonHeight: CGFloat = kMinimumTouchTarget
+private let kDoneButtonHeight: CGFloat = kMinimumTouchTarget
+private let kCompactButtonHeight: CGFloat = kMinimumTouchTarget
+
+private let kCompactPlayDoneSpacing: CGFloat = 4
+private let kCompactPlayColumnHeight: CGFloat =
+    kMinimumTouchTarget * 2 + kCompactPlayDoneSpacing
 private let kPlayDoneSpacing: CGFloat = 6
 private let kHistoryTileSize: CGFloat = 22
 
@@ -39,27 +94,18 @@ struct SentenceTrayView: View {
     let onTileTap: (Int) -> Void
     let onGo: () -> Void
     let onReplay: () -> Void
-    let onReopenHistory: (UUID) -> Void
-    let onDeleteHistory: (UUID) -> Void
     /// Tap the inline sentence bubble to pop out the full sentence overlay.
     /// On iPad this is rarely needed (the inline bubble has plenty of room)
     /// but the affordance stays for parity with the iPhone tray.
     let onExpandSentence: () -> Void
     /// Tap the Home card. Wired to navigate to the active scene's root page.
-    let onHome: () -> Void
     /// Long-press Home to open the caregiver menu (mode toggle + gated Admin).
-    let onOpenMenu: () -> Void
-    /// Tap the Favorites card. Opens the GlassFavoritesOverlay.
-    let onShowFavorites: () -> Void
     /// True when the user is at the home page — dims the Home card.
-    let isAtHome: Bool
     /// Number of promoted SentenceCache entries — shown next to the star.
-    let favoritesCount: Int
     /// True when the sentence popover is currently visible (so the inline
     /// bubble can mute its expand affordance).
     let isSentenceShown: Bool
     /// True when the favorites overlay is currently visible — dims the card.
-    let isFavoritesShown: Bool
     /// Currently unused in iPad layout; reserved for the phone/responsive variant where the
     /// bubble becomes a dismissible overlay (the "×" → clearSelection).
     let onDismissActive: () -> Void
@@ -126,10 +172,7 @@ struct SentenceTrayView: View {
     // MARK: - Body
 
     var body: some View {
-        VStack(spacing: 6) {
-            activeRow
-            navStrip
-        }
+        activeRow
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .background(
@@ -168,8 +211,14 @@ struct SentenceTrayView: View {
     // MARK: - Top row
 
     /// Active card on the left (chips + inline speech bubble bound as one
-    /// surface, mirroring the iPhone tray's ActiveCard), and the Play/Done
-    /// stack on the right.
+    /// surface, mirroring the iPhone tray's ActiveCard), then Favorites, then
+    /// the Play/Clear stack on the right.
+    ///
+    /// This used to be two rows: the active card + play column on top, and a
+    /// nav strip beneath holding Home, a history scroll and Favorites. History
+    /// is gone and Home moved into the board as cell 0, which left an entire
+    /// 38pt row carrying one small card. Folding Favorites up here deletes that
+    /// row — the tray is shorter, which is the whole point of the exercise.
     private var activeRow: some View {
         HStack(alignment: .center, spacing: 12) {
             ActiveTrayCard(
@@ -183,60 +232,12 @@ struct SentenceTrayView: View {
             )
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            // Play and Done handle their own enabled/disabled rendering —
+            // Play and Clear handle their own enabled/disabled rendering —
             // no outer opacity wrap so they stay visible even when the
             // active group is empty (matches the iPhone tray).
             playColumn
         }
         .frame(height: kActiveRowHeight)
-    }
-
-    // MARK: - Bottom nav strip (Home + History scroll + Favorites)
-
-    /// Replaces the old plain history row + the standalone TileGridView
-    /// navBar. Home and Favorites are the same-family cards from the
-    /// iPhone tray, sized up for iPad. History stays as a horizontal
-    /// scroll of TileGroupBubble chips — the existing iPad pattern that
-    /// makes sense given the available width.
-    private var navStrip: some View {
-        HStack(alignment: .center, spacing: 8) {
-            IPadHomeCard(isEnabled: !isAtHome, action: onHome, onOpenMenu: onOpenMenu)
-
-            historyScroll
-                .frame(maxWidth: .infinity)
-
-            IPadFavoritesCard(
-                count: favoritesCount,
-                isEnabled: favoritesCount > 0 && !isFavoritesShown,
-                action: onShowFavorites
-            )
-        }
-        .frame(height: kIPadNavCardHeight)
-    }
-
-    private var historyScroll: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(alignment: .center, spacing: 8) {
-                if engine.groupHistory.isEmpty {
-                    Text("No history yet")
-                        .font(.subheadline)
-                        .foregroundStyle(.tertiary)
-                        .padding(.horizontal, 8)
-                } else {
-                    // Closed groups: oldest first (left), newest last (right).
-                    ForEach(Array(engine.groupHistory.reversed()), id: \.id) { group in
-                        HistoryGroupChip(
-                            group: group,
-                            onTap: { onReopenHistory(group.id) },
-                            onDelete: { onDeleteHistory(group.id) }
-                        )
-                        .id(group.id)
-                        .transition(.scale.combined(with: .opacity))
-                    }
-                }
-            }
-            .padding(.horizontal, 4)
-        }
     }
 
     /// Play button + Done (commit) button stacked vertically. Total height = kCardHeight.
@@ -300,6 +301,34 @@ private struct ActiveTrayCard: View {
     let isSuppressed: Bool
 
     var body: some View {
+        // Measured, because "is there room for the sentence" is a question
+        // about this device's width and this selection's size together. An
+        // 13" iPad has room for four chips and a sentence; an iPad mini in
+        // portrait does not.
+        GeometryReader { geo in
+            content(width: geo.size.width)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        }
+        .frame(height: kCardHeight)
+        .background(TrayCardBackground(cornerRadius: 14))
+        // Belt and braces. The heights above are derived so they cannot
+        // overflow, but this row has drifted out of its card once already and
+        // the failure is very visible — tiles floating over the board.
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    /// Width left for the sentence once the chips have taken theirs.
+    private func sentenceWidth(in width: CGFloat) -> CGFloat {
+        let chips = CGFloat(tiles.count) * kActiveCardWidth
+            + CGFloat(max(0, tiles.count - 1)) * 8
+            + 8   // the chip group's own horizontal padding
+        return width - chips - 12 - 10   // card padding + HStack spacing
+    }
+
+    @ViewBuilder
+    private func content(width: CGFloat) -> some View {
+        let room = sentenceWidth(in: width)
+
         HStack(alignment: .center, spacing: 10) {
             if tiles.isEmpty {
                 Text("Tap tiles to build a sentence")
@@ -318,7 +347,6 @@ private struct ActiveTrayCard: View {
                             .transition(.scale.combined(with: .opacity))
                     }
                 }
-                .padding(.vertical, 2)
                 .padding(.horizontal, 4)
                 .fixedSize(horizontal: true, vertical: false)
                 .animation(.easeInOut(duration: 0.18), value: tiles.count)
@@ -327,8 +355,13 @@ private struct ActiveTrayCard: View {
                     IPadMutedBubble()
                         .onLongPressGesture(minimumDuration: 0.4, perform: onBubbleLongPress)
                 } else if let sentence = sentence {
-                    IPadSentenceBubble(text: sentence, onExpand: onExpandSentence)
-                        .onLongPressGesture(minimumDuration: 0.4, perform: onBubbleLongPress)
+                    if room < kMinimumSentenceWidth {
+                        IPadSentenceButton(action: onExpandSentence)
+                            .onLongPressGesture(minimumDuration: 0.4, perform: onBubbleLongPress)
+                    } else {
+                        IPadSentenceBubble(text: sentence, onExpand: onExpandSentence)
+                            .onLongPressGesture(minimumDuration: 0.4, perform: onBubbleLongPress)
+                    }
                 } else if isThinking {
                     IPadThinkingBubble()
                 } else {
@@ -337,9 +370,36 @@ private struct ActiveTrayCard: View {
             }
         }
         .padding(.horizontal, 6)
-        .padding(.vertical, 4)
-        .frame(height: kCardHeight)
-        .background(TrayCardBackground(cornerRadius: 14))
+        .padding(.vertical, kActiveRowInset)
+    }
+}
+
+/// Stand-in for the iPad sentence bubble when the row has no width left.
+///
+/// Deliberately a control rather than a shrunken bubble: a bubble narrowed to
+/// two characters per line looks broken, and — because it is what a caregiver
+/// then taps — it was how they reached a popover that had no way out.
+private struct IPadSentenceButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 2) {
+                Image(systemName: "text.bubble.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                Text("Sentence")
+                    .font(.caption2.weight(.semibold))
+            }
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color(.tertiarySystemFill))
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Show sentence")
     }
 }
 
@@ -565,66 +625,6 @@ private struct IPadThinkingBubble: View {
 
 // MARK: - iPad nav cards (Home / Favorites)
 
-private struct IPadHomeCard: View {
-    let isEnabled: Bool
-    let action: () -> Void
-    let onOpenMenu: () -> Void
-
-    var body: some View {
-        Button(action: { if isEnabled { action() } }) {
-            HStack(spacing: 6) {
-                Image(systemName: "house.fill")
-                    .font(.system(size: 13, weight: .semibold))
-                Text("Home")
-                    .font(.system(size: 13, weight: .semibold))
-            }
-            .foregroundStyle(isEnabled ? .primary : .secondary)
-            .frame(width: kIPadNavCardWidth, height: kIPadNavCardHeight)
-            .background(TrayCardBackground(cornerRadius: kIPadNavCornerRadius))
-            .opacity(isEnabled ? 1.0 : 0.5)
-        }
-        .buttonStyle(.plain)
-        // Not `.disabled` — long-press while at home toggles interaction mode.
-        .simultaneousGesture(
-            LongPressGesture(minimumDuration: 0.6).onEnded { _ in
-                onOpenMenu()
-            }
-        )
-        .accessibilityLabel("Go home")
-        .accessibilityHint(isEnabled ? "Returns to home page" : "Already at home. Press and hold for caregiver options.")
-    }
-}
-
-private struct IPadFavoritesCard: View {
-    let count: Int
-    let isEnabled: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 4) {
-                Image(systemName: "star.fill")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(isEnabled ? .orange : Color.orange.opacity(0.5))
-                Text("\(count)")
-                    .font(.system(size: 13, weight: .semibold).monospacedDigit())
-                    .foregroundStyle(isEnabled ? .primary : .secondary)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(isEnabled ? .secondary : .tertiary)
-            }
-            .frame(width: kIPadNavCardWidth, height: kIPadNavCardHeight)
-            .background(TrayCardBackground(cornerRadius: kIPadNavCornerRadius))
-            .opacity(isEnabled ? 1.0 : 0.55)
-        }
-        .buttonStyle(.plain)
-        .disabled(!isEnabled)
-        .accessibilityLabel("Favorites")
-        .accessibilityValue("\(count)")
-        .accessibilityHint(isEnabled ? "Opens favorites" : "No favorites yet")
-    }
-}
-
 // MARK: - Active tile card
 
 private struct ActiveTileCard: View {
@@ -635,16 +635,24 @@ private struct ActiveTileCard: View {
         Button(action: onTap) {
             VStack(spacing: 3) {
                 TileImageView(key: tile.key, wordClass: tile.wordClass)
-                    .frame(width: kActiveImageSize, height: kActiveImageSize)
+                    // maxHeight, not height. The label is laid out at whatever
+                    // the reader's text size makes it and the picture absorbs
+                    // the difference; with a fixed size the two together simply
+                    // exceeded the chip and spilled over its edges.
+                    .frame(maxWidth: kActiveImageSize, maxHeight: kActiveImageSize)
+                    .aspectRatio(1, contentMode: .fit)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                 Text(tile.value)
                     .font(.caption)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
+                    .truncationMode(.tail)
+                    .minimumScaleFactor(0.8)
+                    .layoutPriority(1)
             }
             .padding(.horizontal, 6)
             .padding(.vertical, kCardVerticalPadding)
-            .frame(height: kCardHeight)
+            .frame(width: kActiveCardWidth, height: kActiveCardHeight)
             .background(
                 RoundedRectangle(cornerRadius: 12)
                     .fill(Color(.systemBackground))
@@ -685,7 +693,7 @@ struct PrimaryPlayButton: View {
     let action: () -> Void
 
     private var buttonWidth: CGFloat { compact ? 60 : kPlayButtonWidth }
-    private var buttonHeight: CGFloat { compact ? 44 : kPlayButtonHeight }
+    private var buttonHeight: CGFloat { compact ? kCompactButtonHeight : kPlayButtonHeight }
     private var iconSize: CGFloat { compact ? 22 : 30 }
     private var cornerRadius: CGFloat { compact ? 10 : 14 }
 
@@ -833,8 +841,15 @@ struct ReplayBadge: View {
     }
 }
 
-// MARK: - Done / commit button
+// MARK: - Clear / commit button
 
+/// Clears the tray and starts a fresh utterance.
+///
+/// It was labelled "Done" when its job was to *commit the group to the
+/// child-facing history strip*. That strip is gone, so "Done" described a
+/// mechanism the user could no longer see, and "Clear" is now simply what the
+/// button does. The finalized utterance still reaches `LoggedUtterance` for
+/// Admin → Activity Log — that never depended on the label.
 struct DoneButton: View {
     let isEnabled: Bool
     /// Single binary trigger from the engine. Once true, the button drives its own escalating
@@ -846,7 +861,7 @@ struct DoneButton: View {
     let action: () -> Void
 
     private var buttonWidth: CGFloat { compact ? 60 : kPlayButtonWidth }
-    private var buttonHeight: CGFloat { compact ? 22 : kDoneButtonHeight }
+    private var buttonHeight: CGFloat { compact ? kCompactButtonHeight : kDoneButtonHeight }
     private var cornerRadius: CGFloat { compact ? 10 : 8 }
 
     @State private var nudgeScale: CGFloat = 1.0
@@ -933,7 +948,7 @@ struct DoneButton: View {
             HStack(spacing: 4) {
                 Image(systemName: "checkmark")
                     .font(.system(size: 11, weight: iconWeight))
-                Text("Done")
+                Text("Clear")
                     .font(.caption.weight(textWeight))
             }
             .foregroundStyle(foreground)
@@ -1001,7 +1016,7 @@ struct SingleWordPlayButton: View {
     let action: () -> Void
 
     private var buttonWidth: CGFloat { compact ? 60 : kPlayButtonWidth }
-    private var buttonHeight: CGFloat { compact ? 22 : kDoneButtonHeight }
+    private var buttonHeight: CGFloat { compact ? kCompactButtonHeight : kDoneButtonHeight }
     private var cornerRadius: CGFloat { compact ? 10 : 8 }
 
     var body: some View {
@@ -1034,29 +1049,7 @@ struct SingleWordPlayButton: View {
     }
 }
 
-// MARK: - History group chip
-
-private struct HistoryGroupChip: View {
-    let group: TileGroup
-    let onTap: () -> Void
-    let onDelete: () -> Void
-
-    var body: some View {
-        Button(action: onTap) {
-            TileGroupBubble(tiles: group.tiles)
-        }
-        .buttonStyle(.plain)
-        .contextMenu {
-            Button(role: .destructive, action: onDelete) {
-                Label("Delete", systemImage: "trash")
-            }
-        }
-    }
-}
-
-// MARK: - TileGroupBubble (shared)
-
-/// The "bubble of tiles" used by both the in-app sentence tray history row and the AdminView
+/// The "bubble of tiles" used by the AdminView
 /// Activity Log. Each tile is a tinted capsule chip (image + label colored by wordClass),
 /// wrapped in a rounded card with a soft shadow.
 struct TileGroupBubble: View {

@@ -10,6 +10,17 @@ import SwiftData
 import UniformTypeIdentifiers
 
 extension AdminView {
+
+    /// Pull a pending `admin/scenes/...` request off the coordinator and turn it
+    /// into an actual push.
+    func consumePendingSceneDetail() {
+        guard let detail = adminRoute.consumeDetail(for: .scenes) else { return }
+        switch detail {
+        case .vocabulary: vocabDetail = .vocabulary
+        default:          break
+        }
+    }
+
     var scenesTab: some View {
         NavigationStack {
             List {
@@ -31,6 +42,15 @@ extension AdminView {
             .navigationDestination(item: $navigateToNewScene) { scene in
                 SceneEditorView(scene: scene)
             }
+            // A script asking for `admin/scenes/vocabulary` sets a pending
+            // detail; the tab that owns the destination is the only thing that
+            // can push it, and it clears the request on arrival so a later
+            // hand-selection of this tab doesn't silently push again.
+            .navigationDestination(item: $vocabDetail) { _ in
+                VocabManagerView()
+            }
+            .onAppear { consumePendingSceneDetail() }
+            .onChange(of: adminRoute.pendingDetail) { _, _ in consumePendingSceneDetail() }
             .toolbar { adminDoneToolbar }
         }
         .tabItem { Label("Scenes", systemImage: "square.grid.2x2.fill") }

@@ -35,49 +35,63 @@ enum BootstrapLoader {
         return hasher.finalize().map { String(format: "%02x", $0) }.joined()
     }
 
-    /// Decide whether bootstrap should run. Two modes:
+    /// Bootstrap fires **only on first install**, in every configuration.
     ///
-    /// - **RELEASE**: bootstrap fires only on first install. The
-    ///   bootstrapInstalled flag is set once and never re-checked. App updates
-    ///   that change bundled JSON files do NOT auto-replace the user's
-    ///   scene/vocab. This protects children in the wild — they keep their
-    ///   muscle-memory layout across app updates.
+    /// A child's board is muscle memory. An app update must not rearrange it,
+    /// so bundled JSON changes never wipe and re-seed; they arrive through
+    /// `updateSystemScene`, which rewrites the immutable system board in place
+    /// and inserts any new bundled words alongside it.
     ///
-    /// - **DEBUG**: bootstrap fires whenever the bundled content hash changes,
-    ///   so developers editing scenes/*.json see updates on next launch.
+    /// ## Why DEBUG no longer differs
     ///
-    /// Both modes still respect AdminView's "Factory Reset" — that path resets
-    /// both flags so the next launch performs a fresh bootstrap regardless.
+    /// DEBUG used to re-bootstrap whenever the bundled content hash changed, so
+    /// a developer editing `scenes/*.json` saw it on next launch. That was
+    /// convenient and it cost us: DEBUG exercised a launch path that no shipped
+    /// build ever runs, which is how two real bugs stayed hidden —
+    ///
+    /// - the seeded-store branch stamping a content hash it had not applied,
+    ///   swallowing the update it was about to trigger; and
+    /// - `updateSystemScene` never inserting new bundled vocabulary, so a board
+    ///   referencing a new word rendered a hole.
+    ///
+    /// Both only bit an *existing* install, which in DEBUG the wipe kept papering
+    /// over. Running the shipping path in development is worth more than the
+    /// convenience, especially with a pilot in sight.
+    ///
+    /// To reseed from the bundle deliberately, use AdminView's **Factory Reset**,
+    /// which clears both flags so the next launch bootstraps fresh.
     static func needsBootstrap() -> Bool {
         let defaults = UserDefaults.standard
         let installed = defaults.bool(forKey: AppSettingsKey.bootstrapInstalled)
 
-        #if DEBUG
-        // debug builds automatically re-bootstrap if hashes are not the same,
-        // customer builds do not do this auto update, but do allow for manual download
-        //
-        // Migrate from the old integer-version scheme: if installed-flag is
-        // unset but the legacy bootstrap_version key is set, we already
-        // bootstrapped at least once. Migrate forward without an extra wipe.
+        // Migrate from the old integer-version scheme: an install that predates
+        // the flag but has a legacy bootstrap_version has already been seeded.
+        // Move it forward rather than wiping a board someone is using.
         if !installed && defaults.integer(forKey: AppSettingsKey.bootstrapVersion) > 0 {
             defaults.set(true, forKey: AppSettingsKey.bootstrapInstalled)
-            // Don't store the hash here; let the next bootstrap or the next
-            // hash check write it. We deliberately return true on this branch
-            // so the developer sees up-to-date content.
-            return true
+            return false
         }
-        if !installed { return true }
-        let stored = defaults.string(forKey: AppSettingsKey.bootstrapContentHash) ?? ""
-        return stored != bundledContentHash
-        #else
         return !installed
-        #endif
     }
 
-    static func markBootstrapComplete() {
+    /// Record that this device has been seeded.
+    ///
+    /// - Parameter appliedBundledContent: whether bundled JSON was actually
+    ///   loaded. Stamping the content hash is a claim that *this device now
+    ///   holds this bundle's content* — so a caller that skipped seeding must
+    ///   pass `false`, or the stamp lies.
+    ///
+    ///   That lie had teeth: the `storeAlreadySeeded` branch skips seeding and
+    ///   used to stamp anyway, which left `isBundleUpdateAvailable()` false and
+    ///   silently swallowed the very board update the launch sequence runs next.
+    ///   In DEBUG the symptom was that edits to `core_first.json` never appeared
+    ///   until the app was deleted and reinstalled.
+    static func markBootstrapComplete(appliedBundledContent: Bool = true) {
         let defaults = UserDefaults.standard
         defaults.set(true, forKey: AppSettingsKey.bootstrapInstalled)
-        defaults.set(bundledContentHash, forKey: AppSettingsKey.bootstrapContentHash)
+        if appliedBundledContent {
+            defaults.set(bundledContentHash, forKey: AppSettingsKey.bootstrapContentHash)
+        }
     }
 
     /// True when the synced store already holds bundled (system) vocabulary.
@@ -268,8 +282,9 @@ enum BootstrapLoader {
         return stored != bundledContentHash
     }
 
-    /// Re-materialize the bundled `core_first.json` and overwrite the existing
-    /// system scene's content IN PLACE — same BlasterScene id, isActive, and
+    /// Bring an existing install up to the current bundle: insert any new
+    /// bundled vocabulary, then re-materialize `core_first.json` and overwrite
+    /// the system scene's content IN PLACE — same BlasterScene id, isActive, and
     /// isDefault preserved, so navigation and active-scene state aren't
     /// disrupted. Scoped strictly to the system Core-First scene; user-created
     /// and duplicated scenes (systemSceneKey == "") are never touched.
@@ -293,6 +308,35 @@ enum BootstrapLoader {
         }
 
         do {
+            // Insert any bundled word this store has never seen.
+            //
+            // A board is a list of tile KEYS; the words themselves are separate
+            // `TileModel` records seeded at first install. So a build that adds a
+            // word *and* places it on the core board used to update the board and
+            // leave the word missing — `tileLookup[key]` returns nil and the cell
+            // silently renders nothing. A hole where a word should be.
+            //
+            // This is the only path that carries bundled content to an existing
+            // install (RELEASE bootstraps exactly once), so the vocabulary has to
+            // travel with the board. Keys already present are left alone: they may
+            // carry caregiver state — custom art, retirement, review flags — and
+            // this is an update, not a reset.
+            let existingKeys = Set(
+                (try? context.fetch(FetchDescriptor<TileModel>()))?.map(\.key) ?? []
+            )
+            var addedTiles = 0
+            var seen = Set<String>()
+            for codable in vocab where !existingKeys.contains(codable.key) {
+                guard seen.insert(codable.key).inserted else { continue }
+                let tile = TileModel(from: codable)
+                tile.isSystem = true
+                context.insert(tile)
+                addedTiles += 1
+            }
+            if addedTiles > 0 {
+                print("updateSystemScene: inserted \(addedTiles) new bundled tile(s)")
+            }
+
             let key = materialized.key
             let scenes = try context.fetch(
                 FetchDescriptor<BlasterScene>(predicate: #Predicate { $0.systemSceneKey == key })

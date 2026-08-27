@@ -21,7 +21,8 @@ final class DeviceProfile {
     /// Patient devices: always true (forced at onboarding). Caregiver
     /// devices: false by default; the therapist can opt in.
     var requireFaceIDForAdmin: Bool = false
-    /// PBKDF2-hashed PIN used as Face ID fallback. nil = no PIN set yet.
+    /// PBKDF2-hashed PIN used as the biometric fallback — and as the *only*
+    /// unlock on a device with no biometry, such as a Mac. nil = no PIN set yet.
     /// Wired in commit 6; declared here so the schema is stable.
     var adminPINHash: Data?
     var adminPINSalt: Data?
@@ -126,7 +127,7 @@ enum DeviceRole: String, CaseIterable, Codable {
     var summary: String {
         switch self {
         case .patient:
-            return "This device is for a non-verbal child to use as their voice. Admin is locked behind Face ID + PIN so the child can't change things by accident. The child's profile drives the voice and AI prompts."
+            return "This device is for a non-verbal child to use as their voice. Admin is locked behind a PIN (and biometrics where the device has them) so the child can't change things by accident. The child's profile drives the voice and AI prompts."
         case .caregiver:
             return "This device is for you — a therapist, parent, or family member. The Sandbox profile drives generic use; you can add real patient profiles and switch between them to tune scenes. Admin is open by default."
         }

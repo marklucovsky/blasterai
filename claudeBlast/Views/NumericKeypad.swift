@@ -75,6 +75,38 @@ struct NumericKeypad: View {
             dotIndicator
             keypadGrid
         }
+        // A hardware keyboard must work. The on-screen grid exists to keep the
+        // iPad's full keyboard out of the way, not to forbid typing — and on a
+        // Mac (Designed for iPad) the caregiver's first instinct is to type
+        // their PIN. Without this, nothing happens and the device reads as
+        // broken. Digits append, delete backspaces, and the buttons keep
+        // working exactly as before.
+        .focusable()
+        .focusEffectDisabled()
+        .onKeyPress(characters: .decimalDigits) { press in
+            guard let digit = press.characters.first, digit.isNumber else { return .ignored }
+            append(String(digit))
+            return .handled
+        }
+        .onKeyPress(.delete) {
+            backspace()
+            return .handled
+        }
+    }
+
+    // MARK: - Input
+
+    /// Single entry point for adding a digit, shared by the on-screen buttons
+    /// and the hardware keyboard so the two can never drift.
+    private func append(_ digit: String) {
+        guard pin.count < maxLength else { return }
+        pin += digit
+        if pin.count == maxLength { onComplete?() }
+    }
+
+    private func backspace() {
+        guard !pin.isEmpty else { return }
+        pin.removeLast()
     }
 
     // MARK: - Dot indicator
@@ -131,9 +163,7 @@ struct NumericKeypad: View {
     private func digitButton(_ digit: String) -> some View {
         let size = sizing.buttonSize
         return Button {
-            guard pin.count < maxLength else { return }
-            pin += digit
-            if pin.count == maxLength { onComplete?() }
+            append(digit)
         } label: {
             Text(digit)
                 .font(sizing.buttonFont)
@@ -147,7 +177,7 @@ struct NumericKeypad: View {
     private var backspaceButton: some View {
         let size = sizing.buttonSize
         return Button {
-            if !pin.isEmpty { pin.removeLast() }
+            backspace()
         } label: {
             Image(systemName: "delete.left")
                 .font(.title3)

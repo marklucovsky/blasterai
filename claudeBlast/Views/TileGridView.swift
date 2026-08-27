@@ -20,13 +20,6 @@ struct TileGridView: View {
     /// underlying TileModel for display (image, label, wordClass).
     @Query(sort: \TileModel.key) private var allTiles: [TileModel]
 
-    @Query(
-        filter: #Predicate<SentenceCache> { entry in
-            entry.hitCount >= promotedHitThreshold || entry.isPinned
-        },
-        sort: \SentenceCache.hitCount, order: .reverse
-    )
-    private var promotedEntries: [SentenceCache]
 
     private var tileLookup: [String: TileModel] {
         Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
@@ -45,7 +38,6 @@ struct TileGridView: View {
     @State private var haptic = UIImpactFeedbackGenerator(style: .heavy)
     @State private var pendingNote: String = ""
     @State private var showNoteAlert: Bool = false
-    @State private var promotedExpanded: Bool = false
     /// The tile that most recently fired a press pulse — lifted above its grid
     /// neighbors (via cell zIndex) so the grow animation isn't clipped by the
     /// adjacent cell. LazyVGrid ignores zIndex set inside the cell's subtree, so
@@ -61,11 +53,17 @@ struct TileGridView: View {
 
     private var isCompact: Bool { hSizeClass == .compact }
 
+    /// Roughly what the compact tray's bubble can show before truncating.
+    /// Deliberately a blunt character count: the exact threshold matters far
+    /// less than not covering the board for a sentence the caregiver can
+    /// already read.
+    private static func isTooLongForTray(_ sentence: String) -> Bool {
+        sentence.count > 60
+    }
+
     enum CompactOverlay: Equatable {
         case none
         case sentence
-        case history
-        case favorites
     }
 
     private var activeScene: BlasterScene? { activeScenes.first }
@@ -95,115 +93,109 @@ struct TileGridView: View {
         return scene.pages.first { $0.key == key }
     }
 
+    // MARK: - Tray
+
+    /// The tray varies by interaction mode and width, and each variant takes a
+    /// dozen closures. Inlining all three in `body` pushed the expression past
+    /// what the Swift type-checker will solve — it gave up outright when the
+    /// history parameters were removed. Splitting them is what keeps compile
+    /// times sane, and each variant now reads on its own.
+    @ViewBuilder
+    private var trayForCurrentMode: some View {
+        if engine.interactionMode == .singleWord {
+            singleWordTray
+        } else if isCompact {
+            compactTray
+        } else {
+            padTray
+        }
+    }
+
+    /// Classic AAC: a running FIFO strip of spoken words, no AI. One adaptive
+    /// view for both form factors.
+    private var singleWordTray: some View {
+            SingleWordTrayView(
+                onRemove: { index in engine.removeStripWord(at: index) },
+                onClear: { engine.clearStrip() },
+            )
+            .padding(.top, 8)
+    }
+
+    private var compactTray: some View {
+            CompactTrayStrip(
+                onTileTap: { index in engine.removeTile(at: index) },
+                onGo: {
+                    if recorder.state == .recording { recorder.recordPlay() }
+                    engine.triggerGo()
+                },
+                onReplay: {
+                    if recorder.state == .recording { recorder.recordReplay() }
+                    engine.replay()
+                },
+                onCancelSingle: { engine.clearSelection() },
+                onPlaySingle: { engine.playSingleTile() },
+                onCommitActive: { engine.commitActiveAndStartNew() },
+                onShowSentence: { showCompactOverlay(.sentence) },
+                isSentenceShown: compactOverlay == .sentence,
+            )
+    }
+
+    private var padTray: some View {
+            SentenceTrayView(
+                onTileTap: { index in
+                    engine.removeTile(at: index)
+                },
+                onGo: {
+                    if recorder.state == .recording {
+                        recorder.recordPlay()
+                    }
+                    engine.triggerGo()
+                },
+                onReplay: {
+                    if recorder.state == .recording {
+                        recorder.recordReplay()
+                    }
+                    engine.replay()
+                },
+                onExpandSentence: { showCompactOverlay(.sentence) },
+                isSentenceShown: compactOverlay == .sentence,
+                onDismissActive: {
+                    engine.clearSelection()
+                },
+                onCommitActive: {
+                    engine.commitActiveAndStartNew()
+                },
+                onCancelSingle: {
+                    engine.clearSelection()
+                },
+                onPlaySingle: {
+                    engine.playSingleTile()
+                }
+            )
+            .padding(.top, 8)
+    }
+
+    /// The board itself, or an empty state when no scene is active.
+    @ViewBuilder
+    private var gridContent: some View {
+        if let page = currentPage {
+            pagedGrid(for: page)
+                .overlay(alignment: .top) {
+                    compactOverlayContent
+                }
+        } else {
+            ContentUnavailableView(
+                "No Active Scene",
+                systemImage: "questionmark.square",
+                description: Text("No scene is currently active.")
+            )
+        }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            if engine.interactionMode == .singleWord {
-                // Classic AAC: a running FIFO strip of spoken words, no AI.
-                // One adaptive view for both form factors.
-                SingleWordTrayView(
-                    onRemove: { index in engine.removeStripWord(at: index) },
-                    onClear: { engine.clearStrip() },
-                    onHome: {
-                        coordinator.navigateToRoot()
-                        currentDisplayPage = 0
-                    },
-                    onOpenMenu: { showCaregiverMenu = true },
-                    isAtHome: coordinator.navigationPath.count <= 1
-                )
-                .padding(.top, 8)
-            } else if isCompact {
-                CompactTrayStrip(
-                    onTileTap: { index in engine.removeTile(at: index) },
-                    onGo: {
-                        if recorder.state == .recording { recorder.recordPlay() }
-                        engine.triggerGo()
-                    },
-                    onReplay: {
-                        if recorder.state == .recording { recorder.recordReplay() }
-                        engine.replay()
-                    },
-                    onCancelSingle: { engine.clearSelection() },
-                    onPlaySingle: { engine.playSingleTile() },
-                    onCommitActive: { engine.commitActiveAndStartNew() },
-                    onShowSentence: { showCompactOverlay(.sentence) },
-                    onShowHistory: { showCompactOverlay(.history) },
-                    onShowFavorites: { showCompactOverlay(.favorites) },
-                    onHome: {
-                        coordinator.navigateToRoot()
-                        currentDisplayPage = 0
-                    },
-                    onOpenMenu: { showCaregiverMenu = true },
-                    isAtHome: coordinator.navigationPath.count <= 1,
-                    favoritesCount: min(promotedEntries.count, 99),
-                    isSentenceShown: compactOverlay == .sentence,
-                    isHistoryShown: compactOverlay == .history,
-                    isFavoritesShown: compactOverlay == .favorites
-                )
-            } else {
-                SentenceTrayView(
-                    onTileTap: { index in
-                        engine.removeTile(at: index)
-                    },
-                    onGo: {
-                        if recorder.state == .recording {
-                            recorder.recordPlay()
-                        }
-                        engine.triggerGo()
-                    },
-                    onReplay: {
-                        if recorder.state == .recording {
-                            recorder.recordReplay()
-                        }
-                        engine.replay()
-                    },
-                    onReopenHistory: { id in
-                        if recorder.state == .recording {
-                            recorder.recordReplay()
-                        }
-                        engine.reopenHistoryGroup(id: id)
-                    },
-                    onDeleteHistory: { id in
-                        engine.deleteHistoryGroup(id: id)
-                    },
-                    onExpandSentence: { showCompactOverlay(.sentence) },
-                    onHome: {
-                        coordinator.navigateToRoot()
-                        currentDisplayPage = 0
-                    },
-                    onOpenMenu: { showCaregiverMenu = true },
-                    onShowFavorites: { showCompactOverlay(.favorites) },
-                    isAtHome: coordinator.navigationPath.count <= 1,
-                    favoritesCount: min(promotedEntries.count, 99),
-                    isSentenceShown: compactOverlay == .sentence,
-                    isFavoritesShown: compactOverlay == .favorites,
-                    onDismissActive: {
-                        engine.clearSelection()
-                    },
-                    onCommitActive: {
-                        engine.commitActiveAndStartNew()
-                    },
-                    onCancelSingle: {
-                        engine.clearSelection()
-                    },
-                    onPlaySingle: {
-                        engine.playSingleTile()
-                    }
-                )
-                .padding(.top, 8)
-            }
-
-            if let page = currentPage {
-                pagedGrid(for: page)
-                    .overlay(alignment: .top) {
-                        compactOverlayContent
-                    }
-            } else {
-                ContentUnavailableView(
-                    "No Active Scene",
-                    systemImage: "questionmark.square",
-                    description: Text("No scene is currently active.")
-                )
-            }
+            trayForCurrentMode
+            gridContent
         }
         .overlay(alignment: .bottom) {
             if scriptRunner.state == .idle {
@@ -214,12 +206,12 @@ struct TileGridView: View {
                 TileScriptPlaybackOverlay()
             }
         }
-        // Caregiver menu — opened by long-pressing Home. Replaces the old hidden
-        // triple-tap → hamburger → menu chain. Anchored to the top-leading corner
-        // (where the tray's Home button sits) so it pops up next to Home rather
-        // than centered mid-screen — the caregiver's reaching arm doesn't occlude
-        // it. Mode toggle is direct; Admin is gated by AdminGate (Face ID / PIN)
-        // when ContentView presents it.
+        // Caregiver menu — opened by long-pressing Home, which is now cell 0 of
+        // the board rather than a tray button. Anchored top-leading, the corner
+        // Home sits nearest, so it pops up beside it rather than centered
+        // mid-screen where the caregiver's reaching arm would occlude it.
+        // Admin is gated by AdminGate when ContentView presents it; on a
+        // patient device it is the only entry the menu offers.
         .popover(isPresented: $showCaregiverMenu,
                  attachmentAnchor: .point(.topLeading),
                  arrowEdge: .top) {
@@ -228,17 +220,27 @@ struct TileGridView: View {
         }
         .onChange(of: engine.canReplay) { _, isReady in
             guard isCompact else { return }
-            if isReady {
-                // Auto-pop the sentence overlay when a sentence becomes ready,
-                // unless the caregiver is currently browsing history (don't interrupt).
-                if compactOverlay != .history { showCompactOverlay(.sentence) }
-            } else if compactOverlay == .sentence {
+            // Only auto-present the popover when the tray cannot show the
+            // sentence itself.
+            //
+            // The compact tray already renders the sentence in its bubble, so
+            // popping a duplicate over the board hid the top row — including
+            // the Home cell, the one control whose whole value is being in the
+            // same place every time. A caregiver reads the tray; the popover is
+            // for the sentence too long to fit there, and stays available on tap.
+            if isReady, engine.activeGroup.sentence.map(Self.isTooLongForTray) == true {
+                showCompactOverlay(.sentence)
+            } else if !isReady, compactOverlay == .sentence {
                 dismissCompactOverlay()
             }
         }
         .task(id: overlayEpoch) {
-            // Only the sentence overlay auto-dismisses. History stays until tapped.
-            guard isCompact, compactOverlay == .sentence else { return }
+            // Auto-dismiss is NOT compact-only. It used to be, which meant the
+            // popover — reachable on iPad by tapping the tray bubble — had no
+            // timer, no tap-out, and one small × as its only exit. On an iPad
+            // mini in portrait, where the bubble is small enough that a
+            // caregiver actually taps it, that stuck.
+            guard compactOverlay == .sentence else { return }
             try? await Task.sleep(for: .seconds(5))
             guard !Task.isCancelled else { return }
             withAnimation(.easeOut(duration: 0.3)) {
@@ -276,125 +278,6 @@ struct TileGridView: View {
         }
     }
 
-    // Precomputed breadcrumb steps — avoids @ViewBuilder let-binding type-inference pitfalls.
-    private struct BreadcrumbStep: Identifiable {
-        let id: String        // unique per render (index + segment)
-        let segment: String
-        let isFirst: Bool
-        let isLast: Bool
-        let label: String
-    }
-
-    private var breadcrumbSteps: [BreadcrumbStep] {
-        coordinator.navigationPath.enumerated().map { i, seg in
-            BreadcrumbStep(
-                id: "\(i)-\(seg)",
-                segment: seg,
-                isFirst: i == 0,
-                isLast: i == coordinator.navigationPath.count - 1,
-                label: i == 0 ? "Home" : seg.replacingOccurrences(of: "_", with: " ").capitalized
-            )
-        }
-    }
-
-    // Combined nav bar: breadcrumbs (leading) + frequent toggle (trailing).
-    // Shares a single row of vertical space when both are active.
-    private var navBar: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 0) {
-                // Breadcrumbs — leading
-                if coordinator.navigationPath.count > 1 {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 0) {
-                            ForEach(breadcrumbSteps, id: \.id) { step in
-                                breadcrumbStepView(step)
-                            }
-                        }
-                    }
-                }
-
-                Spacer(minLength: 4)
-
-                // Frequent toggle — trailing
-                if !promotedEntries.isEmpty {
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            promotedExpanded.toggle()
-                        }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "star.fill")
-                                .font(.caption2)
-                                .foregroundStyle(.orange)
-                            Text("\(promotedEntries.prefix(8).count)")
-                                .font(.caption2.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                            Image(systemName: "chevron.right")
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
-                                .rotationEffect(.degrees(promotedExpanded ? 90 : 0))
-                        }
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, 16)
-            .frame(height: 26)
-
-            // Expanded chip strip
-            if promotedExpanded && !promotedEntries.isEmpty {
-                PromotedChipStrip(
-                    entries: Array(promotedEntries.prefix(8)),
-                    sceneKeySet: sceneKeySet,
-                    tileWordClass: tileWordClass
-                ) { entry in
-                    engine.speakPromoted(entry)
-                }
-            }
-
-            Divider()
-        }
-    }
-
-    @ViewBuilder
-    private func breadcrumbStepView(_ step: BreadcrumbStep) -> some View {
-        if !step.isFirst {
-            Image(systemName: "chevron.right")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .padding(.horizontal, 5)
-        }
-        if step.isLast {
-            Text(step.label)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .padding(.vertical, 8)
-        } else {
-            Button {
-                if step.isFirst {
-                    coordinator.navigateToRoot()
-                } else {
-                    coordinator.navigate(to: step.segment)
-                }
-            } label: {
-                HStack(spacing: 3) {
-                    if step.isFirst {
-                        Image(systemName: "house.fill")
-                            .font(.caption2)
-                    }
-                    Text(step.label)
-                        .font(.caption)
-                }
-                .foregroundStyle(.tertiary)
-                .padding(.vertical, 8)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
-    @ViewBuilder
     private func pagedGrid(for page: PageSpec) -> some View {
         GeometryReader { geo in
             let isLandscape = geo.size.width > geo.size.height
@@ -407,9 +290,15 @@ struct TileGridView: View {
             // render for the child — both stay invisible in running scenes until
             // the caregiver resolves them. A missing tile stays a no-op as before.
             let lookup = tileLookup
+            // Cell 0 of every page is Home, so each page carries one fewer
+            // vocabulary tile. Reserving it here — rather than only on page 1 —
+            // is what makes the position invariant: Home is in the same place
+            // on page 4 of a long board as on page 1. `max(1,)` guards a
+            // pathologically small grid.
+            let vocabPerPage = max(1, spec.perPage - 1)
             let chunkedTiles = page.tiles
                 .filter { lookup[$0.key]?.isHiddenFromChild != true }
-                .chunked(into: spec.perPage)
+                .chunked(into: vocabPerPage)
             Group {
                 if isLandscape {
                     landscapeTabView(chunks: chunkedTiles, spec: spec)
@@ -435,7 +324,8 @@ struct TileGridView: View {
                 // first, so the tile is always somewhere on `page`.)
                 guard let key,
                       let idx = page.tiles.firstIndex(where: { $0.key == key }) else { return }
-                let chunk = idx / max(1, spec.perPage)
+                // Pages hold `perPage - 1` vocabulary tiles; cell 0 is Home.
+                let chunk = idx / max(1, spec.perPage - 1)
                 if currentDisplayPage != chunk {
                     withAnimation { currentDisplayPage = chunk }
                 }
@@ -458,30 +348,6 @@ struct TileGridView: View {
                 )
                 .allowsHitTesting(true)
             }
-        case .history:
-            let groups = engine.groupHistory.filter { $0.sentence != nil }
-            if !groups.isEmpty {
-                GlassHistoryOverlay(
-                    groups: groups,
-                    onReopen: { id in
-                        if recorder.state == .recording { recorder.recordReplay() }
-                        engine.reopenHistoryGroup(id: id)
-                        dismissCompactOverlay()
-                    },
-                    onDelete: { id in engine.deleteHistoryGroup(id: id) },
-                    onDismiss: { dismissCompactOverlay() }
-                )
-                .allowsHitTesting(true)
-            }
-        case .favorites:
-            GlassFavoritesOverlay(
-                entries: Array(promotedEntries.prefix(12)),
-                sceneKeySet: sceneKeySet,
-                tileWordClass: tileWordClass,
-                onPlay: { entry in engine.speakPromoted(entry) },
-                onDismiss: { dismissCompactOverlay() }
-            )
-            .allowsHitTesting(true)
         }
     }
 
@@ -515,6 +381,7 @@ struct TileGridView: View {
         TabView(selection: $currentDisplayPage) {
             ForEach(Array(chunks.enumerated()), id: \.offset) { index, tiles in
                 LazyVGrid(columns: columns, spacing: spec.verticalSpacing) {
+                    homeCell(spec: spec)
                     ForEach(tiles, id: \.key) { entry in
                         tileCellView(for: entry, labelFontSize: spec.labelFontSize)
                     }
@@ -541,6 +408,7 @@ struct TileGridView: View {
             VStack(spacing: 0) {
                 ForEach(Array(chunks.enumerated()), id: \.offset) { index, tiles in
                     LazyVGrid(columns: columns, spacing: spec.verticalSpacing) {
+                        homeCell(spec: spec)
                         ForEach(tiles, id: \.key) { entry in
                             tileCellView(for: entry, labelFontSize: spec.labelFontSize)
                         }
@@ -561,6 +429,20 @@ struct TileGridView: View {
                 haptic.impactOccurred()
             }
         }
+    }
+
+    /// Home, at cell 0 of every page. See `HomeGridCell` for why it is in the
+    /// grid rather than the tray.
+    private func homeCell(spec: GridLayoutSpec) -> some View {
+        HomeGridCell(
+            isEnabled: coordinator.navigationPath.count > 1 || currentDisplayPage != 0,
+            action: {
+                coordinator.navigateToRoot()
+                currentDisplayPage = 0
+            },
+            onOpenMenu: { showCaregiverMenu = true },
+            labelFontSize: spec.labelFontSize
+        )
     }
 
     @ViewBuilder
@@ -730,90 +612,6 @@ struct TileGridView: View {
                 }
             }
         }
-    }
-}
-
-// MARK: - Promoted Tile Strip
-
-/// Horizontal scroll of promoted chips — shown when expanded from the nav bar.
-struct PromotedChipStrip: View {
-    let entries: [SentenceCache]
-    let sceneKeySet: Set<String>
-    let tileWordClass: [String: String]
-    let onTap: (SentenceCache) -> Void
-
-    private func isInScene(_ entry: SentenceCache) -> Bool {
-        entry.tileKeys.allSatisfy { sceneKeySet.contains($0) }
-    }
-
-    private var inScene: [SentenceCache] { entries.filter { isInScene($0) } }
-    private var outOfScene: [SentenceCache] { entries.filter { !isInScene($0) } }
-
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(inScene) { entry in
-                    PromotedChip(entry: entry, isInScene: true,
-                                 tileWordClass: tileWordClass, onTap: onTap)
-                }
-
-                if !outOfScene.isEmpty {
-                    if !inScene.isEmpty {
-                        Rectangle()
-                            .fill(.separator)
-                            .frame(width: 1, height: 36)
-                            .padding(.horizontal, 4)
-                    }
-                    Text("other")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-
-                    ForEach(outOfScene) { entry in
-                        PromotedChip(entry: entry, isInScene: false,
-                                     tileWordClass: tileWordClass, onTap: onTap)
-                    }
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 6)
-        }
-    }
-}
-
-private struct PromotedChip: View {
-    let entry: SentenceCache
-    let isInScene: Bool
-    let tileWordClass: [String: String]
-    let onTap: (SentenceCache) -> Void
-
-    private let iconSize: CGFloat = 30
-    private let cornerRadius: CGFloat = 10
-
-    private var borderColor: Color {
-        if entry.isPinned && isInScene { return .orange.opacity(0.7) }
-        if isInScene { return .primary.opacity(0.15) }
-        return .secondary.opacity(0.25)
-    }
-
-    var body: some View {
-        Button { onTap(entry) } label: {
-            HStack(spacing: 3) {
-                ForEach(entry.tileKeys.prefix(4), id: \.self) { key in
-                    let wordClass = tileWordClass[key] ?? "default"
-                    TileImageView(key: key, wordClass: wordClass)
-                    .frame(width: iconSize, height: iconSize)
-                    .clipShape(RoundedRectangle(cornerRadius: 5))
-                }
-            }
-            .padding(6)
-            .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: cornerRadius))
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .strokeBorder(borderColor, lineWidth: 1.5)
-            )
-            .opacity(isInScene ? 1 : 0.6)
-        }
-        .buttonStyle(.plain)
     }
 }
 

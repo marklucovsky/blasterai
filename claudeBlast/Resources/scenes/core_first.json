@@ -38,7 +38,6 @@
     {
       "key": "food_drinks",
       "tiles": [
-        {"link": "home", "to": "<home>", "audible": false},
         {"link": "food", "to": "food", "audible": false},
         {"link": "drinks", "to": "drinks", "audible": false},
         {"keys": [
@@ -53,21 +52,18 @@
     {
       "key": "people",
       "tiles": [
-        {"link": "home", "to": "<home>", "audible": false},
         {"class": "people"}
       ]
     },
     {
       "key": "social",
       "tiles": [
-        {"link": "home", "to": "<home>", "audible": false},
         {"class": ["social", "feeling", "question"]}
       ]
     },
     {
       "key": "actions",
       "tiles": [
-        {"link": "home", "to": "<home>", "audible": false},
         {"link": "drink", "to": "drinks", "audible": true},
         {"link": "eat", "to": "food", "audible": true},
         {"link": "play", "to": "play_activities", "audible": true},
@@ -77,7 +73,6 @@
     {
       "key": "describe",
       "tiles": [
-        {"link": "home", "to": "<home>", "audible": false},
         {"class": "describe"},
         {"keys": ["don't", "happy"]}
       ]
@@ -85,7 +80,6 @@
     {
       "key": "food",
       "tiles": [
-        {"link": "home", "to": "<home>", "audible": false},
         {"link": "drinks", "to": "drinks", "audible": false},
         {"class": ["food"]}
       ]
@@ -93,7 +87,6 @@
     {
       "key": "drinks",
       "tiles": [
-        {"link": "home", "to": "<home>", "audible": false},
         {"link": "food", "to": "food", "audible": false},
         {"class": "drinks"}
       ]
@@ -101,7 +94,6 @@
     {
       "key": "places",
       "tiles": [
-        {"link": "home", "to": "<home>", "audible": false},
         {"class": "places"},
         {"keys": ["slide", "swing", "school"]}
       ]
@@ -109,28 +101,24 @@
     {
       "key": "play_activities",
       "tiles": [
-        {"link": "home", "to": "<home>", "audible": false},
         {"class": ["art", "toy", "sports", "games"]}
       ]
     },
     {
       "key": "body_health",
       "tiles": [
-        {"link": "home", "to": "<home>", "audible": false},
         {"class": ["body", "health"]}
       ]
     },
     {
       "key": "colors_shapes",
       "tiles": [
-        {"link": "home", "to": "<home>", "audible": false},
         {"class": ["colors", "shape"]}
       ]
     },
     {
       "key": "weather",
       "tiles": [
-        {"link": "home", "to": "<home>", "audible": false},
         {"class": "weather"}
       ]
     }

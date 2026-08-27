@@ -9,13 +9,6 @@ import SwiftUI
 import SwiftData
 import os
 
-struct HistoryEntry: Identifiable {
-    let id = UUID()
-    let tiles: [TileSelection]
-    let sentence: String
-    let timestamp: Date
-}
-
 @Observable
 @MainActor
 final class SentenceEngine {
@@ -25,6 +18,17 @@ final class SentenceEngine {
     private(set) var activeGroup: TileGroup = TileGroup()
 
     /// Newest-first rolling buffer of closed groups (newest at index 0). Capped by trayBufferSize.
+    /// Closed groups, newest first. **Engine-internal**: it supplies the
+    /// conversational context sent with each request and backs repetition
+    /// detection. Nothing on the child surface reads it.
+    ///
+    /// It used to drive a history strip the child could tap to reopen an old
+    /// utterance. That was removed because it was destructive rather than
+    /// merely awkward: reopening a group *removed* it from the buffer, so
+    /// abandoning the reopened group lost it entirely, and re-committing put it
+    /// back at index 0 — a move-to-front stack, not a history. The immutable
+    /// record a caregiver actually wants already exists as `LoggedUtterance`,
+    /// surfaced in Admin → Activity Log.
     private(set) var groupHistory: [TileGroup] = []
 
     private(set) var isThinking: Bool = false
@@ -58,14 +62,6 @@ final class SentenceEngine {
 
     /// The active group's generated sentence (or single-tile preview).
     var generatedSentence: String? { activeGroup.sentence }
-
-    /// Closed groups exposed as legacy HistoryEntry items for the (soon-to-be-retired) history sheet.
-    var recentHistory: [HistoryEntry] {
-        groupHistory.prefix(maxHistorySheetEntries).compactMap { group in
-            guard let sentence = group.sentence else { return nil }
-            return HistoryEntry(tiles: group.tiles, sentence: sentence, timestamp: group.createdAt)
-        }
-    }
 
     /// Called with the active group's generatedSentence just before the group is flushed to history
     /// or the engine is reset. Used by TileScriptRecorder to finalize the current row.
@@ -172,7 +168,6 @@ final class SentenceEngine {
     private(set) var repetitionCount: Int = 0
     private var lastTileKey: String?
     private let maxConversationHistory = 5
-    private let maxHistorySheetEntries = 10
 
     /// Last N generated sentences fed back as conversational context to the model.
     private var conversationHistory: [String] {
@@ -564,85 +559,6 @@ final class SentenceEngine {
         startIdleTimers()
     }
 
-    // MARK: - History group interactions
-
-    /// Speak + reopen an older history group. The current active group flushes to history first,
-    /// then the target group is promoted to the active slot as .unlockedEditable so it can be
-    /// further edited.
-    func reopenHistoryGroup(id: UUID) {
-        // Verify target exists before doing any work — but DON'T cache its index here.
-        // flushActiveToHistory() may prepend the current active to history and shift indices.
-        guard groupHistory.contains(where: { $0.id == id }) else { return }
-        flushActiveToHistory()
-
-        guard let index = groupHistory.firstIndex(where: { $0.id == id }) else { return }
-        var target = groupHistory.remove(at: index)
-
-        // Re-resolve against durable overrides so a hand-typed / accepted edit — or
-        // a suppression — applied AFTER this group was closed is honored on replay,
-        // instead of speaking the stale stored snapshot.
-        let override = cacheManager?.overrideLookup(tiles: target.tiles,
-                                                    childID: profileResolver?.activeChildID)
-        let suppressed = override?.isSuppressed == true
-        activeIsSuppressed = suppressed
-        if suppressed {
-            // Suppressed set: reopen for editing, show tiles only, say nothing.
-            target.sentence = nil
-            target.state = .unlockedEditable
-            activeGroup = target
-            startIdleTimers()
-            return
-        }
-
-        if let sentence = override?.sentence ?? target.sentence {
-            // Reopening a group with a sentence is equivalent to a fresh Play: lock the group
-            // and speak it. The startIdleTimers task below will see state == .locked, skip the
-            // play-button pulse (no nag — the user just heard it), and fire the Done attention
-            // ramp + auto-Done as if the user had just tapped Play. Adding a new tile later
-            // unlocks and clears the sentence as usual via addTile().
-            if let override {
-                override.hitCount += 1
-                override.lastUsed = .now
-            }
-            target.sentence = sentence
-            target.state = .locked
-            activeGroup = target
-            speak(sentence)
-        } else {
-            // No sentence on the history entry (defensive — current code always assigns one).
-            // Treat as editable so the user can keep building.
-            target.state = .unlockedEditable
-            activeGroup = target
-        }
-
-        startIdleTimers()
-    }
-
-
-    /// Delete a history group. Power-user gesture, surfaced in PR2 UI.
-    func deleteHistoryGroup(id: UUID) {
-        groupHistory.removeAll { $0.id == id }
-    }
-
-    /// Legacy history-sheet replay path. Reconstructs an old utterance into the active group.
-    /// Kept for any callers that still bind to HistoryEntry; will be removed when the sheet is
-    /// fully retired in PR3.
-    func replayFromHistory(_ entry: HistoryEntry) {
-        if let match = groupHistory.first(where: {
-            $0.tiles.map(\.key) == entry.tiles.map(\.key) && $0.sentence == entry.sentence
-        }) {
-            reopenHistoryGroup(id: match.id)
-            return
-        }
-        // Fallback: synthesize an active group from the legacy entry.
-        clearSelection()
-        activeGroup.tiles = entry.tiles
-        refreshActiveSuppressed()   // tiles set directly — keep the cached flag honest
-        activeGroup.sentence = entry.sentence
-        activeGroup.state = .unlockedEditable
-        speak(entry.sentence)
-    }
-
     // MARK: - Idle timer (no-op shim)
 
     /// Retained for callers that used to cancel the 30s idle clear. The idle clear is gone in
@@ -946,7 +862,7 @@ final class SentenceEngine {
         // Provider treats the conversation context as a sequence of prior assistant turns, with
         // the last entry replaced as the user prompt. For escalation/replay we want the model to
         // see the exact sentence it is escalating from — but `conversationHistory` (derived from
-        // `groupHistory`) doesn't include it (the group was popped by `reopenHistoryGroup`, or
+        // `groupHistory`) doesn't include it (the group is still active, or
         // the active group's sentence simply hasn't been flushed). Splice it in here so escalation
         // requests carry the prior turn explicitly.
         var contextWithPrior = conversationHistory

@@ -9,6 +9,26 @@ import SwiftUI
 import SwiftData
 
 extension AdminView {
+
+    /// What this device calls its biometric unlock, if it has one. Recomputed
+    /// per render — `LAContext.canEvaluatePolicy` is a cheap local call, and
+    /// caching it would go stale the moment a caregiver enrols Touch ID.
+    var biometry: Biometry.Capability { Biometry.capability() }
+
+    /// True when removing the PIN would lock the caregiver out entirely: Admin
+    /// is locked, and this device has no biometry to fall back on. A Mac
+    /// running as Designed-for-iPad is the case this exists for.
+    var pinIsOnlyWayIn: Bool {
+        guard let device = deviceProfiles.first else { return false }
+        return device.requireFaceIDForAdmin && !biometry.hasHardware
+    }
+
+    /// Pull a pending `admin/device/...` request off the coordinator.
+    func consumePendingDeviceDetail() {
+        guard let detail = adminRoute.consumeDetail(for: .device) else { return }
+        deviceDetail = detail
+    }
+
     var deviceTab: some View {
         NavigationStack {
             List {
@@ -21,6 +41,15 @@ extension AdminView {
                 #endif
             }
             .navigationTitle("Device")
+            .navigationDestination(item: $deviceDetail) { detail in
+                switch detail {
+                case .about:      AboutStatsView()
+                case .tileScript: TileScriptView()
+                case .vocabulary: EmptyView()   // not a Device destination
+                }
+            }
+            .onAppear { consumePendingDeviceDetail() }
+            .onChange(of: adminRoute.pendingDetail) { _, _ in consumePendingDeviceDetail() }
             .toolbar { adminDoneToolbar }
         }
         .tabItem { Label("Device", systemImage: "gear") }
@@ -96,23 +125,36 @@ extension AdminView {
                         device.role = newRole
                     }
                 }
-                Toggle("Require Face ID for Admin",
+                Toggle("Lock Admin\(biometry.hasHardware ? " (\(biometry.displayName) or PIN)" : " with a PIN")",
                        isOn: Binding(
                         get: { device.requireFaceIDForAdmin },
                         set: { device.requireFaceIDForAdmin = $0 }
                        ))
                 .disabled(device.role == .patient) // patient always on
                 if device.adminPINHash != nil {
+                    // On a device with no biometry the PIN is the ONLY credential,
+                    // so removing it while Admin is locked has no fallback to fall
+                    // back to — it locks the caregiver out of their own device.
+                    // A Mac running this as Designed-for-iPad is exactly that case.
                     Button("Remove PIN", role: .destructive) {
                         device.adminPINHash = nil
                         device.adminPINSalt = nil
                         device.modifiedAt = .now
                     }
-                    Text("Removing the PIN means Face ID is the only way in. You'll be prompted to set a new one on next Admin entry if Face ID fails.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    .disabled(pinIsOnlyWayIn)
+                    if pinIsOnlyWayIn {
+                        Text("This device has no biometric unlock, so the PIN is the only way into Admin. Turn off the Admin lock first if you want to remove it.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("Removing the PIN means \(biometry.displayName) is the only way in. You'll be prompted to set a new one on next Admin entry if \(biometry.displayName) fails.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 } else if device.requireFaceIDForAdmin {
-                    Text("PIN not set — you'll be asked to create one next time Face ID fails.")
+                    Text(biometry.hasHardware
+                         ? "PIN not set — you'll be asked to create one next time \(biometry.displayName) fails."
+                         : "PIN not set — you'll be asked to create one next time you open Admin.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -235,8 +277,17 @@ extension AdminView {
             } label: {
                 Label("About & Stats", systemImage: "chart.bar.doc.horizontal")
             }
+            // TileScript's only other entry point is the caregiver menu, which a
+            // patient device deliberately trims to Admin alone — leaving scripts
+            // unreachable on the very device you would demo on. Admin is the
+            // gated door both paths should lead through anyway.
+            NavigationLink {
+                TileScriptView()
+            } label: {
+                Label("TileScript", systemImage: "play.rectangle.fill")
+            }
         } footer: {
-            Text("Vocabulary, board, and activity counts — plus CloudKit sync health.")
+            Text("Vocabulary, board, and activity counts — plus CloudKit sync health. TileScript records and replays board sessions.")
         }
     }
 

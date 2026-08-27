@@ -1,0 +1,76 @@
+name: Screenshots — Child Surface
+description: Drives the board through the states worth photographing and captures each one.
+scene: "<default>"   # the bundled board, whatever it is named
+audio: off
+provider: mock
+tileWait: .fast
+sentenceWait: .fast
+
+# Captures land in Documents/Screenshots/ inside the app container.
+# On a simulator, read them straight off disk:
+#
+#   xcrun simctl get_app_container booted app.blasterai.ios data
+#
+# On a device, Files → On My iPad → Blaster → Screenshots.
+#
+# Names repeat safely: a second run writes home-board-2.png rather than
+# overwriting the evidence from the first.
+
+script:
+  - comment: Empty board — the resting state a caregiver first sees
+  - screenshot: 01-home-empty
+
+  - comment: One tile selected, single-word affordance showing
+  - tiles:
+    - mom
+  - screenshot: 02-one-tile
+
+  - clear
+
+  - comment: A full sentence in the tray
+  - tiles:
+    - mom, <food>, pizza
+  - screenshot: 03-sentence-ready
+
+  - clear
+
+  - comment: A category page — Home is still cell 0 here
+  - tiles:
+    - <food>
+  - screenshot: 04-category-page
+
+  - comment: Deeper page, to show Home holds position past page 1
+  - tiles:
+    - <describe>
+  - screenshot: 05-describe-page
+
+  - clear
+
+  # The tray under pressure: three chips still leave room for the bubble,
+  # four swap it for an explicit control rather than a squeezed sliver.
+  # The tray's degradation ladder, one capture per rung. Where the bubble
+  # gives way to the button is a width question, so it has to be photographed
+  # per device rather than reasoned about.
+  - comment: Two tiles — bubble
+  - tiles:
+    - mom, <food>, pizza
+  - wait: 2s
+  - screenshot: 05b-tray-two-tiles
+
+  - clear
+
+  - comment: Three tiles — bubble still readable
+  - tiles:
+    - mom, <food>, pizza, cookie
+  - wait: 2s
+  - screenshot: 06-tray-three-tiles
+
+  - clear
+
+  - comment: Four tiles — bubble becomes a button
+  - tiles:
+    - mom, <food>, pizza, cookie, banana
+  - wait: 2s
+  - screenshot: 07-tray-four-tiles
+
+  - comment: Screenshot run complete

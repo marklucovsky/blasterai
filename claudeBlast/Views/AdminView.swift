@@ -7,7 +7,6 @@
 
 import SwiftUI
 import SwiftData
-import Speech
 import AVFoundation
 
 struct AdminView: View {
@@ -17,12 +16,6 @@ struct AdminView: View {
     @Query var deviceProfiles: [DeviceProfile]
     @Query(sort: \ChildProfile.displayName) var childProfiles: [ChildProfile]
     @Environment(ChildProfileResolver.self) var profileResolver
-    @Query(
-        filter: #Predicate<SentenceCache> { entry in
-            entry.hitCount >= 3 || entry.isPinned
-        },
-        sort: \SentenceCache.hitCount, order: .reverse
-    ) var promotedCandidates: [SentenceCache]
 
     // Cache hit/miss metrics from MetricEvent log
     @Query(sort: \MetricEvent.timestamp) var allMetricEvents: [MetricEvent]
@@ -102,6 +95,12 @@ struct AdminView: View {
     /// `.patient` without committing it until the confirmation sheet wraps
     /// the loose ends (PIN setup + API key disposition).
     @State var displayedRole: DeviceRole = .caregiver
+    @Environment(AdminRouteCoordinator.self) var adminRoute
+
+    /// Pushed sub-screens, driven by a TileScript `screen:` route. `Identifiable`
+    /// via the enum itself so `navigationDestination(item:)` can bind to them.
+    @State var vocabDetail: AdminRoute.Detail?
+    @State var deviceDetail: AdminRoute.Detail?
     @State var pendingPatientTransition = false
     @State var pendingCaregiverTransition = false
 
@@ -138,18 +137,20 @@ struct AdminView: View {
         //     said, not with diagnostics, and it's where AI usage now reports.
         // Defaulting to Now means a parent landing in Admin to adjust
         // voice/volume/scene never has to scroll past therapist UI.
-        TabView {
-            nowTab
-            profilesTab
-            scenesTab
-            deviceTab
-            activityTab
+        // Selection is bound to `AdminRouteCoordinator` rather than held in
+        // SwiftUI's own state, so something outside this view — a TileScript
+        // `screen:` command — can put Admin on a named tab. See `ScriptScreen`.
+        TabView(selection: Binding(
+            get: { adminRoute.tab },
+            set: { adminRoute.tab = $0 }
+        )) {
+            nowTab.tag(AdminRoute.now)
+            profilesTab.tag(AdminRoute.profiles)
+            scenesTab.tag(AdminRoute.scenes)
+            deviceTab.tag(AdminRoute.device)
+            activityTab.tag(AdminRoute.activity)
         }
-        .onAppear {
-            // Global setup — request speech-recognition permission while
-            // no sheet is open so the system dialog isn't occluded.
-            SFSpeechRecognizer.requestAuthorization { _ in }
-        }
+
     }
 
     // MARK: - Tile Lookup
