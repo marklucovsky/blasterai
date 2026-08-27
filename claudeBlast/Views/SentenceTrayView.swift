@@ -23,27 +23,39 @@ import UIKit
 /// Shared height for the three top-row elements (active tile card, play+Done column, sentence
 /// bubble). Each gets the same explicit frame height and a matching inner vertical padding so
 /// they read as a single horizontal row.
-private let kCardHeight: CGFloat = 88
+/// Height of the tray's top row. Derived from the Play/Clear pair so the
+/// buttons can meet the minimum touch target — previously a fixed 88, which
+/// silently squeezed them to 41pt.
+private let kCardHeight: CGFloat = kMinimumTouchTarget * 2 + kPlayDoneSpacing
 private let kCardVerticalPadding: CGFloat = 6
 private let kActiveRowHeight: CGFloat = kCardHeight
 private let kActiveImageSize: CGFloat = 56
 private let kPlayButtonWidth: CGFloat = 82
 
-/// Play and Clear are the **same** height, splitting the card evenly.
+/// Apple's minimum comfortable hit target, from the Human Interface Guidelines.
 ///
-/// Play used to be 54pt and Clear 28pt — barely half a target. For an AAC user
-/// motor precision is the constraint that matters most, and Clear is not a
-/// lesser action: it is what a child reaches for when the sentence is wrong,
-/// which is exactly the moment they are least able to be precise. Halving the
-/// card gives Clear 41pt, a ~46% larger target, at no cost to Play.
-private let kPlayButtonHeight: CGFloat = (kCardHeight - kPlayDoneSpacing) / 2
-private let kDoneButtonHeight: CGFloat = kPlayButtonHeight
+/// Treated here as a floor rather than a suggestion. This app's users have, by
+/// definition, motor and communication difficulties; a control that is merely
+/// *usually* hittable is a control that fails at the moment it is needed most.
+private let kMinimumTouchTarget: CGFloat = 44
 
-/// Same split for the compact (iPhone) tray.
-private let kCompactPlayColumnHeight: CGFloat = 72
+/// Play and Clear are the **same** height, and never below the minimum target.
+///
+/// The pair started at 54pt / 28pt — Clear barely half a target. Splitting the
+/// card evenly fixed the asymmetry but landed both at 41pt, still under the
+/// guideline, and 34pt in the compact tray. Both now sit at 44pt and the card
+/// grows to fit them, rather than the buttons shrinking to fit the card.
+///
+/// Clear is not the lesser control: it is what a child reaches for when the
+/// sentence came out wrong, which is exactly when they are least able to be
+/// precise.
+private let kPlayButtonHeight: CGFloat = kMinimumTouchTarget
+private let kDoneButtonHeight: CGFloat = kMinimumTouchTarget
+private let kCompactButtonHeight: CGFloat = kMinimumTouchTarget
+
 private let kCompactPlayDoneSpacing: CGFloat = 4
-private let kCompactButtonHeight: CGFloat =
-    (kCompactPlayColumnHeight - kCompactPlayDoneSpacing) / 2
+private let kCompactPlayColumnHeight: CGFloat =
+    kMinimumTouchTarget * 2 + kCompactPlayDoneSpacing
 private let kPlayDoneSpacing: CGFloat = 6
 private let kHistoryTileSize: CGFloat = 22
 

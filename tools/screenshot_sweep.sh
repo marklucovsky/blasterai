@@ -28,6 +28,7 @@ OS_VER="26.2"
 DEVICES=(
   "iPad Pro 13-inch (M5)"     # 2064 x 2752
   "iPhone 17 Pro Max"         # 1320 x 2868
+  "iPhone 16e"                # narrowest current phone — layout canary
 )
 
 cd "$(dirname "$0")/.."
