@@ -29,8 +29,13 @@ import UIKit
 private let kCardHeight: CGFloat = kMinimumTouchTarget * 2 + kPlayDoneSpacing
 private let kCardVerticalPadding: CGFloat = 6
 private let kActiveRowHeight: CGFloat = kCardHeight
-private let kActiveImageSize: CGFloat = 56
+/// Tile image inside a tray chip. Derived from the row height minus the card's
+/// padding and its label, so the chip fills the card rather than floating in
+/// it — when the row grew to fit 44pt buttons, a fixed image size would have
+/// left the tray looking mostly empty.
+private let kActiveImageSize: CGFloat = kCardHeight - (kCardVerticalPadding * 2) - 20
 private let kPlayButtonWidth: CGFloat = 82
+
 
 /// Apple's minimum comfortable hit target, from the Human Interface Guidelines.
 ///

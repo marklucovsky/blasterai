@@ -171,6 +171,11 @@ struct CompactTrayStrip: View {
 /// when a sentence exists, the bubble appears to the right of the chips
 /// with a tail pointing at the last chip. Whole bubble is tappable to
 /// expand into the GlassSentencePopover.
+/// Height of the compact tray's active card — matched to the Play/Clear
+/// column so the two sit as one band. Exposed here rather than derived inside
+/// the view so `ChipsRow` can size its chips from the same number.
+let kCompactTrayCardHeight: CGFloat = 92
+
 private struct ActiveCard: View {
     let tiles: [TileSelection]
     let sentence: String?
@@ -206,7 +211,11 @@ private struct ActiveCard: View {
                 }
             }
         }
-        .frame(minHeight: 56)
+        // The tray card and the Play/Clear column are one row and should read
+        // as one band. The column is two 44pt targets plus their gap; a card
+        // sized independently (it was minHeight 56) left the row visibly
+        // ragged once the buttons grew to meet the touch-target minimum.
+        .frame(height: kCompactTrayCardHeight)
         .padding(.horizontal, 5)
         .padding(.vertical, 3)
         .background(
@@ -226,7 +235,10 @@ private struct ChipsRow: View {
     let tiles: [TileSelection]
     let onTap: (Int) -> Void
 
-    private let chipSize: CGFloat = 50
+    /// Chips fill the taller card rather than floating in it. Derived from the
+    /// card height so the two cannot drift apart: whatever the row height
+    /// becomes, a chip is that minus the card's padding.
+    private let chipSize: CGFloat = kCompactTrayCardHeight - 12
     private let cornerRadius: CGFloat = 8
 
     var body: some View {
