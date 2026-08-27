@@ -54,10 +54,14 @@ private let kActiveImageSize: CGFloat = kActiveCardHeight - (kCardVerticalPaddin
 /// identifies a chip by its image, and the full word is one tap away.
 private let kActiveCardWidth: CGFloat = kActiveImageSize + 12
 private let kPlayButtonWidth: CGFloat = 82
+/// Compact (phone) width for the Play / Clear column.
+private let kCompactButtonWidth: CGFloat = 60
 
 /// Width the sentence needs before it is worth rendering as text rather than
 /// as a button. Matches the compact tray's rule so both trays degrade the same
 /// way.
+/// Not a `@ScaledMetric` because it is a file-level constant, so the iPad card
+/// scales it at the point of use instead — see `ActiveTrayCard.sentenceFloor`.
 private let kMinimumSentenceWidth: CGFloat = 180
 
 
@@ -317,6 +321,15 @@ private struct ActiveTrayCard: View {
         .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 
+    /// The sentence floor, scaled to the reader's text size.
+    ///
+    /// The iPad bubble is `.title3`, so it already grew with Dynamic Type while
+    /// the width it had to fit into did not — which is why an iPad mini at an
+    /// accessibility size truncated a four-word sentence. The floor moves with
+    /// the text, and the row hands over to the button when it can no longer be
+    /// met.
+    @ScaledMetric(relativeTo: .title3) private var sentenceFloor: CGFloat = kMinimumSentenceWidth
+
     /// Width left for the sentence once the chips have taken theirs.
     private func sentenceWidth(in width: CGFloat) -> CGFloat {
         let chips = CGFloat(tiles.count) * kActiveCardWidth
@@ -355,7 +368,7 @@ private struct ActiveTrayCard: View {
                     IPadMutedBubble()
                         .onLongPressGesture(minimumDuration: 0.4, perform: onBubbleLongPress)
                 } else if let sentence = sentence {
-                    if room < kMinimumSentenceWidth {
+                    if room < sentenceFloor {
                         IPadSentenceButton(action: onExpandSentence)
                             .onLongPressGesture(minimumDuration: 0.4, perform: onBubbleLongPress)
                     } else {
@@ -382,11 +395,13 @@ private struct ActiveTrayCard: View {
 private struct IPadSentenceButton: View {
     let action: () -> Void
 
+    @ScaledMetric(relativeTo: .caption2) private var glyphSize: CGFloat = 18
+
     var body: some View {
         Button(action: action) {
             VStack(spacing: 2) {
                 Image(systemName: "text.bubble.fill")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.system(size: glyphSize, weight: .semibold))
                 Text("Sentence")
                     .font(.caption2.weight(.semibold))
             }
@@ -411,6 +426,8 @@ private struct IPadSentenceBubble: View {
     let text: String
     let onExpand: () -> Void
 
+    @ScaledMetric(relativeTo: .title3) private var glyphSize: CGFloat = 13
+
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             Text(text)
@@ -421,7 +438,7 @@ private struct IPadSentenceBubble: View {
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
             Image(systemName: "arrow.up.left.and.arrow.down.right")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: glyphSize, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .padding(.top, 2)
         }
@@ -449,10 +466,12 @@ private struct IPadSentenceBubble: View {
 /// Muted-state bubble for a suppressed combination: signals that this set is
 /// intentionally blocked (not broken), and long-presses to un-suppress.
 private struct IPadMutedBubble: View {
+    @ScaledMetric(relativeTo: .title3) private var glyphSize: CGFloat = 13
+
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
             Image(systemName: "speaker.slash.fill")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: glyphSize, weight: .semibold))
                 .foregroundStyle(.secondary)
             Text("Muted — long-press to restore")
                 .font(.callout.italic())
@@ -647,7 +666,7 @@ private struct ActiveTileCard: View {
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                     .truncationMode(.tail)
-                    .minimumScaleFactor(0.8)
+                    .minimumScaleFactor(0.6)
                     .layoutPriority(1)
             }
             .padding(.horizontal, 6)
@@ -692,7 +711,30 @@ struct PrimaryPlayButton: View {
     var compact: Bool = false
     let action: () -> Void
 
-    private var buttonWidth: CGFloat { compact ? 60 : kPlayButtonWidth }
+    /// Scaled, because 44pt and 60pt were chosen as touch-target *minimums*
+    /// and a minimum is a poor maximum. Held fixed while its label scaled, the
+    /// button pushed "Clear" out entirely and left a bare checkmark standing
+    /// in for the child's primary destructive control — which reads as
+    /// "confirm" at least as easily as it reads as "clear". The column takes
+    /// the width its own text needs; the tray beside it already knows how to
+    /// give ground.
+    @ScaledMetric(relativeTo: .caption) private var compactButtonWidth: CGFloat = kCompactButtonWidth
+    @ScaledMetric(relativeTo: .caption) private var padButtonWidth: CGFloat = kPlayButtonWidth
+
+    /// Growth is capped at 1.6x. Uncapped, the column reached ~150pt of a
+    /// 393pt phone at the largest accessibility setting, and the tray beside it
+    /// then had no room for four chips at their 44pt minimum *and* any sentence
+    /// control — so the control overflowed underneath this column. Shrinking
+    /// the chips instead would have traded one accessibility guarantee for
+    /// another, which is not a trade worth making inside accessibility work.
+    ///
+    /// Past the cap the label gives way rather than the column growing further;
+    /// `ViewThatFits` above already knows how.
+    private var buttonWidth: CGFloat {
+        let base = compact ? kCompactButtonWidth : kPlayButtonWidth
+        let scaled = compact ? compactButtonWidth : padButtonWidth
+        return min(scaled, base * 1.6)
+    }
     private var buttonHeight: CGFloat { compact ? kCompactButtonHeight : kPlayButtonHeight }
     private var iconSize: CGFloat { compact ? 22 : 30 }
     private var cornerRadius: CGFloat { compact ? 10 : 14 }
@@ -851,6 +893,9 @@ struct ReplayBadge: View {
 /// button does. The finalized utterance still reaches `LoggedUtterance` for
 /// Admin → Activity Log — that never depended on the label.
 struct DoneButton: View {
+    /// Scales with the "Clear" label beside it, so the pair stays one control.
+    @ScaledMetric(relativeTo: .caption) private var checkSize: CGFloat = 11
+
     let isEnabled: Bool
     /// Single binary trigger from the engine. Once true, the button drives its own escalating
     /// animation independent of any other clock: stage 0 (blue) → stage 1 (green) → stage 2
@@ -860,7 +905,30 @@ struct DoneButton: View {
     var compact: Bool = false
     let action: () -> Void
 
-    private var buttonWidth: CGFloat { compact ? 60 : kPlayButtonWidth }
+    /// Scaled, because 44pt and 60pt were chosen as touch-target *minimums*
+    /// and a minimum is a poor maximum. Held fixed while its label scaled, the
+    /// button pushed "Clear" out entirely and left a bare checkmark standing
+    /// in for the child's primary destructive control — which reads as
+    /// "confirm" at least as easily as it reads as "clear". The column takes
+    /// the width its own text needs; the tray beside it already knows how to
+    /// give ground.
+    @ScaledMetric(relativeTo: .caption) private var compactButtonWidth: CGFloat = kCompactButtonWidth
+    @ScaledMetric(relativeTo: .caption) private var padButtonWidth: CGFloat = kPlayButtonWidth
+
+    /// Growth is capped at 1.6x. Uncapped, the column reached ~150pt of a
+    /// 393pt phone at the largest accessibility setting, and the tray beside it
+    /// then had no room for four chips at their 44pt minimum *and* any sentence
+    /// control — so the control overflowed underneath this column. Shrinking
+    /// the chips instead would have traded one accessibility guarantee for
+    /// another, which is not a trade worth making inside accessibility work.
+    ///
+    /// Past the cap the label gives way rather than the column growing further;
+    /// `ViewThatFits` above already knows how.
+    private var buttonWidth: CGFloat {
+        let base = compact ? kCompactButtonWidth : kPlayButtonWidth
+        let scaled = compact ? compactButtonWidth : padButtonWidth
+        return min(scaled, base * 1.6)
+    }
     private var buttonHeight: CGFloat { compact ? kCompactButtonHeight : kDoneButtonHeight }
     private var cornerRadius: CGFloat { compact ? 10 : 8 }
 
@@ -934,6 +1002,15 @@ struct DoneButton: View {
         }
     }
 
+    /// Factored out because `ViewThatFits` needs the same label in more than
+    /// one of its candidate layouts.
+    private var clearLabel: some View {
+        Text("Clear")
+            .font(.caption.weight(textWeight))
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+    }
+
     private var shadowRadius: CGFloat {
         guard isNudge else { return 4 }
         switch nudgeStage {
@@ -945,11 +1022,24 @@ struct DoneButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 4) {
+            // Three layouts in falling order of ambition. The button is a fixed
+            // 44pt touch target, so at an accessibility size the scaled word
+            // cannot simply take the width it wants: it truncated to "C…", and
+            // pairing it with a glyph that scales too made it "✓ …".
+            //
+            // The order encodes what matters. The word carries the meaning, so
+            // the checkmark is what goes first; only when even the word alone
+            // will not fit does the glyph come back on its own, where it is at
+            // least a whole symbol rather than a fragment of one.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 4) {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: checkSize, weight: iconWeight))
+                    clearLabel
+                }
+                clearLabel
                 Image(systemName: "checkmark")
-                    .font(.system(size: 11, weight: iconWeight))
-                Text("Clear")
-                    .font(.caption.weight(textWeight))
+                    .font(.system(size: checkSize, weight: iconWeight))
             }
             .foregroundStyle(foreground)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -1015,7 +1105,30 @@ struct SingleWordPlayButton: View {
     var compact: Bool = false
     let action: () -> Void
 
-    private var buttonWidth: CGFloat { compact ? 60 : kPlayButtonWidth }
+    /// Scaled, because 44pt and 60pt were chosen as touch-target *minimums*
+    /// and a minimum is a poor maximum. Held fixed while its label scaled, the
+    /// button pushed "Clear" out entirely and left a bare checkmark standing
+    /// in for the child's primary destructive control — which reads as
+    /// "confirm" at least as easily as it reads as "clear". The column takes
+    /// the width its own text needs; the tray beside it already knows how to
+    /// give ground.
+    @ScaledMetric(relativeTo: .caption) private var compactButtonWidth: CGFloat = kCompactButtonWidth
+    @ScaledMetric(relativeTo: .caption) private var padButtonWidth: CGFloat = kPlayButtonWidth
+
+    /// Growth is capped at 1.6x. Uncapped, the column reached ~150pt of a
+    /// 393pt phone at the largest accessibility setting, and the tray beside it
+    /// then had no room for four chips at their 44pt minimum *and* any sentence
+    /// control — so the control overflowed underneath this column. Shrinking
+    /// the chips instead would have traded one accessibility guarantee for
+    /// another, which is not a trade worth making inside accessibility work.
+    ///
+    /// Past the cap the label gives way rather than the column growing further;
+    /// `ViewThatFits` above already knows how.
+    private var buttonWidth: CGFloat {
+        let base = compact ? kCompactButtonWidth : kPlayButtonWidth
+        let scaled = compact ? compactButtonWidth : padButtonWidth
+        return min(scaled, base * 1.6)
+    }
     private var buttonHeight: CGFloat { compact ? kCompactButtonHeight : kDoneButtonHeight }
     private var cornerRadius: CGFloat { compact ? 10 : 8 }
 
