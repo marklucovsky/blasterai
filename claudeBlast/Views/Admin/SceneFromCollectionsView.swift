@@ -27,7 +27,7 @@ struct SceneFromCollectionsView: View {
     @State private var selectedPackIDs: Set<String> = []
     @State private var selectedClasses: Set<String> = []
 
-    private var packs: [VocabPack] { PackCatalog.all }
+    private var packs: [VocabPack] { PackCatalog.available(in: modelContext) }
 
     /// Caregiver-selectable classes present in the current vocabulary, with counts.
     private var classOptions: [(cls: VocabularyClass, count: Int)] {

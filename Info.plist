@@ -16,6 +16,18 @@
 				<string>com.claudeblast.scene</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Blaster Vocabulary Pack</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.claudeblast.pack</string>
+			</array>
+		</dict>
 	</array>
 	<!--
 	  Export compliance: Blaster uses only standard HTTPS/TLS (URLSession to
@@ -52,6 +64,29 @@
 				<key>public.mime-type</key>
 				<array>
 					<string>application/vnd.claudeblast.scene+json</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.json</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Blaster Vocabulary Pack</string>
+			<key>UTTypeIconFiles</key>
+			<array/>
+			<key>UTTypeIdentifier</key>
+			<string>com.claudeblast.pack</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>blasterpack</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>application/vnd.claudeblast.pack+json</string>
 				</array>
 			</dict>
 		</dict>

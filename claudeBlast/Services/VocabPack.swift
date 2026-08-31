@@ -9,7 +9,7 @@ import Foundation
 /// assets (p3d_/cls_), so an installed pack word is a first-class multi-set tile.
 /// (For now system packs are bundled; a portable "carry-your-own-art" form is a
 /// later swap behind this same abstraction.)
-struct VocabPackWord: Decodable, Hashable {
+struct VocabPackWord: Codable, Hashable {
     let key: String
     let wordClass: String
     let displayName: String
@@ -43,6 +43,23 @@ enum PackCatalog {
     }()
 
     static func pack(id: String) -> VocabPack? { all.first { $0.id == id } }
+
+    /// Bundled packs **plus** the ones this family has been sent.
+    ///
+    /// `all` stays bundle-only because two callers genuinely mean "shipped with
+    /// the app" — the AI example prompts reference bundled packs by id, and a
+    /// received pack must never be mistaken for one of those. Everywhere a
+    /// caregiver is choosing vocabulary to build with, they should see every pack
+    /// they have, so those sites call this instead.
+    static func available(in context: ModelContext) -> [VocabPack] {
+        let received = ReceivedPack.all(in: context).map(\.asVocabPack)
+        guard !received.isEmpty else { return all }
+        // A received pack that shares an id with a bundled one is the same pack
+        // arriving by a different road; the bundled copy wins, since its art is
+        // in the binary.
+        let bundledIDs = Set(all.map(\.id))
+        return all + received.filter { !bundledIDs.contains($0.id) }
+    }
 
     /// Image key for the pack's two-set thematic cover (p3d_packcover_<slug> /
     /// cls_packcover_<slug>). A page built from a pack aliases this on its

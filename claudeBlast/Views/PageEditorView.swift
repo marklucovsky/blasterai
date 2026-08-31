@@ -42,6 +42,9 @@ struct PageEditorView: View {
     /// editor (`TileGridEditor`) owns the actual selection set.
     @State private var isSelecting = false
 
+    /// Page-level share. A page leaves as a vocabulary pack — see `ShareBoardSheet`.
+    @State private var isSharingPage = false
+
     private var tileLookup: [String: TileModel] {
         Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
     }
@@ -122,7 +125,7 @@ struct PageEditorView: View {
                 ContentUnavailableView {
                     Label("No Tiles", systemImage: "square.grid.2x2")
                 } description: {
-                    Text("Tap + to add tiles to this page.")
+                    Text("This page is empty.")
                 } actions: {
                     Button("Add Tiles") { openPicker() }
                         .buttonStyle(.borderedProminent)
@@ -156,6 +159,11 @@ struct PageEditorView: View {
         .navigationTitle(pageKey)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { pageEditorToolbar }
+        .sheet(isPresented: $isSharingPage) {
+            if let page {
+                ShareBoardSheet(subject: .page(page, in: scene))
+            }
+        }
         .sheet(isPresented: $isPickingTiles, onDismiss: pickerDismissed) {
             TilePickerView(scene: scene, pageKey: pageKey, initialSelectedKeys: pickerInitialKeys)
         }
@@ -198,17 +206,28 @@ struct PageEditorView: View {
 
     // MARK: - Toolbar
 
-    /// Four controls compete for the navigation bar: undo, redo, select and add.
-    ///
     /// At a narrow width SwiftUI protects the inline title and **drops** toolbar
     /// items rather than collapsing them — undo/redo (leading) vanish first,
-    /// then the "+". Nothing tells the user those actions still exist; they are
-    /// simply gone. A resizable Mac window makes this trivial to hit, and an
-    /// iPhone is permanently in that state.
+    /// then whatever trails. Nothing tells the user those actions still exist;
+    /// they are simply gone. A resizable Mac window makes this trivial to hit,
+    /// and an iPhone is permanently in that state. So the bar carries as few
+    /// things as it can, and everything else lives in an explicit overflow menu.
     ///
-    /// So when width is compact the bar keeps exactly one thing — **add**, the
-    /// primary action — and everything else moves into an explicit overflow
-    /// menu, where it stays reachable and visibly present.
+    /// ## Why there is no "+" here
+    ///
+    /// There was, and it did exactly what the grid's add cell does — the same
+    /// `openPicker()`. But the add cell sits in **slot 0** of the grid, ahead of
+    /// the first tile, so it is on screen without scrolling however long the page
+    /// is; it is also a drop target that moves a dragged tile to the front, which
+    /// a toolbar button cannot be. The duplicate bought nothing and cost the one
+    /// bar slot that a genuinely bar-shaped action needed.
+    ///
+    /// **Share is that action.** It has no representation anywhere else on the
+    /// page, and a caregiver looking to send a page somewhere looks in the
+    /// navigation bar — so it is a visible button, not a menu item, at every
+    /// width. Both it and Select are gated on the page having tiles: an empty
+    /// page has nothing to share and nothing to select, and shows its own "Add
+    /// Tiles" button instead.
     @ToolbarContentBuilder
     private var pageEditorToolbar: some ToolbarContent {
         if isCompactWidth {
@@ -216,7 +235,12 @@ struct PageEditorView: View {
                 if isSelecting {
                     Button("Done") { isSelecting = false }
                 } else {
-                    Button { openPicker() } label: { Image(systemName: "plus") }
+                    if hasTiles {
+                        Button { isSharingPage = true } label: {
+                            Image(systemName: "square.and.arrow.up")
+                        }
+                        .accessibilityLabel("Share page")
+                    }
                     Menu {
                         Button { undo() } label: {
                             Label("Undo", systemImage: "arrow.uturn.backward")
@@ -226,7 +250,7 @@ struct PageEditorView: View {
                             Label("Redo", systemImage: "arrow.uturn.forward")
                         }
                         .disabled(redoStack.isEmpty)
-                        if page.map({ !$0.tiles.isEmpty }) == true {
+                        if hasTiles {
                             Divider()
                             Button { isSelecting = true } label: {
                                 Label("Select Tiles", systemImage: "checkmark.circle")
@@ -248,15 +272,20 @@ struct PageEditorView: View {
             ToolbarItemGroup(placement: .navigationBarTrailing) {
                 if isSelecting {
                     Button("Done") { isSelecting = false }
-                } else {
-                    if page.map({ !$0.tiles.isEmpty }) == true {
-                        Button { isSelecting = true } label: { Image(systemName: "checkmark.circle") }
+                } else if hasTiles {
+                    Button { isSelecting = true } label: { Image(systemName: "checkmark.circle") }
+                        .accessibilityLabel("Select tiles")
+                    Button { isSharingPage = true } label: {
+                        Image(systemName: "square.and.arrow.up")
                     }
-                    Button { openPicker() } label: { Image(systemName: "plus") }
+                    .accessibilityLabel("Share page")
                 }
             }
         }
     }
+
+    /// Whether the page has anything on it — gates Select and Share.
+    private var hasTiles: Bool { page.map { !$0.tiles.isEmpty } == true }
 
     // MARK: - Undo / redo (snapshot stack)
 

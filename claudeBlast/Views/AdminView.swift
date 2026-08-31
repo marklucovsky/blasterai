@@ -71,7 +71,9 @@ struct AdminView: View {
     @State var isImporting = false
     @State var importError: String?
     @State var pendingImportURL: ImportSheetURL?
-    @State var sceneToExport: BlasterSceneFile?
+    /// The scene the caregiver is sharing, if any. Drives `ShareBoardSheet`,
+    /// which replaced this tab's hand-rolled export + raw ActivityView.
+    @State var sceneToShare: BlasterScene?
 
     @State var profileSheet: ProfileSheet?
 

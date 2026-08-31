@@ -8,8 +8,10 @@
 //
 
 import Foundation
+import SwiftData
 import UIKit
 
+@MainActor
 enum SceneExporter {
 
     /// Convert a BlasterScene into an ExportableScene struct.
@@ -22,11 +24,22 @@ enum SceneExporter {
     ///   - tileLookup: maps vocabulary key → TileModel. Needed because the
     ///     scene's pages now store keys only; tile metadata (wordClass,
     ///     displayName, userImageData) lives on the TileModel entities.
+    ///   - context: used to collect each custom word's `TileArtVariant` rows. Nil
+    ///     exports word identity with no set art — the pre-4A′ behaviour, kept
+    ///     for callers that only need the page structure.
     static func export(_ scene: BlasterScene,
                        defaultTileKeys: Set<String> = [],
-                       tileLookup: [String: TileModel]) -> ExportableScene {
+                       tileLookup: [String: TileModel],
+                       context: ModelContext? = nil) -> ExportableScene {
         var exportTiles: [ExportableTile] = []
         var seenTileKeys = Set<String>()
+
+        // Every key the scene references, so art is collected in one pass rather
+        // than one fetch per tile.
+        let allKeys = scene.pages.flatMap { $0.tiles.map(\.key) }
+        let storedArt = context.map {
+            ExportArtResolver.storedArt(for: allKeys, tileLookup: tileLookup, context: $0)
+        } ?? [:]
 
         let exportPages: [ExportablePage] = scene.pages.map { page in
             let pageTiles: [ExportablePageTile] = page.tiles.compactMap { entry in
@@ -38,13 +51,7 @@ enum SceneExporter {
                     let hasCustomImage = tile.hasUserImage
 
                     if isCustom || hasCustomImage {
-                        let imageBase64 = encodeImage(tile.userImageData)
-                        exportTiles.append(ExportableTile(
-                            key: tile.key,
-                            wordClass: tile.wordClass,
-                            displayName: tile.displayName,
-                            imageData: imageBase64
-                        ))
+                        exportTiles.append(exportableTile(for: tile, art: storedArt[tile.key]))
                     }
                 }
 
@@ -78,39 +85,55 @@ enum SceneExporter {
     /// Export a BlasterScene to pretty-printed JSON Data.
     static func exportJSON(_ scene: BlasterScene,
                            defaultTileKeys: Set<String> = [],
-                           tileLookup: [String: TileModel]) throws -> Data {
-        let exportable = export(scene, defaultTileKeys: defaultTileKeys, tileLookup: tileLookup)
+                           tileLookup: [String: TileModel],
+                           context: ModelContext? = nil) throws -> Data {
+        let exportable = export(scene, defaultTileKeys: defaultTileKeys,
+                                tileLookup: tileLookup, context: context)
+        return try encode(exportable)
+    }
+
+    static func encode<T: Encodable>(_ value: T) throws -> Data {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
-        return try encoder.encode(exportable)
+        return try encoder.encode(value)
+    }
+
+    // MARK: - Tile payload
+
+    /// Build one tile's export entry: identity, its per-set art, and any photo
+    /// override.
+    static func exportableTile(for tile: TileModel, art: StoredTileArt?) -> ExportableTile {
+        let variants = (art?.variants ?? []).compactMap { entry -> ExportableTileArt? in
+            guard let encoded = encodeArt(entry.data) else { return nil }
+            return ExportableTileArt(imageSet: entry.set.rawValue, imageData: encoded)
+        }
+        return ExportableTile(
+            key: tile.key,
+            wordClass: tile.wordClass,
+            displayName: tile.displayName,
+            imageData: encodeArt(art?.photo),
+            art: variants.isEmpty ? nil : variants
+        )
     }
 
     // MARK: - Image encoding
 
-    /// Resize and base64-encode image data. Returns nil if no data or encoding fails.
-    private static func encodeImage(_ imageData: Data?) -> String? {
-        guard let imageData, let image = UIImage(data: imageData) else { return nil }
-
-        let maxDim = BlasterSceneFormat.maxImageDimension
-        let resized: UIImage
-        if image.size.width > maxDim || image.size.height > maxDim {
-            let scale = min(maxDim / image.size.width, maxDim / image.size.height)
-            let newSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
-            let renderer = UIGraphicsImageRenderer(size: newSize)
-            resized = renderer.image { _ in image.draw(in: CGRect(origin: .zero, size: newSize)) }
-        } else {
-            resized = image
-        }
-
-        guard let pngData = resized.pngData(),
-              pngData.count <= BlasterSceneFormat.maxImageDataSize else {
-            // Fall back to JPEG if PNG is too large
-            guard let jpegData = resized.jpegData(compressionQuality: 0.8),
-                  jpegData.count <= BlasterSceneFormat.maxImageDataSize else {
-                return nil
-            }
-            return jpegData.base64EncodedString()
-        }
-        return pngData.base64EncodedString()
+    /// Base64 the stored bytes **verbatim**.
+    ///
+    /// This used to decode the image, resize it to 512 px, and re-encode as PNG
+    /// (falling back to JPEG). Every step of that was cost without benefit: the
+    /// art is already 512 px, and PNG-from-HEIC inflates a ~14 KB tile to a few
+    /// hundred KB — the difference between a shareable page and one iMessage
+    /// refuses. Both ends of a `.blasterscene` are Blaster and read what we
+    /// wrote, so the bytes travel as they are.
+    ///
+    /// Oversized art is dropped rather than recompressed. It can only come from a
+    /// caregiver photo (generated art is bounded at authoring time), the importer
+    /// already reports dropped images per key, and silently degrading someone's
+    /// photograph is worse than telling them it didn't fit.
+    private static func encodeArt(_ data: Data?) -> String? {
+        guard let data, !data.isEmpty else { return nil }
+        guard data.count <= BlasterSceneFormat.maxImageDataSize else { return nil }
+        return data.base64EncodedString()
     }
 }

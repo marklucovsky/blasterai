@@ -379,5 +379,84 @@ struct SceneExportImportTests {
         #expect(result.scene.pages.count == scene.pages.count)
         #expect(result.skippedKeys.isEmpty)
     }
+
+    // MARK: - Set art
+
+    /// A scene's custom words carry art for every set their author had, and that
+    /// art must arrive as canonical per-style art.
+    ///
+    /// Filing it as `TileModel.userImageData` instead would compile, pass a naive
+    /// round-trip test, and look right on the sender's device — while pinning the
+    /// word to the sender's image set on every device the recipient owns, because
+    /// `TileImageResolver.image(for:)` consults the photo override ahead of the
+    /// active set. That is the failure this test exists for.
+    @Test func customWordArtArrivesAsPerSetVariantsNotAPhotoOverride() throws {
+        let container = try makeTestContainer()
+        let context = container.mainContext
+
+        let art = { (marker: UInt8) in Data([marker, 0xAA, 0xBB] + Array(repeating: marker, count: 32)) }
+
+        let custom = TileModel(key: "dumpling", value: "dumpling", wordClass: "food")
+        custom.isSystem = false
+        context.insert(custom)
+        TileArtVariant.upsert(tileKey: "dumpling", imageSet: .playful3D,
+                              imageData: art(0x11), context: context)
+        TileArtVariant.upsert(tileKey: "dumpling", imageSet: .classic,
+                              imageData: art(0x22), context: context)
+
+        let scene = BlasterScene(name: "Art Scene", homePageKey: "home")
+        scene.pages = [PageSpec(key: "home", tiles: [TileEntry(key: "dumpling")])]
+        context.insert(scene)
+        try context.save()
+
+        let data = try SceneExporter.exportJSON(scene, defaultTileKeys: [],
+                                                tileLookup: ["dumpling": custom],
+                                                context: context)
+
+        // The file carries both sets, verbatim.
+        let decoded = try SceneImporter.preview(data)
+        let tile = try #require(decoded.tiles?.first { $0.key == "dumpling" })
+        #expect(tile.art?.count == 2)
+        #expect(tile.imageData == nil, "no photo override was set, so none should travel")
+
+        // And on a device that has never seen the word, it lands as variants.
+        TestStore.reset()
+        let fresh = TestStore.container.mainContext
+        _ = try SceneImporter.importJSON(data, context: fresh)
+
+        let landed = try #require(
+            try fresh.fetch(FetchDescriptor<TileModel>()).first { $0.key == "dumpling" }
+        )
+        #expect(!landed.hasUserImage)
+
+        let variants = try fresh.fetch(FetchDescriptor<TileArtVariant>())
+            .filter { $0.tileKey == "dumpling" }
+        #expect(Set(variants.map(\.imageSetRaw))
+                == [ImageSetID.playful3D.rawValue, ImageSetID.classic.rawValue])
+        #expect(variants.first { $0.imageSetRaw == ImageSetID.classic.rawValue }?.imageData == art(0x22))
+    }
+
+    /// System words are the recipient's already — shipping their pictures would
+    /// add megabytes to deliver bytes the far side has in its own binary.
+    @Test func systemWordsShipNoArt() throws {
+        let container = try makeTestContainer()
+        let context = container.mainContext
+
+        let eat = TileModel(key: "eat", wordClass: "actions")
+        eat.isSystem = true
+        context.insert(eat)
+        TileArtVariant.upsert(tileKey: "eat", imageSet: .playful3D,
+                              imageData: Data(repeating: 0x33, count: 40), context: context)
+
+        let scene = BlasterScene(name: "System Scene", homePageKey: "home")
+        scene.pages = [PageSpec(key: "home", tiles: [TileEntry(key: "eat")])]
+        context.insert(scene)
+        try context.save()
+
+        let data = try SceneExporter.exportJSON(scene, defaultTileKeys: ["eat"],
+                                                tileLookup: ["eat": eat], context: context)
+        let decoded = try SceneImporter.preview(data)
+        #expect(decoded.tiles?.contains { $0.key == "eat" } != true)
+    }
 }
 }
