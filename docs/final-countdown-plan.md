@@ -297,19 +297,46 @@ same board, not a fallback for when the tech isn't available. See
   only for tiles that are custom *or* carry a user photo; everything else travels as a
   key. Fine for BlasterAI→BlasterAI, fatal for OBZ (which is a zip *of* images) and for
   PDF.
-- **Print resolution is capped by what session 2 shipped.** Device art is 512×512 HEIC
+- **Print resolution is settled: 512 px is enough.** Device art is 512×512 HEIC
   (`claudeBlast/TileImageSets/`, 38 MB). The 1024×1024 masters live in LFS under
   `tools/tile_sets/`, off-device. 512 px prints cleanly to ~2.5" tiles (≈205 DPI) and
   acceptably to 3" (≈171 DPI). `localization-impact.md` §8 asked that the print
-  requirement be established *before* compressing; it wasn't. Not a crisis — typical AAC
-  print tiles are 1–2.5" — but S4 decides it explicitly.
+  requirement be established *before* compressing; it wasn't, but the q65 encode was
+  verified against a 2.5" print and holds up. **Decision (2026-08-31): accept the ~3" tile
+  ceiling and build no print-quality path.** Typical AAC print tiles are 1–2.5", so the
+  ceiling sits above the need. An open-source user who wants full-resolution art can take
+  it from `tools/tile_sets/` themselves.
 
 ### 4A. One share surface
 
 Replace the two ad-hoc `ActivityView` call sites with a single share action offering every
-destination: native `.blasterscene` JSON, PDF, image set, `.obf`/`.obz`. Reachable from a
-scene, a page, and a multi-selection. This is Mark's "revisit sharing and make it
-excellent" item, and it is the substrate for everything below, so it goes first.
+destination. This is Mark's "revisit sharing and make it excellent" item, and it is the
+substrate for everything below, so it goes first.
+
+**The unit of sharing is whatever the caregiver navigated to** — a scene or a page. Both
+levels offer the same destinations; only the meaning of the native export differs.
+
+| From | `.blasterscene` | PDF | Tile images | `.obz` |
+|---|---|---|---|---|
+| **Scene** | the scene | every board page, in order | all tiles in the scene | scene → board set |
+| **Page** | a **pack** (4A″) | that board page | that page's tiles | page → one board |
+
+Sharing a *page* natively is the wrinkle, and it is the vocabulary-pack concept: the
+content used to build a page, portable into someone else's scene. See 4A″.
+
+### 4A″. Page-as-pack — the native page export
+
+A page is not a scene, so `.blasterscene` is the wrong envelope for one. What travels is
+the page's *content*: its tiles, their order, their `wordClass`, their art. What cannot
+travel is navigation — a page's `link` targets name pages that will not exist in the
+destination scene.
+
+Rule: **drop the links, keep the tiles.** A pack imported into an existing scene becomes a
+new page whose linking tiles are inert until the importer wires them up. Record this as a
+lossy mapping the same way 4D records OBF's, because it is the same class of loss.
+
+This aligns with the existing `Resources/pack_*.json` shape and with OBF, where a page
+maps cleanly onto exactly one board.
 
 ### 4A′. Art embedding — prerequisite for 4B, 4C, 4D
 
@@ -320,21 +347,67 @@ times.
 
 ### 4B. PDF board renderer
 
-Caregiver controls: **grid density**, **target scene/page**, **filters** (wordClass,
+Caregiver controls: **grid density**, **paper size**, **filters** (wordClass,
 audible-only, custom-only). Plus cut lines and margins for lamination, board and page
 names printed on the artifact, page links rendered as printed page *references* rather
-than taps, and `Scene.attribution` on the sheet — a printed artifact circulates
+than taps, and `Scene.attribution` on every sheet — a printed artifact circulates
 independently of the app, so it needs its attribution more than the screen does.
 
-Layout presets, one renderer:
+#### Terminology, because the two senses of "page" collide here
 
-- **Multi-page board** — the scene as a printable page set. The core ask.
-- **Single core board** — one condensed page; the artifact an SLP most often laminates
-  first. Needs a selection step, not just a render.
-- **PECS card sheet** — low density plus cut lines. A preset, not a feature.
+- **board page** — the app's page, a navigation unit (`home`, `actions`, `describe`).
+- **paper sheet** — one physical piece of paper.
 
-**Decide and record the print resolution policy here.** Either accept a ~2.5–3" tile
-ceiling at 512 px, or build a print-quality path. Do not leave it implicit.
+**Some board pages are large.** `scenes/core_first.json` defines pages by class expansion
+rather than by literal tile lists, so `{"class": "describe"}` resolves at bootstrap
+against a 493-word vocabulary in which `actions` is 108 tiles and `describe` is 104. A
+board page routinely exceeds one sheet.
+
+#### Pagination rule
+
+- A board page **always begins on a fresh sheet**.
+- A board page consumes **as many sheets as it needs** at the chosen density.
+- **Two board pages never share a sheet**, even when both are small (`people` resolves to
+  ~20, `weather` to 16).
+- Continuation sheets are numbered **within** the board page — "Describe · 3 of 12", not a
+  running count across the scene — so one sheet can be reprinted without renumbering the
+  set.
+
+#### Density, and where the floor is
+
+US Letter with 0.5" margins gives a 7.5 × 10.0" printable area; allow ~0.35" per row for
+the label strip:
+
+| Grid | Tile size | DPI at 512 px | Sheets for `describe` (104) |
+|---|---|---|---|
+| 3 × 3 | 2.5" | 205 | 12 |
+| 4 × 4 | 1.88" | 273 | 7 |
+| 5 × 6 | 1.5" | 341 | 4 |
+| 6 × 8 | 1.25" | 410 | 3 |
+
+At 512 px the constraint is a **floor on columns, not a ceiling**: below 3 columns the
+tile passes 3" and the art goes soft. The density picker stops at 3 columns; it needs no
+warning at the dense end. A full scene at 3×3 runs to roughly 40–50 sheets, which is
+simply what a laminated core-board set looks like — density is what makes that the
+caregiver's call rather than ours.
+
+**Letter and A4 both**, chosen at export. A4 (210×297 mm) changes every number in that
+table, and a meaningful share of early users are outside the US.
+
+#### Layout presets, one renderer
+
+The "single core board" preset is **struck**. It presupposed condensing a whole scene onto
+one sheet, which needed either an AI call or a caregiver picker. Under 4A's model the unit
+is whatever you navigated to, so a board page already *is* the single board — no selection
+step, and no new AI surface this late. What remains:
+
+- **Scene render** — every board page, each starting a fresh sheet. The core ask.
+- **Page render** — one board page, however many sheets it takes.
+- **Cut lines + low density** — the PECS case, an option on either render rather than a
+  third preset.
+
+**Printed links reference the board page by name** ("→ Food"), never a sheet number: the
+target spans sheets and its extent shifts with density. Cheap now, annoying to retrofit.
 
 ### 4C. Tile-image export
 
@@ -352,6 +425,10 @@ spec of what "interop" means here, and it is what makes import (post-pilot) trac
 later.
 
 ### 4E. Usage report — the child's patterns, shared to a caregiver or SLP
+
+**Status (2026-08-31): design deferred pending Mark's conversation with Brandi.** Not
+blocking — 4A and 4A′ are the substrate and do not depend on this payload's shape. The
+question held open for her is how much of the child's speech the readable report carries.
 
 Mark's framing: a share operation *from the child's device to the caregiver*, over
 iMessage. Same share pattern as 4A, different payload. It belongs here rather than in the
@@ -374,9 +451,14 @@ Activity tab because **the recipient is usually not holding the device.**
 
 ### Exit criteria
 
-From one share action, a scene leaves as JSON, as a printable PDF at three layouts, as an
-image set, and as an `.obz` that opens in CoughDrop. A child's usage report reaches an SLP
-who has never touched the device. Every tile key still renders in every destination.
+From one share action, a scene leaves as JSON, as a printable PDF, as an image set, and as
+an `.obz` that opens in CoughDrop — and a *page* leaves by all four routes too, its native
+form being a pack. A large board page prints across multiple sheets without ever sharing a
+sheet with another board page. A child's usage report reaches an SLP who has never touched
+the device. Every tile key still renders in every destination.
+
+**Nothing falls this round** (Mark, 2026-08-31). Unlike S3, S4 has no scope valve; the
+struck single-core-board preset is a simplification, not a cut.
 
 ---
 
@@ -490,14 +572,13 @@ of these forward): prosody escalation, promoted-tile promotion, session mode, OB
 - **S3 / 3E** — does the caregiver UI keep showing age at all?
   `AdminView+ProfilesTab.swift:87` currently prints "Age N · grade N". Does age disappear
   from the caregiver's view entirely once the stage selector exists?
-- **S4 / 4B** — print resolution policy: accept ≤3" tiles at 512 px, or build a
-  print-quality path.
-- **S4 / 4B** — does the single-core-board preset auto-select its words (frequency, a core
-  word list) or ask the caregiver to pick? Auto-select is a small AI call away, but it
-  would be a new AI surface this late.
+- ~~**S4 / 4B** — print resolution policy.~~ **Settled 2026-08-31:** accept the ~3"
+  ceiling at 512 px, no print-quality path.
+- ~~**S4 / 4B** — does the single-core-board preset auto-select its words?~~ **Struck
+  2026-08-31:** the preset is gone; a board page is the single board.
 - **S4 / 4E** — how much of the child's speech goes in the readable report: most-used
   words only, or full utterance history? The SLP wants more; the privacy default wants
-  less.
+  less. **Deferred pending Brandi.**
 - **S5** — internal-testers-only for round 1 is a recommendation, not yet a decision.
 
 ---
