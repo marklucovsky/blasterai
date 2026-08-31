@@ -94,19 +94,30 @@ final class TileImageResolver {
     ///      reached; kept defensively.
     ///   5. nil → TileImageView renders its letter-on-color placeholder.
     func image(for key: String) -> UIImage? {
-        if let photo = userPhoto(for: key) { return photo }
-        if let img = rawImage(for: key, in: activeSet) { return img }
-        if activeSet != ImageSetID.universalBackfill,
-           let img = rawImage(for: key, in: ImageSetID.universalBackfill) { return img }
-        // A custom word arted in only one style still shows (its variant) in others.
-        if let img = anyVariantImage(for: key) { return img }
-        return placeholderImage(for: activeSet)
+        resolved(key, in: activeSet)
     }
 
     /// Resolve a tile's real art in a specific image set — no placeholder, no
     /// master-set backfill. Returns nil when that set genuinely lacks the tile.
     func image(for key: String, in imageSet: ImageSetID) -> UIImage? {
         rawImage(for: key, in: imageSet)
+    }
+
+    /// The full fallback chain against an explicit set — what `image(for:)` does,
+    /// but for a set other than the active one.
+    ///
+    /// Export and print need this: rendering a board "in High Contrast" while the
+    /// child's device sits on Playful-3D must follow the same photo → set →
+    /// backfill → any-variant order, or a printed sheet disagrees with the screen
+    /// for exactly the tiles where it matters (custom words, photo overrides).
+    func resolved(_ key: String, in imageSet: ImageSetID) -> UIImage? {
+        if let photo = userPhoto(for: key) { return photo }
+        if let img = rawImage(for: key, in: imageSet) { return img }
+        if imageSet != ImageSetID.universalBackfill,
+           let img = rawImage(for: key, in: ImageSetID.universalBackfill) { return img }
+        // A custom word arted in only one style still shows (its variant) in others.
+        if let img = anyVariantImage(for: key) { return img }
+        return placeholderImage(for: imageSet)
     }
 
     /// Check whether a tile has bundled art. True when the active set OR the

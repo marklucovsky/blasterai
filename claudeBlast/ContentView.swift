@@ -147,7 +147,7 @@ struct ContentView: View {
                 }
             }
             .sheet(item: $pendingImportSheet) { wrapper in
-                SceneImportSheet(url: wrapper.url) {
+                ImportRouteSheet(url: wrapper.url) {
                     pendingImportSheet = nil
                 }
             }

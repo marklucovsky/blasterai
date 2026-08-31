@@ -61,8 +61,8 @@ extension AdminView {
                 createBlankScene(name: name)
             }
         }
-        .sheet(item: $sceneToExport) { file in
-            ActivityView(items: [file.temporaryFileURL()])
+        .sheet(item: $sceneToShare) { scene in
+            ShareBoardSheet(subject: .scene(scene))
         }
         .confirmationDialog(
             "This is a built-in board",
@@ -78,13 +78,13 @@ extension AdminView {
         }
         .fileImporter(
             isPresented: $isImporting,
-            allowedContentTypes: [.blasterScene, .json],
+            allowedContentTypes: [.blasterScene, .blasterPack, .json],
             allowsMultipleSelection: false
         ) { result in
             handleFileImport(result)
         }
         .sheet(item: $pendingImportURL) { item in
-            SceneImportSheet(url: item.url) { pendingImportURL = nil }
+            ImportRouteSheet(url: item.url) { pendingImportURL = nil }
         }
         .alert("Import Error", isPresented: Binding(
             get: { importError != nil },
@@ -138,7 +138,7 @@ extension AdminView {
                         }
                     }
                     Button {
-                        exportScene(scene)
+                        sceneToShare = scene
                     } label: {
                         Label("Share", systemImage: "square.and.arrow.up")
                     }
@@ -250,32 +250,6 @@ extension AdminView {
     /// which would over-export on a sparse set).
     var defaultTileKeys: Set<String> {
         Set(allTiles.filter(\.isSystem).map(\.key))
-    }
-
-    func exportScene(_ scene: BlasterScene) {
-        do {
-            // Ensure the shared file carries identity + provenance: stamp an id if
-            // this scene predates identity, and fill the author name for a scene
-            // THIS device authored (never overwrite an imported scene's author).
-            let authorID = DeviceProfileStore.ensureAuthorID(context: modelContext)
-            let authorName = DeviceProfileStore.authorName(context: modelContext)
-            scene.ensureIdentity(authorID: authorID, authorName: authorName)
-            if scene.authorName.isEmpty, !authorName.isEmpty, scene.sceneID.hasPrefix(authorID + "/") {
-                scene.authorName = authorName
-            }
-            try? modelContext.save()
-
-            let tileLookup = Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
-            let data = try SceneExporter.exportJSON(scene,
-                                                    defaultTileKeys: defaultTileKeys,
-                                                    tileLookup: tileLookup)
-            sceneToExport = BlasterSceneFile(
-                data: data,
-                filename: scene.name.sanitizedFilename + "." + BlasterSceneFormat.fileExtension
-            )
-        } catch {
-            importError = "Export failed: \(error.localizedDescription)"
-        }
     }
 
     func handleFileImport(_ result: Result<[URL], Error>) {

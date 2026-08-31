@@ -70,11 +70,14 @@ struct TilePickerView: View {
     /// Packs with at least one installed word — worth a filter chip.
     private var installedPacks: [VocabPack] {
         let keys = Set(allTiles.map(\.key))
-        return PackCatalog.all.filter { pack in pack.words.contains { keys.contains($0.key) } }
+        return availablePacks.filter { pack in pack.words.contains { keys.contains($0.key) } }
     }
 
+    /// Bundled packs plus any this family has been sent.
+    private var availablePacks: [VocabPack] { PackCatalog.available(in: modelContext) }
+
     private func packKeys(_ slug: String) -> Set<String> {
-        Set(PackCatalog.all.first { $0.slug == slug }?.words.map(\.key) ?? [])
+        Set(availablePacks.first { $0.slug == slug }?.words.map(\.key) ?? [])
     }
 
     private func classLabel(_ wc: String) -> String {
@@ -82,7 +85,7 @@ struct TilePickerView: View {
         if wc == PageLink.wordClass { return "Page Links" }
         if wc.hasPrefix("pack:") {
             let slug = String(wc.dropFirst("pack:".count))
-            return "📦 " + (PackCatalog.all.first { $0.slug == slug }?.displayName ?? slug)
+            return "📦 " + (availablePacks.first { $0.slug == slug }?.displayName ?? slug)
         }
         return wc
     }

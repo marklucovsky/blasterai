@@ -37,6 +37,7 @@ struct SchemaVersionTests {
             "RecordedScript",
             "LoggedUtterance",
             "ChildProfile",
+            "ReceivedPack",
         ])
     }
 

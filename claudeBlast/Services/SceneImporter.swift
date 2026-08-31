@@ -104,9 +104,14 @@ enum SceneImporter {
         var collisions: [ExportableTile] = []
         for tile in exportable.tiles ?? [] {
             if let existing = lookup[tile.key] {
-                guard tile.imageData != nil else { continue }   // nothing to offer
-                if !existing.hasUserImage { fillWords.append(tile) }
-                else { collisions.append(tile) }
+                // Nothing to offer — neither a photo override nor set art.
+                guard tile.imageData != nil || !(tile.art ?? []).isEmpty else { continue }
+                // The consent prompt is about the *photo override*, the one image
+                // a caregiver chose by hand and would notice being replaced. Set
+                // art is canonical per-style art and merges by the fill-if-absent
+                // rule in `importJSON`, which never overwrites.
+                if tile.imageData != nil && existing.hasUserImage { collisions.append(tile) }
+                else { fillWords.append(tile) }
             } else {
                 newWords.append(tile)
             }
@@ -155,7 +160,7 @@ enum SceneImporter {
         var oversizedImages: [String] = []
         var imageUpdatedKeys: [String] = []
 
-        // Decode a tile's image if present and within the size cap.
+        // Decode a tile's photo override if present and within the size cap.
         func decodedImage(_ tile: ExportableTile) -> Data? {
             guard let base64 = tile.imageData, let decoded = Data(base64Encoded: base64) else { return nil }
             guard decoded.count <= BlasterSceneFormat.maxImageDataSize else {
@@ -165,6 +170,41 @@ enum SceneImporter {
             return decoded
         }
 
+        // Which (key, set) pairs already hold art on this device, so incoming
+        // variants can fill gaps without ever overwriting the recipient's own.
+        let existingVariants = (try? context.fetch(FetchDescriptor<TileArtVariant>())) ?? []
+        var heldVariants = Set(existingVariants.map { "\($0.tileKey)|\($0.imageSetRaw)" })
+
+        /// Apply a tile's per-set art.
+        ///
+        /// **Set art must never land in `userImageData`.** That field is the
+        /// camera-photo override, and `TileImageResolver.image(for:)` consults it
+        /// ahead of every image set — so a tile filled that way would render the
+        /// *sender's* style forever, ignoring the recipient's choice, on every
+        /// device they own. It belongs in `TileArtVariant`, keyed by the set it
+        /// was drawn for, which is exactly how a custom word's art is stored
+        /// natively.
+        func applyArt(_ incoming: ExportableTile) {
+            for entry in incoming.art ?? [] {
+                guard let decoded = Data(base64Encoded: entry.imageData), !decoded.isEmpty else { continue }
+                guard decoded.count <= BlasterSceneFormat.maxImageDataSize else {
+                    if !oversizedImages.contains(incoming.key) { oversizedImages.append(incoming.key) }
+                    continue
+                }
+                // Fill-if-absent. The recipient's own art for a set always wins;
+                // there is no consent prompt for canonical art because nothing is
+                // ever taken away.
+                let slot = "\(incoming.key)|\(entry.imageSet)"
+                guard !heldVariants.contains(slot) else { continue }
+                TileArtVariant.upsert(tileKey: incoming.key,
+                                      imageSet: ImageSetID(entry.imageSet),
+                                      imageData: decoded,
+                                      context: context)
+                heldVariants.insert(slot)
+                if !imageUpdatedKeys.contains(incoming.key) { imageUpdatedKeys.append(incoming.key) }
+            }
+        }
+
         // 1. New words → create the tile (with image if carried).
         for incoming in analysis.newWords {
             let tile = TileModel(key: incoming.key, value: incoming.displayName, wordClass: incoming.wordClass)
@@ -172,21 +212,31 @@ enum SceneImporter {
             context.insert(tile)
             tileLookup[tile.key] = tile
             newTileCount += 1
+            applyArt(incoming)
         }
 
         // 2. Fill-if-empty → existing tile has no image; apply the shared one.
         for incoming in analysis.fillWords {
-            guard let tile = tileLookup[incoming.key], let image = decodedImage(incoming) else { continue }
-            tile.userImageData = image
-            imageUpdatedKeys.append(incoming.key)
+            guard let tile = tileLookup[incoming.key] else { continue }
+            if !tile.hasUserImage, let image = decodedImage(incoming) {
+                tile.userImageData = image
+                imageUpdatedKeys.append(incoming.key)
+            }
+            applyArt(incoming)
         }
 
         // 3. Collisions → only replace where the importer consented. Word
         //    identity is never touched.
-        for incoming in analysis.collisions where acceptedImageCollisions.contains(incoming.key) {
-            guard let tile = tileLookup[incoming.key], let image = decodedImage(incoming) else { continue }
-            tile.userImageData = image
-            imageUpdatedKeys.append(incoming.key)
+        for incoming in analysis.collisions {
+            guard let tile = tileLookup[incoming.key] else { continue }
+            if acceptedImageCollisions.contains(incoming.key), let image = decodedImage(incoming) {
+                tile.userImageData = image
+                imageUpdatedKeys.append(incoming.key)
+            }
+            // Canonical art merges regardless of the photo decision: the two are
+            // different layers, and declining a photo swap is not a reason to
+            // withhold art for a set the recipient has none for.
+            applyArt(incoming)
         }
 
         // Build pages as inline PageSpec values. Tiles missing from the import

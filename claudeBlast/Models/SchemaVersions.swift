@@ -75,6 +75,7 @@ enum BlasterSchemaV1: VersionedSchema {
             RecordedScript.self,
             LoggedUtterance.self,
             ChildProfile.self,
+            ReceivedPack.self,
         ]
     }
 

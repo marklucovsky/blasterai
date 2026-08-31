@@ -94,7 +94,7 @@ struct SceneEditorView: View {
     @State private var navigateToNewPageKey: String? = nil
     @State private var pickerKeysForNewPage: Set<String> = []
     @Environment(\.horizontalSizeClass) private var hSizeClass
-    @State private var sceneToExport: BlasterSceneFile?
+    @State private var isSharingScene = false
 
     var body: some View {
         List {
@@ -284,8 +284,8 @@ struct SceneEditorView: View {
         .navigationTitle(scene.name.isEmpty ? "New Scene" : scene.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { sceneEditorToolbar }
-        .sheet(item: $sceneToExport) { file in
-            ActivityView(items: [file.temporaryFileURL()])
+        .sheet(isPresented: $isSharingScene) {
+            ShareBoardSheet(subject: .scene(scene))
         }
         .fullScreenCover(isPresented: $showPreview) {
             ScenePreviewBoardView(scene: scene, allTiles: allTiles)
@@ -353,7 +353,7 @@ struct SceneEditorView: View {
                     Button { isRefining = true } label: {
                         Label("Refine with AI", systemImage: "sparkles")
                     }
-                    Button { exportScene() } label: {
+                    Button { isSharingScene = true } label: {
                         Label("Share Scene", systemImage: "square.and.arrow.up")
                     }
                 } label: {
@@ -380,27 +380,13 @@ struct SceneEditorView: View {
             }
             ToolbarItem(placement: .primaryAction) {
                 Button {
-                    exportScene()
+                    isSharingScene = true
                 } label: {
                     Image(systemName: "square.and.arrow.up")
                 }
                 .accessibilityLabel("Share scene")
             }
         }
-    }
-
-    private func exportScene() {
-        // Bundled (system) keys aren't packaged; caregiver words are. Provenance-
-        // based so it's independent of the active image set.
-        let defaultKeys = Set(allTiles.filter(\.isSystem).map(\.key))
-        let tileLookup = Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
-        guard let data = try? SceneExporter.exportJSON(scene,
-                                                       defaultTileKeys: defaultKeys,
-                                                       tileLookup: tileLookup) else { return }
-        sceneToExport = BlasterSceneFile(
-            data: data,
-            filename: scene.name.sanitizedFilename + "." + BlasterSceneFormat.fileExtension
-        )
     }
 
     private func deletePages(at offsets: IndexSet) {
@@ -659,7 +645,8 @@ private struct PageGeneratorSheet: View {
                         .font(.caption)
                 }
 
-                let packList = PackCatalog.all.filter { !aiExamplePackIDs.contains($0.id) }
+                let packList = PackCatalog.available(in: modelContext)
+                    .filter { !aiExamplePackIDs.contains($0.id) }
                 if !packList.isEmpty {
                     Section {
                         ForEach(packList) { pack in

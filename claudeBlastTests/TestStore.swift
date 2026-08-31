@@ -66,10 +66,17 @@ enum TestStore {
         func wipe<T: PersistentModel>(_: T.Type) {
             for obj in (try? ctx.fetch(FetchDescriptor<T>())) ?? [] { ctx.delete(obj) }
         }
-        wipe(TileModel.self); wipe(TileArtVariant.self); wipe(SentenceCache.self)
-        wipe(BlasterScene.self); wipe(MetricEvent.self); wipe(RecordedScript.self)
-        wipe(LoggedUtterance.self); wipe(ChildProfile.self); wipe(DeviceProfile.self)
-        wipe(APIUsageEvent.self); wipe(CompactionRun.self)
+        // Driven by the schema, not by a list retyped here.
+        //
+        // It *was* a hand-written list, and it drifted the moment a model was
+        // added: rows survived `reset()` and leaked into later tests as counts
+        // that grew with every test that ran before them — a failure that looks
+        // like a bug in the code under test and isn't. Reading
+        // `BlasterSchemaV1.models` means a new model is wiped by construction,
+        // the same argument the container above makes for its configurations.
+        for model in BlasterSchemaV1.models {
+            _openExistential(model, do: wipe)
+        }
         try? ctx.save()
     }
 
