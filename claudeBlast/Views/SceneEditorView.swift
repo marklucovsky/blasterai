@@ -32,6 +32,9 @@ struct SceneEditorView: View {
     @State private var showPreview = false
     @State private var showKeySheet = false
     @State private var pageToLink: PageLinkTarget? = nil
+    /// The page being shared, if any. Keyed rather than held by value so the
+    /// sheet always reads the page as it currently is.
+    @State private var pageToShare: PageLinkTarget? = nil
     @AppStorage(AppSettingsKey.generateAllStyles) private var generateAllStyles = false
 
     private var tileLookup: [String: TileModel] {
@@ -40,13 +43,22 @@ struct SceneEditorView: View {
 
     /// (flagged, blocked) counts for a page's tiles — one pass over a single
     /// hoisted lookup — shown as chips so a caregiver spots pages needing attention.
+    /// Counted the way `TileReviewBadge` draws: retired wins, and a tile is one
+    /// thing or the other, never both.
+    ///
+    /// These used to be two independent `if`s while the badge used `else if`. A
+    /// tile that was both retired and awaiting review — reachable, because
+    /// `flagForReview()` does not clear `isRetired` — was counted as flagged
+    /// *and* blocked, but drew only the red ✕. The page row then promised a
+    /// flagged tile that no badge on the page would ever show, and the caregiver
+    /// is left hunting for something that is not there.
     private func reviewCounts(_ page: PageSpec) -> (flagged: Int, blocked: Int) {
         let lookup = tileLookup
         var flagged = 0, blocked = 0
         for entry in page.tiles {
             guard let t = lookup[entry.key] else { continue }
-            if t.needsReview { flagged += 1 }
             if t.isRetired { blocked += 1 }
+            else if t.needsReview { flagged += 1 }
         }
         return (flagged, blocked)
     }
@@ -227,7 +239,7 @@ struct SceneEditorView: View {
             // Page count, then the scene's total tile placements across them —
             // the per-page rows below already give the breakdown, so the header
             // carries the sum a caregiver would otherwise add up by hand.
-            Section("Pages (\(scene.pages.count), \(sceneTileCount))") {
+            Section {
                 ForEach(scene.pages, id: \.key) { page in
                     NavigationLink(destination: PageEditorView(scene: scene, pageKey: page.key)) {
                         VStack(alignment: .leading, spacing: 2) {
@@ -256,20 +268,31 @@ struct SceneEditorView: View {
                         .padding(.vertical, 2)
                     }
                     .swipeActions(edge: .leading, allowsFullSwipe: false) {
-                        Button {
-                            guard let newKey = scene.duplicatePage(page.key) else { return }
-                            try? modelContext.save()
-                            // A duplicated page is otherwise unreachable — offer the
-                            // same link-placement step AI pages get, so the caregiver
-                            // can wire it into the scene (skippable). Only when there's
-                            // another page to link it from.
-                            if scene.pages.contains(where: { $0.key != newKey }) {
-                                pageToLink = PageLinkTarget(pageKey: newKey)
-                            }
-                        } label: {
-                            Label("Duplicate", systemImage: "plus.square.on.square")
-                        }
-                        .tint(.indigo)
+                        duplicatePageButton(page)
+                        linkPageButton(page)
+                    }
+                    // Share used to be reachable only by opening the page, while
+                    // delete and duplicate were a swipe away — so the two ways of
+                    // acting on a page disagreed about where its actions live. It
+                    // joins the swipe, and all of them join a menu, matching the
+                    // scenes list one level up.
+                    // Delete is listed explicitly, not left to `.onDelete`.
+                    //
+                    // A trailing `swipeActions` block **replaces** the system
+                    // delete that `.onDelete` supplies — so adding Share here
+                    // silently took away the only way to remove a page. The
+                    // `.onDelete` below stays for Edit mode, but the swipe has to
+                    // carry Delete itself.
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        deletePageButton(page)
+                        sharePageButton(page)
+                    }
+                    .contextMenu {
+                        linkPageButton(page)
+                        sharePageButton(page)
+                        duplicatePageButton(page)
+                        Divider()
+                        deletePageButton(page)
                     }
                 }
                 .onDelete(perform: deletePages)
@@ -279,6 +302,15 @@ struct SceneEditorView: View {
                 } label: {
                     Label("Add Page", systemImage: "plus.circle")
                 }
+            } header: {
+                Text("Pages (\(scene.pages.count), \(sceneTileCount))")
+            } footer: {
+                Text("Swipe a page left to share or delete it, or right to duplicate or link to it. Touch and hold a page for the same actions.")
+            }
+        }
+        .sheet(item: $pageToShare) { target in
+            if let page = scene.pages.first(where: { $0.key == target.pageKey }) {
+                ShareBoardSheet(subject: .page(page, in: scene))
             }
         }
         .navigationTitle(scene.name.isEmpty ? "New Scene" : scene.name)
@@ -387,6 +419,68 @@ struct SceneEditorView: View {
                 .accessibilityLabel("Share scene")
             }
         }
+    }
+
+    // MARK: - Page row actions
+    //
+    // Written once and used by both the swipe and the menu, so the two cannot
+    // drift into offering different things.
+
+    /// Place a link to this page on other pages.
+    ///
+    /// `PageLinkPlacementSheet` could always do this, but it was only ever
+    /// reachable in the moment right after a page was created or duplicated — so
+    /// a page that needed a second way in later had no way to get one short of
+    /// finding its `page_link` tile by hand in the picker. Only offered when
+    /// there is somewhere else to link from.
+    @ViewBuilder
+    private func linkPageButton(_ page: PageSpec) -> some View {
+        if scene.pages.contains(where: { $0.key != page.key }) {
+            Button {
+                pageToLink = PageLinkTarget(pageKey: page.key)
+            } label: {
+                Label("Link From…", systemImage: "arrow.turn.down.right")
+            }
+            .tint(.teal)
+        }
+    }
+
+    @ViewBuilder
+    private func deletePageButton(_ page: PageSpec) -> some View {
+        Button(role: .destructive) {
+            if let index = scene.pages.firstIndex(where: { $0.key == page.key }) {
+                deletePages(at: IndexSet(integer: index))
+            }
+        } label: {
+            Label("Delete", systemImage: "trash")
+        }
+    }
+
+    @ViewBuilder
+    private func sharePageButton(_ page: PageSpec) -> some View {
+        Button {
+            pageToShare = PageLinkTarget(pageKey: page.key)
+        } label: {
+            Label("Share", systemImage: "square.and.arrow.up")
+        }
+        .tint(.blue)
+    }
+
+    @ViewBuilder
+    private func duplicatePageButton(_ page: PageSpec) -> some View {
+        Button {
+            guard let newKey = scene.duplicatePage(page.key) else { return }
+            try? modelContext.save()
+            // A duplicated page is otherwise unreachable — offer the same
+            // link-placement step AI pages get, so the caregiver can wire it into
+            // the scene (skippable). Only when there's another page to link from.
+            if scene.pages.contains(where: { $0.key != newKey }) {
+                pageToLink = PageLinkTarget(pageKey: newKey)
+            }
+        } label: {
+            Label("Duplicate", systemImage: "plus.square.on.square")
+        }
+        .tint(.indigo)
     }
 
     private func deletePages(at offsets: IndexSet) {
@@ -653,18 +747,25 @@ private struct PageGeneratorSheet: View {
                             Button {
                                 loadPackPage(pack)
                             } label: {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "shippingbox.fill")
-                                        .font(.caption).foregroundStyle(.tint)
-                                    Text(pack.displayName)
-                                        .font(.callout.weight(.semibold))
-                                        .foregroundStyle(.primary)
-                                    Spacer()
-                                    Text("\(pack.words.count) words")
+                                VStack(alignment: .leading, spacing: 2) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "shippingbox.fill")
+                                            .font(.caption).foregroundStyle(.tint)
+                                        Text(pack.displayName)
+                                            .font(.callout.weight(.semibold))
+                                            .foregroundStyle(.primary)
+                                        Spacer()
+                                        Text("\(pack.words.count) words")
+                                            .font(.caption2)
+                                            .padding(.horizontal, 6).padding(.vertical, 2)
+                                            .background(Capsule().fill(Color.accentColor.opacity(0.15)))
+                                            .foregroundStyle(.tint)
+                                    }
+                                    // Same provenance a shared scene shows: words
+                                    // someone sent you should say who sent them.
+                                    Text(pack.attribution)
                                         .font(.caption2)
-                                        .padding(.horizontal, 6).padding(.vertical, 2)
-                                        .background(Capsule().fill(Color.accentColor.opacity(0.15)))
-                                        .foregroundStyle(.tint)
+                                        .foregroundStyle(.secondary)
                                 }
                             }
                             .disabled(isGenerating)
@@ -1263,19 +1364,39 @@ private struct PagePreviewView: View {
     /// Renders one preview tile by key — an existing tile via its art, or a
     /// proposed NEW word (flagged) via its declared display name / class.
     @ViewBuilder
+    /// One preview tile.
+    ///
+    /// **The badge follows `isProposedNew`, not "does a TileModel exist yet".**
+    /// Those are two different questions, and the badge used to answer the wrong
+    /// one: it was drawn only in the branch for a word with no `TileModel`, while
+    /// the audit and the flagged count key off `isProposedNew`.
+    ///
+    /// Importing a vocabulary pack is what makes them disagree, because it
+    /// materializes every word as a `TileModel` up front. Add a page from that
+    /// pack and its words are still proposed-new — audited, counted, gating
+    /// Accept — but now they resolve in `tileLookup`, take the first branch, and
+    /// no 🟡 is drawn anywhere. The status then reports a flagged tile the
+    /// caregiver cannot find, and Accept stays disabled with nothing to act on.
     private func generatedCell(_ key: String) -> some View {
-        if let gt = currentTiles.first(where: { $0.key == key }) {
-            if let tile = tileLookup[gt.key] {
-                GeneratedTileCell(key: tile.bundleImage, displayName: tile.displayName,
-                                  wordClass: tile.wordClass, link: gt.link,
-                                  imageData: previewImages[gt.key])
-            } else if let name = gt.displayName, let wc = gt.wordClass {
-                GeneratedTileCell(key: gt.key, displayName: name,
-                                  wordClass: wc, link: gt.link, isNew: true,
-                                  imageData: previewImages[gt.key])
-                    .overlay(alignment: .bottomTrailing) {
-                        NewWordReviewBadge(key: gt.key, review: review)
-                    }
+        Group {
+            if let gt = currentTiles.first(where: { $0.key == key }) {
+                if let tile = tileLookup[gt.key] {
+                    GeneratedTileCell(key: tile.bundleImage, displayName: tile.displayName,
+                                      wordClass: tile.wordClass, link: gt.link,
+                                      imageData: previewImages[gt.key])
+                        .overlay(alignment: .bottomTrailing) {
+                            if gt.isProposedNew {
+                                NewWordReviewBadge(key: gt.key, review: review)
+                            }
+                        }
+                } else if let name = gt.displayName, let wc = gt.wordClass {
+                    GeneratedTileCell(key: gt.key, displayName: name,
+                                      wordClass: wc, link: gt.link, isNew: true,
+                                      imageData: previewImages[gt.key])
+                        .overlay(alignment: .bottomTrailing) {
+                            NewWordReviewBadge(key: gt.key, review: review)
+                        }
+                }
             }
         }
     }

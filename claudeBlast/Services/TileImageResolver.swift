@@ -120,6 +120,39 @@ final class TileImageResolver {
         return placeholderImage(for: imageSet)
     }
 
+    /// Does `key` have real art in `imageSet` — **without decoding it**.
+    ///
+    /// Answers the same question as `image(for:in:) != nil`, which is how the
+    /// art-completion scan used to ask it. That scan runs over every tile in a
+    /// scene × every variant of a style, from a computed property re-evaluated on
+    /// every body render: on the bundled board it decoded ~600 tiles several
+    /// times over into 512² bitmaps, which is gigabytes, and the OS killed the
+    /// app for it. Counting art should never cost what drawing it costs.
+    func hasArt(for key: String, in imageSet: ImageSetID) -> Bool {
+        if bundledArtExists(for: key, in: imageSet) { return true }
+        return variantExists(for: key, in: imageSet)
+    }
+
+    /// File presence only — no decode, no cache write.
+    private func bundledArtExists(for key: String, in imageSet: ImageSetID) -> Bool {
+        let name = "\(ImageSetCatalog.bundlePrefix(for: imageSet))_\(key)"
+        return Self.bundledExtensions.contains {
+            Bundle.main.url(forResource: name, withExtension: $0) != nil
+        }
+    }
+
+    /// Row presence only. `fetchLimit = 1` and no property access means the
+    /// external-storage blob is never faulted in.
+    private func variantExists(for key: String, in imageSet: ImageSetID) -> Bool {
+        guard let context else { return false }
+        let raw = imageSet.rawValue
+        var descriptor = FetchDescriptor<TileArtVariant>(
+            predicate: #Predicate { $0.tileKey == key && $0.imageSetRaw == raw }
+        )
+        descriptor.fetchLimit = 1
+        return ((try? context.fetchCount(descriptor)) ?? 0) > 0
+    }
+
     /// Check whether a tile has bundled art. True when the active set OR the
     /// backfill set ships real art for the key — i.e. it's a known bundled tile,
     /// not a custom user-only one. Deliberately bypasses photo overrides and

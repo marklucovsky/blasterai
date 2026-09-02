@@ -60,6 +60,24 @@ enum BlasterPackFormat {
     static let fileExtension = "blasterpack"
 }
 
+/// The file formats Blaster opens.
+///
+/// One list, because there are three places that have to agree — the
+/// `CFBundleDocumentTypes` in Info.plist, the `onOpenURL` guard, and the
+/// `fileImporter`'s content types — and when the pack format was added the guard
+/// was missed. A file then arrived, launched the app, and vanished: no sheet, no
+/// error, nothing to explain it. Adding a format means adding it here.
+enum BlasterFileFormat {
+    static let openableExtensions: Set<String> = [
+        BlasterSceneFormat.fileExtension,
+        BlasterPackFormat.fileExtension,
+    ]
+
+    static func canOpen(_ url: URL) -> Bool {
+        openableExtensions.contains(url.pathExtension.lowercased())
+    }
+}
+
 // MARK: - Codable structs
 
 /// One set's canonical art for a custom word, base64-encoded.

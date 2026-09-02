@@ -79,7 +79,8 @@ final class ReceivedPack {
     /// `CollectionSource` already handles a coverless pack.
     var asVocabPack: VocabPack {
         VocabPack(id: packID, slug: slug, displayName: displayName,
-                  version: packVersion, icon: "", words: words)
+                  version: packVersion, icon: "", words: words,
+                  authorName: authorName.isEmpty ? nil : authorName)
     }
 }
 

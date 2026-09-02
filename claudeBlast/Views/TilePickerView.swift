@@ -956,7 +956,7 @@ struct TilePickerView: View {
         let newlyAdded = keysToAdd.filter { sessionNewWordKeys.contains($0) }
         if !newlyAdded.isEmpty, !apiKey.isEmpty {
             let tiles = allTiles.filter { newlyAdded.contains($0.key) }
-            for t in tiles { t.needsReview = true }
+            for t in tiles { t.flagForReview() }
             try? modelContext.save()
             Task { await WordModerationService.reviewTiles(tiles, apiKey: apiKey, context: modelContext) }
         }

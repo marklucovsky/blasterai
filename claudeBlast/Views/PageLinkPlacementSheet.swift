@@ -10,9 +10,14 @@ struct PageLinkTarget: Identifiable {
     var id: String { pageKey }
 }
 
-/// Shown right after a page is created: offers to drop the page's `page_link`
-/// tile (a silent navigation tile) onto chosen existing pages, so the new
-/// collection is reachable without hunting for the tile in the picker.
+/// Offers to drop a page's `page_link` tile (a silent navigation tile) onto
+/// chosen pages, so the collection is reachable without hunting for the tile in
+/// the picker.
+///
+/// Shown right after a page is created, and reachable any time afterwards from
+/// the page's own row in the scene editor — a page can want a second way in
+/// long after it was made, and until that entry point existed there was no way
+/// to add one short of finding the tile by hand.
 struct PageLinkPlacementSheet: View {
     @Bindable var scene: BlasterScene
     let target: PageLinkTarget
@@ -37,12 +42,28 @@ struct PageLinkPlacementSheet: View {
             Form {
                 Section {
                     ForEach(candidatePages, id: \.key) { page in
-                        Toggle(isOn: binding(for: page.key)) {
+                        if alreadyLinked(page) {
+                            // Shown, not hidden, and not a toggle: the honest
+                            // answer to "where does this page link from" includes
+                            // the places it already does. Removing a link is an
+                            // edit to that page, not something to bury in a
+                            // checkbox that only ever adds.
                             HStack {
                                 Text(pageLabel(page))
                                 Spacer()
-                                Text("\(page.tiles.count)")
-                                    .font(.caption).foregroundStyle(.secondary)
+                                Label("Linked", systemImage: "checkmark.circle.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .labelStyle(.titleAndIcon)
+                            }
+                        } else {
+                            Toggle(isOn: binding(for: page.key)) {
+                                HStack {
+                                    Text(pageLabel(page))
+                                    Spacer()
+                                    Text("\(page.tiles.count)")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
                             }
                         }
                     }
@@ -67,7 +88,8 @@ struct PageLinkPlacementSheet: View {
                 // Default to linking from the home page — the common case.
                 guard !didSeed else { return }
                 didSeed = true
-                if candidatePages.contains(where: { $0.key == scene.homePageKey }) {
+                if let home = candidatePages.first(where: { $0.key == scene.homePageKey }),
+                   !alreadyLinked(home) {
                     selectedPages = [scene.homePageKey]
                 }
             }
@@ -79,6 +101,10 @@ struct PageLinkPlacementSheet: View {
             get: { selectedPages.contains(key) },
             set: { on in if on { selectedPages.insert(key) } else { selectedPages.remove(key) } }
         )
+    }
+
+    private func alreadyLinked(_ page: PageSpec) -> Bool {
+        page.tiles.contains { $0.key == linkKey }
     }
 
     private func pageLabel(_ page: PageSpec) -> String {

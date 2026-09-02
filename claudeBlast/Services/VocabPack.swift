@@ -24,6 +24,20 @@ struct VocabPack: Identifiable, Decodable, Hashable {
     /// Slug for the pack's thematic cover image: Resources/packicon_<icon>.png.
     let icon: String
     let words: [VocabPackWord]
+    /// Who wrote it, for a pack that arrived from outside the app. Absent for the
+    /// bundled packs, which are first-party — decoded with `decodeIfPresent`, so
+    /// the shipped JSON needs no new field.
+    ///
+    /// Vocabulary a stranger sent deserves the same provenance a shared scene
+    /// gets: a caregiver choosing what to build a page from should be able to see
+    /// where the words came from without leaving the picker.
+    var authorName: String? = nil
+
+    /// Caregiver-facing provenance — "by Greta", or built-in.
+    var attribution: String {
+        guard let authorName, !authorName.isEmpty else { return "Built-in" }
+        return "by \(authorName)"
+    }
 }
 
 enum PackCatalog {

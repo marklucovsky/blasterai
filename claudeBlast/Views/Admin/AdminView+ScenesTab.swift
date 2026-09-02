@@ -100,7 +100,7 @@ extension AdminView {
 
     @ViewBuilder
     var scenesSection: some View {
-        Section("Scenes") {
+        Section {
             ForEach(scenes) { scene in
                 Group {
                     if scene.isSystemOwned {
@@ -121,35 +121,87 @@ extension AdminView {
                     }
                 }
                 .swipeActions(edge: .leading) {
-                    if !scene.isActive {
-                        Button("Activate") { activateScene(scene) }
-                            .tint(.green)
-                    }
+                    activateButton(scene)
                 }
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                    // System-owned scenes are undeletable as well as uneditable:
-                    // we ship them, and a caregiver who wants rid of one keeps
-                    // their own copy and simply stops activating this.
-                    if !scene.isDefault && !scene.isSystemOwned {
-                        Button(role: .destructive) {
-                            deleteScene(scene)
-                        } label: {
-                            Label("Delete", systemImage: "trash")
-                        }
-                    }
-                    Button {
-                        sceneToShare = scene
-                    } label: {
-                        Label("Share", systemImage: "square.and.arrow.up")
-                    }
-                    .tint(.blue)
-                    Button {
-                        duplicateScene(scene)
-                    } label: {
-                        Label("Duplicate", systemImage: "plus.square.on.square")
-                    }
-                    .tint(.indigo)
+                    deleteButton(scene)
+                    shareButton(scene)
+                    duplicateButton(scene)
                 }
+                // The same actions on touch-and-hold.
+                //
+                // A swipe is invisible until you already know it is there, and it
+                // is the wrong gesture on a Mac, where these boards are edited
+                // with a trackpad and a right-click is what a caregiver reaches
+                // for. Offering both costs one modifier and means no action is
+                // reachable only by a gesture nobody discovered.
+                .contextMenu {
+                    activateButton(scene)
+                    shareButton(scene)
+                    duplicateButton(scene)
+                    if isDeletable(scene) {
+                        Divider()
+                        deleteButton(scene)
+                    }
+                }
+            }
+        } header: {
+            Text("Scenes")
+        } footer: {
+            Text("Swipe a board left to share, duplicate or delete it, or right to make it active. Touch and hold a board for the same actions.")
+        }
+    }
+
+    // MARK: - Row actions
+    //
+    // Written once and used by both the swipe and the menu, so the two cannot
+    // drift into offering different things.
+
+    /// A board we ship is undeletable as well as uneditable: a caregiver who
+    /// wants rid of one keeps their own copy and stops activating this.
+    func isDeletable(_ scene: BlasterScene) -> Bool {
+        !scene.isDefault && !scene.isSystemOwned
+    }
+
+    @ViewBuilder
+    func activateButton(_ scene: BlasterScene) -> some View {
+        if !scene.isActive {
+            Button {
+                activateScene(scene)
+            } label: {
+                Label("Activate", systemImage: "checkmark.circle")
+            }
+            .tint(.green)
+        }
+    }
+
+    @ViewBuilder
+    func shareButton(_ scene: BlasterScene) -> some View {
+        Button {
+            sceneToShare = scene
+        } label: {
+            Label("Share", systemImage: "square.and.arrow.up")
+        }
+        .tint(.blue)
+    }
+
+    @ViewBuilder
+    func duplicateButton(_ scene: BlasterScene) -> some View {
+        Button {
+            duplicateScene(scene)
+        } label: {
+            Label("Duplicate", systemImage: "plus.square.on.square")
+        }
+        .tint(.indigo)
+    }
+
+    @ViewBuilder
+    func deleteButton(_ scene: BlasterScene) -> some View {
+        if isDeletable(scene) {
+            Button(role: .destructive) {
+                deleteScene(scene)
+            } label: {
+                Label("Delete", systemImage: "trash")
             }
         }
     }
