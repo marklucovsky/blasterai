@@ -489,7 +489,12 @@ enum BoardPDFRenderer {
         let visible = BoardPagination.filtered(pages, filter: options.filter, tileLookup: tileLookup)
         let sheets = BoardPagination.paginate(visible, perSheet: layout.perSheet)
 
-        try await images.warm(keys: sheets.flatMap { $0.tiles.map(\.key) },
+        try await images.warm(keys: sheets.flatMap { sheet in
+                                  sheet.tiles.map { entry in
+                                      tileLookup[entry.key].map { $0.bundleImage.isEmpty ? entry.key : $0.bundleImage }
+                                          ?? entry.key
+                                  }
+                              },
                               in: imageSet, pointSize: layout.imageSide,
                               progress: progress)
 
@@ -649,7 +654,15 @@ enum BoardPDFRenderer {
         let artRect = CGRect(x: card.midX - layout.imageSide / 2,
                              y: card.minY + layout.labelBand,
                              width: layout.imageSide, height: layout.imageSide)
-        if let cg = images.image(for: entry.key, in: imageSet, pointSize: layout.imageSide),
+        // Art resolves through `bundleImage`, never the placement key.
+        //
+        // They are the same for an ordinary word, which is why this looked right
+        // everywhere until a page-link tile turned up: a page cover aliases
+        // another asset (`page_vehicles` → `packcover_vehicles`), so resolving by
+        // key found nothing and the cover printed blank — while the app and the
+        // OBZ, which both go through `bundleImage`, showed it correctly.
+        let artKey = tile?.bundleImage.isEmpty == false ? tile!.bundleImage : entry.key
+        if let cg = images.image(for: artKey, in: imageSet, pointSize: layout.imageSide),
            let ctx = UIGraphicsGetCurrentContext() {
             // CoreGraphics draws images bottom-up; a UIKit PDF context is
             // top-down, so the y axis is flipped for the duration of the draw.

@@ -92,3 +92,113 @@ It now has a name — `TileModel.isStructuralChrome` — but only pack export us
 
 **Fix:** point the other four at the named predicate, so the next surface that
 treats a page's tiles as a word list inherits the rule instead of forgetting it.
+
+---
+
+## 5. `NOTICE` describes art the app no longer ships — **S5, not this session**
+
+**Found:** 2026-09-02, while deciding what licence an exported `.obz` should
+assert.
+
+`NOTICE` still says most tile images are ARASAAC pictograms under CC BY-NC-SA
+4.0, "FREE for NON-COMMERCIAL use only", and that "Commercial use (e.g. App Store
+distribution) requires replacement with commercially-licensed imagery."
+
+None of that is true any more. All 2,743 shipped images across the five sets are
+OpenAI-generated; "ARASAAC" survives only as a *style description* inside a
+generation prompt (`Resources/image_styles.json` — "in the ARASAAC style") and in
+one comment listing AAC apps. No ARASAAC asset ships.
+
+This is not cosmetic. It is a standing claim that the app cannot be distributed
+commercially without replacing its art, which is exactly the kind of statement
+the S5 claims refresh exists to catch — and it is the file a reviewer or
+contributor reads first.
+
+**Fix:** rewrite `NOTICE` for the art that actually ships, as part of the S5
+claims refresh (`docs/claims-audit-2026-07-20.md` discipline) rather than here.
+Mark's intent, confirmed 2026-09-02: **repo and app images are Apache-2.0 with no
+additional constraints.**
+
+Related and already handled: OBF/OBZ export reports Apache-2.0 for bundled art
+and attributes caregiver-generated art to its author without asserting a licence
+on their behalf. See `docs/obf-interop.md`.
+
+---
+
+## 6. A test that references a `private` symbol can vanish without failing
+
+**Found:** 2026-09-02, while adding coverage for the `bundleImage` alias bug.
+
+A new test in `BoardPrintTests` referenced `PrintImageCache`, which is
+file-private in `BoardPDFRenderer.swift`. Rather than failing the build,
+`xcodebuild` printed `** TEST SUCCEEDED **` and ran the previous test bundle: 21
+tests, the new one simply absent. Nothing in the summary said so.
+
+This is the same trap `CLAUDE.md` documents for a wrong `-only-testing` path —
+"a wrong path is not an error" — wearing a different disguise. The counter-measure
+is the same: **check the test names, not just the count or the exit status.**
+
+    xcrun xcresulttool get test-results tests --path <bundle>.xcresult \
+      | grep -o '<newTestName>'
+
+**Fix:** consider whether `CLAUDE.md`'s testing section should say this more
+generally — verify that the test you just wrote appears in the results, by name,
+before believing a green run.
+
+---
+
+## 7. No question words in the vocabulary at all
+
+**Found:** 2026-09-02, from Brandi asking how we assure a child has the core
+words they need.
+
+Coverage against a standard core list is broadly good — verbs 29/30,
+prepositions 12/13, pronouns 13/17, descriptors 16/19 — with one hole:
+
+**Question words: 0 of 7.** No `what`, `where`, `who`, `why`, `when`, `how`,
+`which`. The `question` wordClass contains exactly one word, and it is the
+literal word `question` (a page-link cover). The nearest entries are `whats_up`
+and `how_are_you`, which are social phrases, not question words.
+
+This matters clinically rather than cosmetically: wh-words are how a child *asks*
+rather than requests, and every published core board carries them. Without them
+the board caps out at requesting and commenting.
+
+**Also missing, from the same audit:** `do`, `to`, `mad`, `some`, `done`, `him`,
+`her`, `them`, `us`, `hi`, `bye`, `dont`.
+
+**Fix:** add the words, generate art for each in every shipped set, and place
+them on the Core-First board. Non-trivial: it is a vocabulary change, an
+image-generation run across five sets, and a revisit of the default board's
+layout. Mark's call, 2026-09-02: **its own pass this session, not folded into the
+export PR.**
+
+---
+
+## 8. A part-of-speech axis is for discovery, not for the generator
+
+**Raised:** 2026-09-02, alongside item 7.
+
+`wordClass` is **not** a board-organisation taxonomy and should not be made into
+one. It exists for the sentence generator: `SentencePromptBuilder:68` injects
+`"\(value) (\(wordClass))"` so the model can tell `snack_bar` the place from
+`snack_bar` the food, and it also participates in the cache key. It serves that
+customer well, and pages — arranged by the caregiver — are what organise a board.
+
+What is genuinely missing is a *second, independent* axis: part of speech. Its
+consumers are all caregiver- or therapist-facing:
+
+1. **Tile picker filtering** — "show me verbs" while building a page.
+2. **Coverage auditing** — the report that answers item 7's question for any board.
+3. **Generation prompts** — "include eight core verbs" instead of hoping.
+
+**It need not be a stored field.** `TileModel.key` is a language-neutral concept
+id that never changes, so part of speech can ship as a static lookup in
+`Resources/` over the bundled vocabulary — no `TileModel` property, no synced
+schema change, and therefore **no S6 promotion deadline**. Caregiver-added words
+are absent from such a table, which is acceptable: they are overwhelmingly
+concrete nouns a family invented, and coverage auditing is about core words.
+
+**Fix:** design with Brandi before building — part of speech and Fitzgerald-key
+colour grouping are different axes, and which one a therapist actually filters and
+teaches on decides the shape. See [[project_wordclass_taxonomy_review]].
