@@ -18,6 +18,17 @@ import UIKit
 /// third-party library here would add a dependency to produce a file format the
 /// OS already produces — and this same writer is what OBZ export will need,
 /// since an `.obz` is a zip with a manifest.
+private extension Data {
+    /// Little-endian, which is what every field in a zip container is.
+    mutating func append(uint16 value: UInt16) {
+        append(contentsOf: [UInt8(value & 0xFF), UInt8((value >> 8) & 0xFF)])
+    }
+    mutating func append(uint32 value: UInt32) {
+        append(contentsOf: [UInt8(value & 0xFF), UInt8((value >> 8) & 0xFF),
+                            UInt8((value >> 16) & 0xFF), UInt8((value >> 24) & 0xFF)])
+    }
+}
+
 enum ZipWriter {
 
     enum ZipError: LocalizedError {
@@ -28,6 +39,99 @@ enum ZipWriter {
             case .coordinationFailed(let detail): return "Could not create archive: \(detail)"
             }
         }
+    }
+
+    /// Build an archive whose entries are **exactly** the given paths.
+    ///
+    /// `NSFileCoordinator` archives a *folder*, so every entry comes out nested
+    /// under it — fine for a folder of pictures a person will open, fatal for an
+    /// `.obz`, where a reader looks for `manifest.json` at the root and finds
+    /// nothing. There is no API to archive a folder's contents flat, so this
+    /// writes the container directly.
+    ///
+    /// Stored, not deflated: the payload is PNG and JSON, and the PNGs — which
+    /// are almost all of the bytes — are already compressed. Deflate would spend
+    /// time to save almost nothing.
+    static func zip(entries: [(path: String, data: Data)], named filename: String) throws -> URL {
+        var archive = Data()
+        var directory = Data()
+        var offset = 0
+
+        for entry in entries {
+            let name = Array(entry.path.utf8)
+            let crc = crc32(entry.data)
+            let size = UInt32(entry.data.count)
+
+            var local = Data()
+            local.append(uint32: 0x0403_4b50)          // local file header
+            local.append(uint16: 20)                   // version needed
+            local.append(uint16: 0)                    // flags
+            local.append(uint16: 0)                    // stored
+            local.append(uint16: 0)                    // mod time
+            local.append(uint16: 0)                    // mod date
+            local.append(uint32: crc)
+            local.append(uint32: size)                 // compressed
+            local.append(uint32: size)                 // uncompressed
+            local.append(uint16: UInt16(name.count))
+            local.append(uint16: 0)                    // extra length
+            local.append(contentsOf: name)
+            local.append(entry.data)
+
+            var central = Data()
+            central.append(uint32: 0x0201_4b50)        // central directory header
+            central.append(uint16: 20)                 // version made by
+            central.append(uint16: 20)                 // version needed
+            central.append(uint16: 0)
+            central.append(uint16: 0)                  // stored
+            central.append(uint16: 0)
+            central.append(uint16: 0)
+            central.append(uint32: crc)
+            central.append(uint32: size)
+            central.append(uint32: size)
+            central.append(uint16: UInt16(name.count))
+            central.append(uint16: 0)                  // extra
+            central.append(uint16: 0)                  // comment
+            central.append(uint16: 0)                  // disk number
+            central.append(uint16: 0)                  // internal attrs
+            central.append(uint32: 0)                  // external attrs
+            central.append(uint32: UInt32(offset))
+            central.append(contentsOf: name)
+
+            offset += local.count
+            archive.append(local)
+            directory.append(central)
+        }
+
+        let directoryOffset = archive.count
+        archive.append(directory)
+        archive.append(uint32: 0x0605_4b50)            // end of central directory
+        archive.append(uint16: 0)
+        archive.append(uint16: 0)
+        archive.append(uint16: UInt16(entries.count))
+        archive.append(uint16: UInt16(entries.count))
+        archive.append(uint32: UInt32(directory.count))
+        archive.append(uint32: UInt32(directoryOffset))
+        archive.append(uint16: 0)                      // comment length
+
+        let destination = FileManager.default.temporaryDirectory
+            .appendingPathComponent("zip-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent(filename)
+        try FileManager.default.createDirectory(at: destination.deletingLastPathComponent(),
+                                                withIntermediateDirectories: true)
+        try archive.write(to: destination)
+        return destination
+    }
+
+    private static let crcTable: [UInt32] = (0..<256).map { i -> UInt32 in
+        var c = UInt32(i)
+        for _ in 0..<8 { c = (c & 1) == 1 ? (0xEDB8_8320 ^ (c >> 1)) : (c >> 1) }
+        return c
+    }
+
+    private static func crc32(_ data: Data) -> UInt32 {
+        var c: UInt32 = 0xFFFF_FFFF
+        for byte in data { c = crcTable[Int((c ^ UInt32(byte)) & 0xFF)] ^ (c >> 8) }
+        return c ^ 0xFFFF_FFFF
     }
 
     /// Archive `directory` and return a URL to the resulting `.zip`.

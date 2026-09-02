@@ -48,12 +48,12 @@ enum ShareSubject {
     }
 }
 
-/// Where a share can go. PDF and OBZ join this list in later sessions; the sheet
-/// is built to grow a row rather than be rewritten.
+/// Where a share can go.
 private enum ShareDestination: String, Identifiable, CaseIterable {
     case nativeFile
     case printablePDF
     case tileImages
+    case openBoard
 
     var id: String { rawValue }
 
@@ -62,12 +62,18 @@ private enum ShareDestination: String, Identifiable, CaseIterable {
         case .nativeFile: return "square.and.arrow.up.on.square"
         case .printablePDF: return "printer"
         case .tileImages: return "photo.on.rectangle.angled"
+        case .openBoard: return "arrow.up.forward.square"
         }
     }
 
     /// A native file has nothing to configure — it always carries every style —
     /// so it gets no disclosure and no empty settings panel.
-    var hasOptions: Bool { self != .nativeFile }
+    var hasOptions: Bool { self != .nativeFile && self != .openBoard }
+
+    /// Only whole scenes travel as OBF. A board set holding one board and no
+    /// navigation is not what the format is for, and a page's links point at
+    /// pages the package would not contain.
+    var isSceneOnly: Bool { self == .openBoard }
 }
 
 struct ShareBoardSheet: View {
@@ -97,7 +103,7 @@ struct ShareBoardSheet: View {
         NavigationStack {
             Form {
                 Section {
-                    ForEach(ShareDestination.allCases) { destination in
+                    ForEach(ShareDestination.allCases.filter { !(isPage && $0.isSceneOnly) }) { destination in
                         destinationRow(destination)
                         if expanded == destination {
                             optionRows(for: destination)
@@ -220,7 +226,7 @@ struct ShareBoardSheet: View {
         switch destination {
         case .printablePDF: pdfOptionRows
         case .tileImages: pictureOptionRows
-        case .nativeFile: EmptyView()
+        case .nativeFile, .openBoard: EmptyView()
         }
     }
 
@@ -334,6 +340,9 @@ struct ShareBoardSheet: View {
             let sets = setScope == .allSets ? ExportArtResolver.allInstalledSets.count : 1
             let count = Set(subject.tileKeys).count * sets
             return "\(count) PNG image\(count == 1 ? "" : "s") · \(setScope.label.lowercased())"
+        case .openBoard:
+            let boards = subject.scene.pages.count
+            return "\(boards) board\(boards == 1 ? "" : "s") for CoughDrop and other AAC apps"
         }
     }
 
@@ -387,6 +396,7 @@ struct ShareBoardSheet: View {
         case .nativeFile: return isPage ? "Blaster Pack" : "Blaster Scene"
         case .printablePDF: return "Printable PDF"
         case .tileImages: return "Tile Pictures"
+        case .openBoard: return "Open Board (.obz)"
         }
     }
 
@@ -410,6 +420,7 @@ struct ShareBoardSheet: View {
                 case .nativeFile:   file = try nativeFile()
                 case .printablePDF: file = try await printablePDF()
                 case .tileImages:   file = try await tileImages()
+                case .openBoard:    file = try await openBoardPackage()
                 }
                 try Task.checkCancellation()
                 work = nil
@@ -428,6 +439,7 @@ struct ShareBoardSheet: View {
         case .nativeFile: return "Packaging words and pictures…"
         case .printablePDF: return "Drawing sheets…"
         case .tileImages: return "Saving pictures…"
+        case .openBoard: return "Building boards…"
         }
     }
 
@@ -499,8 +511,31 @@ struct ShareBoardSheet: View {
         return try ExportedFile.write(data, named: "\(subject.basename).pdf")
     }
 
+    private func openBoardPackage() async throws -> ExportedFile {
+        let url = try await OBFExporter.exportOBZ(scene: subject.scene,
+                                                  tileLookup: tileLookup,
+                                                  imageSet: imageResolver.activeSet,
+                                                  resolver: imageResolver,
+                                                  basename: subject.basename,
+                                                  progress: note)
+        return ExportedFile(url: url, displayName: url.lastPathComponent)
+    }
+
+    /// The keys art actually resolves under.
+    ///
+    /// A placement key is not always an art key: a page-link tile aliases another
+    /// asset through `bundleImage` (`page_vehicles` → `packcover_vehicles`), so
+    /// exporting by placement key silently produced a missing picture.
+    private var artKeys: [String] {
+        let lookup = tileLookup
+        return subject.tileKeys.map { key in
+            guard let image = lookup[key]?.bundleImage, !image.isEmpty else { return key }
+            return image
+        }
+    }
+
     private func tileImages() async throws -> ExportedFile {
-        let url = try await TileImageExporter.exportZip(keys: subject.tileKeys,
+        let url = try await TileImageExporter.exportZip(keys: artKeys,
                                                         scope: setScope,
                                                         resolver: imageResolver,
                                                         basename: subject.basename,

@@ -358,6 +358,51 @@ struct BoardPrintTests {
         #expect(data.count > 200_000)
     }
 
+    /// A placement key is not always an art key.
+    ///
+    /// A page-link tile aliases another asset through `bundleImage` — a page
+    /// cover, `page_vehicles` → `packcover_vehicles`. The print renderer resolved
+    /// art by placement key, found nothing, and printed the cover blank, while
+    /// the app and the OBZ (both of which go through `bundleImage`) showed it.
+    @Test("Art resolves through bundleImage, not the placement key")
+    func aliasedArtIsResolved() async throws {
+        TestStore.reset()
+        let context = TestStore.container.mainContext
+
+        // A page-link tile whose art lives under a different key entirely.
+        let link = TileModel(key: "page_vehicles", value: "Vehicles",
+                             wordClass: PageLink.wordClass)
+        link.bundleImage = "packcover_vehicles"
+        link.isSystem = true
+        context.insert(link)
+
+        let scene = BlasterScene(name: "Aliased", homePageKey: "home")
+        scene.pages = [PageSpec(key: "home", tiles: [TileEntry(key: link.key, link: "vehicles")])]
+        context.insert(scene)
+        try context.save()
+
+        let resolver = TileImageResolver()
+        // The premise: the picture lives under the alias, not the placement key.
+        #expect(resolver.image(for: link.key, in: .classic) == nil,
+                "the placement key is not an asset name")
+        #expect(resolver.image(for: link.bundleImage, in: .classic) != nil,
+                "the alias is where the picture lives")
+
+        // A sheet that resolved the cover is materially bigger than one that drew
+        // an empty card, so the rendered size is the observable difference.
+        let withArt = try await BoardPDFRenderer.render(
+            pages: scene.pages, scene: scene, tileLookup: [link.key: link],
+            options: BoardPrintOptions(), imageSet: .classic, resolver: resolver)
+
+        var noLookup = scene.pages
+        noLookup[0].tiles = [TileEntry(key: "nothing_here")]
+        let blank = try await BoardPDFRenderer.render(
+            pages: noLookup, scene: scene, tileLookup: [:],
+            options: BoardPrintOptions(), imageSet: .classic, resolver: resolver)
+
+        #expect(withArt.count > blank.count + 2_000, "the aliased cover did not draw")
+    }
+
     @Test("Rendering produces a real PDF with one page per sheet")
     func renderProducesAPDFPerSheet() async throws {
         TestStore.reset()
