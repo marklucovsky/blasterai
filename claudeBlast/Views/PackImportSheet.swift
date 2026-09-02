@@ -132,13 +132,21 @@ struct PackImportSheet: View {
         }
     }
 
-    /// First available picture from the pack, purely as a preview thumbnail.
+    /// The picture this word will actually have **on this device**.
+    ///
+    /// It used to show `word.art?.first` — the first embedded variant, sorted by
+    /// set id, which is an arbitrary one of the *sender's* styles. That was wrong
+    /// twice over: a preview in the sender's skin misrepresents what the
+    /// recipient is about to get, and system words carry no embedded art at all
+    /// (deliberately — the recipient already ships it), so most rows drew an
+    /// empty grey box.
+    ///
+    /// So: resolve locally first, which covers every word this device already
+    /// has, and fall back to the embedded art only for a genuinely new word —
+    /// preferring the entry for the style the recipient is actually using.
     @ViewBuilder
     private func packArtThumbnail(_ word: ExportablePackWord) -> some View {
-        let encoded = word.art?.first?.imageData ?? word.imageData
-        if let encoded,
-           let data = Data(base64Encoded: encoded),
-           let image = UIImage(data: data) {
+        if let image = localArt(for: word.key) ?? embeddedArt(word) {
             Image(uiImage: image)
                 .resizable().scaledToFit()
                 .frame(width: 40, height: 40)
@@ -148,6 +156,24 @@ struct PackImportSheet: View {
                 .fill(.quaternary)
                 .frame(width: 40, height: 40)
         }
+    }
+
+    /// Art already on this device, in the recipient's own style.
+    private func localArt(for key: String) -> UIImage? {
+        resolver.image(for: key, in: resolver.activeSet)
+            ?? resolver.image(for: key, in: ImageSetID.universalBackfill)
+    }
+
+    /// Art carried by the file, preferring the recipient's active style so a new
+    /// word previews as close to its eventual appearance as the pack allows.
+    private func embeddedArt(_ word: ExportablePackWord) -> UIImage? {
+        let art = word.art ?? []
+        let preferred = art.first { $0.imageSet == resolver.activeSet.rawValue }
+            ?? art.first { $0.imageSet == ImageSetID.universalBackfill.rawValue }
+            ?? art.first
+        let encoded = preferred?.imageData ?? word.imageData
+        guard let encoded, let data = Data(base64Encoded: encoded) else { return nil }
+        return UIImage(data: data)
     }
 
     // MARK: - Result

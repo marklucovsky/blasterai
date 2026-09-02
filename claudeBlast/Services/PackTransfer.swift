@@ -37,12 +37,20 @@ enum PackExporter {
     ///
     /// ## What is deliberately left behind
     ///
-    /// **The links.** A page's `TileEntry.link` names a sibling page inside the
-    /// scene it came from. On the far side that page does not exist, and there is
-    /// no honest way to guess what it should point at — so a linking tile travels
-    /// as an ordinary word and the recipient wires up navigation themselves when
-    /// they build a page. This is the pack format's one lossy mapping, and it is
-    /// the same *class* of loss that OBF export will have to record.
+    /// **Navigation, entirely.** Not just `TileEntry.link` — the pointer — but
+    /// the page-link and navigation *tiles* themselves.
+    ///
+    /// A tile like `body_health` or `next_page` is chrome, not vocabulary: it
+    /// means something only inside the scene whose pages it points at. Shipping
+    /// it as a word gives the recipient a picture that navigates nowhere, and —
+    /// because a pack is a word list — hands "body health" to the moderation
+    /// audit as a piece of vocabulary, where it gets flagged on arrival. The
+    /// recipient wires up their own navigation when they build a page, exactly as
+    /// copying a page within a scene already assumes
+    /// (`CollectionSource.copyableTiles` drops the same two classes).
+    ///
+    /// This is the pack format's one lossy mapping, and the same *class* of loss
+    /// OBF export will have to record.
     ///
     /// **`isAudible`.** It is a property of a tile's placement on a page, not of
     /// the word. A pack has no placements.
@@ -55,13 +63,17 @@ enum PackExporter {
         let authorID = DeviceProfileStore.ensureAuthorID(context: context)
         let authorName = DeviceProfileStore.authorName(context: context)
 
-        let keys = page.tiles.map(\.key)
+        // Chrome is excluded before art is gathered, not after — a page-link tile
+        // minted on this device is a custom tile with its own art variants, and
+        // collecting them would bloat the file with pictures for words the pack
+        // then drops.
+        let keys = page.tiles.map(\.key).filter { tileLookup[$0]?.isStructuralChrome == false }
         let storedArt = ExportArtResolver.storedArt(for: keys, tileLookup: tileLookup, context: context)
 
         var seen = Set<String>()
         let words: [ExportablePackWord] = page.tiles.compactMap { entry in
             guard seen.insert(entry.key).inserted else { return nil }
-            guard let tile = tileLookup[entry.key] else { return nil }
+            guard let tile = tileLookup[entry.key], !tile.isStructuralChrome else { return nil }
             let exported = SceneExporter.exportableTile(for: tile, art: storedArt[tile.key])
             return ExportablePackWord(key: exported.key,
                                       wordClass: exported.wordClass,

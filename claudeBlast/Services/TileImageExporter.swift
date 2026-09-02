@@ -91,10 +91,16 @@ enum TileImageExporter {
     ///     collapsed; a key with no art anywhere is skipped.
     ///   - scope: one style, or every installed style.
     ///   - basename: names the archive and its root folder.
+    ///   - progress: called on the main actor as each picture is written, with
+    ///     (written, total). Encoding a few thousand PNGs is seconds of work, and
+    ///     without this the caregiver watches a frozen screen and concludes the
+    ///     app has hung — which is exactly what happened the first time this ran
+    ///     over the whole vocabulary in every style.
     static func exportZip(keys: [String],
                           scope: ExportSetScope,
                           resolver: TileImageResolver,
-                          basename: String) throws -> URL {
+                          basename: String,
+                          progress: @MainActor (Int, Int) -> Void = { _, _ in }) async throws -> URL {
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent("tiles-\(UUID().uuidString)", isDirectory: true)
             .appendingPathComponent(basename, isDirectory: true)
@@ -108,6 +114,10 @@ enum TileImageExporter {
         var seen = Set<String>()
         let orderedKeys = keys.filter { seen.insert($0).inserted }
 
+        let total = orderedKeys.count * sets.count
+        var written = 0
+        progress(0, total)
+
         for set in sets {
             // One style flattens to the archive root; several need a folder each,
             // or the same key would overwrite itself set after set.
@@ -118,8 +128,17 @@ enum TileImageExporter {
                 try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             }
             for key in orderedKeys {
-                guard let png = ExportArtResolver.renderedPNG(key, in: set, resolver: resolver) else { continue }
-                try png.write(to: directory.appendingPathComponent("\(key).png"))
+                try Task.checkCancellation()
+                if let png = ExportArtResolver.renderedPNG(key, in: set, resolver: resolver) {
+                    try png.write(to: directory.appendingPathComponent("\(key).png"))
+                }
+                written += 1
+                progress(written, total)
+                // Resolution has to happen on the main actor — that is where the
+                // resolver and its caches live — so yield between pictures rather
+                // than holding the actor for the whole run. Without this the
+                // progress the caller is drawing never gets a chance to paint.
+                await Task.yield()
             }
         }
 

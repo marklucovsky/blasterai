@@ -95,8 +95,28 @@ final class TileModel: Identifiable {
     }
 
     /// Flag the word for caregiver review (hidden from the child until resolved).
+    ///
+    /// Deliberately does **not** clear `isRetired`: a moderation result should
+    /// not quietly un-hide a word a caregiver already hid. That means a tile can
+    /// hold both states, and **retired is the one that shows** — every reader
+    /// must treat the pair as retired-wins-then-flagged, never count them
+    /// independently, or a surface will report a flagged tile that no badge
+    /// anywhere will draw.
     func flagForReview() {
         needsReview = true
+    }
+
+    /// Structural chrome rather than vocabulary — a page link, or a navigation
+    /// tile like home / next page.
+    ///
+    /// These are tiles, but they are not *words*: they mean something only
+    /// inside the scene whose pages they point at, and they are already excluded
+    /// from every AI vocabulary prompt and from page copying
+    /// (`CollectionSource.copyableTiles`). Anything that treats a page's tiles as
+    /// a word list has to exclude them too, or "body health" leaves as a piece of
+    /// vocabulary and gets moderated as one.
+    var isStructuralChrome: Bool {
+        wordClass == PageLink.wordClass || wordClass == "navigation"
     }
 
     /// True when a caregiver photo override is present. Prefer this over

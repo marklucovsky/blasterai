@@ -246,7 +246,12 @@ struct claudeBlastApp: App {
                     if phase == .active { syncCoordinator.reconcileSoon() }
                 }
                 .onOpenURL { url in
-                    guard url.pathExtension == BlasterSceneFormat.fileExtension else { return }
+                    // Every file format Blaster owns has to be listed here, not
+                    // just the scene. A pack arriving from Messages or Files was
+                    // silently dropped by this guard — the app opened, nothing
+                    // happened, and there was nothing to tell the caregiver why.
+                    // `ImportRouteSheet` is what decides which importer handles it.
+                    guard BlasterFileFormat.canOpen(url) else { return }
                     importCoordinator.pendingURL = url
                 }
         }

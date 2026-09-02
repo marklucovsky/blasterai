@@ -61,10 +61,11 @@ enum SceneImageBatch {
     }
 
     @MainActor
+    /// Which sets this style still lacks art for. Existence only — `existingArt`
+    /// above is for the generation path, which genuinely needs the pictures.
     static func missingVariants(of style: TileStyle, for tile: TileModel,
                                 resolver: TileImageResolver) -> [ImageSetID] {
-        let have = existingArt(of: style, for: tile, resolver: resolver)
-        return style.setIDs.filter { have[$0] == nil }
+        style.setIDs.filter { !resolver.hasArt(for: tile.bundleImage, in: $0) }
     }
 
     /// Distinct tiles in `scene` that this style could complete: they have art
@@ -88,8 +89,13 @@ enum SceneImageBatch {
         for page in scene.pages {
             for entry in page.tiles where seen.insert(entry.key).inserted {
                 guard let tile = tileLookup[entry.key] else { continue }
-                let have = existingArt(of: style, for: tile, resolver: resolver)
-                if !have.isEmpty && have.count < style.variants.count {
+                // Counts, not pictures. This runs from a computed property on
+                // every render of the scene editor, so decoding each tile to ask
+                // whether it exists cost gigabytes on a full board and got the
+                // app killed. `hasArt` answers the same question off the file
+                // system and a fetch count.
+                let have = style.variants.count { resolver.hasArt(for: tile.bundleImage, in: $0.id) }
+                if have > 0 && have < style.variants.count {
                     result.append(tile)
                 }
             }

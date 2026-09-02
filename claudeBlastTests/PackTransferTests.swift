@@ -95,6 +95,48 @@ struct PackTransferTests {
         #expect(Data(base64Encoded: entry.imageData) == artData(0x01))
     }
 
+    /// A page-link tile is chrome, not vocabulary.
+    ///
+    /// `body_health` shipped inside a real pack as a word. On the recipient's
+    /// device it became a picture that navigates nowhere, and — because a pack is
+    /// a word list — the moderation audit read "body health" as vocabulary and
+    /// flagged it, blocking Accept on a tile the caregiver never meant to send.
+    @Test("Page links and navigation tiles never travel as words")
+    func chromeIsNotVocabulary() throws {
+        TestStore.reset()
+        let context = TestStore.container.mainContext
+
+        let eat = TileModel(key: "eat", wordClass: "actions")
+        eat.isSystem = true
+        let pageLink = TileModel(key: PageLink.key(forPage: "body_health"),
+                                 value: "Body Health",
+                                 wordClass: PageLink.wordClass)
+        let home = TileModel(key: "home", value: "home", wordClass: "navigation")
+        for tile in [eat, pageLink, home] { context.insert(tile) }
+
+        // The link tile is caregiver-minted, so it has art of its own — which
+        // must not be gathered either.
+        TileArtVariant.upsert(tileKey: pageLink.key, imageSet: .playful3D,
+                              imageData: artData(0x44), context: context)
+
+        let page = PageSpec(key: "farm", tiles: [
+            TileEntry(key: "eat", link: "", isAudible: true),
+            TileEntry(key: pageLink.key, link: "body_health", isAudible: false),
+            TileEntry(key: "home", link: "<home>", isAudible: false),
+        ])
+        let scene = BlasterScene(name: "Farm", homePageKey: "farm")
+        scene.pages = [page]
+        context.insert(scene)
+        try context.save()
+
+        let lookup = [eat.key: eat, pageLink.key: pageLink, home.key: home]
+        let pack = PackExporter.exportPage(page, from: scene, tileLookup: lookup, context: context)
+
+        #expect(pack.words.map(\.key) == ["eat"])
+        #expect(!pack.words.contains { $0.key == pageLink.key })
+        #expect(!pack.words.contains { $0.key == "home" })
+    }
+
     @Test("Word order follows the page")
     func preservesWordOrder() throws {
         TestStore.reset()
