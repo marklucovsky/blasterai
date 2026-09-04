@@ -108,6 +108,15 @@ final class SentenceEngine {
 
     /// Active child's interaction mode (AI sentences vs. classic single words).
     /// Defaults to `.sentence` before the resolver is wired or pre-onboarding.
+    /// The page the child is looking at, set by the board.
+    ///
+    /// Pushed down from `TileGridView` rather than pulled: the engine has no
+    /// business knowing about navigation, and this is the one fact it needs from
+    /// it — which page a press came from, stamped at the press. Empty until the
+    /// board sets it, and empty is recorded honestly as "unknown" rather than
+    /// guessed at.
+    var currentPageKey: String = ""
+
     var interactionMode: InteractionMode {
         scriptedModeOverride ?? (profileResolver?.interactionMode ?? .sentence)
     }
@@ -243,6 +252,10 @@ final class SentenceEngine {
         }
 
         activeGroup.tiles.append(selection)
+        // Recorded at the press, like a referrer. The page cannot be recovered
+        // later: a sentence is routinely built across pages, and asking which
+        // pages carry a word credits all of them.
+        activeGroup.pageKeys.append(currentPageKey)
         refreshActiveSuppressed()   // re-detect a suppressed combo as it's rebuilt
         cacheManager?.logEvent(subjectType: "tile", subjectKey: tile.key, eventType: .selected)
         scheduleGeneration()
@@ -270,10 +283,10 @@ final class SentenceEngine {
     // MARK: - Single-word (classic AAC) strip
 
     /// Append a spoken word to the FIFO strip (single-word mode). Duplicates are
-    /// allowed; the oldest word drops off once the cap is exceeded. Each word is
-    /// logged as its own utterance so the therapist activity log stays
-    /// meaningful in this mode. Speech itself is driven by the grid tap (the
-    /// view), so this is data-only and won't double-speak.
+    /// allowed; the oldest word drops off once the cap is exceeded. **Every
+    /// press is logged as its own utterance**, mashes included, so the therapist
+    /// activity log stays meaningful in this mode. Speech itself is driven by the
+    /// grid tap (the view), so this is data-only and won't double-speak.
     private func appendSpokenWord(_ tile: TileModel) {
         let selection = TileSelection(from: tile)
 
@@ -281,25 +294,40 @@ final class SentenceEngine {
         // strip tile (surfaced as an escalation badge) instead of flooding the
         // strip with duplicates. The grid tap still speaks the word (view-driven),
         // so the child hears each insistent tap; the strip just stops growing.
-        if spokenStrip.last?.key == selection.key {
+        let isMash = spokenStrip.last?.key == selection.key
+        if isMash {
             repetitionCount += 1
-            lastTileKey = selection.key
-            cacheManager?.logEvent(subjectType: "tile", subjectKey: tile.key, eventType: .selected)
-            return
+        } else {
+            // A different word starts a fresh run — reset the escalation counter.
+            repetitionCount = 0
+            spokenStrip.append(selection)
+            if spokenStrip.count > spokenStripCap {
+                spokenStrip.removeFirst(spokenStrip.count - spokenStripCap)
+            }
         }
-
-        // A different word starts a fresh run — reset the escalation counter.
-        repetitionCount = 0
         lastTileKey = selection.key
-        spokenStrip.append(selection)
-        if spokenStrip.count > spokenStripCap {
-            spokenStrip.removeFirst(spokenStrip.count - spokenStripCap)
-        }
         cacheManager?.logEvent(subjectType: "tile", subjectKey: tile.key, eventType: .selected)
+
+        // EVERY press is logged, mashes included.
+        //
+        // The mash used to return here, before the log. The strip not growing is
+        // a deliberate child-surface choice and stays — but the log is a
+        // different consumer, and pressing "bathroom" ten times is ten
+        // communication acts however few chips the strip shows. Dropping nine of
+        // them made a mash indistinguishable from a single calm press, which is
+        // the opposite of what a therapist reading this needs to see.
+        //
+        // `repetitionCount` stays 0 on purpose. It means "this one utterance was
+        // said again, louder" — an escalation *within* an act — and in
+        // single-word mode there is no such act to escalate: the repeat is its
+        // own press, already recorded as its own row. `ActivityGrouping.clusters`
+        // is what surfaces the mash, as "bathroom ×10 within a minute", where the
+        // span is doing the work the badge does in sentence mode.
         cacheManager?.logUtterance(
             tiles: [selection],
             sentence: selection.value,
             repetitionCount: 0,
+            pageKeys: [currentPageKey],
             childID: profileResolver?.activeChildID
         )
     }
@@ -615,6 +643,7 @@ final class SentenceEngine {
                 tiles: finalized.tiles,
                 sentence: finalized.sentence ?? "",
                 repetitionCount: finalized.repetitionCount,
+                pageKeys: finalized.pageKeys,
                 childID: profileResolver?.activeChildID
             )
         }
@@ -998,6 +1027,11 @@ final class SentenceEngine {
                 for key in keys {
                     if let tile = lookup[key] {
                         activeGroup.tiles.append(TileSelection(from: tile))
+                        // Unknown, and left that way. This restores a cached
+                        // combination, which records no page — and stamping the
+                        // page the caregiver happens to be on would invent an
+                        // attribution nobody made.
+                        activeGroup.pageKeys.append("")
                     }
                 }
             }

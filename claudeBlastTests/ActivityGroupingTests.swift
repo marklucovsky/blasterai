@@ -137,5 +137,120 @@ struct ActivityGroupingTests {
         ])
         #expect(bands.count == 2)
     }
+
+    // MARK: - Sessions
+
+    private func at(_ minutes: Double) -> Date {
+        date(9).addingTimeInterval(minutes * 60)
+    }
+
+    /// The gap is the only thing that splits a session. Ten minutes exactly is
+    /// still the same sitting; a second more is not.
+    @Test func gapSplitsSessionsAndTheBoundaryIsInclusive() {
+        let onTheLine = ActivityGrouping.sessions([
+            utterance(["a"], at: at(0)),
+            utterance(["b"], at: at(10)),
+        ])
+        #expect(onTheLine.count == 1)
+
+        let justOver = ActivityGrouping.sessions([
+            utterance(["a"], at: at(0)),
+            utterance(["b"], at: at(10.5)),
+        ])
+        #expect(justOver.count == 2)
+    }
+
+    /// The gap is measured from the *previous utterance*, not from the session's
+    /// start — otherwise a long steady sitting would be cut at an arbitrary
+    /// point once it outran the window.
+    @Test func aLongSteadySittingIsOneSession() {
+        let entries = (0..<12).map { utterance(["a"], at: at(Double($0) * 9)) }
+        let sessions = ActivityGrouping.sessions(entries)
+        #expect(sessions.count == 1)
+        #expect(sessions[0].count == 12)
+        // 11 gaps of 9 minutes: an hour and 39, far past the 10-minute window.
+        #expect(sessions[0].duration == 99 * 60)
+    }
+
+    /// Sessions newest first, entries within a session oldest first. The two
+    /// orders are opposite on purpose: you scan sittings backwards and read one
+    /// forwards.
+    @Test func sessionsAreNewestFirstButEntriesReadForwards() {
+        let sessions = ActivityGrouping.sessions([
+            utterance(["a"], at: at(0)),
+            utterance(["b"], at: at(2)),
+            utterance(["c"], at: at(40)),
+            utterance(["d"], at: at(42)),
+        ])
+        #expect(sessions.count == 2)
+        #expect(sessions[0].startedAt == at(40))
+        #expect(sessions[1].startedAt == at(0))
+        #expect(sessions[1].entries.map(\.tileKeys) == [["a"], ["b"]])
+    }
+
+    /// Input order must not matter — entries arrive newest-first from the
+    /// `@Query`, and CloudKit can deliver them in any order at all.
+    @Test func unsortedInputGroupsIdentically() {
+        let a = utterance(["a"], at: at(0))
+        let b = utterance(["b"], at: at(3))
+        let c = utterance(["c"], at: at(40))
+        let forwards = ActivityGrouping.sessions([a, b, c])
+        let backwards = ActivityGrouping.sessions([c, b, a])
+        let shuffled = ActivityGrouping.sessions([b, c, a])
+        #expect(forwards.map(\.count) == [1, 2])
+        #expect(backwards.map(\.count) == forwards.map(\.count))
+        #expect(shuffled.map(\.count) == forwards.map(\.count))
+    }
+
+    /// Presses and distinct words are different numbers, and the pair is what
+    /// carries the meaning. Five utterances over three words is a child
+    /// insisting; five over eleven is a child ranging.
+    @Test func distinctWordCountCountsWordsNotPresses() {
+        let sessions = ActivityGrouping.sessions([
+            utterance(["want", "bathroom"], at: at(0)),
+            utterance(["bathroom"], at: at(1)),
+            utterance(["bathroom", "now"], at: at(2)),
+        ])
+        #expect(sessions[0].count == 3)
+        #expect(sessions[0].distinctWordCount == 3)
+    }
+
+    /// Escalation counts utterances that were escalated, not the depth they
+    /// reached — one utterance re-tapped four times is one escalated utterance.
+    @Test func escalatedCountCountsUtterancesNotDepth() {
+        let sessions = ActivityGrouping.sessions([
+            utterance(["a"], at: at(0), repetitions: 4),
+            utterance(["b"], at: at(1), repetitions: 0),
+            utterance(["c"], at: at(2), repetitions: 1),
+        ])
+        #expect(sessions[0].escalatedCount == 2)
+    }
+
+    /// A single utterance is a session, with zero duration. One thing said
+    /// really does take no measurable time — the alternative would be inventing
+    /// a span nobody observed.
+    @Test func aLoneUtteranceIsASessionOfZeroDuration() {
+        let sessions = ActivityGrouping.sessions([utterance(["a"], at: at(0))])
+        #expect(sessions.count == 1)
+        #expect(sessions[0].duration == 0)
+    }
+
+    @Test func noEntriesIsNoSessions() {
+        #expect(ActivityGrouping.sessions([]).isEmpty)
+    }
+
+    /// A sitting that runs past midnight is one sitting. Splitting on the
+    /// calendar would cut a bedtime session in half for no reason the child
+    /// would recognise.
+    @Test func aSessionMayCrossMidnight() {
+        let cal = Calendar.current
+        let late = cal.date(from: DateComponents(year: 2026, month: 8, day: 27,
+                                                 hour: 23, minute: 55))!
+        let sessions = ActivityGrouping.sessions([
+            utterance(["a"], at: late),
+            utterance(["b"], at: late.addingTimeInterval(8 * 60)),
+        ])
+        #expect(sessions.count == 1)
+    }
 }
 }

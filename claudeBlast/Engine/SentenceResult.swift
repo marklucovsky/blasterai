@@ -58,6 +58,14 @@ enum TileGroupState: Sendable, Equatable {
 struct TileGroup: Identifiable, Sendable, Equatable {
     let id: UUID
     var tiles: [TileSelection]
+    /// Page each tile was pressed on — parallel to `tiles`, one entry each.
+    ///
+    /// Deliberately NOT a field on `TileSelection`. That type is `Hashable` and
+    /// feeds `SentenceCacheManager.cacheKey`, so carrying the page there would
+    /// make the same words picked from two pages into two different cache
+    /// entries — halving the hit rate to record something the cache has no
+    /// interest in.
+    var pageKeys: [String]
     var sentence: String?
     var state: TileGroupState
     let createdAt: Date
@@ -66,6 +74,7 @@ struct TileGroup: Identifiable, Sendable, Equatable {
     init(
         id: UUID = UUID(),
         tiles: [TileSelection] = [],
+        pageKeys: [String] = [],
         sentence: String? = nil,
         state: TileGroupState = .building,
         createdAt: Date = .now,
@@ -73,6 +82,7 @@ struct TileGroup: Identifiable, Sendable, Equatable {
     ) {
         self.id = id
         self.tiles = tiles
+        self.pageKeys = pageKeys
         self.sentence = sentence
         self.state = state
         self.createdAt = createdAt

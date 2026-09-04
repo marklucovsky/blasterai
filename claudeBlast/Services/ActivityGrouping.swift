@@ -47,6 +47,108 @@ struct ActivityHourBand: Identifiable {
     var count: Int { entries.count }
 }
 
+/// A run of speech with no long silence in it — one sitting at the board.
+///
+/// ## Why this is derived, not stored
+///
+/// A session is computed from the timestamps every time it is asked for. There
+/// is no session row, no session id, and nothing about sessions in the schema.
+/// That is deliberate on three counts:
+///
+/// 1. **It survives promotion.** After the CloudKit promotion in S6 the synced
+///    schema is additive-only forever. A grouping rule that lives in code can be
+///    retuned; a stored `sessionID` could not be taken back.
+/// 2. **It merges across devices.** Utterances from an iPad and an iPhone land
+///    in one timeline and group into one sitting. Sessions recorded per-device
+///    would double-count the same lunch.
+/// 3. **`sessionGap` stays a one-line change.** Nothing has to be migrated when
+///    the number moves.
+///
+/// ## Why not app lifecycle
+///
+/// The obvious alternative — foreground to background — is wrong, and Mac makes
+/// it obvious. A caregiver checking mail shatters one lunch into six "sessions",
+/// while an iPad left open on the board all day collapses a whole day into one.
+/// Neither is something the child did: backgrounding is a device event, not a
+/// communication event. Reading the timestamps instead means iPhone, iPad and
+/// Mac all produce the same answer, because none of them is consulted.
+///
+/// One consequence to know about: a session cannot exist with nothing in it. A
+/// day where the board was opened and nothing was said produces no session at
+/// all, and has to be told from `MetricEvent` instead.
+struct ActivitySession: Identifiable {
+    /// Chronological — oldest first, the order they were said in.
+    let entries: [LoggedUtterance]
+
+    /// The first entry's id. Sessions are derived, so this is stable only for as
+    /// long as the underlying rows are — which is exactly as long as the session
+    /// itself is.
+    var id: String { entries.first?.id ?? "empty" }
+
+    var startedAt: Date { entries.first?.createdAt ?? .distantPast }
+    var endedAt: Date { entries.last?.createdAt ?? .distantPast }
+
+    /// First to last. Zero for a single-utterance session, which is honest: one
+    /// thing said takes no measurable time.
+    var duration: TimeInterval { endedAt.timeIntervalSince(startedAt) }
+
+    var count: Int { entries.count }
+
+    /// Distinct tile keys across the session — how many different words, not how
+    /// many presses. The pair is the point: 12 said / 5 different reads very
+    /// differently from 12 said / 11 different, and neither number alone says it.
+    var distinctWordCount: Int {
+        Set(entries.flatMap(\.tileKeys)).count
+    }
+
+    /// How many utterances were escalated. See `ActivityCluster.escalatedCount` —
+    /// said louder is not said again.
+    ///
+    /// Always zero in single-word mode, where there is no generated sentence to
+    /// escalate. Callers should omit the badge rather than render a zero.
+    var escalatedCount: Int { entries.filter { $0.repetitionCount > 0 }.count }
+
+    /// Whether this sitting was spent in single-word mode.
+    ///
+    /// Read from the rows rather than from the current setting, because the
+    /// report describes history: a child switched to sentences on Thursday still
+    /// has three single-word days behind them, and labelling those by today's
+    /// mode would misreport every one.
+    ///
+    /// The test is exact rather than a guess. `SentenceEngine.selectTile` logs a
+    /// single-word press as one tile key whose `sentence` is the tile's own
+    /// `value`; the sentence path logs generated text. So a session is
+    /// single-word when every row is one tile that says exactly itself. A
+    /// sentence-mode utterance built from one tile still carries a generated
+    /// sentence, and on the vanishing chance generation returns the bare word,
+    /// reading it as single-word costs nothing — the two renderings agree on a
+    /// one-word row.
+    ///
+    /// Needs the tile table for the same reason `sceneDisplayName` needs the
+    /// scenes: the row stores a key, and only the caller can turn it into a word.
+    func isSingleWord(resolving tiles: [String: TileModel]) -> Bool {
+        guard !entries.isEmpty else { return false }
+        return entries.allSatisfy { entry in
+            guard entry.tileKeys.count == 1,
+                  let value = tiles[entry.tileKeys[0]]?.value else { return false }
+            return entry.sentence == value
+        }
+    }
+
+    /// The scene the child was most often in during this session, or nil when
+    /// nothing was recorded. A session can cross scenes; this names where most
+    /// of it happened rather than pretending it was one place.
+    func sceneDisplayName(resolving scenes: [BlasterScene]) -> String? {
+        let names = entries.compactMap { $0.sceneDisplayName(resolving: scenes) }
+        guard !names.isEmpty else { return nil }
+        let counts = names.reduce(into: [String: Int]()) { $0[$1, default: 0] += 1 }
+        return counts.max { lhs, rhs in
+            if lhs.value != rhs.value { return lhs.value < rhs.value }
+            return lhs.key > rhs.key
+        }?.key
+    }
+}
+
 /// Grouping the activity log, as pure functions over the entries.
 ///
 /// Deliberately not computed properties on a view. The Admin snippet and the
@@ -122,5 +224,46 @@ enum ActivityGrouping {
         return buckets
             .map { ActivityHourBand(start: $0.key, entries: $0.value.sorted { $0.createdAt > $1.createdAt }) }
             .sorted { $0.start > $1.start }
+    }
+
+    /// How long a silence ends a session.
+    ///
+    /// Ten minutes, not five. Five splits one slow sitting in two: a child
+    /// composing tile by tile, or a partner modelling between turns, routinely
+    /// leaves more than five minutes between utterances, and cutting there
+    /// reports two short sessions where there was one ordinary one.
+    ///
+    /// The number is here, alone, because it is a guess until pilot logs exist.
+    /// Nothing is stored per session, so changing it is a recompile rather than
+    /// a migration.
+    static let sessionGap: TimeInterval = 600
+
+    /// Group entries into sittings, **newest session first**, each session's own
+    /// entries oldest first.
+    ///
+    /// The two orders are deliberate and opposite. A caregiver scans sessions
+    /// newest-first — today before last Tuesday — but reads *within* a session
+    /// forwards, because the interesting thing about a sitting is how it
+    /// developed: what was tried, what was repeated, what it escalated to.
+    static func sessions(_ entries: [LoggedUtterance],
+                         gap: TimeInterval = sessionGap) -> [ActivitySession] {
+        guard !entries.isEmpty else { return [] }
+
+        let chronological = entries.sorted { $0.createdAt < $1.createdAt }
+        var sessions: [ActivitySession] = []
+        var current: [LoggedUtterance] = [chronological[0]]
+
+        for entry in chronological.dropFirst() {
+            let previous = current[current.count - 1].createdAt
+            if entry.createdAt.timeIntervalSince(previous) > gap {
+                sessions.append(ActivitySession(entries: current))
+                current = [entry]
+            } else {
+                current.append(entry)
+            }
+        }
+        sessions.append(ActivitySession(entries: current))
+
+        return sessions.reversed()
     }
 }

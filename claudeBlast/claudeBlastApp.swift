@@ -72,7 +72,8 @@ struct claudeBlastApp: App {
         // Bootstrap only on first launch (or after a forced version bump).
         // Always wipe first — on a fresh store this is a no-op; on a version
         // bump it prevents duplicate records when re-seeding from the bundle.
-        if BootstrapLoader.needsBootstrap() {
+        // Context-aware: the flag alone can outlive the store it describes.
+        if BootstrapLoader.needsBootstrap(context: container.mainContext) {
             // Under CloudKit, a second device may already hold the synced dataset
             // by the time it launches (the seed-once flag is local-only). Don't
             // seed a duplicate full copy — adopt the synced one. Best-effort: if

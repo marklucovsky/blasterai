@@ -42,7 +42,19 @@ enum AppSettingsKey {
     // hour grouping and comes back to find it off will just turn it on again.
     static let activityRange       = "activity_range"
     static let activityClusterByName = "activity_cluster_by_name"
-    static let activityGroupByHour   = "activity_group_by_hour"
+    /// Which band the log is broken into: session, hour, or none.
+    ///
+    /// Replaces the `activity_group_by_hour` boolean it grew out of. A session
+    /// is a band exactly as an hour is — the difference is that its edges come
+    /// from behaviour rather than the clock — so the two belong in one choice
+    /// rather than as a bool plus a special case.
+    static let activityBand          = "activity_band"
+    /// `BlasterScene.sceneID` the Reach report is scoped to. Empty falls back to
+    /// the active scene, which survives a rename and is what a caregiver opening
+    /// the screen almost always means.
+    static let coverageSceneID          = "coverage_scene_id"
+    /// Whether the never-used breakdown is grouped by part of speech or by page.
+    static let coverageBreakdown      = "coverage_breakdown"
     static let openaiApiKey      = "openai_api_key"
     static let providerChoice    = "provider_choice"
     static let audioEnabled          = "audio_enabled"
