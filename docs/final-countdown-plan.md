@@ -426,9 +426,27 @@ later.
 
 ### 4E. Usage report — the child's patterns, shared to a caregiver or SLP
 
-**Status (2026-08-31): design deferred pending Mark's conversation with Brandi.** Not
-blocking — 4A and 4A′ are the substrate and do not depend on this payload's shape. The
-question held open for her is how much of the child's speech the readable report carries.
+**Status (2026-09-04): BUILT.** Activity now bands by session; `Coverage` and `Patterns`
+are new screens; the readable report renders to PDF from Admin → Activity → Share report,
+behind `AdminGate`. Design notes in `docs/usage-report-notes.md`; the draft canvas Mark
+reviewed is at <https://claude.ai/code/artifact/de571911-1ab6-4284-9efd-0cc1131085b6>.
+
+**The question held for Brandi is answered as a toggle, not a decision.** "Include what
+was said" defaults **off** — the report still carries how often, when, which words and how
+much of the board, and withholds only the sentences. A caregiver can always send more and
+can never unsend, so the default is the direction that can be walked back. If Brandi says
+SLPs need the full history, it is one flag. When utterances ARE included, the warning is a
+running footer on every page, because page four can be forwarded without page one.
+
+**Still open, and deliberately deferred:**
+
+- **Scheduled sends and the States screens.** The weekly digest is the same job as the PDF
+  — deliver the report — so building it separately would build the delivery path twice.
+  Note the constraint that shaped it: a digest only works INSIDE the family iCloud, where
+  a caregiver device holds `LoggedUtterance` by sync and raises a *local* notification. On
+  a patient-only device there is nowhere to send it, and the SLP is never a sync peer, so
+  their copy is always an exported file. That is the PDF's real job.
+- **Custom date ranges** — post-launch, `docs/architecture-backlog.md` §4.
 
 Mark's framing: a share operation *from the child's device to the caregiver*, over
 iMessage. Same share pattern as 4A, different payload. It belongs here rather than in the
@@ -465,6 +483,24 @@ struck single-core-board preset is a simplification, not a cut.
 ## Session 5 — `cb-launch-prep`
 
 **Identity:** everything a tester needs, except the build.
+
+### Carried from S4
+
+Two found while building 4E, both written up in full in `docs/s4-cleanup.md`:
+
+- **§11 — profile names are visible now.** The usage report's title is
+  `ChildProfile.displayName`, so the first PDF built was headed **"Legacy"** — a migration
+  label that was internal until a document meant for a therapist started printing it. The
+  audit question is broader than a rename: whether `Legacy` and `Sandbox` both need to
+  exist, and which surfaces should show a profile name at all.
+- **§12 — the new activity screens have not been seen on a phone.** Coverage, Patterns and
+  the coverage grid were built on iPad and Mac. The heatmap in particular is a
+  `weekday × hour` grid with data-driven columns, and nothing caps or scrolls it at compact
+  width. Related to the S3 finding that SwiftUI silently *drops* toolbar items rather than
+  collapsing them — expect quiet truncation rather than an obvious break.
+
+Also carried: **§9** (validate a scene before activation — the two lockouts are contained,
+not fixed) and **§10** (consequential toggles have no gate).
 
 ### Tester-readiness code work
 

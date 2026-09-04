@@ -315,3 +315,63 @@ caregiver would be on while waiting for it.
 
 **Not started.**
 
+---
+
+## 11. Profile names are visible now, and "Legacy" is on the report
+
+**Raised:** 2026-09-04, from the first usage-report PDF. Next session.
+
+The report's title is the `ChildProfile.displayName`, so the first PDF built on
+Mark's iPad is headed **"Legacy"** — the name `ProfileMigration` gives the profile
+it seeds from prior UserDefaults. That was an internal label back when nothing
+displayed it. It is now the largest word on a document intended for a therapist.
+
+Two questions, and the second is the real one:
+
+1. **What should the seeded profiles be called?** "Legacy" describes where the
+   record came from, not who it is about. Whatever replaces it has to work for a
+   caregiver who never chose it and may never rename it.
+2. **Do `Legacy` and `Sandbox` both need to exist?** They arrived for different
+   reasons — `Legacy` is a migration artefact, `Sandbox` is
+   `ChildProfileResolver`'s undeletable fallback so the engine never sees nil —
+   and on a fresh install a caregiver can end up looking at both in the Profiles
+   list with no way to tell why either is there. If one can cover both jobs, it
+   should.
+
+**Do this as an audit rather than a rename.** The names leak into the report
+title, the Profiles list, the caregiver menu and any future scheduled digest, so
+the question is which surfaces show a profile name at all — and whether an
+unnamed profile should show *something else* rather than a placeholder that reads
+as a real child's name.
+
+**Not started.**
+
+---
+
+## 12. The new activity screens have not been seen on a phone
+
+**Raised:** 2026-09-04. Next session.
+
+Coverage, Patterns and the coverage grid were built and reviewed on iPad and Mac.
+None has been looked at in a compact width, and each has a shape that compact
+width is unkind to:
+
+- **The Patterns heatmap** is a `weekday × hour` grid whose columns come from the
+  data. A board used from 7am to 8pm gives fourteen columns plus a day label
+  gutter; on a phone those cells get very small, and nothing currently caps them
+  or offers a scroll.
+- **Coverage rows** carry a ring, a two-line label, a count and a percentage on
+  one line. That is four things competing for ~350pt.
+- **The coverage grid** uses `GridItem(.adaptive(minimum: 68))`, which will
+  simply give fewer columns — probably fine, but it means a page's layout shape
+  reads differently on a phone than the board the child actually uses, which
+  undercuts the whole point of showing position.
+- **The summary strips** are three-cell `HStack`s with numbers and labels; the
+  Patterns one additionally carries a change indicator under each.
+
+Related to the S3 finding that SwiftUI toolbars silently *drop* items at narrow
+widths rather than collapsing them — the failure mode here is likely to be quiet
+truncation rather than an obvious break.
+
+**Not started.**
+

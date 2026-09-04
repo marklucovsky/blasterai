@@ -25,6 +25,7 @@ extension AdminView {
             }
             .navigationTitle("Activity")
             .toolbar { adminDoneToolbar }
+            .sheet(isPresented: $showUsageReport) { UsageReportSheet() }
         }
         .tabItem { Label("Activity", systemImage: "list.bullet.rectangle.fill") }
     }
@@ -157,6 +158,11 @@ extension AdminView {
                 PatternsView()
             } label: {
                 Label("Patterns", systemImage: "calendar.badge.clock")
+            }
+            Button {
+                showUsageReport = true
+            } label: {
+                Label("Share report", systemImage: "square.and.arrow.up")
             }
         } header: {
             Text("Recent")
