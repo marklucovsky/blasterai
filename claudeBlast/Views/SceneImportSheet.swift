@@ -323,6 +323,11 @@ struct SceneImportSheet: View {
                 resolution: resolution)
             // Re-render any tiles whose image was filled or replaced.
             for key in result.imageUpdatedKeys { resolver.invalidatePhoto(for: key) }
+            // And drop the art-alias table: an imported scene mints tiles whose
+            // picture lives under another key — every page link for a bundled
+            // pack points at `packcover_<slug>`. The table is loaded once, so
+            // without this those tiles draw letter placeholders until relaunch.
+            resolver.invalidateAliases()
             lastResolution = resolution
             importResult = result
         } catch {

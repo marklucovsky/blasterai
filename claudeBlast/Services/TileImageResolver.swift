@@ -62,6 +62,14 @@ final class TileImageResolver {
     private var variantCache = NSCache<NSString, UIImage>()
     private var variantMisses = Set<String>()
 
+    /// Word key → the key its ART lives under (`TileModel.bundleImage`).
+    ///
+    /// Only holds entries that actually differ, so the common case costs one
+    /// dictionary miss. `aliasesLoaded` distinguishes "no aliases" from "not
+    /// looked yet", which a bare empty dictionary cannot.
+    private var aliasMap: [String: String] = [:]
+    private var aliasesLoaded = false
+
     init() {
         cache.countLimit = 600 // ~500 tiles + headroom
         overrideCache.countLimit = 600
@@ -77,6 +85,55 @@ final class TileImageResolver {
         overrideMisses.removeAll()
         variantCache.removeAllObjects()
         variantMisses.removeAll()
+        aliasMap.removeAll()
+        aliasesLoaded = false
+    }
+
+    /// Where a tile's art actually lives.
+    ///
+    /// ## Why this belongs to the resolver
+    ///
+    /// `TileModel.bundleImage` is usually the tile's own key and sometimes
+    /// another word's: a page link for a bundled pack points at
+    /// `packcover_<slug>`, and `him` borrows `he`'s picture. Following that was
+    /// left to each call site, and `TileImageView` takes a bare key — so being
+    /// correct meant every caller remembering to pass `bundleImage` instead.
+    /// Sixteen did; the coverage grid and the activity log's tile strip did not,
+    /// and both drew letter placeholders for words whose art exists.
+    ///
+    /// The failure is silent by construction — a placeholder reads as "art not
+    /// generated yet", never as "alias dropped" — so it survives review. Making
+    /// resolution the resolver's job means a bare key is correct by default and
+    /// there is one place to be wrong.
+    ///
+    /// Idempotent, which is what lets the existing `bundleImage`-passing callers
+    /// stay as they are: an alias is one level deep and terminates on a key that
+    /// aliases itself, so resolving twice is resolving once. A key with no tile
+    /// at all — `packcover_space` — simply misses and comes back unchanged.
+    func artKey(for key: String) -> String {
+        loadAliasesIfNeeded()
+        return aliasMap[key] ?? key
+    }
+
+    /// One fetch for the whole table rather than one per tile.
+    ///
+    /// A board render asks for every visible key at once; per-key fetches would
+    /// turn one query into sixty. The table is ~500 short strings and only holds
+    /// the entries that differ, so in practice it is a handful.
+    private func loadAliasesIfNeeded() {
+        guard !aliasesLoaded, let context else { return }
+        aliasesLoaded = true
+        guard let tiles = try? context.fetch(FetchDescriptor<TileModel>()) else { return }
+        for tile in tiles where !tile.bundleImage.isEmpty && tile.bundleImage != tile.key {
+            aliasMap[tile.key] = tile.bundleImage
+        }
+    }
+
+    /// Drop the alias table — call when a tile's `bundleImage` changes or new
+    /// tiles arrive by import or sync.
+    func invalidateAliases() {
+        aliasMap.removeAll()
+        aliasesLoaded = false
     }
 
     /// Resolve a UIImage for the given tile key, applying the full fallback
@@ -100,7 +157,7 @@ final class TileImageResolver {
     /// Resolve a tile's real art in a specific image set — no placeholder, no
     /// master-set backfill. Returns nil when that set genuinely lacks the tile.
     func image(for key: String, in imageSet: ImageSetID) -> UIImage? {
-        rawImage(for: key, in: imageSet)
+        rawImage(for: artKey(for: key), in: imageSet)
     }
 
     /// The full fallback chain against an explicit set — what `image(for:)` does,
@@ -111,12 +168,19 @@ final class TileImageResolver {
     /// backfill → any-variant order, or a printed sheet disagrees with the screen
     /// for exactly the tiles where it matters (custom words, photo overrides).
     func resolved(_ key: String, in imageSet: ImageSetID) -> UIImage? {
+        // The photo override is looked up on the tile's OWN key, deliberately.
+        // A caregiver photograph belongs to the word they attached it to: a photo
+        // on `him` must win for `him` and must not leak onto `he`, which is
+        // exactly what aliasing before this line would do.
         if let photo = userPhoto(for: key) { return photo }
-        if let img = rawImage(for: key, in: imageSet) { return img }
+
+        // Everything below is about where the ART lives, so it follows the alias.
+        let art = artKey(for: key)
+        if let img = rawImage(for: art, in: imageSet) { return img }
         if imageSet != ImageSetID.universalBackfill,
-           let img = rawImage(for: key, in: ImageSetID.universalBackfill) { return img }
+           let img = rawImage(for: art, in: ImageSetID.universalBackfill) { return img }
         // A custom word arted in only one style still shows (its variant) in others.
-        if let img = anyVariantImage(for: key) { return img }
+        if let img = anyVariantImage(for: art) { return img }
         return placeholderImage(for: imageSet)
     }
 
@@ -129,8 +193,9 @@ final class TileImageResolver {
     /// times over into 512² bitmaps, which is gigabytes, and the OS killed the
     /// app for it. Counting art should never cost what drawing it costs.
     func hasArt(for key: String, in imageSet: ImageSetID) -> Bool {
-        if bundledArtExists(for: key, in: imageSet) { return true }
-        return variantExists(for: key, in: imageSet)
+        let art = artKey(for: key)
+        if bundledArtExists(for: art, in: imageSet) { return true }
+        return variantExists(for: art, in: imageSet)
     }
 
     /// File presence only — no decode, no cache write.
@@ -273,6 +338,11 @@ final class TileImageResolver {
         variantMisses.removeAll()
         overrideCache.removeAllObjects()
         overrideMisses.removeAll()
+        // Aliases too: a synced or imported TileModel can arrive with a
+        // `bundleImage` pointing elsewhere, and the table is loaded once. Without
+        // this the new word renders a placeholder until relaunch — the same
+        // stale-negative shape this method exists to cure for variants.
+        invalidateAliases()
         revision &+= 1
     }
 

@@ -108,9 +108,23 @@ struct ExportableTile: Codable {
     /// both directions: an older build reads the photo override and ignores this,
     /// and a file written by an older build simply has no entries.
     var art: [ExportableTileArt]?
+    /// Art alias: the key whose set art this tile borrows.
+    ///
+    /// `TileModel.bundleImage` — usually the tile's own key, sometimes another
+    /// word's. Two things depend on it and both broke without it travelling:
+    ///
+    /// - **Pack covers.** A page link minted for a bundled pack aliases
+    ///   `packcover_<slug>`, which is where its picture lives. Imported without
+    ///   the alias, the cover falls back to the tile's own key, finds nothing,
+    ///   and every page link on Home renders as a letter placeholder.
+    /// - **Word aliases.** `him` borrows `he`'s art. Same failure, quieter.
+    ///
+    /// Written only when it differs from `key`, so the common case costs nothing
+    /// and an older file's absence means exactly what it should: no alias.
+    var bundleImage: String?
 
     enum CodingKeys: String, CodingKey {
-        case key, wordClass, displayName, imageData, art
+        case key, wordClass, displayName, imageData, art, bundleImage
     }
 }
 

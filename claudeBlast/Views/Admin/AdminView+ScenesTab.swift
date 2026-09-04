@@ -296,13 +296,13 @@ extension AdminView {
         navigateToNewScene = scene
     }
 
-    /// Bundled (system) vocabulary keys — the importer already has these, so they
-    /// aren't packaged. Caregiver-added words (isSystem=false) ARE exported.
-    /// Provenance-based and image-set-independent (unlike a bundled-art check,
-    /// which would over-export on a sparse set).
-    var defaultTileKeys: Set<String> {
-        Set(allTiles.filter(\.isSystem).map(\.key))
-    }
+    /// Keys a fresh install already owns, so an export need not carry them.
+    ///
+    /// `vocabulary.json`, NOT `isSystem`. The two look interchangeable and are
+    /// not: `isSystem` means first-party, and bundled PACK words are first-party
+    /// while being absent until the pack is installed. Filtering on it dropped
+    /// every pack word from every export. See `BundledVocabulary`.
+    var defaultTileKeys: Set<String> { BundledVocabulary.keys }
 
     func handleFileImport(_ result: Result<[URL], Error>) {
         switch result {

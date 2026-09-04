@@ -112,7 +112,10 @@ enum SceneExporter {
             wordClass: tile.wordClass,
             displayName: tile.displayName,
             imageData: encodeArt(art?.photo),
-            art: variants.isEmpty ? nil : variants
+            art: variants.isEmpty ? nil : variants,
+            // Only when it points somewhere else. An alias equal to the key is
+            // the default and carrying it would be noise in every file.
+            bundleImage: tile.bundleImage == tile.key ? nil : tile.bundleImage
         )
     }
 

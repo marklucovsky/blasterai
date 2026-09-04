@@ -227,11 +227,42 @@ struct TileGridView: View {
                     compactOverlayContent
                 }
         } else {
-            ContentUnavailableView(
-                "No Active Scene",
-                systemImage: "questionmark.square",
-                description: Text("No scene is currently active.")
-            )
+            noBoardState
+        }
+    }
+
+    /// The board has nothing to draw — and the only way out is here.
+    ///
+    /// ## Why this needs its own escape hatch
+    ///
+    /// Every other route into Admin is a long-press on the Home cell, and the
+    /// Home cell lives *inside* the grid. So the one state where the grid cannot
+    /// render is exactly the state with no way to reach the settings that would
+    /// fix it: activate a scene whose `homePageKey` names no page and the app is
+    /// bricked until it is deleted and reinstalled. Reachable purely by
+    /// authoring a scene by hand and getting the home page wrong.
+    ///
+    /// ## Two different nothings
+    ///
+    /// `currentPage` is nil when there is no active scene at all, and *also*
+    /// when a scene is active but its home page does not resolve. The second is
+    /// the far likelier one and the old copy — "No scene is currently active" —
+    /// stated the opposite of what had happened, sending anyone reading it to
+    /// look in the wrong place.
+    @ViewBuilder
+    private var noBoardState: some View {
+        ContentUnavailableView {
+            Label(activeScene == nil ? "No Active Scene" : "This Scene Has No Home Page",
+                  systemImage: "questionmark.square")
+        } description: {
+            if let scene = activeScene {
+                Text("“\(scene.name)” is active, but its home page (“\(scene.homePageKey)”) does not match any page in it. Set a home page, or activate another scene.")
+            } else {
+                Text("No scene is currently active. Activate one to show the board.")
+            }
+        } actions: {
+            Button("Open Admin") { caregiverMenu.requested = .admin }
+                .buttonStyle(.borderedProminent)
         }
     }
 
@@ -318,6 +349,14 @@ struct TileGridView: View {
             // The lift belongs to the tap that caused it, and that tap is over.
             lastTappedKey = nil
             currentDisplayPage = 0
+            engine.currentPageKey = identityPageKey
+        }
+        .onChange(of: identityPageKey, initial: true) { _, key in
+            // The board tells the engine where the child is, so a press can be
+            // stamped with the page it came from. Pushed rather than pulled:
+            // navigation is a view concern, and this is the single fact the
+            // engine needs out of it.
+            engine.currentPageKey = key
         }
         .alert("Add Note", isPresented: $showNoteAlert) {
             TextField("Note", text: $pendingNote)
@@ -345,9 +384,18 @@ struct TileGridView: View {
             // on page 4 of a long board as on page 1. `max(1,)` guards a
             // pathologically small grid.
             let vocabPerPage = max(1, spec.perPage - 1)
-            let chunkedTiles = page.tiles
-                .filter { lookup[$0.key]?.isHiddenFromChild != true }
-                .chunked(into: vocabPerPage)
+            let visible = page.tiles.filter { lookup[$0.key]?.isHiddenFromChild != true }
+            // ALWAYS at least one chunk, even with nothing to put in it.
+            //
+            // `chunked(into:)` returns no chunks for an empty page, and Home is
+            // cell 0 of a chunk — so an empty page drew no Home, and with Home
+            // gone there is no long-press target and therefore no route into
+            // Admin. A page emptied by a bad import, or by hiding its last tile,
+            // bricked the device.
+            //
+            // Now that Admin is reached *through* the board, an empty grid is a
+            // state the board has to survive rather than one it can assume away.
+            let chunkedTiles = visible.isEmpty ? [[]] : visible.chunked(into: vocabPerPage)
             Group {
                 if isLandscape {
                     landscapeTabView(chunks: chunkedTiles, spec: spec)
@@ -557,17 +605,17 @@ struct TileGridView: View {
     ///
     /// ## What appears depends on who is holding the device
     ///
-    /// On a **patient** device this shows **Admin only**. The other two entries
-    /// are unguarded actions sitting one long-press away from the child whose
-    /// device it is: "Switch modes" changes how their board behaves, and
-    /// TileScript starts a scripted playback over the top of it. Neither is
-    /// something a child should be able to trigger, and neither is urgent enough
-    /// for a caregiver to need outside the gate — both are reachable in Admin,
-    /// which is exactly what the gate is for.
+    /// On a **patient** device this shows **Admin only**. "Switch modes" is an
+    /// unguarded action sitting one long-press away from the child whose device
+    /// it is — it changes how their board behaves — and it is not urgent enough
+    /// for a caregiver to need outside the gate, since Admin reaches it anyway.
     ///
-    /// On a **caregiver** device all three stay. That device is for authoring,
-    /// demoing and testing, its Admin is ungated by default, and flipping modes
-    /// quickly is the point of having the shortcut at all.
+    /// On a **caregiver** device the mode switch stays. That device is for
+    /// authoring, demoing and testing, its Admin is ungated by default, and
+    /// flipping modes quickly is the point of having the shortcut at all.
+    ///
+    /// TileScript used to be a third entry and is not any more — see the note at
+    /// its former call site below.
     private var caregiverMenuContent: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Caregiver Menu")
@@ -586,15 +634,18 @@ struct TileGridView: View {
                 }
                 Divider()
             }
+            // TileScript is deliberately NOT here. It lives in Admin ->
+            // Device -> TileScript, which is one door instead of two and is the
+            // path that actually works: reached from this menu the runner is
+            // presented outside the hierarchy that owns `TileScriptRunner`, so
+            // it trapped on a missing environment object every time.
+            //
+            // Keeping the broken second route and injecting the environment into
+            // it was the other option. One gated door to a developer tool is
+            // worth more than two.
             caregiverMenuRow("Admin", systemImage: "lock.fill") {
                 showCaregiverMenu = false
                 caregiverMenu.requested = .admin
-            }
-            if !isPatientDevice {
-                caregiverMenuRow("TileScript", systemImage: "play.rectangle.fill") {
-                    showCaregiverMenu = false
-                    caregiverMenu.requested = .tileScript
-                }
             }
         }
         .frame(minWidth: 240)

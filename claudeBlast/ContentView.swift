@@ -89,14 +89,13 @@ struct ContentView: View {
                     }
             }
             // The caregiver menu (long-press Home in the tray) requests a
-            // destination; present it here, where the cover lives. Both
-            // destinations are wrapped in AdminGate, so the menu itself is open.
+            // destination; present it here, where the cover lives. It is wrapped
+            // in AdminGate, so the menu itself is open.
             .onChange(of: caregiverMenu.requested) { _, requested in
                 guard let requested else { return }
                 caregiverMenu.requested = nil
                 switch requested {
-                case .admin:      activeDestination = .admin
-                case .tileScript: activeDestination = .tileScript
+                case .admin: activeDestination = .admin
                 }
             }
             .onAppear {

@@ -233,6 +233,8 @@ struct PackImportSheet: View {
                 resolver.invalidateVariants(for: key)
                 resolver.invalidatePhoto(for: key)
             }
+            // New tiles can carry an art alias, so the cached table is stale.
+            resolver.invalidateAliases()
             result = imported
         } catch {
             self.error = error.localizedDescription

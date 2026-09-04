@@ -192,6 +192,30 @@ final class BlasterScene {
         set {
             pagesData = (try? JSONEncoder().encode(newValue)) ?? Data()
             lastModified = .now
+            adoptHomePageIfNeeded(newValue)
+        }
+    }
+
+    /// Keep `homePageKey` pointing at a page that exists.
+    ///
+    /// A scene whose home page names nothing renders no board — and since Admin
+    /// is reached by long-pressing Home, and Home lives on the board, that scene
+    /// cannot be edited or deactivated from the device it is active on. The only
+    /// exit was delete-and-reinstall.
+    ///
+    /// Enforced here rather than at the call sites because this setter is the one
+    /// choke point every page mutation passes through: creation, adding the first
+    /// page, deleting the page that happened to be home, import, materialisation.
+    /// A guard per site is a guard someone forgets to add to the eleventh.
+    ///
+    /// The first page wins when there is no valid home. Arbitrary, and better
+    /// than the alternative by a wide margin: a scene opening on the wrong page
+    /// is a nuisance a caregiver can fix in seconds, and one opening on no page
+    /// is a device that needs wiping.
+    private func adoptHomePageIfNeeded(_ pages: [PageSpec]) {
+        guard let first = pages.first else { return }
+        if !pages.contains(where: { $0.key == homePageKey }) {
+            homePageKey = first.key
         }
     }
 
@@ -311,10 +335,22 @@ final class BlasterScene {
     }
 
     /// Activate this scene, deactivating any other active scene in the context.
+    ///
+    /// The last line of defence for the home-page invariant. The `pages` setter
+    /// normally holds it, but a scene can arrive with `homePageKey` written
+    /// *after* its pages — an importer assigning fields in field order will do
+    /// exactly that — and the moment of activation is the one that matters:
+    /// this is where an unreachable home page becomes a board that will not
+    /// draw.
     func activate(context: ModelContext) throws {
         let allScenes = try context.fetch(FetchDescriptor<BlasterScene>())
         for scene in allScenes where scene.isActive {
             scene.isActive = false
+        }
+        let pages = self.pages
+        if !pages.isEmpty, !pages.contains(where: { $0.key == homePageKey }),
+           let first = pages.first {
+            homePageKey = first.key
         }
         self.isActive = true
     }
