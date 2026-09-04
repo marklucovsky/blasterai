@@ -484,23 +484,217 @@ struck single-core-board preset is a simplification, not a cut.
 
 **Identity:** everything a tester needs, except the build.
 
+S4's cleanup list was never cleared — S4 closed on its exit criteria with
+`docs/s4-cleanup.md` §1–§6 and §9–§12 still open. Mark's call, 2026-09-04: those
+roll into S5 as if they had belonged all along, and PR 1 clears the mechanical
+half of them. Two new pieces of scope arrived the same day (tile colour and
+sparse boards); both are recorded below before the PR table, because the PR
+ordering only makes sense once the colour decision is understood.
+
+### PR ordering
+
+| # | PR | Contains | Note |
+|---|---|---|---|
+| 0 | docs | this plan section | doc-only, direct to main |
+| 1 | **cleanup** | S4 §1 `bassketball` delete · §2 `cls_help` frame regen · §3 print label shrink-to-fit · §4 `isStructuralChrome` ×5 sites · §5 `NOTICE` rewrite (Apache-2.0) · §6 CLAUDE.md test-name check | mechanical; §4 unblocks PR 2 |
+| 2 | **colour** | `partOfSpeechRaw` on TileModel · 4-layer resolver · `VocabularyClass.color` → `defaultPartOfSpeech` · drop `PartOfSpeechIndex.overrides` · resolver takes a tile, not a string (~12 sites) · Fitzgerald palette · filled cards · card ignores dark mode | **the only S6 schema deadline** |
+| 3 | **sparse boards** | `TileEntry.isHidden` · `key: "<spacer>"` reserved token · one empty-cell render path · coverage counts hidden ≠ spacer · OBF `hidden:true` / `null` | blob-local, no schema change |
+| 4 | **gates** | §9 scene validation on activate · §10 iCloud toggle confirmation both directions · modal progress for long ops · audit sibling one-tap actions | two live lockouts + the stray-tap iCloud flip |
+| 5 | **compact + names** | §12 Coverage / Patterns / coverage grid at phone width · §11 profile-name audit | both are "reviewed on the wrong device or by the wrong reader" |
+| 6 | **tester readiness** | AdminGate hardening · PIN recovery · no-key path verified · beta-review notes | no-key path is the likeliest rejection cause |
+| 7 | **launch assets** | claims refresh · ASC record · icon audit · privacy labels · screenshots iPad/iPhone/Mac | exit criteria live here |
+
+PR 2 is sequenced early because it is the only irreversible item, and PRs 3 and 5
+both render against the palette it establishes.
+
+### The palette is ours, and it should not be (decided 2026-09-04)
+
+`VocabularyClasses.swift` says it plainly — *"Colors mirror the legacy switch"*.
+We invented the colourway, and it colours by **semantic category** (food red,
+animal brown, places blue). No clinical practice uses that axis.
+
+What every board we are compared against uses is the **Fitzgerald Key**: a
+*part-of-speech* axis, taught by SLPs, carried between apps. TouchChat, Snap Core
+First, LAMP, PODD and CoughDrop all speak it. A child moving between our board and
+their school board currently gets no transfer at all.
+
+Mark's call: we already know the right answer and we already built the axis —
+adopt it now rather than waiting on the design session `docs/s4-cleanup.md` §8
+proposed.
+
+**We have the data.** `43ce69b` shipped `PartOfSpeech` + `PartOfSpeechIndex`.
+496 of 507 vocabulary keys are in `Resources/parts_of_speech.json`; the 11 that
+are not are exactly the structural chrome that `isStructuralChrome` names, and
+they *should* fall through to chrome styling rather than a word colour. There is
+no gap to fill.
+
+**Mapping** (Modified Fitzgerald, as Snap Core First and TouchChat teach it):
+
+| PartOfSpeech | colour |
+|---|---|
+| pronoun | yellow |
+| verb | green |
+| adjective | blue |
+| noun | orange |
+| question | purple |
+| negation | red |
+| social, interjection | pink |
+| preposition, determiner, conjunction | white / neutral |
+| *(no part of speech — chrome)* | gray / indigo, as now |
+
+**Three consequences, accepted deliberately:**
+
+1. **The palette collapses from ~20 colours to 8.** Food stops being red and
+   becomes orange like every other noun; mint, teal, cyan and brown leave the
+   board entirely. Colour no longer distinguishes food from places. That is the
+   trade Fitzgerald makes on purpose — fewer colours, but ones a therapist teaches
+   and a child carries elsewhere. Every existing board and PDF changes appearance.
+2. **"White" does not survive a naive fill.** Function words are white on a
+   Fitzgerald board because the card sits against a coloured surround. On our
+   white ground that is invisible, so it becomes a neutral card with a visible
+   outline.
+3. **The tile card does not follow dark mode.** Fitzgerald colours are taught as
+   constants; a board is a physical object. The card stays light in both
+   appearances and only the chrome around it goes dark. This is also the better
+   answer to "the colour needs to be bolder in dark mode" — a light card on a dark
+   ground is the boldest version available, and it costs no new constants.
+
+**Colour on the edge is why ours reads flat.** `TileView.swift:139–149` draws a
+`lineWidth: 3` border at `opacity(0.6)` over an `opacity(0.12)` fill. Side by side
+with cboard on the same tiles, their colour *is* the card and ours is a hairline
+around a white card — the board reads monochrome from three feet away. Our own
+PDFs are closer to cboard than our app is, because the print renderer fills.
+
+#### Resolving a part of speech
+
+```
+1. TileModel.partOfSpeechRaw   stored, synced — therapist / classifier truth
+2. parts_of_speech.json        bundled table, 496 words
+3. derived from wordClass      total for any real word
+4. nil                         structural chrome only (home, page_*, nav)
+```
+
+**Reporting stops after layer 2; colour runs all four.** "Strict" means *no
+guessing*, not *table only*: a therapist's stored answer is not a guess, so
+coverage must honour it; a derivation is, so coverage must not.
+
+- `partOfSpeech(for:)` → `stored ?? bundled` — nil-able, feeds the coverage report
+- `resolvedPartOfSpeech` → `stored ?? bundled ?? derived` — total, feeds `TileColorResolver`
+
+Layer 1 must outrank layer 2, or a therapist correcting a *bundled* word (calling
+`more` a verb on their board, not a determiner) is silently ignored on exactly the
+words most likely to be argued about.
+
+**Layer 3 was measured, not assumed.** Deriving from `wordClass` — which the
+caregiver already picks when creating a word — gives **92.3% colour accuracy**
+across the caregiver-selectable classes. Every one of the 36 misses is a *bundled*
+word, which has an exact table entry and never reaches the derivation; the misses
+concentrate in function words (prepositions filed as `describe`, pronouns filed as
+`people`) that a family will never add. They add "grandma", "Bluey", "trampoline".
+Real-world accuracy on the population the fallback actually serves is well above
+92%.
+
+Two structural changes fall out and should land in the same PR:
+
+- **`PartOfSpeechIndex.overrides` goes.** It was the seam for exactly this, and
+  the stored field is now that seam. Keeping both leaves two override mechanisms
+  with undefined precedence — the same shape as the copy-pasted predicate §4 is
+  cleaning up.
+- **`VocabularyClass.color` becomes `defaultPartOfSpeech`.** A column swap, not a
+  new file: the catalogue that already declares what classes exist also declares
+  what each one is grammatically, so there is no parallel switch to drift. Colour
+  leaves the catalogue entirely.
+
+The resolver must also move to where a tile is in hand. `wordClassColor(_ String)`
+and `colorForWordClass(_ String)` become tile-taking; all ~12 call sites already
+have the tile (`TileView`, `SentenceTrayView`, `SingleWordTrayView`,
+`CompactTrayStrip`, `CoverageGridView`, `AdminView+ActivityTab`).
+
+#### The schema deadline
+
+`partOfSpeechRaw: String = ""` on `TileModel` is a **synced schema change and must
+land before S6 promotion.** It is the only deadline-bearing item in S5.
+
+It is taken as insurance, on the S3 3A precedent (`languageRaw`, `brownsStageRaw`).
+v1 derives; the field ships empty. It exists so that a therapist can correct a
+colour and have it stick, and so a classifier run at word-add time (we already call
+`WordModerationService` there and it could return a part of speech in the same
+response) can persist its answer. Without it, `overrides` is in-memory only: the
+answer dies at relaunch and the same word renders orange on the iPad and gray on
+the iPhone. Derivation would be correct today and permanent forever.
+
+### Sparse boards: hidden tiles and spacers (decided 2026-09-04)
+
+Published AAC boards leave cells empty on purpose, and the technique is to grow a
+child's word-space by unhiding rather than by adding. Two mechanisms, one
+rendering.
+
+**The clinical argument is motor planning, not tidiness** — the same argument that
+put Home at cell 0. Deleting a word reflows the board and moves every other word;
+hiding it in place moves nothing. So hide-in-place becomes the *normal* way to take
+a word off a board, and deletion the rare one.
+
+- **Hidden tile** — `TileEntry.isHidden`. A word that is on the board but
+  unavailable. It belongs on `TileEntry` rather than in a parallel page-level
+  `hiddenKeys` array: `TileEntry` already *is* the per-page instance (it carries
+  `link` and `isAudible`, both page-specific), and a parallel array is a second
+  thing to keep in sync — delete a tile and the key is orphaned, reorder and
+  nothing tells you.
+- **Spacer** — a `TileEntry` with the reserved key `"<spacer>"` and no `TileModel`
+  behind it, following the existing `link: "<home>"` magic-token convention. Not a
+  word at all.
+
+**The spacer key must be explicit, never "a key that does not resolve."**
+`docs/s4-cleanup.md` §9 lists "a page whose tiles all resolve to missing
+`TileModel`s" as the export bug's signature — a page that looks populated in the
+editor and empty on the board. If unresolvable silently meant spacer, we would
+destroy the only signal separating corruption from intent.
+
+**What reflow costs us.** Our board derives its column count from geometry
+(`tilesPerPage(geo:isLandscape:)`), so a *designed* gap — "leave column 4 of row 2
+empty" — has no stable meaning; it lands differently on iPad, iPhone and at large
+Dynamic Type. Column-relative alignment does not survive. **Order-relative grouping
+does**: the words before and after a spacer stay separated on every device. That is
+weaker than a fixed grid gives, and it is most of what the technique is for. A
+fixed rows × columns page remains unbuilt and is not in scope here — it would trade
+away the reflow that makes one scene work on iPad, iPhone and Mac.
+
+One render path, two entry kinds. Both draw an empty cell, both are untappable,
+both consume their real estate. They differ only in metadata:
+
+| | coverage report | OBF |
+|---|---|---|
+| hidden tile | on the board, unavailable | `hidden: true` |
+| spacer | not a word at all | `null` in `grid.order` |
+
+The coverage distinction is the point: a hidden word is not an ignored word, and
+conflating them makes the report read "the child ignores 40 words" when the
+caregiver hid them. `OBFExporter.swift:84` already emits `[String?]`, so the export
+side of spacers exists.
+
+Both live on `TileEntry`, inside the `pagesData` JSON blob (`Models/Scene.swift:179–197`)
+— **not a synced schema change, and no S6 deadline.** Note the symmetry with the
+colour work: part of speech is per-*word* (`TileModel`, syncs, one answer
+everywhere), hidden and spacer are per-*placement*. The same word can be hidden on
+the school board and visible at home — and orange in both places.
+
 ### Carried from S4
 
-Two found while building 4E, both written up in full in `docs/s4-cleanup.md`:
+All of `docs/s4-cleanup.md` that did not land in S4. §1–§6 are PR 1; §9–§12 are
+PRs 4 and 5. §7 and §8 landed in `43ce69b`. Detail stays in that file rather than
+being restated here; the two entries that shape a decision:
 
 - **§11 — profile names are visible now.** The usage report's title is
-  `ChildProfile.displayName`, so the first PDF built was headed **"Legacy"** — a migration
-  label that was internal until a document meant for a therapist started printing it. The
-  audit question is broader than a rename: whether `Legacy` and `Sandbox` both need to
-  exist, and which surfaces should show a profile name at all.
-- **§12 — the new activity screens have not been seen on a phone.** Coverage, Patterns and
-  the coverage grid were built on iPad and Mac. The heatmap in particular is a
-  `weekday × hour` grid with data-driven columns, and nothing caps or scrolls it at compact
-  width. Related to the S3 finding that SwiftUI silently *drops* toolbar items rather than
-  collapsing them — expect quiet truncation rather than an obvious break.
-
-Also carried: **§9** (validate a scene before activation — the two lockouts are contained,
-not fixed) and **§10** (consequential toggles have no gate).
+  `ChildProfile.displayName`, so the first PDF built was headed **"Legacy"** — a
+  migration label that was internal until a document meant for a therapist started
+  printing it. The audit question is broader than a rename: whether `Legacy` and
+  `Sandbox` both need to exist, and which surfaces should show a profile name at all.
+- **§12 — the new activity screens have not been seen on a phone.** Coverage,
+  Patterns and the coverage grid were built on iPad and Mac. The heatmap in
+  particular is a `weekday × hour` grid with data-driven columns, and nothing caps
+  or scrolls it at compact width. Related to the S3 finding that SwiftUI silently
+  *drops* toolbar items rather than collapsing them — expect quiet truncation
+  rather than an obvious break.
 
 ### Tester-readiness code work
 
@@ -541,6 +735,13 @@ Re-run the `docs/claims-audit-2026-07-20.md` discipline over everything S2–S4 
 cost numbers, the bundle size, and the new print/interop claims. Site and deck copy staged
 in `~/src/blasterai-site` (direct-to-main, no PRs) but **not published** until the
 screenshots come from the shipped build.
+
+`NOTICE` is part of this and moves earlier, into PR 1: it still says most tile images are
+ARASAAC pictograms under CC BY-NC-SA 4.0 and that commercial distribution "requires
+replacement with commercially-licensed imagery". None of that is true — all 2,743 shipped
+images across the five sets are OpenAI-generated. It is a standing claim that the app
+cannot be shipped as-is, in the file a reviewer or contributor reads first. Mark's intent,
+confirmed 2026-09-02: **repo and app images are Apache-2.0 with no additional constraints.**
 
 ### Exit criteria
 
