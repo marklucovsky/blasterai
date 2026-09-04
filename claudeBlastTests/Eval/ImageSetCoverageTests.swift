@@ -20,6 +20,23 @@ import Foundation
 struct ImageSetCoverageTests {
 
     /// All vocabulary keys from the bundled vocabulary.json.
+    /// The keys art is actually stored under — the alias where a word has one.
+    ///
+    /// A word key is not always an art key. `him` deliberately carries no picture
+    /// of its own: it reuses `he`, because they are the same image and different
+    /// grammar, and generating a second would cost money to produce something a
+    /// child cannot tell apart. Coverage means "every word resolves to art", so
+    /// it has to be measured where the art lives.
+    private func vocabularyArtKeys() throws -> [String] {
+        let url = try #require(Bundle.main.url(forResource: "vocabulary", withExtension: "json"),
+                               "vocabulary.json missing from the app bundle")
+        let entries = try JSONDecoder().decode([TileModelCodable].self, from: Data(contentsOf: url))
+        return entries.map { entry in
+            guard let alias = entry.bundleImage, !alias.isEmpty else { return entry.key }
+            return alias
+        }
+    }
+
     private func vocabularyKeys() throws -> [String] {
         let url = try #require(Bundle.main.url(forResource: "vocabulary", withExtension: "json"),
                                "vocabulary.json missing from the app bundle")
@@ -87,7 +104,7 @@ struct ImageSetCoverageTests {
     }
 
     @Test func shippableSetsCoverEntireVocabulary() throws {
-        let keys = try vocabularyKeys()
+        let keys = try vocabularyArtKeys()
         #expect(!keys.isEmpty)
 
         let resolver = TileImageResolver()
