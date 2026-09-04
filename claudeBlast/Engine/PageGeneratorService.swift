@@ -219,7 +219,7 @@ struct PageGeneratorService {
         for tile in allTiles {
             // Hide structural navigation + page_link tiles so the model treats
             // them as neither selectable words nor page switchers.
-            guard tile.wordClass != "navigation", tile.wordClass != PageLink.wordClass else { continue }
+            guard !tile.isStructuralChrome else { continue }
             byClass[tile.wordClass, default: []].append(tile.key)
         }
         return byClass.keys.sorted().map { wc in

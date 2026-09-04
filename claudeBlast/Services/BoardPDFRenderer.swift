@@ -632,7 +632,18 @@ enum BoardPDFRenderer {
         let label = tile?.displayName.isEmpty == false
             ? tile!.displayName
             : PageNaming.displayName(entry.key)
-        let labelSize = max(5, layout.labelBand * 0.62)
+        // Shrink to fit before truncating, exactly as `TileView` does on screen
+        // with `minimumScaleFactor(0.6)`, and for the same reason — a whole word
+        // slightly smaller beats half a word at the size asked for. It matters
+        // more on paper: at core-board density the label band is about an inch,
+        // which "graham crackers" overruns, and a caregiver reading the sheet
+        // gets nothing at all from "graham crac…".
+        //
+        // Below the floor the word is too small to read anyway, so `centered`
+        // (which truncates tail) stays the last resort rather than the first.
+        let labelSize = fittedLabelSize(label,
+                                        requested: max(5, layout.labelBand * 0.62),
+                                        available: card.width - 4)
         let labelAttrs: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: labelSize, weight: .semibold),
             .foregroundColor: UIColor.black,
@@ -711,6 +722,40 @@ enum BoardPDFRenderer {
                                       cornerRadius: radius)
         borderPath.lineWidth = border
         borderPath.stroke()
+    }
+
+    /// Largest point size at or below `requested` that draws `label` inside
+    /// `available`, floored at 60% of `requested` — the same factor
+    /// `TileView.minimumScaleFactor` uses on screen.
+    ///
+    /// A ratio gets the first guess, then it is verified and walked down.
+    ///
+    /// The ratio alone is not enough, and assuming it was is what made the first
+    /// version of this wrong: San Francisco is optically sized, so it tracks
+    /// *wider* per point as the point size falls. Scaling by `available / width`
+    /// therefore lands slightly over the band rather than on it — a small error,
+    /// but it reintroduces exactly the ellipsis this exists to prevent. The
+    /// verify-and-step loop runs a couple of iterations at most, on a string
+    /// that already overflowed.
+    static func fittedLabelSize(_ label: String,
+                                requested: CGFloat,
+                                available: CGFloat) -> CGFloat {
+        guard available > 0, !label.isEmpty else { return requested }
+
+        func width(at size: CGFloat) -> CGFloat {
+            let font = UIFont.systemFont(ofSize: size, weight: .semibold)
+            return (label as NSString).size(withAttributes: [.font: font]).width
+        }
+
+        let full = width(at: requested)
+        guard full > available else { return requested }
+
+        let floor = requested * 0.6
+        var size = max(floor, requested * available / full)
+        while size > floor, width(at: size) > available {
+            size = max(floor, size - 0.25)
+        }
+        return size
     }
 
     private static let centered: NSParagraphStyle = {

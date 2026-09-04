@@ -164,7 +164,7 @@ struct TilePickerView: View {
         let byKey = Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
         pageSourceKeys = page.tiles.compactMap { entry in
             guard let t = byKey[entry.key], !t.isRetired,
-                  t.wordClass != PageLink.wordClass, t.wordClass != "navigation" else { return nil }
+                  !t.isStructuralChrome else { return nil }
             return t.key
         }
         pageSourceLabel = "\(scene.name.isEmpty ? "Scene" : scene.name) · \(page.key)"

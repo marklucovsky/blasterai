@@ -173,7 +173,7 @@ struct SceneGeneratorService {
             // page_farm, …) so the model can't repurpose them as ad-hoc words or
             // page switchers; scene navigation is generated deterministically
             // (see SceneNavigation).
-            guard tile.wordClass != "navigation", tile.wordClass != PageLink.wordClass else { continue }
+            guard !tile.isStructuralChrome else { continue }
             byClass[tile.wordClass, default: []].append(tile.key)
         }
         return byClass.keys.sorted().map { wc in

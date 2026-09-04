@@ -34,6 +34,23 @@ or read the count out of the result bundle, which is the unambiguous check:
 
 `totalTestCount: 0` with `TEST SUCCEEDED` means the filter matched nothing.
 
+### Green is not proof your test ran
+
+The wrong-path trap has a second disguise, and the count does not catch this one.
+A test that references a `private` or file-private symbol does **not** fail the
+build: `xcodebuild` prints `** TEST SUCCEEDED **` and re-runs the *previous* test
+bundle. The suite passes, the count looks plausible, and the test you just wrote
+is simply absent. Nothing in the summary says so.
+
+So the count is necessary and not sufficient. **Check the name.**
+
+    xcrun xcresulttool get test-results tests --path <path>.xcresult \
+      | grep -o '<theTestYouJustWrote>'
+
+No match means it did not run, whatever the exit status said. This applies to
+every new test, not only ones you suspect — the failure is silent by
+construction, so the check has to be habitual rather than triggered by suspicion.
+
 ## Rules
 - Do not change signing/team settings unless asked.
 - Prefer minimal diffs.
@@ -102,9 +119,10 @@ All models live in `claudeBlast/Models/`.
 All tile keys must be lowercase. Keys map directly to imageset directory names.
 
 ### Tile images
-`Assets.xcassets/{key}.imageset/{key}.png` — one imageset per tile.
-Source: ARASAAC (CC BY-NC-SA 4.0) for most tiles; DALL-E 3 for ~20 tiles with no good ARASAAC match. Before App Store: replace all with custom DALL-E set to clear license.
-Tools: `tools/download_arasaac.py`, `tools/generate_dalle.py`, `tools/prompts.json`.
+`claudeBlast/TileImageSets/{set_prefix}_{key}.heic` — one flat directory, HEIC at 512px.
+Five shipped sets: `cls` / `clsm` / `clsmd` (Classic Light/Medium/Dark), `p3d` (Playful 3D), `hc` (High Contrast). `ImageSetCatalog` is the source of truth for what exists and what ships.
+All of it is OpenAI-generated and Apache-2.0 with the rest of the repo — **no third-party art ships, and there is nothing to replace before the App Store.** ARASAAC was removed in July 2026 and survives only as a style description in `Resources/image_styles.json`. See `NOTICE`.
+Tools: `tools/generate_sets.py`, `tools/prompts.json`, `tools/audit_art_coverage.py`.
 
 ### SentenceEngine (Observable, MainActor)
 Lives in `Engine/SentenceEngine.swift`. Injected as environment object.

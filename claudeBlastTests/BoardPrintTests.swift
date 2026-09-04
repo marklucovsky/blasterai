@@ -11,6 +11,7 @@ import Testing
 import SwiftData
 import Foundation
 import CoreGraphics
+import UIKit
 @testable import claudeBlast
 
 extension SerialTests {
@@ -442,6 +443,57 @@ struct BoardPrintTests {
         // Two board pages, so never fewer than two sheets however dense the grid.
         #expect(sheets.count >= 2)
         #expect(Set(sheets.map(\.pageKey)) == ["home", "food"])
+    }
+
+    // MARK: - Label fitting
+
+    @Test("A label that fits is drawn at the size asked for")
+    func shortLabelKeepsItsSize() {
+        #expect(BoardPDFRenderer.fittedLabelSize("eat", requested: 12, available: 80) == 12)
+    }
+
+    /// The case from the 9-across core board: "graham crac…" told the caregiver
+    /// nothing. A whole word slightly smaller beats half a word at full size.
+    ///
+    /// The band is derived from the label's own measured width rather than
+    /// hardcoded, so the test exercises the fit and not the floor whatever the
+    /// system font's metrics do.
+    @Test("A long label shrinks to fit rather than truncating")
+    func longLabelShrinksToFit() {
+        let label = "graham crackers"
+        let requested: CGFloat = 12
+        func width(at size: CGFloat) -> CGFloat {
+            (label as NSString).size(
+                withAttributes: [.font: UIFont.systemFont(ofSize: size, weight: .semibold)]
+            ).width
+        }
+
+        let available = width(at: requested) * 0.8
+        let fitted = BoardPDFRenderer.fittedLabelSize(label,
+                                                      requested: requested,
+                                                      available: available)
+        #expect(fitted < requested)
+        #expect(fitted > requested * 0.6)
+        // Within a rounding hair of the band: the fit is computed from a ratio,
+        // not searched, so it lands on the boundary rather than under it.
+        #expect(width(at: fitted) <= available + 0.5)
+    }
+
+    /// Below the floor the word is too small to read, so truncation becomes the
+    /// better failure and `centered` (which truncates tail) takes over.
+    @Test("Shrinking stops at the floor rather than vanishing")
+    func shrinkingHoldsAFloor() {
+        let requested: CGFloat = 12
+        let fitted = BoardPDFRenderer.fittedLabelSize(String(repeating: "m", count: 200),
+                                                      requested: requested,
+                                                      available: 20)
+        #expect(fitted == requested * 0.6)
+    }
+
+    @Test("An empty label does not divide by zero")
+    func emptyLabelIsSafe() {
+        #expect(BoardPDFRenderer.fittedLabelSize("", requested: 9, available: 40) == 9)
+        #expect(BoardPDFRenderer.fittedLabelSize("eat", requested: 9, available: 0) == 9)
     }
 }
 }
