@@ -84,6 +84,33 @@ final class BulkCacheGenerator {
         // (`spanDays == 0`) every date is now, exactly as before.
         var clock = SimulatedClock(spanDays: spec.spanDays, count: spec.count, seed: spec.seed)
 
+        // Read once rather than per iteration: `SentenceCacheManager.logUtterance`
+        // fetches the active scene on every call, which is fine for one tap and
+        // absurd for 25,000.
+        var activeSceneName = ""
+        var activeSceneID = ""
+        // Which page each word actually lives on, so a synthetic press can be
+        // attributed the way a real one is. A word on several pages takes the
+        // first, which is arbitrary but consistent — the alternative, leaving
+        // synthetic presses unattributed, would make the by-page report look
+        // broken on exactly the data used to check it.
+        var pageForKey: [String: String] = [:]
+        if spec.logUtterances {
+            var sceneDescriptor = FetchDescriptor<BlasterScene>(
+                predicate: #Predicate { $0.isActive == true }
+            )
+            sceneDescriptor.fetchLimit = 1
+            if let scene = try? modelContext.fetch(sceneDescriptor).first {
+                activeSceneName = scene.name
+                activeSceneID = scene.sceneID
+                for page in scene.pages {
+                    for tile in page.tiles where tile.link.isEmpty {
+                        if pageForKey[tile.key] == nil { pageForKey[tile.key] = page.key }
+                    }
+                }
+            }
+        }
+
         for i in 0..<spec.count {
             guard !Task.isCancelled else { break }
 
@@ -126,6 +153,42 @@ final class BulkCacheGenerator {
                 cacheManager.logEvent(subjectType: "sentence", subjectKey: key,
                                       eventType: .used, at: at)
                 insertedCount += 1
+            }
+
+            // Optional, and off unless a script asks. The activity views read
+            // `LoggedUtterance` and nothing here writes one otherwise, so a load
+            // run leaves the Activity tab empty however many metric rows it
+            // produced. Backdated with the same clock as everything else, so
+            // sessions and day grouping have real history to fold over.
+            if spec.logUtterances {
+                // Single-word rows must look exactly like the ones
+                // `SentenceEngine.selectTile` writes: ONE tile whose sentence is
+                // that tile's own value. `ActivitySession.isSingleWord` tests
+                // for precisely that shape, so a run in word mode that still
+                // wrote generated sentences would render every screen in
+                // sentence mode — the load would prove nothing about the mode it
+                // claimed to be testing.
+                let entry = LoggedUtterance(
+                    tileKeys: spec.singleWord ? [selections[0].key] : selections.map(\.key),
+                    sentence: spec.singleWord ? selections[0].value
+                                              : buildMockSentence(from: combo),
+                    // A tenth escalate. Enough that the badge is exercised and
+                    // the "said louder is not said again" distinction shows up,
+                    // without pretending synthetic traffic knows anything about
+                    // how often a real child escalates.
+                    // No escalation in single-word mode: the engine passes 0
+                    // literally on that path, so anything else here would be a
+                    // shape the app cannot produce.
+                    repetitionCount: spec.singleWord ? 0
+                        : (Int.random(in: 0...9, using: &rng) == 0 ? 1 : 0),
+                    pageKeys: spec.singleWord
+                        ? [pageForKey[selections[0].key] ?? ""]
+                        : selections.map { pageForKey[$0.key] ?? "" },
+                    sceneName: activeSceneName,
+                    sceneID: activeSceneID,
+                    createdAt: at
+                )
+                modelContext.insert(entry)
             }
 
             batchCount += 1

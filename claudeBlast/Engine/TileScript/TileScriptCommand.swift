@@ -82,6 +82,27 @@ struct BulkTileSpec: Sendable {
     /// an equal number of cached sentences into iCloud, which is both far larger
     /// and the wrong target. This mode grows only what the compactor measures.
     var metricsOnly: Bool = false
+    /// Also write a `LoggedUtterance` per iteration (`utterances:` in a script).
+    ///
+    /// **Off by default, and the default is load-bearing.** `load_compaction`
+    /// budgets bytes against a measured row mix; adding a synced utterance row
+    /// per iteration would change that accounting and invalidate the numbers the
+    /// compaction work was tuned against.
+    ///
+    /// On, it is the only way to put anything in front of the activity views at
+    /// scale: nothing but `SentenceEngine` writes `LoggedUtterance` in ordinary
+    /// use, so a load run without this produces a rich metric log and a
+    /// completely empty Activity tab.
+    var logUtterances: Bool = false
+    /// Write single-word rows rather than sentence rows (`singleWord:`).
+    ///
+    /// Shapes the generated `LoggedUtterance` to match what
+    /// `SentenceEngine.selectTile` writes on the single-word path: one tile,
+    /// sentence equal to that tile's own value, no escalation. A script's
+    /// `mode:` header changes what the BOARD does and cannot reach the bulk
+    /// generator, so without this a word-mode load still produced sentence-mode
+    /// history.
+    var singleWord: Bool = false
     /// Seed for combo selection and timestamps, so a run replays exactly.
     var seed: UInt64 = 0x5EED
 
