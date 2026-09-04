@@ -215,8 +215,12 @@ struct AboutStatsView: View {
     /// Filtered on `wordClass` rather than by correcting the flag: `isSystem`
     /// answers "does this ship in the bundle" for `SceneExporter`, and page links
     /// genuinely do not.
+    ///
+    /// Uses the shared predicate, which also drops the `navigation` tiles
+    /// (`home`, `next_page`, `previous_page`). Those are in `vocabulary.json` and
+    /// were being counted here as three words the caregiver cannot say.
     private var words: [TileModel] {
-        tiles.filter { $0.wordClass != PageLink.wordClass }
+        tiles.filter { !$0.isStructuralChrome }
     }
 
     private var pageCount: Int {

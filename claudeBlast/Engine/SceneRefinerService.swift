@@ -136,7 +136,7 @@ struct SceneRefinerService {
     private func buildVocabBlock(allTiles: [TileModel]) -> String {
         var byClass: [String: [String]] = [:]
         for tile in allTiles {
-            guard tile.wordClass != "navigation", tile.wordClass != PageLink.wordClass else { continue }
+            guard !tile.isStructuralChrome else { continue }
             byClass[tile.wordClass, default: []].append(tile.key)
         }
         return byClass.keys.sorted().map { wc in

@@ -1,16 +1,24 @@
 claudeBlast
 Copyright 2026 Mark Lucovsky
 
-This product includes third-party assets:
+Licensed under the Apache License, Version 2.0. See LICENSE.
 
-ARASAAC Pictograms
-  Most tile images are pictograms created by Sergio Palao for ARASAAC
-  (Aragonese Portal of AAC, https://www.arasaac.org), distributed under
-  Creative Commons License CC BY-NC-SA 4.0.
-  These pictograms are FREE for NON-COMMERCIAL use only.
-  Commercial use (e.g. App Store distribution) requires replacement with
-  commercially-licensed imagery. See CLAUDE.md § "Tile images".
-
-AI-Generated Tile Images
-  Approximately 20 tile images were generated using OpenAI DALL-E 3.
+Tile Images
+  Every tile image this app ships is generated with OpenAI image models.
   Per OpenAI's Terms of Service, generated content is owned by the requester.
+  They carry no license beyond the Apache License above: no attribution
+  requirement, no non-commercial restriction, nothing to replace before
+  distribution.
+
+  No ARASAAC pictogram, and no other third-party artwork, ships in this
+  product. Earlier versions bundled ARASAAC pictograms under CC BY-NC-SA 4.0;
+  that set was removed in July 2026 and replaced. "ARASAAC" survives in the
+  source only as a description of a drawing style inside a generation prompt
+  (Resources/image_styles.json) — a style is not a licensable asset, and no
+  ARASAAC file remains.
+
+  Art a caregiver generates on their own device with their own OpenAI key
+  belongs to them on the same terms, and this project asserts no license
+  over it. Exports say so: an .obz reports Apache-2.0 for bundled art and
+  attributes caregiver-generated art to its author without claiming a
+  license on their behalf.

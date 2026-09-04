@@ -151,7 +151,7 @@ enum CollectionSource {
     private static func copyableTiles(from page: PageSpec, lookup: [String: TileModel]) -> [TileEntry] {
         page.tiles.compactMap { entry in
             guard let t = lookup[entry.key], !t.isRetired,
-                  t.wordClass != PageLink.wordClass, t.wordClass != "navigation" else { return nil }
+                  !t.isStructuralChrome else { return nil }
             return TileEntry(key: t.key, link: "", isAudible: true)
         }
     }

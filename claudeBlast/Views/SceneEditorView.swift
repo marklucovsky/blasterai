@@ -1100,7 +1100,7 @@ private struct PageGeneratorSheet: View {
         let lookup = Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
         return page.tiles.compactMap { entry in
             guard let t = lookup[entry.key],
-                  t.wordClass != PageLink.wordClass, t.wordClass != "navigation" else { return nil }
+                  !t.isStructuralChrome else { return nil }
             return t
         }
     }

@@ -123,11 +123,9 @@ The project has one SPM dependency: [Yams](https://github.com/jpsim/Yams) (YAML 
 
 ## Image Tile Generation
 
-Blaster supports multiple image sets. The default is ARASAAC pictograms; a DALL-E-generated "playful 3D" set is also available. Image sets are switchable in the Admin panel.
+Blaster ships five image sets, all OpenAI-generated: Classic in Light, Medium and Dark, plus Playful 3D and High Contrast. They are switchable in the Admin panel. The ARASAAC pictogram set was removed in July 2026; no third-party artwork ships (see [Image Licensing](#image-licensing)).
 
-**Where images live:**
-- Default set: `Assets.xcassets/{key}.imageset/{key}.png`
-- Additional sets: `TileImageSets/{set_name}/{key}.png` (bundled as resources)
+**Where images live:** `claudeBlast/TileImageSets/{set_prefix}_{key}.heic` — one flat directory, HEIC-encoded at 512px. Set prefixes are `cls`, `clsm`, `clsmd`, `p3d`, `hc`; `ImageSetCatalog` maps them to display names.
 
 ### Tools
 
@@ -251,9 +249,11 @@ The format supports vocabulary extension — scenes can carry new tile definitio
 
 ## Image Licensing
 
-> **Important:** Most tile images are ARASAAC pictograms created by Sergio Palao, distributed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/). This license permits **non-commercial use only**. App Store distribution requires replacing these images with commercially-licensed imagery before submission. See [NOTICE](NOTICE) for full attribution.
+Every tile image is generated with OpenAI image models and is owned by the requester per OpenAI's Terms of Service. They carry no license beyond this repository's Apache 2.0: no attribution requirement, no non-commercial restriction, and nothing to replace before App Store distribution.
 
-Approximately 20 tiles were generated with OpenAI DALL-E 3 and are commercially usable per OpenAI's Terms of Service.
+No ARASAAC pictogram ships. Earlier versions bundled them under CC BY-NC-SA 4.0; that set was removed in July 2026. "ARASAAC" survives in the source only as a description of a drawing style inside a generation prompt (`Resources/image_styles.json`).
+
+Art a caregiver generates on their own device with their own key belongs to them, and this project asserts no license over it. See [NOTICE](NOTICE).
 
 ## License
 

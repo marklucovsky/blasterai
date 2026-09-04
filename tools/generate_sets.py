@@ -321,6 +321,20 @@ def main() -> None:
         sys.exit("Error: OPENAI_API_KEY not set")
 
     raw_prompts: dict[str, str] = json.loads(PROMPTS_FILE.read_text())
+
+    # Two keys that differ only in case are a silent bug, not a style nit.
+    # The fold below keeps whichever entry comes LAST in the file, so which
+    # prompt actually ships depends on key order and nothing says a word was
+    # dropped. A legacy capitalized block sat on top of eleven live prompts
+    # that way. Fail loudly rather than pick one.
+    folded: dict[str, str] = {}
+    for k in raw_prompts:
+        if k.lower() in folded:
+            sys.exit(f"{PROMPTS_FILE}: {folded[k.lower()]!r} and {k!r} collide when "
+                     f"lowercased — one silently shadows the other. Keys must be "
+                     f"unique and lowercase.")
+        folded[k.lower()] = k
+
     # Build case-insensitive lookup: lowercase key → original prompt text
     prompts: dict[str, str] = {}
     for k, v in raw_prompts.items():
