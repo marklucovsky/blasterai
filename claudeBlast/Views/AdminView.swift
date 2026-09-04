@@ -63,6 +63,9 @@ struct AdminView: View {
     #if DEBUG
     @AppStorage(AppSettingsKey.icloudEnabled) var icloudEnabled: Bool = false
     @State var showResetConfirmation = false
+    /// The usage-report share sheet, opened from the Activity tab. Declared here
+    /// because the tab lives in an extension and cannot hold its own state.
+    @State var showUsageReport = false
     @State var isResetting = false
     #endif
 
