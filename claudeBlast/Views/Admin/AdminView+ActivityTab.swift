@@ -148,10 +148,20 @@ extension AdminView {
             } label: {
                 Label("View full activity log", systemImage: "list.bullet.rectangle")
             }
+            NavigationLink {
+                CoverageView()
+            } label: {
+                Label("Coverage", systemImage: "chart.bar.xaxis")
+            }
+            NavigationLink {
+                PatternsView()
+            } label: {
+                Label("Patterns", systemImage: "calendar.badge.clock")
+            }
         } header: {
             Text("Recent")
         } footer: {
-            Text("What was repeated this week, then the latest utterances. Read-only review for therapists and partners.")
+            Text("What was repeated this week, then the latest utterances. Read-only review for therapists and partners. Coverage asks how much of a scene is actually being used and which kinds of words go untouched; Patterns asks when the board gets reached for, and whether the range is widening.")
         }
     }
 
@@ -439,7 +449,7 @@ extension AdminView {
             Button("Reset All Data", role: .destructive) { performFactoryReset() }
             Button("Cancel", role: .cancel) { }
         } message: {
-            Text("Deletes all scenes, pages, tiles, and cache. Vocabulary reloads from the bundle.")
+            Text("Leaves this device as a fresh install: deletes all scenes, pages, tiles, activity, cache and settings. Vocabulary reloads from the bundle. Your API key is kept, and anything in iCloud is untouched.")
         }
     }
 
@@ -449,26 +459,67 @@ extension AdminView {
         do {
             // BlasterScene.pages is inline JSON-encoded data (no PageModel
             // relationship), so deleting BlasterScene is sufficient.
+            // Every model in the schema. The list used to stop after
+            // ChildProfile, which left `LoggedUtterance` rows referencing tile
+            // keys that no longer existed — an activity log full of words the
+            // vocabulary had forgotten, on the very screen this button sits
+            // under. `TileArtVariant` likewise outlived its tiles.
+            //
+            // Keep this in step with `BlasterSchemaV1`; a model added there and
+            // missed here survives a reset silently.
             try modelContext.delete(model: MetricEvent.self)
             try modelContext.delete(model: SentenceCache.self)
             try modelContext.delete(model: BlasterScene.self)
+            try modelContext.delete(model: TileArtVariant.self)
             try modelContext.delete(model: TileModel.self)
+            try modelContext.delete(model: LoggedUtterance.self)
+            try modelContext.delete(model: RecordedScript.self)
+            try modelContext.delete(model: ReceivedPack.self)
             try modelContext.delete(model: ChildProfile.self)
             try modelContext.delete(model: DeviceProfile.self)
+            // Device-local diagnostics. Both describe data this reset is about to
+            // destroy — API spend against utterances that will no longer exist,
+            // compaction runs measuring a metric log being emptied — so keeping
+            // them leaves the Activity tab reporting on a device that no longer
+            // has anything to report on.
+            try modelContext.delete(model: APIUsageEvent.self)
+            try modelContext.delete(model: CompactionRun.self)
             try modelContext.save()
         } catch {
             print("Factory reset failed: \(error)")
             isResetting = false
             return
         }
-        // Clear all bootstrap-state flags so the next loadDefaultVocabulary
-        // call writes fresh hash + installed flag via markBootstrapComplete.
+        // Every setting, not just the bootstrap flags.
+        //
+        // A reset is meant to leave the device as a fresh install would, and a
+        // fresh install remembers nothing. Clearing only the three bootstrap keys
+        // left the image set, the voice, tile size, view options and the
+        // compaction budget behind — so a "reset" device came back through
+        // onboarding already knowing which tile art you preferred, which is how
+        // this whole class of bug got noticed.
+        //
+        // Wiping the persistent domain wholesale, rather than naming keys to
+        // remove, means a setting added later is cleared by default. A named list
+        // is a list someone forgets to extend — the same failure the model delete
+        // list had.
+        //
+        // The registration domain is separate and survives, so the defaults
+        // registered at launch (notably `icloud_enabled`) still apply.
+        //
+        // NOT cleared: the OpenAI key. It lives in the Keychain via
+        // `OpenAIKeyVault`, and it is a credential the caregiver typed rather
+        // than app state — losing it to a data reset is a worse surprise than
+        // keeping it. Say so if that should change.
         let defaults = UserDefaults.standard
-        defaults.removeObject(forKey: AppSettingsKey.bootstrapInstalled)
-        defaults.removeObject(forKey: AppSettingsKey.bootstrapContentHash)
-        defaults.removeObject(forKey: AppSettingsKey.bootstrapVersion)
+        if let domain = Bundle.main.bundleIdentifier {
+            defaults.removePersistentDomain(forName: domain)
+        } else {
+            defaults.removeObject(forKey: AppSettingsKey.bootstrapInstalled)
+            defaults.removeObject(forKey: AppSettingsKey.bootstrapContentHash)
+            defaults.removeObject(forKey: AppSettingsKey.bootstrapVersion)
+        }
         _ = BootstrapLoader.loadDefaultVocabulary(context: modelContext)
-        BootstrapLoader.markBootstrapComplete()
         // Match cold-launch behavior: re-seed the DeviceProfile placeholder
         // and the Sandbox ChildProfile so the user lands in the same state
         // as a fresh install. Without this, the Admin Profiles list comes
@@ -478,6 +529,26 @@ extension AdminView {
             context: modelContext,
             seedLegacy: false
         )
+
+        // Commit the STORE before claiming in UserDefaults that it was seeded.
+        //
+        // The order used to be the other way round and relied on autosave for
+        // the store while `markBootstrapComplete` wrote to UserDefaults
+        // immediately. Two destinations, two durabilities: kill the app before
+        // autosave — which is exactly what pressing Stop in Xcode after a reset
+        // does — and the flag survives while the scenes do not. Next launch reads
+        // "already bootstrapped", declines to seed, and the device comes up with
+        // no scenes at all and no way to get any.
+        //
+        // A failed save leaves the flag unwritten, so the next launch seeds
+        // instead of inheriting an empty store.
+        do {
+            try modelContext.save()
+            BootstrapLoader.markBootstrapComplete()
+        } catch {
+            print("Factory reset: seeding failed to save — \(error). Leaving the bootstrap flag clear so the next launch re-seeds.")
+        }
+
         profileResolver.refresh()
         isResetting = false
     }
@@ -497,6 +568,10 @@ struct LogTileStrip: View {
     var body: some View {
         HStack(spacing: 3) {
             ForEach(Array(tiles.prefix(maxCount).enumerated()), id: \.offset) { _, tile in
+                // `TileSelection` carries no `bundleImage` — that type is
+                // `Hashable` and feeds the sentence cache key, so an extra field
+                // would split cache entries. It does not need one: the resolver
+                // follows the alias from the word key.
                 TileImageView(key: tile.key, wordClass: tile.wordClass)
                     .frame(width: size, height: size)
                     .background(wordClassColor(tile.wordClass).opacity(0.12))

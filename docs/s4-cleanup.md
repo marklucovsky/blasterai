@@ -202,3 +202,116 @@ concrete nouns a family invented, and coverage auditing is about core words.
 **Fix:** design with Brandi before building — part of speech and Fitzgerald-key
 colour grouping are different axes, and which one a therapist actually filters and
 teaches on decides the shape. See [[project_wordclass_taxonomy_review]].
+
+---
+
+## 9. Validate a scene before letting it become active
+
+**Raised:** 2026-09-03, out of two live lockouts on the iPad mini.
+
+Right now anything can be activated, and a scene with a structural fault takes
+the device with it. Two ways in were hit within an hour:
+
+1. **No resolvable home page.** A hand-built scene whose `homePageKey` named no
+   page rendered `No Active Scene` — with no board, and therefore no Home cell to
+   long-press, and therefore no route into Admin.
+2. **Pages with no tiles.** A scene imported from a file whose words had been
+   dropped by the export bug (see the `BundledVocabulary` fix) had four empty
+   leaf pages. An empty page produced no chunks, so no Home cell, same dead end.
+
+Both are patched, and the patches are the right ones to keep — the empty state
+now carries an **Open Admin** button, the `pages` setter and `activate()` hold
+the home-page invariant, and an empty page still draws its Home cell. But every
+one of those is a *repair after the fact*. Nothing yet stops a scene in a known
+bad state from going live.
+
+**The question to settle:** should `activate(context:)` refuse, or repair, or
+warn?
+
+Arguments for refusing:
+
+- A scene with no pages at all cannot be repaired into something usable. Adopting
+  a first page is not available; there is nothing to adopt.
+- Activation is a deliberate caregiver action with an obvious place to put an
+  error, unlike the silent repairs which happen with nobody watching.
+- "Why is my board empty" is a much worse question than "this scene isn't ready
+  yet, here's what's missing".
+
+Arguments for repairing, as now:
+
+- A repair keeps a caregiver moving; a refusal in the wrong place strands them
+  with a scene they cannot activate and may not know how to fix.
+- The repair rules are cheap and obvious (first page becomes home).
+
+Likely answer: **repair what is unambiguous, refuse what is not, and never
+silently do either.** A scene with pages but a dangling home key repairs and says
+so. A scene with no pages, or one whose every page is empty, refuses with a
+message naming the fault. Worth deciding alongside Mark's related observation
+rather than in isolation.
+
+**Cases to enumerate when this is picked up:**
+
+- No pages at all.
+- Pages, but every page empty of vocabulary.
+- Home page deleted while the scene was inactive — is it homeless, or repaired?
+- Home page deleted while the scene was ACTIVE, which is the same fault arriving
+  with a child holding the device.
+- A page whose tiles all resolve to missing `TileModel`s (the export bug's
+  signature), which looks populated in the editor and empty on the board.
+- Scene arriving by import or sync in any of the above states, where no
+  caregiver was present at the moment it became invalid.
+
+**Not started.** Recorded so the two shipped patches are understood as
+containment, not as the fix.
+
+---
+
+## 10. Consequential toggles have no gate, and an unresponsive UI aims taps for you
+
+**Raised:** 2026-09-03, from the Mac install after a large load run. Same class
+as item 9.
+
+The Mac install came back with `icloud_enabled = true`, which nobody meant to
+set. DEBUG registers it `false` and onboarding seeds its toggle from that, so a
+stored `true` is an explicit write — and the likeliest author is a tap that
+queued during one of the long unresponsive stretches after the load and landed on
+whatever was under the finger when the run loop caught up.
+
+**The mechanism is the point, not the mishap.** A UI that stops answering does
+not stop accepting. Touches queue, and they are delivered against the layout that
+exists when processing resumes — which after a list has grown, or a sheet has
+settled, is not the layout the finger was aimed at. Every control in reach
+becomes a control that can fire on its own.
+
+**Why this one matters.** Flipping iCloud sync is not a preference, it is a
+storage decision: the `ModelContainer` is rebuilt at next launch against a
+different configuration, which store is authoritative changes, and turning it ON
+can pull a large sync down onto a device that was deliberately local. It is one
+tap, unconfirmed, in a scrolling list.
+
+Related to item 9 because both are the same shape: **a consequential state change
+with no gate, discovered only once the app is already in the bad state.**
+
+**Do not dismiss this as a DEBUG-only artefact.** The load scripts that caused
+the unresponsiveness are DEBUG-only; the unconfirmed toggle is not, and neither
+is the general case. A first CloudKit sync on a real device with a large store
+produces the same stalls in a RELEASE build, and Storage is exactly the screen a
+caregiver would be on while waiting for it.
+
+**Candidate fixes, in rough order of value:**
+
+1. **Confirm the iCloud toggle**, both directions, naming what happens — "sync
+   will begin at next launch and may download your existing data" / "this device
+   will stop syncing; data already in iCloud is kept". Cheap, and it defeats the
+   queued-tap case outright because a stray tap cannot also confirm.
+2. **Make long operations own the screen.** The load runs leave the list live and
+   tappable while blocking the main thread in bursts. A modal progress state that
+   ignores input is more honest about what is happening — and this is exactly the
+   fix already applied to tile-image export, which had the same "is it hung?"
+   problem.
+3. **Audit for siblings.** Anything else that is one unconfirmed tap from a
+   structural change: factory reset (already confirmed), Flush All on the cache,
+   scene activation and deletion, Remove PIN.
+
+**Not started.**
+

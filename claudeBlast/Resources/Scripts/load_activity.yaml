@@ -1,0 +1,52 @@
+name: Load — activity
+description: 3k backdated utterances over 90 days — fills the Activity views
+scene: "<default>"
+mode: sentence
+audio: off
+tileWait: .instant
+sentenceWait: .instant
+
+# Data for the ACTIVITY views, which is a different job from the other three
+# load scripts and needs saying plainly:
+#
+#   load_sizing / load_compaction / load_natural  →  MetricEvent + SentenceCache
+#   load_activity (this one)                      →  LoggedUtterance
+#
+# The activity views read `LoggedUtterance` and nothing else. Only
+# `SentenceEngine` writes one in ordinary use, so a bulk run WITHOUT
+# `utterances: true` leaves the Activity tab completely empty however many
+# hundred thousand metric rows it produced. That is not a bug in either place —
+# they measure different halves of the app — but it does mean the compaction
+# loads cannot double as activity data, and running one expecting the other is
+# an easy hour to lose.
+#
+# 3,000 over 90 days, not 25,000 over 400. The activity views are read by a
+# human at human speed: 90 days is long enough for Past Week and All Time to
+# differ, for "went quiet" to have something to point at, and for the day-of-week
+# heatmap to fill in. 25k rows would prove nothing further and would make every
+# recompute of the session grouping slow enough to feel.
+#
+# Roughly 33 utterances a day, arriving in clumps because `SimulatedClock`
+# scatters within the span rather than spacing evenly — which is what gives the
+# 10-minute session gap something real to cut on.
+#
+# WHAT TO EXPECT
+#
+#   Activity -> sessions grouped by sitting, newest first
+#   About a tenth of utterances carrying an escalation badge
+#   Reach -> coverage across the parts of speech present in the pool
+#
+# The pool is `most-common`, so coverage will look narrow on purpose: a small
+# high-frequency vocabulary is what a real early board looks like, and it is
+# what makes "never used" worth showing at all.
+
+script:
+  - comment: 3k utterances over 90 days — activity views, not compaction
+  - tiles:
+      count: 3000
+      source: most-common
+      length: "2-4"
+      days: 90
+      utterances: true
+      seed: 20260902
+  - comment: Load complete — open Activity

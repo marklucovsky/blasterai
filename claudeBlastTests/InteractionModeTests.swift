@@ -45,6 +45,31 @@ struct InteractionModeTests {
         withExtendedLifetime(container) {}
     }
 
+    /// The same harness, plus the context, for the tests that care what reached
+    /// the log rather than what reached the strip. The two are deliberately
+    /// different — the strip stops growing on a mash and the log does not — so
+    /// asserting on the strip alone cannot see the bug this covers.
+    private func withEngineAndContext(mode: InteractionMode,
+                                      _ body: (SentenceEngine, ModelContext) throws -> Void) throws {
+        let container = try makeContainer()
+        let ctx = container.mainContext
+        let profile = ChildProfile(displayName: "Test",
+                                   brownsStage: mode == .singleWord ? .one : .fourPlus,
+                                   isActive: true)
+        ctx.insert(profile)
+        try? ctx.save()
+        let resolver = ChildProfileResolver()
+        resolver.configure(modelContext: ctx)
+        let engine = SentenceEngine(provider: MockSentenceProvider(minLatency: 0, maxLatency: 0))
+        engine.configure(modelContext: ctx, profileResolver: resolver)
+        try body(engine, ctx)
+        withExtendedLifetime(container) {}
+    }
+
+    private func loggedUtterances(_ ctx: ModelContext) -> [LoggedUtterance] {
+        (try? ctx.fetch(FetchDescriptor<LoggedUtterance>())) ?? []
+    }
+
     // MARK: - Model
 
     /// Mode is derived from the stage, not stored. Stage I *is* single-word
@@ -251,6 +276,57 @@ struct InteractionModeTests {
             engine.addTile(mom)
             engine.addTile(dad)
             #expect(engine.spokenStrip.map(\.key) == ["dad", "mom", "dad"])
+        }
+    }
+
+    /// Mashing one tile ten times is ten rows in the log.
+    ///
+    /// The strip deliberately does not grow on a mash — that is a child-surface
+    /// choice and stays — but the mash branch used to `return` BEFORE the log
+    /// write, so nine of the ten presses vanished. A mash became
+    /// indistinguishable from one calm press, which is the opposite of what a
+    /// therapist reading the log needs to see. `repetitionCount` was even
+    /// incremented on that path and then never persisted anywhere.
+    @Test func singleWordMode_everyMashIsLogged() throws {
+        try withEngineAndContext(mode: .singleWord) { engine, ctx in
+            let bathroom = TileModel(key: "bathroom", wordClass: "body")
+            for _ in 0..<10 { engine.addTile(bathroom) }
+
+            let logged = loggedUtterances(ctx)
+            #expect(logged.count == 10)
+            #expect(logged.allSatisfy { $0.tileKeys == ["bathroom"] })
+            // The strip still shows one chip — the two consumers disagree on
+            // purpose, and that is the whole point of the fix.
+            #expect(engine.spokenStrip.count == 1)
+        }
+    }
+
+    /// Each logged press stays a single-word row: one tile, saying itself, no
+    /// escalation. `ActivitySession.isSingleWord` tests for exactly that shape,
+    /// so a mash that logged anything else would silently flip every activity
+    /// screen into sentence mode.
+    @Test func singleWordMode_mashRowsKeepTheSingleWordShape() throws {
+        try withEngineAndContext(mode: .singleWord) { engine, ctx in
+            let more = TileModel(key: "more", value: "more", wordClass: "core")
+            engine.addTile(more)
+            engine.addTile(more)
+
+            let logged = loggedUtterances(ctx)
+            #expect(logged.count == 2)
+            #expect(logged.allSatisfy { $0.sentence == "more" })
+            #expect(logged.allSatisfy { $0.repetitionCount == 0 })
+        }
+    }
+
+    /// A non-consecutive repeat was never broken and must stay that way.
+    @Test func singleWordMode_alternatingWordsLogEachPress() throws {
+        try withEngineAndContext(mode: .singleWord) { engine, ctx in
+            let dad = TileModel(key: "dad", wordClass: "people")
+            let mom = TileModel(key: "mom", wordClass: "people")
+            engine.addTile(dad)
+            engine.addTile(mom)
+            engine.addTile(dad)
+            #expect(loggedUtterances(ctx).count == 3)
         }
     }
 

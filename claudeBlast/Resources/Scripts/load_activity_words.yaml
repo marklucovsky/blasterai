@@ -1,0 +1,55 @@
+name: Load — activity (single word)
+description: 3k backdated single-word presses over 90 days — the word-mode views
+scene: "<default>"
+mode: word
+audio: off
+tileWait: .instant
+sentenceWait: .instant
+
+# The single-word twin of `load_activity`. Same span, same seed family, same
+# volume — the only difference is the SHAPE of what it writes.
+#
+# WHY A SEPARATE SCRIPT AND NOT A FLAG ON THE OTHER
+#
+# The two modes produce genuinely different history and the views read it
+# differently, so a mixed store would tell you nothing about either. Loading one
+# then the other on the same install is a fair test of the mixed case, and worth
+# doing once — but it is not the case to build the views against first.
+#
+# WHY `mode: word` IS NOT ENOUGH ON ITS OWN
+#
+# The `mode:` header changes what the BOARD does. It cannot reach the bulk
+# generator, which writes rows directly. Without `singleWord: true` this script
+# would set the board to word mode and then fill the log with multi-tile
+# sentences — and every activity screen would render in sentence mode, because
+# `ActivitySession.isSingleWord` reads the ROWS, not the setting. The load would
+# have proved nothing about the mode it claims to test.
+#
+# WHAT A SINGLE-WORD ROW LOOKS LIKE
+#
+# Exactly what `SentenceEngine.selectTile` writes: one tile key, `sentence` equal
+# to that tile's own value, `repetitionCount` zero. Escalation is a property of a
+# generated sentence and there is none here — so the badge is absent throughout
+# rather than showing zero.
+#
+# WHAT TO CHECK
+#
+#   Activity  -> "31 words / 18 different", no flame badges anywhere
+#             -> session rows carry the WORDS, no sentence line
+#   Reach     -> unchanged in shape; it is pure vocabulary and reads the same in
+#                both modes, which is the point of it
+#   Patterns  -> presses and distinct words must still differ. In word mode a
+#                press IS a word, so if those two series ever coincide exactly,
+#                the second one is counting the wrong thing.
+
+script:
+  - comment: 3k single-word presses over 90 days
+  - tiles:
+      count: 3000
+      source: most-common
+      length: "1-1"
+      days: 90
+      utterances: true
+      singleWord: true
+      seed: 20260903
+  - comment: Load complete — open Activity, then Reach and Patterns

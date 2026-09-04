@@ -85,5 +85,51 @@ text):
 
 ---
 
+## 4. Custom date ranges in the activity reports — **post-launch**
+
+**Raised:** 2026-09-04, building Coverage and Patterns. Deferred deliberately;
+launch ships the three fixed windows.
+
+Activity, Coverage and Patterns all read one `ActivityLogView.Window` — **Today /
+Past Week / All Time** — persisted in `activity_range` and shared across the three
+screens so they never disagree about the period being described.
+
+That is enough to launch and not enough for the reader these screens are
+ultimately for. CoughDrop offers an arbitrary range plus a *compare to…* control,
+and the reason is the SLP's actual working unit: a **term**, a **six-week block**,
+the stretch **since the last review**. "Past week" cannot express any of them, and
+"All Time" dilutes the recent past into a year of history.
+
+**What exists already, and what does not.** The reporting layer is range-native —
+`PatternsReport.make(inWindow:allTime:from:to:)` takes explicit bounds, and its
+comparison already computes the *preceding window of equal length* from them. So
+the arithmetic is done. What is missing is only the way to say which dates, and
+the plumbing to carry a pair instead of an enum case.
+
+**Sketch when picked up:**
+
+- `Window` grows a `.custom(from:to:)` case, or is replaced by a `DateInterval`
+  with the three presets as constructors. The latter is cleaner and touches every
+  call site once.
+- The persisted `activity_range` becomes two dates rather than a raw string.
+  Non-trivial in one respect: an absolute range **ages**. A caregiver who picks
+  "1 Sep – 15 Sep" and returns in November sees a report about September, which is
+  correct and will read as a bug. Presets are relative and never stale, so the
+  UI has to distinguish "the last six weeks" from "these six weeks".
+- The comparison window is already implied by the range's length, so *compare to
+  the period before* comes free — it is the same code path Patterns uses today.
+- Coverage's all-time halves (`usageByKind`, `usageByPage`, never-used) stay
+  all-time regardless. They answer "has this word ever been reached", which a
+  date range must not narrow, or an untouched page starts looking used because
+  the window excluded the day it was used.
+
+**Why not now:** it is a control and a persistence change across three screens,
+for a reader we have not yet put the screens in front of. Brandi's feedback on
+the reports should shape whether the range picker is a term selector, a
+free-form pair of dates, or a "since last review" marker — and those are
+different designs, not different defaults.
+
+---
+
 *Add new cross-cutting items here as stubs; promote to a dedicated note + worktree
 when scheduled.*

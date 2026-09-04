@@ -8,118 +8,344 @@
     {
       "key": "home",
       "tiles": [
-        {"link": "people", "to": "people", "audible": false},
-        {"link": "social", "to": "social", "audible": false},
-        {"link": "actions", "to": "actions", "audible": false},
-        {"link": "describe", "to": "describe", "audible": false},
-        {"link": "food", "to": "food", "audible": false},
-        {"link": "drinks", "to": "drinks", "audible": false},
-        {"link": "places", "to": "places", "audible": false},
-        {"link": "body_health", "to": "body_health", "audible": false},
-        {"keys": [
-          "mom", "dad", "sister", "brother", "grandma", "grandpa", "baby", "friend",
-          "hungry", "thirsty", "tired", "hurt", "sick", "toilet", "yes", "no",
-          "i", "you", "me", "my", "your", "it", "that", "here",
-          "want"
-        ]},
-        {"link": "eat", "to": "food_drinks", "audible": true},
-        {"keys": ["banana","goldfish_cracker"]},
-        {"link": "play", "to": "play_activities", "audible": true},
-        {"keys": [
-          "go", "help", "stop", "like", "more", "all", "all_done", "again",
-          "not", "please", "thank_you", "sorry", "in", "on", "off", "out",
-          "up", "down", "with", "for"
-        ]},
-        {"link": "weather", "to": "weather", "audible": false},
-        {"link": "colors", "to": "colors_shapes", "audible": false},
-        {"keys": ["draw", "paint", "color", "sing", "dance", "read"]}
+        {
+          "link": "people",
+          "to": "people",
+          "audible": false
+        },
+        {
+          "link": "social",
+          "to": "social",
+          "audible": false
+        },
+        {
+          "link": "actions",
+          "to": "actions",
+          "audible": false
+        },
+        {
+          "link": "describe",
+          "to": "describe",
+          "audible": false
+        },
+        {
+          "link": "food",
+          "to": "food",
+          "audible": false
+        },
+        {
+          "link": "drinks",
+          "to": "drinks",
+          "audible": false
+        },
+        {
+          "link": "places",
+          "to": "places",
+          "audible": false
+        },
+        {
+          "link": "body_health",
+          "to": "body_health",
+          "audible": false
+        },
+        {
+          "keys": [
+            "mom",
+            "dad",
+            "sister",
+            "brother",
+            "grandma",
+            "grandpa",
+            "baby",
+            "friend",
+            "hungry",
+            "thirsty",
+            "tired",
+            "hurt",
+            "sick",
+            "toilet",
+            "yes",
+            "no",
+            "i",
+            "you",
+            "me",
+            "my",
+            "your",
+            "it",
+            "that",
+            "here",
+            "want"
+          ]
+        },
+        {
+          "keys": [
+            "what",
+            "where",
+            "who",
+            "why",
+            "when",
+            "how"
+          ]
+        },
+        {
+          "link": "eat",
+          "to": "food_drinks",
+          "audible": true
+        },
+        {
+          "keys": [
+            "banana",
+            "goldfish_cracker"
+          ]
+        },
+        {
+          "link": "play",
+          "to": "play_activities",
+          "audible": true
+        },
+        {
+          "keys": [
+            "go",
+            "help",
+            "stop",
+            "like",
+            "more",
+            "all",
+            "all_done",
+            "again",
+            "not",
+            "please",
+            "thank_you",
+            "sorry",
+            "in",
+            "on",
+            "off",
+            "out",
+            "up",
+            "down",
+            "with",
+            "for"
+          ]
+        },
+        {
+          "link": "weather",
+          "to": "weather",
+          "audible": false
+        },
+        {
+          "link": "colors",
+          "to": "colors_shapes",
+          "audible": false
+        },
+        {
+          "keys": [
+            "draw",
+            "paint",
+            "color",
+            "sing",
+            "dance",
+            "read"
+          ]
+        }
       ]
     },
     {
       "key": "food_drinks",
       "tiles": [
-        {"link": "food", "to": "food", "audible": false},
-        {"link": "drinks", "to": "drinks", "audible": false},
-        {"keys": [
-          "hungry", "thirsty", "more", "water", "milk", "juice", "chocolate_milk", "eat",
-          "drink", "soda", "iced_tea", "milkshake", "lemonade", "ice_cubes", "apple", "banana",
-          "cookie", "chocolate", "cheese", "yogurt", "sandwich", "fries", "peanut_butter", "blueberries", "strawberry",
-          "popcorn", "goldfish_cracker", "graham_cracker", "pretzel", "popsicle", "chips", "cereal", "pizza",
-          "eggs", "please", "all_done", "no"
-        ]}
+        {
+          "link": "food",
+          "to": "food",
+          "audible": false
+        },
+        {
+          "link": "drinks",
+          "to": "drinks",
+          "audible": false
+        },
+        {
+          "keys": [
+            "hungry",
+            "thirsty",
+            "more",
+            "water",
+            "milk",
+            "juice",
+            "chocolate_milk",
+            "eat",
+            "drink",
+            "soda",
+            "iced_tea",
+            "milkshake",
+            "lemonade",
+            "ice_cubes",
+            "apple",
+            "banana",
+            "cookie",
+            "chocolate",
+            "cheese",
+            "yogurt",
+            "sandwich",
+            "fries",
+            "peanut_butter",
+            "blueberries",
+            "strawberry",
+            "popcorn",
+            "goldfish_cracker",
+            "graham_cracker",
+            "pretzel",
+            "popsicle",
+            "chips",
+            "cereal",
+            "pizza",
+            "eggs",
+            "please",
+            "all_done",
+            "no"
+          ]
+        }
       ]
     },
     {
       "key": "people",
       "tiles": [
-        {"class": "people"}
+        {
+          "class": "people"
+        }
       ]
     },
     {
       "key": "social",
       "tiles": [
-        {"class": ["social", "feeling", "question"]}
+        {
+          "class": [
+            "social",
+            "feeling",
+            "question"
+          ]
+        }
       ]
     },
     {
       "key": "actions",
       "tiles": [
-        {"link": "drink", "to": "drinks", "audible": true},
-        {"link": "eat", "to": "food", "audible": true},
-        {"link": "play", "to": "play_activities", "audible": true},
-        {"class": "actions"}
+        {
+          "link": "drink",
+          "to": "drinks",
+          "audible": true
+        },
+        {
+          "link": "eat",
+          "to": "food",
+          "audible": true
+        },
+        {
+          "link": "play",
+          "to": "play_activities",
+          "audible": true
+        },
+        {
+          "class": "actions"
+        }
       ]
     },
     {
       "key": "describe",
       "tiles": [
-        {"class": "describe"},
-        {"keys": ["don't", "happy"]}
+        {
+          "class": "describe"
+        },
+        {
+          "keys": [
+            "don't",
+            "happy"
+          ]
+        }
       ]
     },
     {
       "key": "food",
       "tiles": [
-        {"link": "drinks", "to": "drinks", "audible": false},
-        {"class": ["food"]}
+        {
+          "link": "drinks",
+          "to": "drinks",
+          "audible": false
+        },
+        {
+          "class": [
+            "food"
+          ]
+        }
       ]
     },
     {
       "key": "drinks",
       "tiles": [
-        {"link": "food", "to": "food", "audible": false},
-        {"class": "drinks"}
+        {
+          "link": "food",
+          "to": "food",
+          "audible": false
+        },
+        {
+          "class": "drinks"
+        }
       ]
     },
     {
       "key": "places",
       "tiles": [
-        {"class": "places"},
-        {"keys": ["slide", "swing", "school"]}
+        {
+          "class": "places"
+        },
+        {
+          "keys": [
+            "slide",
+            "swing",
+            "school"
+          ]
+        }
       ]
     },
     {
       "key": "play_activities",
       "tiles": [
-        {"class": ["art", "toy", "sports", "games"]}
+        {
+          "class": [
+            "art",
+            "toy",
+            "sports",
+            "games"
+          ]
+        }
       ]
     },
     {
       "key": "body_health",
       "tiles": [
-        {"class": ["body", "health"]}
+        {
+          "class": [
+            "body",
+            "health"
+          ]
+        }
       ]
     },
     {
       "key": "colors_shapes",
       "tiles": [
-        {"class": ["colors", "shape"]}
+        {
+          "class": [
+            "colors",
+            "shape"
+          ]
+        }
       ]
     },
     {
       "key": "weather",
       "tiles": [
-        {"class": "weather"}
+        {
+          "class": "weather"
+        }
       ]
     }
   ]

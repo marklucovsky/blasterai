@@ -479,7 +479,10 @@ struct ShareBoardSheet: View {
             }
             try? modelContext.save()
 
-            let defaultKeys = Set(allTiles.filter(\.isSystem).map(\.key))
+            // `vocabulary.json`, not `isSystem` — a bundled pack word is
+            // first-party AND absent from a fresh install, so `isSystem` here
+            // dropped every pack word. See `BundledVocabulary`.
+            let defaultKeys = BundledVocabulary.keys
             let data = try SceneExporter.exportJSON(scene,
                                                     defaultTileKeys: defaultKeys,
                                                     tileLookup: tileLookup,

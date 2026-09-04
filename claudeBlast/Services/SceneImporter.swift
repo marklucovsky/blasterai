@@ -209,6 +209,17 @@ enum SceneImporter {
         for incoming in analysis.newWords {
             let tile = TileModel(key: incoming.key, value: incoming.displayName, wordClass: incoming.wordClass)
             if let image = decodedImage(incoming) { tile.userImageData = image }
+            // Where this tile's picture actually lives. A page link for a bundled
+            // pack aliases `packcover_<slug>`; without this the alias is lost and
+            // the cover resolves against the tile's own key, which has no art —
+            // so every page link on Home arrives as a letter placeholder.
+            //
+            // Applied only to NEW tiles. An existing tile's alias is the
+            // recipient's own arrangement and a shared file does not get to
+            // repoint it, the same rule art and display names already follow.
+            if let alias = incoming.bundleImage, !alias.isEmpty {
+                tile.bundleImage = alias
+            }
             context.insert(tile)
             tileLookup[tile.key] = tile
             newTileCount += 1

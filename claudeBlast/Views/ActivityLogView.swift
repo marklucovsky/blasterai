@@ -30,10 +30,29 @@ struct ActivityLogView: View {
     /// the same word at breakfast and at bedtime is a different observation
     /// from the same word twice in ten minutes. Silent hours are dropped, so
     /// the banding costs almost no vertical space on a quiet day.
-    @AppStorage(AppSettingsKey.activityGroupByHour) private var groupByHour = true
+    @AppStorage(AppSettingsKey.activityBand) private var bandRaw = Band.session.rawValue
 
     @State private var expanded: Set<String> = []
     @State private var showInfrequent = false
+
+    private var band: Band {
+        get { Band(rawValue: bandRaw) ?? .session }
+        nonmutating set { bandRaw = newValue.rawValue }
+    }
+
+    /// How the window is cut into sections.
+    ///
+    /// Sessions are the default because they are the unit a caregiver actually
+    /// reads: "she asked for the bathroom five times over lunch" is one event,
+    /// and an hour boundary falling through the middle of it reports two.
+    /// Hours remain because they answer a different question — when in the day —
+    /// and clock bands are the honest way to ask that.
+    enum Band: String, CaseIterable, Identifiable {
+        case session = "Sessions"
+        case hour    = "By hour"
+        case none    = "No bands"
+        var id: String { rawValue }
+    }
 
     private var window: Window {
         get { Window(rawValue: rangeRaw) ?? .today }
@@ -90,6 +109,27 @@ struct ActivityLogView: View {
         ActivityGrouping.hourBands(windowedEntries)
     }
 
+    private var sessions: [ActivitySession] {
+        ActivityGrouping.sessions(windowedEntries)
+    }
+
+    /// Distinct words across the whole window — not the sum of the sessions',
+    /// which would count a word once per sitting it appeared in.
+    private var distinctWordCount: Int {
+        Set(windowedEntries.flatMap(\.tileKeys)).count
+    }
+
+    /// Whether the window as a whole reads as single-word.
+    ///
+    /// Every session, not most: a week that mixes the two modes is described in
+    /// sentence terms, because "said" covers a single word said but "words" does
+    /// not cover a sentence.
+    private var isSingleWordWindow: Bool {
+        let lookup = tileLookup
+        let all = sessions
+        return !all.isEmpty && all.allSatisfy { $0.isSingleWord(resolving: lookup) }
+    }
+
     var body: some View {
         List {
             if windowedEntries.isEmpty {
@@ -111,8 +151,15 @@ struct ActivityLogView: View {
                         }
                     }
                     Divider()
+                    Picker("Bands", selection: Binding(
+                        get: { band }, set: { band = $0 }
+                    )) {
+                        ForEach(Band.allCases) { b in
+                            Text(b.rawValue).tag(b)
+                        }
+                    }
+                    Divider()
                     Toggle("Cluster by name", isOn: $clusterByName)
-                    Toggle("Group by hour", isOn: $groupByHour)
                 } label: {
                     Label("View options", systemImage: "line.3.horizontal.decrease.circle")
                 }
@@ -130,28 +177,119 @@ struct ActivityLogView: View {
     ///     cluster on,  hour on   →  what kept happening, hour by hour
     @ViewBuilder
     private var content: some View {
-        if groupByHour {
-            ForEach(hourBands) { band in
+        switch band {
+        case .session:
+            summaryStrip
+            ForEach(sessions) { sessionSection($0) }
+        case .hour:
+            ForEach(hourBands) { hourBand in
                 Section {
                     if clusterByName {
-                        bandClusters(band)
+                        bandClusters(hourBand)
                     } else {
-                        ForEach(band.entries) { entryRow($0) }
+                        ForEach(hourBand.entries) { entryRow($0) }
                     }
                 } header: {
                     HStack {
-                        Text(band.start, format: .dateTime.weekday(.abbreviated).hour())
+                        Text(hourBand.start, format: .dateTime.weekday(.abbreviated).hour())
                         Spacer()
-                        Text("\(band.count)")
+                        Text("\(hourBand.count)")
                             .foregroundStyle(.secondary)
                     }
                 }
             }
-        } else if clusterByName {
-            clustersContent
-        } else {
-            timelineContent
+        case .none:
+            if clusterByName {
+                clustersContent
+            } else {
+                timelineContent
+            }
         }
+    }
+
+    // MARK: - Sessions
+
+    /// Three numbers, and the middle one changes name with the mode.
+    ///
+    /// "Said" counts sentences and "words" counts presses; in single-word mode
+    /// they are the same event, which is exactly why the label has to move. The
+    /// alternative — one word for both — is how a report ends up claiming a
+    /// child produced 214 sentences when they pressed 214 tiles.
+    @ViewBuilder
+    private var summaryStrip: some View {
+        let singleWord = isSingleWordWindow
+        Section {
+            HStack(spacing: 0) {
+                summaryCell("\(sessions.count)", sessions.count == 1 ? "session" : "sessions")
+                Divider()
+                summaryCell("\(windowedEntries.count)", singleWord ? "words" : "said")
+                Divider()
+                summaryCell("\(distinctWordCount)", singleWord ? "different" : "words used")
+            }
+        } footer: {
+            Text("A session is a run of use with no gap longer than \(Int(ActivityGrouping.sessionGap / 60)) minutes. Read from the timestamps, so it means the same thing on iPhone, iPad and Mac.")
+        }
+    }
+
+    @ViewBuilder
+    private func summaryCell(_ value: String, _ label: String) -> some View {
+        VStack(spacing: 1) {
+            Text(value)
+                .font(.title2.monospacedDigit().weight(.semibold))
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
+    private func sessionSection(_ session: ActivitySession) -> some View {
+        let singleWord = session.isSingleWord(resolving: tileLookup)
+        Section {
+            if clusterByName {
+                bandClusters(ActivityHourBand(start: session.startedAt, entries: session.entries))
+            } else {
+                ForEach(session.entries) { entryRow($0) }
+            }
+        } header: {
+            HStack(spacing: 8) {
+                Text(session.startedAt, format: .dateTime.hour().minute())
+                if session.count > 1 {
+                    Text(sessionSubtitle(session, singleWord: singleWord))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                // Escalation is a property of a generated sentence. In
+                // single-word mode there is none, so the badge is absent rather
+                // than a zero — a zero would read as "she never insisted", which
+                // is a claim the data cannot make.
+                //
+                // Suppressed on a lone utterance too, where the row below
+                // carries the same flame two lines down and the header is only
+                // repeating it.
+                if !singleWord && session.count > 1 && session.escalatedCount > 0 {
+                    Label("\(session.escalatedCount)", systemImage: "flame.fill")
+                        .foregroundStyle(.orange)
+                }
+            }
+            .font(.caption)
+            .textCase(nil)
+        }
+    }
+
+    /// "14 min · 12 said · 7 different", collapsing the parts that would be
+    /// noise: a one-utterance session has no duration worth printing, and a
+    /// session where everything was different does not need telling twice.
+    private func sessionSubtitle(_ session: ActivitySession, singleWord: Bool) -> String {
+        var parts: [String] = []
+        let minutes = Int(session.duration / 60)
+        if minutes >= 1 { parts.append("\(minutes) min") }
+        parts.append("\(session.count) \(singleWord ? "words" : "said")")
+        if session.distinctWordCount < session.count {
+            parts.append("\(session.distinctWordCount) different")
+        }
+        return parts.joined(separator: " · ")
     }
 
     /// Within one hour, singletons render inline rather than behind a collapsed
@@ -300,14 +438,32 @@ struct ActivityLogView: View {
         }
     }
 
+    /// Two different nothings, and conflating them costs real time.
+    ///
+    /// "No utterances yet" is true only when the log is genuinely empty. Said
+    /// over a full log that simply has nothing in *today's* window it is a
+    /// falsehood the reader has no way to catch — the range lives behind a
+    /// toolbar menu, so nothing on screen says which window they are looking
+    /// through. The fix is to name the window and offer the wider one.
     @ViewBuilder
     private var emptyState: some View {
         Section {
-            ContentUnavailableView(
-                "No utterances yet",
-                systemImage: "text.bubble",
-                description: Text("Finalized sentence tray groups will appear here for review.")
-            )
+            if allEntries.isEmpty {
+                ContentUnavailableView(
+                    "No utterances yet",
+                    systemImage: "text.bubble",
+                    description: Text("Finalized sentence tray groups will appear here for review.")
+                )
+            } else {
+                ContentUnavailableView {
+                    Label("Nothing \(window == .today ? "today" : "in this window")",
+                          systemImage: "calendar.badge.exclamationmark")
+                } description: {
+                    Text("\(allEntries.count) utterance\(allEntries.count == 1 ? "" : "s") recorded outside it.")
+                } actions: {
+                    Button("Show all time") { window = .all }
+                }
+            }
         }
     }
 

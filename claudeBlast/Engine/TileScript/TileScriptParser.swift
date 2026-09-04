@@ -254,7 +254,8 @@ struct TileScriptParser {
 
     private static func parseTilesCommand(_ value: Any, lineComments: [String: String]) throws -> TileScriptCommand {
         // Bulk spec: {count: N, source: ..., length: "2-4", days: N,
-        //             metricsOnly: true, seed: N}
+        //             metricsOnly: true, utterances: true, singleWord: true,
+        //             seed: N}
         if let dict = value as? [String: Any], dict["count"] != nil {
             let count = dict["count"] as? Int ?? 100
             let sourceStr = dict["source"] as? String ?? "random"
@@ -268,6 +269,12 @@ struct TileScriptParser {
             if let days = dict["days"] as? Int { spec.spanDays = days }
             if let metricsOnly = (dict["metricsOnly"] ?? dict["metrics_only"]) as? Bool {
                 spec.metricsOnly = metricsOnly
+            }
+            if let logUtterances = (dict["utterances"] ?? dict["logUtterances"]) as? Bool {
+                spec.logUtterances = logUtterances
+            }
+            if let singleWord = (dict["singleWord"] ?? dict["single_word"]) as? Bool {
+                spec.singleWord = singleWord
             }
             if let seed = dict["seed"] as? Int { spec.seed = UInt64(bitPattern: Int64(seed)) }
             return .bulkTiles(spec: spec)

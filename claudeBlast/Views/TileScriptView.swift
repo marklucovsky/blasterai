@@ -575,6 +575,14 @@ struct TileScriptView: View {
             ScriptInfo(name: "Load — sizing", description: "10k events over 6 months — measure real bytes/row", resourceName: "load_sizing"),
             ScriptInfo(name: "Load — compaction", description: "25k utterances / ~100k rows over 400 days — force a fold (needs compaction_budget_mb)", resourceName: "load_compaction"),
             ScriptInfo(name: "Load — natural fold", description: "400k utterances / ~1.6M rows — cross the shipping 205 MB high-water (simulator only)", resourceName: "load_natural"),
+            // The odd one out, and worth saying so here rather than only in its
+            // header: the three above write MetricEvent and SentenceCache, which
+            // is what the compactor measures. This one writes LoggedUtterance,
+            // which is the only thing the Activity views read. Running a
+            // compaction load and expecting a populated Activity tab is an easy
+            // hour to lose.
+            ScriptInfo(name: "Load — activity", description: "3k utterances over 90 days — fills the Activity views (not the compactor)", resourceName: "load_activity"),
+            ScriptInfo(name: "Load — activity (single word)", description: "The same, as single-word presses — the mode the views must also hold up in", resourceName: "load_activity_words"),
         ]
         #endif
         return scripts

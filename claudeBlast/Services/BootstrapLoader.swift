@@ -74,6 +74,37 @@ enum BootstrapLoader {
         return !installed
     }
 
+    /// `needsBootstrap`, plus a check that the flag is telling the truth.
+    ///
+    /// The flag lives in UserDefaults and the data it describes lives in the
+    /// store. They commit separately, so a process that dies between the two
+    /// leaves a device claiming to be seeded with nothing in it — no scenes, no
+    /// board, and no route to make one. Believing the flag over the store means
+    /// that state is permanent.
+    ///
+    /// **Only when iCloud is off.** With sync on, an empty store is the ordinary
+    /// condition of a second device whose initial import has not landed yet, and
+    /// re-seeding there would mint a duplicate copy of a dataset already on its
+    /// way — the case `storeAlreadySeeded` exists to avoid. Sync off removes that
+    /// ambiguity: nothing is coming, so empty means lost.
+    ///
+    /// Zero scenes rather than zero tiles: the default scene is system-owned and
+    /// cannot be deleted, so having none is never something a caregiver did.
+    static func needsBootstrap(context: ModelContext) -> Bool {
+        if needsBootstrap() { return true }
+        guard !UserDefaults.standard.bool(forKey: AppSettingsKey.icloudEnabled) else {
+            return false
+        }
+        var descriptor = FetchDescriptor<BlasterScene>()
+        descriptor.fetchLimit = 1
+        let sceneCount = (try? context.fetchCount(descriptor)) ?? 1
+        if sceneCount == 0 {
+            print("bootstrap: flagged as seeded but the store has no scenes — re-seeding")
+            return true
+        }
+        return false
+    }
+
     /// Record that this device has been seeded.
     ///
     /// - Parameter appliedBundledContent: whether bundled JSON was actually

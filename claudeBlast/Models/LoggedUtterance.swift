@@ -15,6 +15,24 @@ import Foundation
 final class LoggedUtterance {
     var id: String = UUID().uuidString
     var tileKeys: [String] = []
+    /// Where each tile was pressed — parallel to `tileKeys`, one page key each.
+    ///
+    /// The HTTP referrer of a tile press: recorded at the tap, not reconstructed
+    /// afterwards. A sentence is routinely built across pages — `want` on Home,
+    /// then `pizza` on Food — so the page belongs to the *tile*, not the
+    /// utterance, and there is no single page to put on the row.
+    ///
+    /// Without it, "how much of this page gets used" cannot be answered at all.
+    /// Reconstructing it from which pages carry a word credits every page the
+    /// word appears on, which fails exactly where the question matters: a buried
+    /// page stocked with core words that also sit on Home scores as well-used,
+    /// because those words were pressed — on Home. An SLP tuning that page would
+    /// be reading an artefact.
+    ///
+    /// **Empty, or shorter than `tileKeys`, for rows written before this
+    /// existed.** Readers must pair by index and treat a missing entry as
+    /// unknown rather than assuming alignment.
+    var pageKeys: [String] = []
     var sentence: String = ""
     var createdAt: Date = Date.now
     var repetitionCount: Int = 0
@@ -37,12 +55,14 @@ final class LoggedUtterance {
         tileKeys: [String],
         sentence: String,
         repetitionCount: Int = 0,
+        pageKeys: [String] = [],
         sceneName: String? = nil,
         sceneID: String? = nil,
         childID: String? = nil,
         createdAt: Date = .now
     ) {
         self.tileKeys = tileKeys
+        self.pageKeys = pageKeys
         self.sentence = sentence
         self.repetitionCount = repetitionCount
         self.sceneName = sceneName ?? ""
@@ -63,5 +83,17 @@ final class LoggedUtterance {
             return live.name
         }
         return sceneName.isEmpty ? nil : sceneName
+    }
+
+    /// Tile key paired with the page it was pressed on, skipping any tile whose
+    /// page was not recorded.
+    ///
+    /// The pairing is by index and the arrays can disagree in length — rows
+    /// written before `pageKeys` existed have none at all — so this is the only
+    /// safe way to read them together.
+    var tilesWithPages: [(key: String, pageKey: String)] {
+        zip(tileKeys, pageKeys)
+            .filter { !$0.1.isEmpty }
+            .map { (key: $0.0, pageKey: $0.1) }
     }
 }

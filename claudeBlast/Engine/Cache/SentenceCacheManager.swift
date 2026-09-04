@@ -350,12 +350,14 @@ final class SentenceCacheManager {
     /// time (display snapshot — survives a deletion). `childID` is stamped for
     /// per-child review filtering. See `LoggedUtterance.sceneDisplayName(resolving:)`.
     func logUtterance(tiles: [TileSelection], sentence: String,
-                      repetitionCount: Int, childID: String? = nil) {
+                      repetitionCount: Int, pageKeys: [String] = [],
+                      childID: String? = nil) {
         let scene = activeScene()
         let entry = LoggedUtterance(
             tileKeys: tiles.map(\.key),
             sentence: sentence,
             repetitionCount: repetitionCount,
+            pageKeys: pageKeys,
             sceneName: scene.name,
             sceneID: scene.id,
             childID: childID
