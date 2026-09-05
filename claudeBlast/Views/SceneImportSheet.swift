@@ -222,7 +222,7 @@ struct SceneImportSheet: View {
             if let image {
                 Image(uiImage: image).resizable().scaledToFill()
             } else {
-                Rectangle().fill(colorForWordClass(wordClass))
+                Rectangle().fill(TileColorResolver.color(forWordClass: wordClass))
                     .overlay {
                         Text(String(name.prefix(1)).uppercased())
                             .font(.headline).bold().foregroundStyle(.white)

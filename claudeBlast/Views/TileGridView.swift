@@ -557,7 +557,6 @@ struct TileGridView: View {
                 tile: tile,
                 link: entry.link,
                 isAudible: entry.isAudible,
-                isSelected: engine.selectedTiles.contains { $0.key == entry.key },
                 labelFontSize: labelFontSize,
                 scriptPulseKey: scriptRunner.tapPulseKey,
                 scriptPulseCount: scriptRunner.tapPulseCount

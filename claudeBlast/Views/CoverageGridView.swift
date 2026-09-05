@@ -89,7 +89,7 @@ struct CoverageGridView: View {
                 TileImageView(key: key, wordClass: tile?.wordClass ?? "")
                     .aspectRatio(1, contentMode: .fit)
                     .background(
-                        wordClassColor(tile?.wordClass ?? "").opacity(0.12),
+                        TileColorResolver.color(for: tile).opacity(0.12),
                         in: RoundedRectangle(cornerRadius: 8)
                     )
                 if !isUsed {

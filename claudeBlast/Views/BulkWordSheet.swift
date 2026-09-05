@@ -77,7 +77,7 @@ struct BulkWordSheet: View {
                                     Text(cls.name)
                                         .font(.caption2.weight(.medium))
                                         .padding(.horizontal, 9).padding(.vertical, 4)
-                                        .background(Capsule().fill(cls.color.opacity(0.28)))
+                                        .background(Capsule().fill(TileColorResolver.color(for: cls.defaultPartOfSpeech).opacity(0.28)))
                                         .foregroundStyle(.primary)
                                 }
                                 .buttonStyle(.plain)

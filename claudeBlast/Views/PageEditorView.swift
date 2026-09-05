@@ -327,18 +327,36 @@ struct PageTileCell: View {
     let tile: TileModel
     var link: String = ""
 
+    /// Same rule as the board: part of speech, or blue for a nav tile.
+    private var accent: Color {
+        link.isEmpty ? TileColorResolver.color(for: tile) : TileColorResolver.navigation
+    }
+
     var body: some View {
         VStack(spacing: 3) {
             ZStack(alignment: .topTrailing) {
-                TileImageView(key: tile.bundleImage, wordClass: tile.wordClass)
-                    .padding(5)
-                    .aspectRatio(1, contentMode: .fit)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .shadow(color: .black.opacity(0.1), radius: 2, y: 1)
+                // The editor draws the tile the way the child will see it.
+                //
+                // It was a bare picture, which was survivable while colour was a
+                // hairline nobody arranged by. Now that colour means part of
+                // speech, a caregiver grouping the board into colour blocks — the
+                // whole point of a Fitzgerald layout — was doing it blind here and
+                // only finding out on the board.
+                ZStack {
+                    accent
+                    RoundedRectangle(cornerRadius: 5)
+                        .fill(Color.white)
+                        .padding(6)
+                    TileImageView(key: tile.bundleImage, wordClass: tile.wordClass)
+                        .padding(8)
+                }
+                .aspectRatio(1, contentMode: .fit)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .shadow(color: .black.opacity(0.1), radius: 2, y: 1)
                 if !link.isEmpty {
                     Image(systemName: "arrow.right.circle.fill")
                         .font(.caption2)
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.white, TileColorResolver.navigation)
                         .padding(4)
                 }
             }
@@ -380,6 +398,62 @@ struct TilePropertiesSheet: View {
 
     private var tile: TileModel? {
         allTiles.first { $0.key == tileKey }
+    }
+
+    // MARK: - Part of speech
+
+    /// The tile's part of speech, and the control that lets a therapist correct
+    /// it.
+    ///
+    /// **It sets the part of speech, not the colour**, even though colour is
+    /// what a caregiver notices. Picking a colour directly would break the axis
+    /// the colour stands for: two words could end up the same colour with
+    /// different parts of speech, and the coverage report would then disagree
+    /// with the board. One axis, and the colour follows from it.
+    ///
+    /// "Automatic" is the normal state and names what it resolved to, so the
+    /// difference between *nobody has said* and *someone chose this* stays
+    /// visible. Clearing back to Automatic is how a correction is undone —
+    /// there is no separate reset.
+    @ViewBuilder
+    private func partOfSpeechPicker(_ tile: TileModel) -> some View {
+        NavigationLink {
+            PartOfSpeechPickerList(selection: partOfSpeechBinding(tile),
+                                   automatic: tile.derivedPartOfSpeech)
+        } label: {
+            HStack(spacing: 8) {
+                partOfSpeechSwatch(TileColorResolver.color(for: tile))
+                Text("Word type")
+                if tile.storedPartOfSpeech != nil {
+                    Text("edited")
+                        .font(.caption2)
+                        .foregroundStyle(.purple)
+                }
+                Spacer(minLength: 8)
+                Text(tile.storedPartOfSpeech?.label
+                     ?? automaticLabel(tile.derivedPartOfSpeech))
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    /// What "Automatic" currently works out to, so the row is never a mystery.
+    private func automaticLabel(_ resolved: PartOfSpeech?) -> String {
+        guard let resolved else { return "Automatic" }
+        return "Automatic (\(resolved.label))"
+    }
+
+    /// Writes through to the model, and keeps `PartOfSpeechIndex` in step so the
+    /// coverage report counts the word the same way the board colours it.
+    private func partOfSpeechBinding(_ tile: TileModel) -> Binding<PartOfSpeech?> {
+        Binding(
+            get: { tile.storedPartOfSpeech },
+            set: { newValue in
+                tile.storedPartOfSpeech = newValue
+                PartOfSpeechIndex.setStored(newValue, for: tile.key)
+                try? modelContext.save()
+            }
+        )
     }
 
     private var entry: TileEntry? {
@@ -443,6 +517,8 @@ struct TilePropertiesSheet: View {
                                 .foregroundStyle(.secondary)
                                 .textSelection(.enabled)
                         }
+
+                        if let tile { partOfSpeechPicker(tile) }
 
                         // Per-style art review: every style side by side + zoom.
                         TileStyleStripView(tileKey: tile?.key ?? tileKey,
@@ -525,6 +601,77 @@ struct TilePropertiesSheet: View {
                 Button("OK", role: .cancel) { photoError = nil }
             } message: {
                 Text(photoError ?? "")
+            }
+        }
+    }
+}
+/// A dot in the tile's real board colour. Drawn rather than an SF Symbol so it
+/// survives every context that would otherwise template-render it.
+@ViewBuilder
+func partOfSpeechSwatch(_ color: Color, size: CGFloat = 12) -> some View {
+    Circle()
+        .fill(color)
+        .frame(width: size, height: size)
+        .overlay(Circle().strokeBorder(Color.primary.opacity(0.18), lineWidth: 0.5))
+}
+
+/// The word-type list.
+///
+/// A pushed list rather than a menu because the colour is the point, and a menu
+/// renders its option icons monochrome. Here each row owns its own swatch, so a
+/// therapist picks the colour they can see.
+struct PartOfSpeechPickerList: View {
+    @Binding var selection: PartOfSpeech?
+    /// What Automatic works out to for this tile, so the row is never a mystery.
+    let automatic: PartOfSpeech?
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        List {
+            Section {
+                row(nil, label: automaticRowLabel, color: TileColorResolver.color(for: automatic))
+            } footer: {
+                Text("Automatic uses the word's own type, or the class it was created with. "
+                     + "Choose a type to override it — the tile's colour follows.")
+            }
+
+            Section("Word type") {
+                ForEach(PartOfSpeech.display) { pos in
+                    row(pos, label: pos.label, color: TileColorResolver.color(for: pos))
+                }
+            }
+        }
+        .navigationTitle("Word Type")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var automaticRowLabel: String {
+        guard let automatic else { return "Automatic" }
+        return "Automatic (\(automatic.label))"
+    }
+
+    @ViewBuilder
+    private func row(_ value: PartOfSpeech?, label: String, color: Color) -> some View {
+        Button {
+            selection = value
+            dismiss()
+        } label: {
+            HStack(spacing: 10) {
+                partOfSpeechSwatch(color, size: 14)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(label).foregroundStyle(.primary)
+                    // The term stays standard; the examples do the explaining.
+                    if let value {
+                        Text(value.examples)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+                if selection == value {
+                    Image(systemName: "checkmark").foregroundStyle(.tint)
+                }
             }
         }
     }

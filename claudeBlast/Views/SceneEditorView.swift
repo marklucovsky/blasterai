@@ -787,7 +787,7 @@ private struct PageGeneratorSheet: View {
                                     loadClassQueryPage([opt.cls.name])
                                 } label: {
                                     HStack(spacing: 8) {
-                                        Circle().fill(opt.cls.color).frame(width: 12, height: 12)
+                                        Circle().fill(TileColorResolver.color(for: opt.cls.defaultPartOfSpeech)).frame(width: 12, height: 12)
                                         Text(opt.cls.label)
                                             .font(.callout.weight(.semibold))
                                             .foregroundStyle(.primary)

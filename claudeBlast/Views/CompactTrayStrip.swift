@@ -331,7 +331,7 @@ private struct ChipsRow: View {
             ForEach(Array(tiles.enumerated()), id: \.offset) { idx, tile in
                 Button(action: { onTap(idx) }) {
                     ZStack {
-                        wordClassColor(tile.wordClass).opacity(0.14)
+                        TileColorResolver.color(for: tile).opacity(0.14)
                         TileImageView(key: tile.key, wordClass: tile.wordClass)
                             .padding(2)
                     }
@@ -339,7 +339,7 @@ private struct ChipsRow: View {
                     .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                     .overlay(
                         RoundedRectangle(cornerRadius: cornerRadius)
-                            .strokeBorder(wordClassColor(tile.wordClass).opacity(0.45), lineWidth: 1)
+                            .strokeBorder(TileColorResolver.color(for: tile).opacity(0.45), lineWidth: 1)
                     )
                     .shadow(color: .black.opacity(0.08), radius: 1.5, y: 1)
                 }
@@ -549,7 +549,7 @@ private struct TilePill: View {
     var body: some View {
         HStack(spacing: 5) {
             ZStack {
-                wordClassColor(tile.wordClass).opacity(0.22)
+                TileColorResolver.color(for: tile).opacity(0.22)
                 TileImageView(key: tile.key, wordClass: tile.wordClass)
                     .padding(1)
             }
@@ -557,7 +557,7 @@ private struct TilePill: View {
             .clipShape(Circle())
             .overlay(
                 Circle()
-                    .strokeBorder(wordClassColor(tile.wordClass).opacity(0.55), lineWidth: 0.5)
+                    .strokeBorder(TileColorResolver.color(for: tile).opacity(0.55), lineWidth: 0.5)
             )
 
             Text(tile.value)
@@ -570,11 +570,11 @@ private struct TilePill: View {
         .padding(.vertical, 2)
         .background(
             Capsule()
-                .fill(wordClassColor(tile.wordClass).opacity(0.16))
+                .fill(TileColorResolver.color(for: tile).opacity(0.16))
         )
         .overlay(
             Capsule()
-                .strokeBorder(wordClassColor(tile.wordClass).opacity(0.3), lineWidth: 0.5)
+                .strokeBorder(TileColorResolver.color(for: tile).opacity(0.3), lineWidth: 0.5)
         )
     }
 }

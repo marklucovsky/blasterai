@@ -615,8 +615,8 @@ enum BoardPDFRenderer {
         let border = max(1.0, card.width * 0.028)
         let padding = SheetLayout.cardPadding(cellWidth: card.width)
         let accent = navigates
-            ? UIColor.systemBlue
-            : UIColor(TileColorResolver.color(for: tile?.wordClass ?? ""))
+            ? UIColor(TileColorResolver.navigation)
+            : UIColor(TileColorResolver.color(for: tile))
 
         let cardPath = UIBezierPath(roundedRect: card, cornerRadius: radius)
         accent.withAlphaComponent(0.14).setFill()
@@ -701,7 +701,7 @@ enum BoardPDFRenderer {
             let stripHeight = max(7, card.width * 0.19)
             let strip = CGRect(x: card.minX, y: card.maxY - stripHeight,
                                width: card.width, height: stripHeight)
-            UIColor.systemBlue.withAlphaComponent(0.92).setFill()
+            UIColor(TileColorResolver.navigation).withAlphaComponent(0.92).setFill()
             UIBezierPath(rect: strip).fill()
 
             let text = "→ " + PageNaming.displayName(target)

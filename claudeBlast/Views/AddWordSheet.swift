@@ -265,7 +265,7 @@ struct AddWordSheet: View {
             wordClass = cls.name
         } label: {
             HStack(spacing: 6) {
-                Circle().fill(cls.color).frame(width: 11, height: 11)
+                Circle().fill(TileColorResolver.color(for: cls.defaultPartOfSpeech)).frame(width: 11, height: 11)
                 Text(cls.label).font(.subheadline)
                 if taken {
                     Image(systemName: "checkmark.circle.fill")
@@ -276,8 +276,8 @@ struct AddWordSheet: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
             .frame(maxWidth: .infinity)
-            .background(Capsule().fill(selected ? cls.color.opacity(0.22) : Color.secondary.opacity(0.12)))
-            .overlay(Capsule().strokeBorder(selected ? cls.color : .clear, lineWidth: 2))
+            .background(Capsule().fill(selected ? TileColorResolver.color(for: cls.defaultPartOfSpeech).opacity(0.22) : Color.secondary.opacity(0.12)))
+            .overlay(Capsule().strokeBorder(selected ? TileColorResolver.color(for: cls.defaultPartOfSpeech) : .clear, lineWidth: 2))
             .opacity(taken ? 0.4 : 1)
         }
         .buttonStyle(.plain)
