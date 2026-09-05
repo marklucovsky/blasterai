@@ -132,8 +132,8 @@ enum OBFExporter {
                                        content_type: "image/png",
                                        license: license(for: tile, scene: scene)))
 
-                let accent = loadBoard != nil ? Color.blue
-                                              : TileColorResolver.color(for: tile.wordClass)
+                let accent = loadBoard != nil ? TileColorResolver.navigation
+                                              : TileColorResolver.color(for: tile)
                 buttons.append(OBFButton(
                     id: buttonID,
                     label: tile.displayName.isEmpty ? tile.key : tile.displayName,

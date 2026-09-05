@@ -468,7 +468,7 @@ struct TilePickerView: View {
                         ForEach(VocabularyClasses.caregiverSelectable, id: \.name) { cls in
                             Button { addNewWordInline(word, wordClass: cls.name) } label: {
                                 HStack(spacing: 6) {
-                                    Circle().fill(cls.color).frame(width: 9, height: 9)
+                                    Circle().fill(TileColorResolver.color(for: cls.defaultPartOfSpeech)).frame(width: 9, height: 9)
                                     Text(cls.label).font(.subheadline).lineLimit(1)
                                     Spacer(minLength: 0)
                                 }
@@ -531,7 +531,7 @@ struct TilePickerView: View {
                 ForEach(matches) { tile in
                     HStack(spacing: 8) {
                         Circle()
-                            .fill(TileColorResolver.color(for: tile.wordClass))
+                            .fill(TileColorResolver.color(for: tile))
                             .frame(width: 10, height: 10)
                         Text(tile.wordClass)
                         Spacer()
@@ -838,7 +838,7 @@ struct TilePickerView: View {
                         Text(cls.name)
                             .font(.caption2.weight(.medium))
                             .padding(.horizontal, 9).padding(.vertical, 4)
-                            .background(Capsule().fill(cls.color.opacity(0.28)))
+                            .background(Capsule().fill(TileColorResolver.color(for: cls.defaultPartOfSpeech).opacity(0.28)))
                             .foregroundStyle(.primary)
                     }
                     .buttonStyle(.plain)

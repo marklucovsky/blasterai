@@ -218,7 +218,25 @@ struct VocabManagerView: View {
         } else if tile.needsReview {
             Text("flagged — may be inappropriate").font(.caption2).foregroundStyle(.orange)
         } else {
-            Text(tile.wordClass).font(.caption2).foregroundStyle(.tertiary)
+            // Both axes, because they answer different questions and a caregiver
+            // comparing two words needs to see which one differs. The swatch is
+            // the tile's actual colour on the board, so this row is also how you
+            // find a word whose colour looks wrong without hunting the grid.
+            HStack(spacing: 5) {
+                Text(tile.wordClass)
+                if let pos = tile.resolvedPartOfSpeech {
+                    Text("·")
+                    Circle()
+                        .fill(TileColorResolver.color(for: tile))
+                        .frame(width: 7, height: 7)
+                    Text(pos.label)
+                    if tile.storedPartOfSpeech != nil {
+                        Text("edited").foregroundStyle(.purple)
+                    }
+                }
+            }
+            .font(.caption2)
+            .foregroundStyle(.tertiary)
         }
     }
 

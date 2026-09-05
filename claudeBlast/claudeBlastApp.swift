@@ -216,6 +216,10 @@ struct claudeBlastApp: App {
                 .onAppear {
                     profileResolver.configure(modelContext: modelContainer.mainContext)
                     imageResolver.configure(modelContext: modelContainer.mainContext)
+                    // Therapist corrections to a word's part of speech. Loaded
+                    // here so the coverage report counts a word the same way the
+                    // board colours it — see PartOfSpeechIndex.
+                    PartOfSpeechIndex.refreshStored(from: modelContainer.mainContext)
                     // Until this runs, API usage recording is a silent no-op —
                     // never a crash, so previews and tests work unconfigured.
                     UsageRecorder.shared.configure(context: modelContainer.mainContext)

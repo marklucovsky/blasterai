@@ -580,7 +580,7 @@ struct LogTileStrip: View {
                 // follows the alias from the word key.
                 TileImageView(key: tile.key, wordClass: tile.wordClass)
                     .frame(width: size, height: size)
-                    .background(wordClassColor(tile.wordClass).opacity(0.12))
+                    .background(TileColorResolver.color(for: tile).opacity(0.12))
                     .clipShape(RoundedRectangle(cornerRadius: 5))
             }
             if tiles.count > maxCount {
@@ -603,7 +603,7 @@ struct MostUsedTileChip: View {
         HStack(spacing: 5) {
             TileImageView(key: key, wordClass: wordClass)
                 .frame(width: 26, height: 26)
-                .background(wordClassColor(wordClass).opacity(0.12))
+                .background(TileColorResolver.color(forWordClass: wordClass).opacity(0.12))
                 .clipShape(RoundedRectangle(cornerRadius: 5))
             Text(value)
                 .font(.caption)

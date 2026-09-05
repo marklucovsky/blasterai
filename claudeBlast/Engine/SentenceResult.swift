@@ -12,16 +12,32 @@ struct TileSelection: Sendable, Equatable, Hashable {
     let value: String
     let wordClass: String
 
-    init(key: String, value: String, wordClass: String) {
+    /// Part of speech captured when the tile was tapped, so a chip in the tray
+    /// and the tile on the board cannot disagree about colour.
+    ///
+    /// Snapshotted rather than re-derived at render time because the first layer
+    /// of resolution — a therapist's stored correction — lives on `TileModel`,
+    /// which a selection does not carry. Deriving from `wordClass` alone in the
+    /// tray would quietly paint the chip a different colour from the tile the
+    /// child just pressed.
+    let partOfSpeech: PartOfSpeech?
+
+    init(key: String, value: String, wordClass: String, partOfSpeech: PartOfSpeech? = nil) {
         self.key = key
         self.value = value
         self.wordClass = wordClass
+        // No tile in hand, so this can reach layers 2 and 3 but not a stored
+        // correction. Callers that have a TileModel should use `init(from:)`.
+        self.partOfSpeech = partOfSpeech
+            ?? PartOfSpeechIndex.partOfSpeech(for: key)
+            ?? VocabularyClasses.known(wordClass)?.defaultPartOfSpeech
     }
 
     init(from tile: TileModel) {
         self.key = tile.key
         self.value = tile.value
         self.wordClass = tile.wordClass
+        self.partOfSpeech = tile.resolvedPartOfSpeech
     }
 }
 

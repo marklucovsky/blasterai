@@ -97,7 +97,7 @@ struct ScenePreviewBoardView: View {
             .padding(6)
             .background(
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(colorForWordClass(tile?.wordClass ?? "").opacity(0.12))
+                    .fill(TileColorResolver.color(for: tile).opacity(0.12))
             )
         }
         .buttonStyle(.plain)

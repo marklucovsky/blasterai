@@ -119,7 +119,7 @@ private struct WordChip: View {
         Button(action: onTap) {
             VStack(spacing: 2) {
                 ZStack {
-                    wordClassColor(tile.wordClass).opacity(0.14)
+                    TileColorResolver.color(for: tile).opacity(0.14)
                     TileImageView(key: tile.key, wordClass: tile.wordClass)
                         .padding(3)
                 }
@@ -127,7 +127,7 @@ private struct WordChip: View {
                 .clipShape(RoundedRectangle(cornerRadius: 9))
                 .overlay(
                     RoundedRectangle(cornerRadius: 9)
-                        .strokeBorder(wordClassColor(tile.wordClass).opacity(0.45), lineWidth: 1)
+                        .strokeBorder(TileColorResolver.color(for: tile).opacity(0.45), lineWidth: 1)
                 )
 
                 Text(tile.value)

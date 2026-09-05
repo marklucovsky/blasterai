@@ -29,6 +29,41 @@ final class TileModel: Identifiable {
     var key: String = ""
     var wordClass: String = ""
 
+    /// Part of speech, when something knows better than the bundled table and the
+    /// derivation — a therapist's correction, or a classifier run at word-add
+    /// time. **Empty means "nobody has said"**, which is the normal state: v1
+    /// writes this nowhere and resolves through `resolvedPartOfSpeech` instead.
+    ///
+    /// ## Why the field exists before a writer does
+    ///
+    /// Part of speech drives tile colour (`TileColorResolver`), and colour is the
+    /// one thing on a board a therapist teaches against. They will disagree with
+    /// us about a word — `more` as a verb rather than a determiner is the obvious
+    /// one — and a correction has to stick, on every device.
+    ///
+    /// `PartOfSpeechIndex` alone cannot hold that. Its table is a bundled file, so
+    /// it cannot learn; its in-memory layer dies at relaunch and never syncs, so
+    /// the same word would render orange on the iPad and gray on the iPhone.
+    /// Only a stored, synced property answers it.
+    ///
+    /// Taken as **schema insurance** on the S3 3A precedent (`languageRaw`,
+    /// `brownsStageRaw`): a synced property can be added before CloudKit
+    /// promotion and never after, so the choice is now or never. Shipping it
+    /// empty costs one defaulted String; not shipping it makes derivation
+    /// permanent. See `docs/final-countdown-plan.md` § Session 5.
+    ///
+    /// String-backed with a typed accessor, per the house rule — never a Codable
+    /// enum attribute.
+    var partOfSpeechRaw: String = ""
+
+    /// Typed view of `partOfSpeechRaw`. Nil when nothing has been stored, which
+    /// is not the same as "this word has no part of speech" — for that answer,
+    /// ask `resolvedPartOfSpeech`.
+    var storedPartOfSpeech: PartOfSpeech? {
+        get { PartOfSpeech(rawValue: partOfSpeechRaw) }
+        set { partOfSpeechRaw = newValue?.rawValue ?? "" }
+    }
+
     /// True for tiles seeded from the bundled vocabulary (BootstrapLoader);
     /// false for caregiver-added words and tiles brought in by scene import.
     /// Lets authoring surfaces distinguish system vocabulary from extensions.

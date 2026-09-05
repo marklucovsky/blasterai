@@ -12,7 +12,6 @@ struct TileView: View {
     let tile: TileModel
     var link: String = ""
     var isAudible: Bool = true
-    var isSelected: Bool = false
     var labelFontSize: CGFloat = 11
     /// TileScript playback pulse: when `scriptPulseCount` changes and
     /// `scriptPulseKey` matches this tile, the tile bounces — so viewers can see
@@ -114,44 +113,77 @@ struct TileView: View {
       withAnimation(.easeOut(duration: 0.45).delay(0.16)) { pulseScale = 1.0; glow = 0.0 }
     }
 
+    /// The colour a tile carries: its part of speech, or blue for a nav tile,
+    /// which is wayfinding rather than vocabulary.
+    private var accent: Color {
+        isNavigation ? TileColorResolver.navigation : TileColorResolver.color(for: tile)
+    }
+
+    /// The card is a coloured card with the picture on a white plate inside it —
+    /// the shape every published AAC board uses, and the shape our own printed
+    /// sheets already used while the screen did not.
+    ///
+    /// **The colour is the card, not its edge.** This used to be a 3pt border at
+    /// 0.6 alpha over a 0.12 fill, and side by side with cboard on identical
+    /// tiles the board read monochrome from three feet away: a hairline around a
+    /// white card against a card that *is* the colour. Colour only teaches if it
+    /// is legible at the distance a board is actually used from.
+    ///
+    /// **The card does not follow dark mode, deliberately.** Fitzgerald colours
+    /// are taught as constants — the green ones are doing words, wherever and
+    /// whenever you look at the board. A board is a physical object, and the
+    /// chrome around it going dark while the board itself stays put is both
+    /// truer and bolder than any appearance-aware tint could be at these sizes.
+    /// Everything here is therefore a literal colour, never a semantic one.
     @ViewBuilder
     private var tileCard: some View {
         ZStack(alignment: .bottomTrailing) {
-            colorForWordClass(tile.wordClass).opacity(0.12)
+            accent
                 .aspectRatio(1, contentMode: .fit)
+
+            // The plate. Art is drawn on white and ships without alpha, so this
+            // is mostly belt-and-braces — but it keeps the corners clean and
+            // gives caregiver photos and any future transparent art the same
+            // ground as everything else.
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color.white)
+                .aspectRatio(1, contentMode: .fit)
+                .padding(7)
 
             TileImageView(key: tile.bundleImage, wordClass: tile.wordClass)
                 .aspectRatio(1, contentMode: .fit)
-                .padding(6)
+                .padding(9)
 
             if isNavigation {
                 Image(systemName: "arrow.right.circle.fill")
                     .font(.caption)
-                    .foregroundStyle(.white, .blue)
+                    .foregroundStyle(.white, TileColorResolver.navigation)
                     .padding(4)
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 10))
-        // Resting border: thick + saturated when selected so the tile clearly
-        // stands out from the grid; thin wordClass tint otherwise.
+        // A nav tile deepens under the finger: a scale change is read against the
+        // edge as a reference, so a static edge is part of what made a small
+        // scale hard to see. Opacity only — changing its width made the edge
+        // shimmer.
+        //
+        // **A tile in the tray no longer restyles itself.** It used to take an
+        // orange border and an orange glow, from the days when tapping a grid
+        // tile toggled it in and out of the tray, so the grid had to show
+        // membership. It has not worked that way for a long time — the tray is
+        // edited in the tray — and the cost is now much higher than the stale
+        // affordance: orange is *nouns*. A tile that changes colour on tap
+        // contradicts the one thing the colour is there to teach, and it does it
+        // at the exact moment the child is looking at the tile. Single-word mode
+        // never had this treatment; the grid now matches it.
         .overlay(
             RoundedRectangle(cornerRadius: 10)
                 .strokeBorder(
-                    isSelected ? Color.orange
-                        // The border deepens under the finger. A scale change is
-                        // read against the border as a reference edge, so a
-                        // static border is part of what made a small scale hard
-                        // to see. Opacity only — changing its width made the
-                        // edge shimmer.
-                        : (isNavigation ? Color.blue.opacity(isPressed ? 1.0 : 0.6)
-                        : colorForWordClass(tile.wordClass).opacity(0.6)),
-                    lineWidth: isSelected ? 6 : 3
+                    isNavigation ? TileColorResolver.navigation.opacity(isPressed ? 1.0 : 0.0) : .clear,
+                    lineWidth: 3
                 )
         )
         .shadow(color: .black.opacity(0.12), radius: 2, y: 1)
-        // Persistent glow lifts the selected tile off the grid so it reads as
-        // clearly different, not just "an orange border like any other tile."
-        .shadow(color: Color.orange.opacity(isSelected ? 0.75 : 0.0), radius: 10)
         // Press "pop + glow": a thick bright ring + strong colored halo flashes
         // on every tap (glow springs 0→1→0 with the bounce), so a press is
         // unmistakable in motion and on camera.
@@ -185,21 +217,21 @@ private struct PressReportingButtonStyle: ButtonStyle {
 
 #Preview("Audible tile") {
     let tile = TileModel(key: "eat", wordClass: "actions")
-    TileView(tile: tile, link: "", isAudible: true, isSelected: false) {}
+    TileView(tile: tile, link: "", isAudible: true) {}
         .frame(width: 80)
         .modelContainer(for: TileModel.self, inMemory: true)
 }
 
 #Preview("Nav tile") {
     let tile = TileModel(key: "food", wordClass: "navigation")
-    TileView(tile: tile, link: "food", isAudible: false, isSelected: false) {}
+    TileView(tile: tile, link: "food", isAudible: false) {}
         .frame(width: 80)
         .modelContainer(for: TileModel.self, inMemory: true)
 }
 
 #Preview("Selected tile") {
     let tile = TileModel(key: "happy", wordClass: "feeling")
-    TileView(tile: tile, link: "", isAudible: true, isSelected: true) {}
+    TileView(tile: tile, link: "", isAudible: true) {}
         .frame(width: 80)
         .modelContainer(for: TileModel.self, inMemory: true)
 }

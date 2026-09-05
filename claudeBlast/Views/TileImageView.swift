@@ -35,7 +35,7 @@ struct TileImageView: View {
     @ViewBuilder
     private var missingTilePlaceholder: some View {
         Rectangle()
-            .fill(colorForWordClass(wordClass))
+            .fill(TileColorResolver.color(forWordClass: wordClass))
             .overlay {
                 VStack(spacing: 4) {
                     Text(String(key.replacingOccurrences(of: "_", with: " ").prefix(1)).uppercased())
@@ -51,11 +51,3 @@ struct TileImageView: View {
     }
 }
 
-// MARK: - Word Class Colors (shared)
-
-/// Word-class color used by TileView and TileImageView. Thin shim over the
-/// single source of truth so callers stay unchanged; see TileColorResolver /
-/// VocabularyClasses for the canonical mapping.
-func colorForWordClass(_ wordClass: String) -> Color {
-    TileColorResolver.color(for: wordClass)
-}

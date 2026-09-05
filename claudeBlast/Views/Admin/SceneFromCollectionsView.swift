@@ -74,7 +74,7 @@ struct SceneFromCollectionsView: View {
                     ForEach(classOptions, id: \.cls.id) { opt in
                         Toggle(isOn: classBinding(opt.cls.name)) {
                             HStack {
-                                Circle().fill(opt.cls.color).frame(width: 10, height: 10)
+                                Circle().fill(TileColorResolver.color(for: opt.cls.defaultPartOfSpeech)).frame(width: 10, height: 10)
                                 Text(opt.cls.label)
                                 Spacer()
                                 Text("\(opt.count)")

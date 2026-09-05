@@ -681,7 +681,7 @@ private struct ActiveTileCard: View {
             // reads as the same category it does on the board.
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(colorForWordClass(tile.wordClass).opacity(0.6), lineWidth: 2.5)
+                    .strokeBorder(TileColorResolver.color(for: tile).opacity(0.6), lineWidth: 2.5)
             )
         }
         .buttonStyle(.plain)
@@ -1183,7 +1183,7 @@ struct TileGroupBubble: View {
                 .padding(.horizontal, 6)
                 .padding(.vertical, 3)
                 .background(
-                    Capsule().fill(wordClassColor(tile.wordClass).opacity(0.20))
+                    Capsule().fill(TileColorResolver.color(for: tile).opacity(0.20))
                 )
             }
         }
@@ -1201,11 +1201,4 @@ struct TileGroupBubble: View {
     }
 }
 
-// MARK: - Shared helpers
-
-/// Thin shim over the canonical mapping so tray call sites stay unchanged.
-/// See TileColorResolver / VocabularyClasses for the source of truth.
-func wordClassColor(_ wordClass: String) -> Color {
-    TileColorResolver.color(for: wordClass)
-}
 

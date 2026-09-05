@@ -5,10 +5,10 @@
 //  claudeBlast
 //
 //  Canonical catalog of word classes — the single source of truth for what
-//  classes exist, their tile color, and whether a caregiver may pick one when
-//  creating a word. Deriving "what classes exist" from the data is fragile (a
-//  typo like `bassketball` would become a real, selectable class); this catalog
-//  governs the creator picker and color instead.
+//  classes exist, the part of speech each falls back to, and whether a
+//  caregiver may pick one when creating a word. Deriving "what classes exist"
+//  from the data is fragile (a typo would become a real, selectable class);
+//  this catalog governs the creator picker and the derivation instead.
 //
 //  NOTE: a tile's `wordClass` string is injected verbatim into the
 //  sentence-generation prompt (SentencePromptBuilder) as a hint — e.g.
@@ -22,8 +22,14 @@ import SwiftUI
 struct VocabularyClass: Identifiable, Hashable {
     /// The `wordClass` string stored on tiles and sent to the AI as a hint.
     let name: String
-    /// Tile color for this class (see TileColorResolver).
-    let color: Color
+    /// Part of speech a word of this class gets when nothing better is known —
+    /// the third layer of `TileModel.resolvedPartOfSpeech`, below a stored
+    /// answer and the bundled table. Nil for structural chrome, which has no
+    /// part of speech and takes no word colour.
+    ///
+    /// This replaced a per-class `color`. Colour now comes from part of speech,
+    /// so a colour here would be a second source competing with the first.
+    let defaultPartOfSpeech: PartOfSpeech?
     /// Whether the caregiver "New Word" creator offers this class. Structural /
     /// function classes (core, navigation, question) are not caregiver content.
     let isCaregiverSelectable: Bool
@@ -34,47 +40,62 @@ struct VocabularyClass: Identifiable, Hashable {
 }
 
 enum VocabularyClasses {
-    /// Canonical word classes in caregiver-facing display order. Colors mirror
-    /// the legacy switch, with `feeling` given its own rose (all emotions live
-    /// here now) and `animal` added (brown).
+    /// Canonical word classes in caregiver-facing display order.
+    ///
+    /// The second column used to be a colour. It is now the part of speech a
+    /// word of this class falls back to when neither a stored answer nor the
+    /// bundled table knows — the derivation layer, measured at **92.3% colour
+    /// accuracy** across the caregiver-selectable classes.
+    ///
+    /// Every miss in that measurement is a *bundled* word, which has an exact
+    /// table entry and never reaches here: prepositions filed as `describe`,
+    /// pronouns filed as `people`. The population this actually serves is
+    /// caregiver-added words, which are overwhelmingly concrete nouns a family
+    /// invented — "grandma", "Bluey", "trampoline" — so its real accuracy is
+    /// well above the measured figure.
     static let all: [VocabularyClass] = [
-        VocabularyClass(name: "people",   color: .purple,                                   isCaregiverSelectable: true),
-        VocabularyClass(name: "animal",   color: .brown,                                    isCaregiverSelectable: true),
-        VocabularyClass(name: "actions",  color: .orange,                                   isCaregiverSelectable: true),
-        VocabularyClass(name: "describe", color: .green,                                    isCaregiverSelectable: true),
-        VocabularyClass(name: "feeling",  color: Color(red: 0.96, green: 0.42, blue: 0.55), isCaregiverSelectable: true),
-        VocabularyClass(name: "social",   color: .pink,                                     isCaregiverSelectable: true),
+        VocabularyClass(name: "people", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
+        VocabularyClass(name: "animal", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
+        VocabularyClass(name: "actions", defaultPartOfSpeech: .verb, isCaregiverSelectable: true),
+        VocabularyClass(name: "describe", defaultPartOfSpeech: .adjective, isCaregiverSelectable: true),
+        VocabularyClass(name: "feeling", defaultPartOfSpeech: .adjective, isCaregiverSelectable: true),
+        VocabularyClass(name: "social", defaultPartOfSpeech: .social, isCaregiverSelectable: true),
         // `food` absorbs the former meals/fruit/veggie/snacks buckets (2026-08).
         // Those sub-splits were arbitrary from the LLM's view (the class string is
         // injected into the sentence prompt) and only ever served scene-builder
         // collection filtering — the wrong customer. The word itself ("carrot",
         // "cookie") already tells the model what it is; the sub-class did not.
-        VocabularyClass(name: "food",     color: .red,                                      isCaregiverSelectable: true),
-        VocabularyClass(name: "plant",    color: Color(red: 0.5, green: 0.62, blue: 0.28),  isCaregiverSelectable: true),
-        VocabularyClass(name: "drinks",   color: .cyan,                                     isCaregiverSelectable: true),
-        VocabularyClass(name: "places",   color: .blue,                                     isCaregiverSelectable: true),
-        VocabularyClass(name: "weather",  color: Color(red: 0.3, green: 0.6, blue: 0.9),    isCaregiverSelectable: true),
-        VocabularyClass(name: "colors",   color: .mint,                                     isCaregiverSelectable: true),
-        VocabularyClass(name: "shape",    color: .teal,                                     isCaregiverSelectable: true),
-        VocabularyClass(name: "body",     color: Color(red: 0.9, green: 0.5, blue: 0.5),    isCaregiverSelectable: true),
-        VocabularyClass(name: "health",   color: Color(red: 0.9, green: 0.5, blue: 0.5),    isCaregiverSelectable: true),
-        VocabularyClass(name: "toy",      color: .yellow,                                   isCaregiverSelectable: true),
-        VocabularyClass(name: "games",    color: .yellow,                                   isCaregiverSelectable: true),
-        VocabularyClass(name: "sports",   color: .yellow,                                   isCaregiverSelectable: true),
-        VocabularyClass(name: "play",     color: .yellow,                                   isCaregiverSelectable: true),
-        VocabularyClass(name: "art",      color: Color(red: 0.7, green: 0.4, blue: 0.8),    isCaregiverSelectable: true),
+        VocabularyClass(name: "food", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
+        VocabularyClass(name: "plant", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
+        VocabularyClass(name: "drinks", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
+        VocabularyClass(name: "places", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
+        VocabularyClass(name: "weather", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
+        VocabularyClass(name: "colors", defaultPartOfSpeech: .adjective, isCaregiverSelectable: true),
+        VocabularyClass(name: "shape", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
+        VocabularyClass(name: "body", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
+        VocabularyClass(name: "health", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
+        VocabularyClass(name: "toy", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
+        VocabularyClass(name: "games", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
+        VocabularyClass(name: "sports", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
+        VocabularyClass(name: "play", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
+        VocabularyClass(name: "art", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
         // Generic concrete objects / tools / equipment / vehicles that don't fit a
-        // more specific class (handcuffs, badge, hose, ladder, tractor). Neutral
-        // steel so it reads as a real category, distinct from the gray fallback.
-        VocabularyClass(name: "object",   color: Color(red: 0.45, green: 0.5, blue: 0.55),  isCaregiverSelectable: true),
+        // more specific class (handcuffs, badge, hose, ladder, tractor).
+        VocabularyClass(name: "object", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
         // Structural / function classes — not caregiver-creatable content.
-        VocabularyClass(name: "core",       color: Color(red: 0.95, green: 0.88, blue: 0.55), isCaregiverSelectable: false),
-        VocabularyClass(name: "navigation", color: .indigo,                                   isCaregiverSelectable: false),
-        VocabularyClass(name: "question",   color: .pink,                                     isCaregiverSelectable: false),
+        //
+        // `core` is the one genuinely mixed class: its bundled words split across
+        // prepositions, pronouns and determiners, with preposition the modal
+        // answer at 50%. Every one of them is in the table, so this fallback is
+        // very nearly unreachable — it exists for a `core` word that arrived by
+        // scene import.
+        VocabularyClass(name: "core", defaultPartOfSpeech: .preposition, isCaregiverSelectable: false),
+        VocabularyClass(name: "navigation", defaultPartOfSpeech: nil, isCaregiverSelectable: false),
+        VocabularyClass(name: "question", defaultPartOfSpeech: .question, isCaregiverSelectable: false),
         // Auto-minted per page: a silent link tile (key `page_<pageKey>`) that
         // navigates to a named page collection. Reusable on any board. Not
         // caregiver-creatable — pages mint these themselves.
-        VocabularyClass(name: "page_link",  color: Color(red: 0.4, green: 0.45, blue: 0.85),  isCaregiverSelectable: false),
+        VocabularyClass(name: "page_link", defaultPartOfSpeech: nil, isCaregiverSelectable: false),
     ]
 
     /// Shared, tightened rule for how the AI should pick a `wordClass` for a NEW
@@ -100,13 +121,94 @@ enum VocabularyClasses {
     static var caregiverSelectable: [VocabularyClass] { all.filter(\.isCaregiverSelectable) }
 }
 
-/// Single source of truth for tile color. Replaces the duplicated
-/// `colorForWordClass` (TileImageView) and `wordClassColor` (SentenceTrayView)
-/// switches, which they now delegate to. Unknown classes fall back to gray.
-/// Future: an explicit per-tile color and per-word/page overrides resolve here
-/// ahead of the class default.
+/// Single source of truth for tile colour.
+///
+/// ## Colour means part of speech, not category
+///
+/// It used to mean semantic category — food red, animal brown, places blue — a
+/// palette this project invented (`VocabularyClasses` said so outright: "Colors
+/// mirror the legacy switch"). No clinical practice uses that axis, so a child
+/// moving between this board and their school board got no transfer at all.
+///
+/// It now means **part of speech**, in the Modified Fitzgerald Key that
+/// TouchChat, Snap Core First, LAMP, PODD and CoughDrop all speak and that SLPs
+/// teach against: yellow pronouns, green verbs, blue describing words, orange
+/// nouns, purple questions, red for no, pink social, neutral function words.
+///
+/// The cost, accepted deliberately: ~20 colours collapse to 8, food stops being
+/// red, and colour no longer separates food from places. That is the trade
+/// Fitzgerald makes on purpose — fewer colours, but ones a therapist teaches and
+/// a child carries elsewhere.
+///
+/// ## Why a tile, not a wordClass string
+///
+/// Resolution needs the tile: a stored correction lives on it, and the
+/// derivation needs its `wordClass`. See `TileModel.resolvedPartOfSpeech`.
 enum TileColorResolver {
-    static func color(for wordClass: String) -> Color {
-        VocabularyClasses.known(wordClass)?.color ?? .gray
+
+    /// Structural chrome — home, page links, next/previous page. Not a word, so
+    /// no word colour: it reads as furniture, which is what it is.
+    static let chrome = Color.gray
+
+    /// A tile that takes the board somewhere.
+    ///
+    /// **Deep royal blue, because Fitzgerald already owns blue for describing
+    /// words.** Navigation used plain `.blue`, which was fine while adjectives
+    /// were a hairline tint — and stopped being fine the moment a card was
+    /// filled: an adjective sat in a row of page links and could not be told
+    /// apart from them. Descriptors keep the lighter, more saturated blue the
+    /// key specifies (a therapist teaches *that* one); navigation moves down and
+    /// darker, which is also where this app's old `navigation` indigo sat.
+    static let navigation = Color(red: 0.16, green: 0.26, blue: 0.68)
+
+    /// Function words (prepositions, determiners, conjunctions) are *white* on a
+    /// published Fitzgerald board, which works because the card sits against a
+    /// coloured surround. Ours sit on the page, so white would be invisible; they
+    /// get a near-neutral that still draws an edge.
+    static let functionWord = Color(red: 0.62, green: 0.64, blue: 0.67)
+
+    /// The Modified Fitzgerald Key.
+    static func color(for partOfSpeech: PartOfSpeech?) -> Color {
+        guard let partOfSpeech else { return chrome }
+        switch partOfSpeech {
+        case .pronoun:     return Color(red: 0.98, green: 0.80, blue: 0.20)   // yellow
+        case .verb:        return Color(red: 0.30, green: 0.72, blue: 0.35)   // green
+        case .adjective:   return Color(red: 0.36, green: 0.70, blue: 0.96)   // light blue
+        case .noun:        return Color(red: 0.96, green: 0.60, blue: 0.16)   // orange
+        case .question:    return Color(red: 0.62, green: 0.40, blue: 0.82)   // purple
+        case .negation:    return Color(red: 0.90, green: 0.29, blue: 0.27)   // red
+        case .social,
+             .interjection: return Color(red: 0.95, green: 0.55, blue: 0.72)  // pink
+        case .preposition,
+             .determiner,
+             .conjunction: return functionWord
+        }
+    }
+
+    /// Colour for a tile — the entry point every surface should use.
+    ///
+    /// Optional because several surfaces render a placement whose word may not
+    /// resolve (a page built from a scene whose vocabulary did not travel). A
+    /// missing tile is chrome: no word, no word colour.
+    static func color(for tile: TileModel?) -> Color {
+        guard let tile else { return chrome }
+        return color(for: tile.resolvedPartOfSpeech)
+    }
+
+    /// Colour for a tray chip. The selection carries the part of speech it was
+    /// created with, so a chip always matches the tile it came from.
+    static func color(for selection: TileSelection) -> Color {
+        color(for: selection.partOfSpeech)
+    }
+
+    /// Degraded path for the few surfaces that hold a `wordClass` string and no
+    /// tile — a scene-import preview, a class swatch in a picker.
+    ///
+    /// **Prefer `color(for tile:)` wherever a tile exists.** Without a key there
+    /// is no stored answer and no table lookup, so this can only ask the
+    /// derivation, which is the weakest of the four layers. It is right for a
+    /// swatch that stands for a whole class; it is wrong for a word.
+    static func color(forWordClass wordClass: String) -> Color {
+        color(for: VocabularyClasses.known(wordClass)?.defaultPartOfSpeech)
     }
 }
