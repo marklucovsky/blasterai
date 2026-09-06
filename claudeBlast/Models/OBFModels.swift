@@ -79,6 +79,10 @@ struct OBFButton: Codable {
     var border_color: String?
     /// Set on a button that opens another board.
     var load_board: OBFLoadBoard?
+    /// Present on the board, not available to the child. Standard OBF, and the
+    /// exact meaning of `TileEntry.isConcealed`, so a concealed word arrives
+    /// concealed rather than either missing or available.
+    var hidden: Bool?
 
     // Ours, namespaced.
     var ext_blasterai_word_class: String?

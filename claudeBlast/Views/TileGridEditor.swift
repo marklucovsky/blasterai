@@ -38,6 +38,10 @@ struct TileGridEditor<Cell: View>: View {
     /// select mode.
     var showAddCell: Bool = false
     var onAdd: (() -> Void)? = nil
+    /// Optional second action on the Add cell — adding a deliberate gap.
+    /// When nil the cell stays a plain button, so callers that only add tiles
+    /// are unchanged.
+    var onAddSpace: (() -> Void)? = nil
 
     /// Non-select tap on a tile (e.g. open its properties). No-op if nil.
     var onTapTile: ((String) -> Void)? = nil
@@ -125,18 +129,43 @@ struct TileGridEditor<Cell: View>: View {
             }
     }
 
+    /// The face of the Add cell, shared by both of its forms.
+    private var addCellFace: some View {
+        VStack(spacing: 3) {
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(style: StrokeStyle(lineWidth: 2, dash: [6]))
+                .foregroundStyle(.tertiary)
+                .aspectRatio(1, contentMode: .fit)
+                .overlay(Image(systemName: "plus").font(.title2).foregroundStyle(.secondary))
+            Text("Add").font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
+        }
+    }
+
+    /// Add, in the grid where the caregiver is already looking.
+    ///
+    /// A plain button when tiles are the only thing to add, a menu when a gap is
+    /// also on offer — rather than a second cell, which would itself take up a
+    /// cell, or a toolbar icon, which is both far away and unreadable cold.
+    @ViewBuilder
     private func addCell(_ action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            VStack(spacing: 3) {
-                RoundedRectangle(cornerRadius: 10)
-                    .strokeBorder(style: StrokeStyle(lineWidth: 2, dash: [6]))
-                    .foregroundStyle(.tertiary)
-                    .aspectRatio(1, contentMode: .fit)
-                    .overlay(Image(systemName: "plus").font(.title2).foregroundStyle(.secondary))
-                Text("Add").font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
+        Group {
+            if let onAddSpace {
+                Menu {
+                    Button { action() } label: {
+                        Label("Add Tiles", systemImage: "square.grid.2x2")
+                    }
+                    Button { onAddSpace() } label: {
+                        Label("Add Space", systemImage: "square.dashed")
+                    }
+                } label: {
+                    addCellFace
+                }
+                .buttonStyle(.plain)
+            } else {
+                Button(action: action) { addCellFace }
+                    .buttonStyle(.plain)
             }
         }
-        .buttonStyle(.plain)
         .dropDestination(for: String.self) { items, _ in   // drop on "+" → move to front
             guard let moved = items.first else { return false }
             impact(.light)

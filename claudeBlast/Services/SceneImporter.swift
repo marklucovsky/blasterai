@@ -255,6 +255,12 @@ enum SceneImporter {
         var skippedKeys: [String] = []
         let pages: [PageSpec] = exportable.pages.map { exportPage in
             let tiles: [TileEntry] = exportPage.tiles.compactMap { exportTile in
+                // A gap names no word, so it is neither looked up nor reported
+                // as skipped. Its incoming key is kept: the sender already made
+                // it unique within the page, which is all identity needs.
+                if TileEntry(key: exportTile.key).isSpacer {
+                    return TileEntry(key: exportTile.key, link: "", isAudible: false)
+                }
                 guard tileLookup[exportTile.key] != nil else {
                     if !skippedKeys.contains(exportTile.key) {
                         skippedKeys.append(exportTile.key)
@@ -264,7 +270,8 @@ enum SceneImporter {
                 return TileEntry(
                     key: exportTile.key,
                     link: exportTile.link,
-                    isAudible: exportTile.isAudible
+                    isAudible: exportTile.isAudible,
+                    isConcealed: exportTile.isConcealed ?? false
                 )
             }
             return PageSpec(key: exportPage.key, tiles: tiles)

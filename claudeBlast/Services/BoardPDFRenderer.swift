@@ -353,6 +353,10 @@ enum BoardPagination {
         return pages.map { page in
             var copy = page
             copy.tiles = page.tiles.filter { entry in
+                // A gap survives every filter. Dropping it would close the
+                // hole and shift every tile after it, so a filtered sheet
+                // would no longer match the board it was printed from.
+                if entry.isEmptyCell { return true }
                 guard let tile = tileLookup[entry.key] else { return false }
                 if !filter.wordClasses.isEmpty, !filter.wordClasses.contains(tile.wordClass) { return false }
                 if filter.audibleOnly, !entry.isAudible { return false }
@@ -593,6 +597,28 @@ enum BoardPDFRenderer {
         let card = cell
         let tile = tileLookup[entry.key]
         let navigates = !entry.link.isEmpty
+
+        // An empty cell on paper is the point, not an omission.
+        //
+        // A gap keeps its place on the printed sheet for the same reason it does
+        // on the screen: the laminated board and the iPad have to be the same
+        // board, or the child learns two layouts. Drawn before anything else so
+        // the cut guide still lands — a caregiver cutting up a sheet needs the
+        // blank cell as much as the full ones.
+        //
+        // It also has to happen here rather than by filtering the entry out
+        // upstream, because removing it would close the gap and reflow the sheet.
+        if entry.isEmptyCell {
+            if options.cutLines {
+                let guide = UIBezierPath(rect: cell.insetBy(dx: -SheetLayout.gutter / 2,
+                                                           dy: -SheetLayout.gutter / 2))
+                guide.setLineDash([4, 3], count: 2, phase: 0)
+                guide.lineWidth = 0.5
+                UIColor.lightGray.setStroke()
+                guide.stroke()
+            }
+            return
+        }
 
         if options.cutLines {
             let path = UIBezierPath(rect: cell.insetBy(dx: -SheetLayout.gutter / 2,

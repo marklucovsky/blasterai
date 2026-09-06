@@ -384,7 +384,17 @@ struct TileGridView: View {
             // on page 4 of a long board as on page 1. `max(1,)` guards a
             // pathologically small grid.
             let vocabPerPage = max(1, spec.perPage - 1)
-            let visible = page.tiles.filter { lookup[$0.key]?.isHiddenFromChild != true }
+            // Two different hides, and only one of them removes a cell.
+            //
+            // `isHiddenFromChild` (retired / needs review) is the word-level
+            // safety hide: the tile leaves the board everywhere and the grid
+            // reflows around it. `TileEntry.isConcealed` and spacers are
+            // placement-level and must NOT be filtered here — they keep their
+            // cell and draw empty, which is the entire point. Filtering them
+            // would reflow the board and move every word the child had learned.
+            let visible = page.tiles.filter { entry in
+                entry.isEmptyCell || lookup[entry.key]?.isHiddenFromChild != true
+            }
             // ALWAYS at least one chunk, even with nothing to put in it.
             //
             // `chunked(into:)` returns no chunks for an empty page, and Home is
@@ -552,7 +562,21 @@ struct TileGridView: View {
 
     @ViewBuilder
     private func tileCellView(for entry: TileEntry, labelFontSize: CGFloat) -> some View {
-        if let tile = tileLookup[entry.key] {
+        if entry.isEmptyCell {
+            // A concealed word and a spacer look identical to the child, and
+            // should: both are "nothing is here". They differ only in what the
+            // caregiver sees in the editor and in what the coverage report
+            // counts — a concealed word is on the board but unavailable, and a
+            // spacer was never a word at all.
+            //
+            // It keeps its full cell. That is the whole feature: the board does
+            // not reflow, so every other word stays exactly where the child
+            // learned it.
+            Color.clear
+                .aspectRatio(1, contentMode: .fit)
+                .frame(maxWidth: .infinity)
+                .accessibilityHidden(true)
+        } else if let tile = tileLookup[entry.key] {
             TileView(
                 tile: tile,
                 link: entry.link,

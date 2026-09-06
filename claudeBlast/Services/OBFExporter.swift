@@ -103,6 +103,14 @@ enum OBFExporter {
             }
 
             for entry in pageEntries {
+                // A gap is a gap in the grid, not a button that happens to be
+                // empty. OBF says so natively: `grid.order` takes null for a
+                // cell with nothing in it, which is exactly what a spacer is.
+                // No button, no image, no id — just the slot.
+                if entry.isSpacer {
+                    order.append(nil)
+                    continue
+                }
                 guard let tile = tileLookup[entry.key] else { continue }
                 let buttonID = entry.key
 
@@ -148,6 +156,11 @@ enum OBFExporter {
                     background_color: rgbString(accent.opacity(1)),
                     border_color: rgbString(accent),
                     load_board: loadBoard,
+                    // Concealed travels as OBF's own `hidden`. The word is still
+                    // on the board and still in its place — which is the thing a
+                    // receiving app needs to know, and the thing it would lose if
+                    // we dropped the button instead.
+                    hidden: entry.isConcealed ? true : nil,
                     ext_blasterai_word_class: tile.wordClass,
                     ext_blasterai_tile_key: tile.key))
                 order.append(buttonID)
