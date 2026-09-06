@@ -79,10 +79,11 @@ struct OBFButton: Codable {
     var border_color: String?
     /// Set on a button that opens another board.
     var load_board: OBFLoadBoard?
-    /// Present on the board, not available to the child. Standard OBF, and the
-    /// exact meaning of `TileEntry.isConcealed`, so a concealed word arrives
-    /// concealed rather than either missing or available.
-    var hidden: Bool?
+
+    // No `hidden`. OBF defines it and it is the faithful rendering of
+    // `TileEntry.isConcealed`, but Cboard ignores it on a button that also
+    // carries `load_board` and shows the word anyway — so a concealed word is
+    // exported as an empty grid slot instead. See the note in `OBFExporter`.
 
     // Ours, namespaced.
     var ext_blasterai_word_class: String?
