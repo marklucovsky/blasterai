@@ -144,9 +144,14 @@ enum OBFExporter {
                         // `path` is what Cboard matches on, and it must equal the
                         // zip entry key exactly. `id` is for readers that resolve
                         // by id instead.
+                        // The destination's own name, not one derived from its
+                        // key — a renamed page should read the same on the link
+                        // as on the board it opens.
+                        let targetTitle = scene.pages.first { $0.key == target }?.title
+                            ?? PageNaming.displayName(target)
                         loadBoard = OBFLoadBoard(id: boardID(for: target, in: scene),
                                                  path: "boards/\(target).\(OBFFormat.boardExtension)",
-                                                 name: PageNaming.displayName(target))
+                                                 name: targetTitle)
                     }
                 }
 
@@ -193,7 +198,7 @@ enum OBFExporter {
 
             return OBFBoard(
                 id: boardID(for: page.key, in: scene),
-                name: PageNaming.displayName(page.key),
+                name: page.title,
                 description_html: scene.descriptionText.isEmpty ? nil : scene.descriptionText,
                 buttons: buttons,
                 grid: OBFGrid(rows: shape.rows, columns: shape.columns, order: rows),

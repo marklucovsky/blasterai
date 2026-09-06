@@ -45,6 +45,9 @@ struct PageEditorView: View {
     /// Page-level share. A page leaves as a vocabulary pack — see `ShareBoardSheet`.
     @State private var isSharingPage = false
 
+    /// Rename. Nil when closed; the draft name while open.
+    @State private var renameDraft: String?
+
     private var tileLookup: [String: TileModel] {
         Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
     }
@@ -99,6 +102,11 @@ struct PageEditorView: View {
             }
             .buttonStyle(.plain)
             Spacer()
+            Button { renameDraft = page?.displayName ?? "" } label: {
+                Label("Rename", systemImage: "pencil")
+                    .font(.subheadline.weight(.medium))
+            }
+            .buttonStyle(.plain)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
@@ -168,9 +176,17 @@ struct PageEditorView: View {
                 ContentUnavailableView("Page not found", systemImage: "questionmark.folder")
             }
         }
-        .navigationTitle(pageKey)
+        .navigationTitle(page?.title ?? pageKey)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { pageEditorToolbar }
+        .sheet(isPresented: Binding(get: { renameDraft != nil },
+                                    set: { if !$0 { renameDraft = nil } })) {
+            PageRenameSheet(
+                currentTitle: page?.title ?? pageKey,
+                pageKey: pageKey,
+                draft: Binding(get: { renameDraft ?? "" }, set: { renameDraft = $0 }),
+                onSave: { rename(to: $0) })
+        }
         .sheet(isPresented: $isSharingPage) {
             if let page {
                 ShareBoardSheet(subject: .page(page, in: scene))
@@ -293,6 +309,38 @@ struct PageEditorView: View {
                 }
             }
         }
+    }
+
+    /// Rename this page.
+    ///
+    /// **Sets `displayName`; the key never moves.** Everything that points at a
+    /// page points at its key — links, `homePageKey`, the minted `page_<key>`
+    /// tile, TileScript navigation, `.obf` filenames, and `LoggedUtterance`
+    /// history that must stay true to what was actually pressed. A rename that
+    /// touched the key would either break all of those or silently rewrite
+    /// history.
+    ///
+    /// Empty restores the derived name, so a rename is always undoable without a
+    /// separate reset.
+    ///
+    /// **The page-link tile's label follows.** `page_<key>` is what the child
+    /// actually reads on the board; leaving it behind would rename the page
+    /// everywhere the caregiver looks and nowhere the child does. Note the tile
+    /// is keyed from the page key alone, so two scenes with a page keyed `farm`
+    /// share it and both labels move together — rare, and the alternative (a
+    /// board still showing the old word) is the worse surprise.
+    private func rename(to newName: String) {
+        guard let idx = pageIndex else { return }
+        let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
+        var pages = scene.pages
+        pages[idx].displayName = trimmed
+        scene.pages = pages
+
+        if let link = tileLookup[PageLink.key(forPage: pageKey)] {
+            link.displayName = trimmed.isEmpty ? PageNaming.displayName(pageKey) : trimmed
+        }
+        try? modelContext.save()
+        renameDraft = nil
     }
 
     /// Add a deliberate gap at the front of the page.
@@ -630,7 +678,7 @@ struct TilePropertiesSheet: View {
                     Picker("Link to Page", selection: entryBinding.link) {
                         Text("None").tag("")
                         ForEach(scene.pages, id: \.key) { page in
-                            Text(page.key).tag(page.key)
+                            Text(page.title).tag(page.key)
                         }
                     }
                     let currentLink = entry?.link ?? ""
@@ -753,5 +801,61 @@ struct PartOfSpeechPickerList: View {
                 }
             }
         }
+    }
+}
+
+/// Rename a page.
+///
+/// Shows the key, because a caregiver who has been living with `play_activities`
+/// deserves to know it is still there and still what everything points at — the
+/// name is a label, not a move.
+struct PageRenameSheet: View {
+    let currentTitle: String
+    let pageKey: String
+    @Binding var draft: String
+    let onSave: (String) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Page name", text: $draft, prompt: Text(currentTitle))
+                        .focused($focused)
+                        .submitLabel(.done)
+                        .onSubmit { save() }
+                } footer: {
+                    Text("Leave it empty to go back to \(PageNaming.displayName(pageKey)).")
+                }
+
+                Section {
+                    LabeledContent("Key", value: pageKey)
+                        .font(.caption.monospaced())
+                } footer: {
+                    Text("The key never changes. Links to this page, scripts, and your "
+                         + "activity history all point at it, so renaming is safe — it "
+                         + "only changes what you see.")
+                }
+            }
+            .navigationTitle("Rename Page")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { save() }
+                }
+            }
+            .onAppear { focused = true }
+        }
+        .presentationDetents([.medium])
+    }
+
+    private func save() {
+        onSave(draft)
+        dismiss()
     }
 }

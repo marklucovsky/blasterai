@@ -219,7 +219,7 @@ struct SceneEditorView: View {
                 if !scene.pages.isEmpty {
                     Picker("Home Page", selection: $scene.homePageKey) {
                         ForEach(scene.pages, id: \.key) { page in
-                            Text(page.key).tag(page.key)
+                            Text(page.title).tag(page.key)
                         }
                     }
                 }
@@ -244,7 +244,7 @@ struct SceneEditorView: View {
                     NavigationLink(destination: PageEditorView(scene: scene, pageKey: page.key)) {
                         VStack(alignment: .leading, spacing: 2) {
                             HStack(spacing: 6) {
-                                Text(page.key)
+                                Text(page.title)
                                     .font(.headline)
                                 if scene.homePageKey == page.key {
                                     Text("HOME")
@@ -821,7 +821,7 @@ private struct PageGeneratorSheet: View {
                                         HStack(spacing: 6) {
                                             Image(systemName: "doc.on.doc")
                                                 .font(.caption).foregroundStyle(.tint)
-                                            Text(page.key).foregroundStyle(.primary)
+                                            Text(page.title).foregroundStyle(.primary)
                                             if page.key == src.homePageKey {
                                                 Label("Home", systemImage: "house.fill")
                                                     .labelStyle(.titleAndIcon)
