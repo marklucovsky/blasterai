@@ -154,6 +154,22 @@ final class TileModel: Identifiable {
         wordClass == PageLink.wordClass || wordClass == "navigation"
     }
 
+    /// The key this tile's canonical art is stored and looked up under.
+    ///
+    /// **Art belongs to the picture, not to the tile.** `bundleImage` is where a
+    /// tile's picture lives, and when it differs from `key` it is because several
+    /// tiles deliberately share one picture — a page cover aliasing
+    /// `packcover_farm`, a pronoun borrowing `he`. Art keyed to the picture is
+    /// therefore shared by everything that points at it, which is the intent.
+    ///
+    /// This exists because writes and reads had drifted apart. Every read went
+    /// through the alias (`hasArt(for: tile.bundleImage)`), every
+    /// `TileArtVariant.upsert` went through `tile.key`, and for an aliased tile
+    /// those are different strings — so generated art landed somewhere nothing
+    /// ever looked. A page cover reported "needs art" forever, and generating
+    /// again just wrote another unread row.
+    var artKey: String { bundleImage.isEmpty ? key : bundleImage }
+
     /// True when a caregiver photo override is present. Prefer this over
     /// comparing `userImageData` to nil — it is no longer optional.
     var hasUserImage: Bool { !userImageData.isEmpty }

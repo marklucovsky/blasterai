@@ -194,9 +194,15 @@ enum SceneImporter {
                 // Fill-if-absent. The recipient's own art for a set always wins;
                 // there is no consent prompt for canonical art because nothing is
                 // ever taken away.
-                let slot = "\(incoming.key)|\(entry.imageSet)"
+                // Keyed by the picture. A page cover arrives as `page_farm`
+                // aliasing `packcover_farm`; storing under `page_farm` put the
+                // sender's art where the recipient never looks, so a shared
+                // board reported the same covers missing art forever.
+                let artKey = tileLookup[incoming.key]?.artKey
+                    ?? (incoming.bundleImage?.isEmpty == false ? incoming.bundleImage! : incoming.key)
+                let slot = "\(artKey)|\(entry.imageSet)"
                 guard !heldVariants.contains(slot) else { continue }
-                TileArtVariant.upsert(tileKey: incoming.key,
+                TileArtVariant.upsert(tileKey: artKey,
                                       imageSet: ImageSetID(entry.imageSet),
                                       imageData: decoded,
                                       context: context)

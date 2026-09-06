@@ -254,10 +254,12 @@ enum TilePhotoCommit {
                              resolver: TileImageResolver) -> String? {
         do {
             let processed = try TilePhotoProcessor.process(image)
-            TileArtVariant.upsert(tileKey: tile.key, imageSet: imageSet,
+            // `artKey`, not `key`: reads resolve the alias, so a write that did
+            // not would store an aliased tile's art where nothing looks.
+            TileArtVariant.upsert(tileKey: tile.artKey, imageSet: imageSet,
                                   imageData: processed, context: context)
             try context.save()
-            resolver.invalidateVariants(for: tile.key)
+            resolver.invalidateVariants(for: tile.artKey)
             return nil
         } catch let err as TilePhotoProcessor.ProcessError {
             return err.errorDescription
