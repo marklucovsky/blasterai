@@ -52,6 +52,7 @@ struct TileGridEditor<Cell: View>: View {
     @State private var dropTarget: String? = nil
     /// When set, the next tap on a non-selected tile drops the selection before/
     /// after it (collect-to-anchor). Entered from the Move menu.
+    @State private var showMixedConcealHelp = false
     @State private var anchorMode: AnchorMove?
     enum AnchorMove { case before, after }
 
@@ -204,6 +205,8 @@ struct TileGridEditor<Cell: View>: View {
             } label: { Label("Move", systemImage: "arrow.up.arrow.down") }
                 .disabled(selectedKeys.isEmpty)
 
+            concealControl
+
             Button(role: .destructive) { removeKeys() } label: {
                 Label("Delete", systemImage: "trash")
             }
@@ -212,6 +215,89 @@ struct TileGridEditor<Cell: View>: View {
         .padding(.horizontal)
         .padding(.vertical, 10)
         .background(.bar)
+    }
+
+    // MARK: - Bulk conceal
+
+    /// What a bulk conceal action would do to the current selection.
+    ///
+    /// **A toggle over a mixed selection has no honest answer.** "Conceal" would
+    /// hide the already-hidden and change nothing for them; "Reveal" the
+    /// converse; a flip-each-one would leave the caregiver with the same mixture
+    /// inverted, which is nobody's intent. So the control names the single thing
+    /// it will do, and refuses when there is no single thing.
+    private enum ConcealAction {
+        case conceal, reveal, mixed
+
+        var label: String {
+            switch self {
+            case .conceal, .mixed: return "Conceal"
+            case .reveal: return "Reveal"
+            }
+        }
+        var icon: String {
+            switch self {
+            case .conceal, .mixed: return "eye.slash"
+            case .reveal: return "eye"
+            }
+        }
+    }
+
+    private var concealAction: ConcealAction {
+        let selected = tiles.filter { selectedKeys.contains($0.key) }
+        guard !selected.isEmpty else { return .conceal }
+        if selected.allSatisfy({ $0.isConcealed }) { return .reveal }
+        if selected.allSatisfy({ !$0.isConcealed }) { return .conceal }
+        return .mixed
+    }
+
+    @ViewBuilder
+    private var concealControl: some View {
+        let action = concealAction
+        HStack(spacing: 2) {
+            Button {
+                setConcealed(action == .conceal)
+            } label: {
+                Label(action.label, systemImage: action.icon)
+            }
+            .disabled(selectedKeys.isEmpty || action == .mixed)
+
+            // The explanation only appears when the control is refused, so it
+            // never adds noise to the working case — and a disabled control with
+            // no reason is the thing that makes people think an app is broken.
+            if action == .mixed {
+                Button {
+                    showMixedConcealHelp = true
+                } label: {
+                    Image(systemName: "questionmark.circle")
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .accessibilityLabel("Why is Conceal unavailable?")
+            }
+        }
+        .alert("Mixed selection", isPresented: $showMixedConcealHelp) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Some of the selected tiles are concealed and some are not, so "
+                 + "Conceal and Reveal would each do something different to each "
+                 + "half.\n\nSelect only concealed tiles to reveal them, or only "
+                 + "visible ones to conceal them.")
+        }
+    }
+
+    /// Conceal or reveal every selected tile, in one undoable step.
+    ///
+    /// Spacers are skipped: a gap has no word to hide, and concealing one would
+    /// be a no-op stored as if it meant something.
+    private func setConcealed(_ concealed: Bool) {
+        var next = tiles
+        for index in next.indices
+        where selectedKeys.contains(next[index].key) && !next[index].isSpacer {
+            next[index].isConcealed = concealed
+        }
+        tiles = next
+        impact(.light)
     }
 
     /// Shown while picking a drop anchor for the selection (move-before/after).

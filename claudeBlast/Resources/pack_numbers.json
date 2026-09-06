@@ -1,0 +1,64 @@
+{
+  "id": "packs.blasterai.app/numbers",
+  "slug": "numbers",
+  "displayName": "Numbers",
+  "version": "1.0.0",
+  "icon": "numbers",
+  "words": [
+    {
+      "key": "number_0",
+      "wordClass": "number",
+      "displayName": "0"
+    },
+    {
+      "key": "number_1",
+      "wordClass": "number",
+      "displayName": "1"
+    },
+    {
+      "key": "number_2",
+      "wordClass": "number",
+      "displayName": "2"
+    },
+    {
+      "key": "number_3",
+      "wordClass": "number",
+      "displayName": "3"
+    },
+    {
+      "key": "number_4",
+      "wordClass": "number",
+      "displayName": "4"
+    },
+    {
+      "key": "number_5",
+      "wordClass": "number",
+      "displayName": "5"
+    },
+    {
+      "key": "number_6",
+      "wordClass": "number",
+      "displayName": "6"
+    },
+    {
+      "key": "number_7",
+      "wordClass": "number",
+      "displayName": "7"
+    },
+    {
+      "key": "number_8",
+      "wordClass": "number",
+      "displayName": "8"
+    },
+    {
+      "key": "number_9",
+      "wordClass": "number",
+      "displayName": "9"
+    },
+    {
+      "key": "number_10",
+      "wordClass": "number",
+      "displayName": "10"
+    }
+  ]
+}
