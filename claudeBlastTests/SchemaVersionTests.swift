@@ -20,6 +20,20 @@ struct SchemaVersionTests {
         Set(models.map { String(describing: $0) })
     }
 
+    /// Every synced model must be exercised by `CloudKitSchemaExerciser`.
+    ///
+    /// A record type CloudKit has never been asked to write does not exist in
+    /// the Development schema, and `SchemaVersions` says what that costs after
+    /// promotion: Production is read-only, so the first device to write an
+    /// unmaterialized type fails to sync forever. We shipped four of eight for
+    /// a while without noticing.
+    ///
+    /// So adding a synced model and forgetting to exercise it fails here, not
+    /// at the promotion ceremony.
+    @Test func everySyncedModelIsExercised() {
+        #expect(Set(CloudKitSchemaExerciser.exercised) == names(BlasterSchemaV1.syncedModels))
+    }
+
     @Test func versionIdentifierIsV1() {
         #expect(BlasterSchemaV1.versionIdentifier == Schema.Version(1, 0, 0))
     }

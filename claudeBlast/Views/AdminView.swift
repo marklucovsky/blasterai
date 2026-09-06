@@ -67,6 +67,10 @@ struct AdminView: View {
     /// because the tab lives in an extension and cannot hold its own state.
     @State var showUsageReport = false
     @State var isResetting = false
+    #if DEBUG
+    /// Outcome of the last CloudKit schema exercise — see CloudKitSchemaExerciser.
+    @State var schemaProbeResult: String?
+    #endif
     #endif
 
     @State var navigateToNewScene: BlasterScene?
