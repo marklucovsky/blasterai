@@ -303,11 +303,15 @@ struct BoardSheet: Equatable {
     let sheetCount: Int
     let tiles: [TileEntry]
 
+    /// The page's name as the caregiver sees it. Empty falls back to the key's
+    /// derived form, which is what every page had before rename existed.
+    var pageTitle: String = ""
+
     /// "Describe · 3 of 12" — numbered **within** the board page, never as a
     /// running count across the scene, so one sheet can be reprinted without
     /// renumbering the set.
     var caption: String {
-        let name = PageNaming.displayName(pageKey)
+        let name = pageTitle.isEmpty ? PageNaming.displayName(pageKey) : pageTitle
         return sheetCount > 1 ? "\(name) · \(sheetIndex) of \(sheetCount)" : name
     }
 }
@@ -338,7 +342,8 @@ enum BoardPagination {
                 sheets.append(BoardSheet(pageKey: page.key,
                                          sheetIndex: offset + 1,
                                          sheetCount: chunks.count,
-                                         tiles: chunk))
+                                         tiles: chunk,
+                                         pageTitle: page.title))
             }
         }
         return sheets

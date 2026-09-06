@@ -73,7 +73,10 @@ enum SceneExporter {
                     isConcealed: entry.isConcealed ? true : nil
                 )
             }
-            return ExportablePage(key: page.key, tiles: pageTiles)
+            // A rename has to travel, or sharing a board silently reverts
+            // every page name the caregiver chose.
+            return ExportablePage(key: page.key, tiles: pageTiles,
+                                  displayName: page.hasCustomName ? page.displayName : nil)
         }
 
         return ExportableScene(

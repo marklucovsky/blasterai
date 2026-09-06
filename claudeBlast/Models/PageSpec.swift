@@ -20,8 +20,58 @@ import Foundation
 /// a page keyed "home" with no global collision.
 struct PageSpec: Codable, Hashable, Identifiable {
     var id: String { key }
+
+    /// Scene-scoped identity. **Never changes**, including on rename.
+    ///
+    /// Far too much points at it for it to be editable: every `TileEntry.link`
+    /// aiming here, `BlasterScene.homePageKey`, the page-link tile minted as
+    /// `page_<key>`, TileScript navigation steps, `.obf` filenames on export,
+    /// and `LoggedUtterance.pageKeys` — which is an immutable historical record
+    /// and must never be rewritten to match a later rename. Renaming edits
+    /// `displayName` instead, exactly as `BlasterScene` separates `name` from
+    /// `systemSceneKey`.
     var key: String
+
+    /// What a caregiver calls this page. **Empty means "derive from the key"**,
+    /// which is the state every page starts in.
+    ///
+    /// Unique keys, non-unique names — deliberately. Two pages may both be
+    /// called "Food"; the key keeps them apart, and forbidding it would only
+    /// invite "Food " with a trailing space.
+    ///
+    /// Exists because people name pages before they know what a page is. By the
+    /// time a caregiver understands the model well enough to want better names,
+    /// the board is full of the guesses they made on day one — and until now
+    /// there was no way to change them.
+    var displayName: String
+
     var tiles: [TileEntry]
+
+    init(key: String, displayName: String = "", tiles: [TileEntry]) {
+        self.key = key
+        self.displayName = displayName
+        self.tiles = tiles
+    }
+
+    /// The name to show. The single resolution point — no surface should reach
+    /// for `key` or `displayName` directly to label a page.
+    var title: String {
+        displayName.isEmpty ? PageNaming.displayName(key) : displayName
+    }
+
+    /// True when the caregiver has named this page rather than inheriting the
+    /// key's title-cased form.
+    var hasCustomName: Bool { !displayName.isEmpty }
+
+    /// Hand-written for the same reason `TileEntry`'s is: Swift's synthesized
+    /// decoder calls `decode` for a non-optional and throws on a missing key, so
+    /// a scene file written before rename existed would fail to import.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        key = try container.decode(String.self, forKey: .key)
+        displayName = try container.decodeIfPresent(String.self, forKey: .displayName) ?? ""
+        tiles = try container.decodeIfPresent([TileEntry].self, forKey: .tiles) ?? []
+    }
 }
 
 /// Reserved `TileEntry` keys and links. Angle brackets are not legal in a

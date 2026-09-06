@@ -145,6 +145,10 @@ struct ExportablePageTile: Codable {
 struct ExportablePage: Codable {
     let key: String
     let tiles: [ExportablePageTile]
+    /// The caregiver's name for this page, when they have set one. Optional so a
+    /// file written before rename existed decodes as nil, and absent on the wire
+    /// for a page still using its derived name.
+    var displayName: String? = nil
 }
 
 struct ExportableScene: Codable {

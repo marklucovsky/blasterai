@@ -280,7 +280,9 @@ enum SceneImporter {
                     isConcealed: exportTile.isConcealed ?? false
                 )
             }
-            return PageSpec(key: exportPage.key, tiles: tiles)
+            return PageSpec(key: exportPage.key,
+                            displayName: exportPage.displayName ?? "",
+                            tiles: tiles)
         }
 
         // Decentralized identity carried in the file (absent on legacy exports).
