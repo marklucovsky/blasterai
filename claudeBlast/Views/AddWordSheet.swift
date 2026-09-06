@@ -307,13 +307,17 @@ struct AddWordSheet: View {
         // No longer a failable lookup: any id is storable, because the art was
         // generated for that set and a build that doesn't recognise the id must
         // not throw the image away.
+        // Keyed by the picture (`artKey`), matching every read. A freshly created
+        // word has no alias so this is its own key today — stated explicitly so
+        // the rule does not have to be rediscovered if that ever changes.
+        let artKey = tile.artKey
         for (setRaw, data) in generatedArt {
-            TileArtVariant.upsert(tileKey: finalKey, imageSet: ImageSetID(setRaw),
+            TileArtVariant.upsert(tileKey: artKey, imageSet: ImageSetID(setRaw),
                                   imageData: data, context: modelContext)
         }
         try? modelContext.save()
         if processedPhoto != nil { resolver.invalidatePhoto(for: finalKey) }
-        if !generatedArt.isEmpty { resolver.invalidateVariants(for: finalKey) }
+        if !generatedArt.isEmpty { resolver.invalidateVariants(for: artKey) }
         onCommit(tile)
         dismiss()
     }

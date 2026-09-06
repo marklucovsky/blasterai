@@ -212,9 +212,12 @@ enum PackImporter {
                     if !oversizedImages.contains(word.key) { oversizedImages.append(word.key) }
                     continue
                 }
-                let slot = "\(word.key)|\(entry.imageSet)"
+                // Keyed by the picture, so a word that aliases another's art
+                // fills the slot the reader will look in.
+                let artKey = tile.artKey
+                let slot = "\(artKey)|\(entry.imageSet)"
                 guard !heldVariants.contains(slot) else { continue }
-                TileArtVariant.upsert(tileKey: word.key,
+                TileArtVariant.upsert(tileKey: artKey,
                                       imageSet: ImageSetID(entry.imageSet),
                                       imageData: decoded,
                                       context: context)

@@ -128,10 +128,18 @@ struct ExportableTile: Codable {
     }
 }
 
+/// One placement on a page, as it travels.
+///
+/// A spacer rides in here too — `key` carries the reserved `<spacer>#…` token
+/// and no `tiles` entry describes it, because there is no word to describe.
 struct ExportablePageTile: Codable {
     let key: String
     let isAudible: Bool
     let link: String
+    /// Concealed on this page. Optional so a file written before conceal
+    /// existed decodes as nil rather than throwing, and absent on the wire for
+    /// the overwhelming majority of tiles that are not concealed.
+    var isConcealed: Bool? = nil
 }
 
 struct ExportablePage: Codable {

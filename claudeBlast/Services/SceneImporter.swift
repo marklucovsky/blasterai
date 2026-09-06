@@ -194,9 +194,15 @@ enum SceneImporter {
                 // Fill-if-absent. The recipient's own art for a set always wins;
                 // there is no consent prompt for canonical art because nothing is
                 // ever taken away.
-                let slot = "\(incoming.key)|\(entry.imageSet)"
+                // Keyed by the picture. A page cover arrives as `page_farm`
+                // aliasing `packcover_farm`; storing under `page_farm` put the
+                // sender's art where the recipient never looks, so a shared
+                // board reported the same covers missing art forever.
+                let artKey = tileLookup[incoming.key]?.artKey
+                    ?? (incoming.bundleImage?.isEmpty == false ? incoming.bundleImage! : incoming.key)
+                let slot = "\(artKey)|\(entry.imageSet)"
                 guard !heldVariants.contains(slot) else { continue }
-                TileArtVariant.upsert(tileKey: incoming.key,
+                TileArtVariant.upsert(tileKey: artKey,
                                       imageSet: ImageSetID(entry.imageSet),
                                       imageData: decoded,
                                       context: context)
@@ -255,6 +261,12 @@ enum SceneImporter {
         var skippedKeys: [String] = []
         let pages: [PageSpec] = exportable.pages.map { exportPage in
             let tiles: [TileEntry] = exportPage.tiles.compactMap { exportTile in
+                // A gap names no word, so it is neither looked up nor reported
+                // as skipped. Its incoming key is kept: the sender already made
+                // it unique within the page, which is all identity needs.
+                if TileEntry(key: exportTile.key).isSpacer {
+                    return TileEntry(key: exportTile.key, link: "", isAudible: false)
+                }
                 guard tileLookup[exportTile.key] != nil else {
                     if !skippedKeys.contains(exportTile.key) {
                         skippedKeys.append(exportTile.key)
@@ -264,7 +276,8 @@ enum SceneImporter {
                 return TileEntry(
                     key: exportTile.key,
                     link: exportTile.link,
-                    isAudible: exportTile.isAudible
+                    isAudible: exportTile.isAudible,
+                    isConcealed: exportTile.isConcealed ?? false
                 )
             }
             return PageSpec(key: exportPage.key, tiles: tiles)

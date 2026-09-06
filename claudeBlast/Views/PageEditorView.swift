@@ -139,10 +139,22 @@ struct PageEditorView: View {
                         wordClassOf: { tileLookup[$0]?.wordClass },
                         showAddCell: true,
                         onAdd: { openPicker() },
+                        onAddSpace: { addSpacer() },
                         onTapTile: { editingTileKey = $0 },
                         cell: { entry in
-                            if let tile = tileLookup[entry.key] {
-                                PageTileCell(tile: tile, link: entry.link)
+                            // The editor shows what the child cannot.
+                            //
+                            // On the board a concealed word draws as empty
+                            // space; here it has to stay visible and legible, or
+                            // the caregiver is arranging a page with invisible
+                            // contents and cannot find the word to reveal it
+                            // again. Same picture, dimmed, with a badge saying
+                            // why — the exact inverse of the child's view.
+                            if entry.isSpacer {
+                                SpacerCell()
+                            } else if let tile = tileLookup[entry.key] {
+                                PageTileCell(tile: tile, link: entry.link,
+                                             isConcealed: entry.isConcealed)
                                     .overlay(alignment: .bottomTrailing) {
                                         TileReviewBadge(tile: tile,
                                                         onKeep: { keepReview(tile) },
@@ -251,7 +263,6 @@ struct PageEditorView: View {
                         }
                         .disabled(redoStack.isEmpty)
                         if hasTiles {
-                            Divider()
                             Button { isSelecting = true } label: {
                                 Label("Select Tiles", systemImage: "checkmark.circle")
                             }
@@ -282,6 +293,21 @@ struct PageEditorView: View {
                 }
             }
         }
+    }
+
+    /// Add a deliberate gap at the front of the page.
+    ///
+    /// **Slot 0, exactly where a newly picked tile lands** (`TilePickerView`
+    /// inserts at index 0). Anything added from the Add cell appears right next
+    /// to it, on screen without scrolling however long the page is — and from
+    /// there the caregiver drags it where it belongs, using the reorder gesture
+    /// they already know. Appending would have put a new gap off the bottom of a
+    /// long page, where the one thing a blank cell cannot do is announce itself.
+    ///
+    /// Goes through `tilesBinding`, so it records one undo step and saves like
+    /// every other page mutation.
+    private func addSpacer() {
+        tilesBinding.wrappedValue = [TileEntry.spacer()] + (page?.tiles ?? [])
     }
 
     /// Whether the page has anything on it — gates Select and Share.
@@ -323,9 +349,31 @@ struct PageEditorView: View {
 
 /// A single tile in the editor grid, mirroring the child's board cell, with a
 /// small link badge for navigation tiles.
+/// A deliberate gap, as the caregiver sees it.
+///
+/// The child sees nothing here at all. The editor has to show *something*, or a
+/// spacer is indistinguishable from the end of the page and cannot be selected,
+/// moved or removed.
+struct SpacerCell: View {
+    var body: some View {
+        VStack(spacing: 3) {
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
+                .foregroundStyle(.tertiary)
+                .aspectRatio(1, contentMode: .fit)
+            Text("space")
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(.tertiary)
+                .frame(maxWidth: .infinity)
+        }
+    }
+}
+
 struct PageTileCell: View {
     let tile: TileModel
     var link: String = ""
+    /// Concealed on this page: still drawn, deliberately muted, and badged.
+    var isConcealed: Bool = false
 
     /// Same rule as the board: part of speech, or blue for a nav tile.
     private var accent: Color {
@@ -353,6 +401,15 @@ struct PageTileCell: View {
                 .aspectRatio(1, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
                 .shadow(color: .black.opacity(0.1), radius: 2, y: 1)
+                .opacity(isConcealed ? 0.32 : 1)
+                .overlay(alignment: .center) {
+                    if isConcealed {
+                        Image(systemName: "eye.slash.fill")
+                            .font(.title3)
+                            .foregroundStyle(.white)
+                            .shadow(radius: 2)
+                    }
+                }
                 if !link.isEmpty {
                     Image(systemName: "arrow.right.circle.fill")
                         .font(.caption2)
@@ -460,7 +517,7 @@ struct TilePropertiesSheet: View {
         scene.pages.first { $0.key == pageKey }?.tiles.first { $0.key == tileKey }
     }
 
-    private var entryBinding: (link: Binding<String>, audible: Binding<Bool>) {
+    private var entryBinding: (link: Binding<String>, audible: Binding<Bool>, concealed: Binding<Bool>) {
         let link = Binding<String>(
             get: { entry?.link ?? "" },
             set: { newValue in
@@ -490,7 +547,17 @@ struct TilePropertiesSheet: View {
                 scene.pages = pages
             }
         )
-        return (link, audible)
+        let concealed = Binding<Bool>(
+            get: { entry?.isConcealed ?? false },
+            set: { newValue in
+                var pages = scene.pages
+                guard let p = pages.firstIndex(where: { $0.key == pageKey }),
+                      let t = pages[p].tiles.firstIndex(where: { $0.key == tileKey }) else { return }
+                pages[p].tiles[t].isConcealed = newValue
+                scene.pages = pages
+            }
+        )
+        return (link, audible, concealed)
     }
 
     var body: some View {
@@ -537,13 +604,25 @@ struct TilePropertiesSheet: View {
                 Section {
                     Toggle("Add to sentence tray", isOn: entryBinding.audible)
                         .disabled((entry?.link ?? "").isEmpty)
+
+                    Toggle("Conceal on this page", isOn: entryBinding.concealed)
                 } header: {
                     Text("Behavior")
                 } footer: {
-                    if (entry?.link ?? "").isEmpty {
-                        Text("A word tile always adds to the sentence tray.")
-                    } else {
-                        Text("This tile opens a page. Turn this on if it should also speak the word.")
+                    VStack(alignment: .leading, spacing: 6) {
+                        if (entry?.link ?? "").isEmpty {
+                            Text("A word tile always adds to the sentence tray.")
+                        } else {
+                            Text("This tile opens a page. Turn this on if it should also speak the word.")
+                        }
+                        // Says what conceal is *for*, because the obvious
+                        // alternative — removing the tile — is worse in a way
+                        // that is not obvious.
+                        Text("Concealing keeps the tile's place on the board but draws it "
+                             + "empty, so nothing else moves. Removing it instead would shift "
+                             + "every word after it, and the child would have to learn the "
+                             + "board again. This page only — the word stays available "
+                             + "everywhere else.")
                     }
                 }
 

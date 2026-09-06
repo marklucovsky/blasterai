@@ -302,6 +302,33 @@ extension AdminView {
                     .foregroundStyle(.secondary)
             }
         }
+
+        // The pre-promotion gate. See docs/cloudkit-schema-checklist.md.
+        Section {
+            Button {
+                let result = CloudKitSchemaExerciser.run(context: modelContext)
+                CloudKitSchemaExerciser.cleanUp(context: modelContext)
+                schemaProbeResult = result.isComplete
+                    ? "Wrote all \(result.written.count) record types. Give sync a minute, "
+                      + "then check CloudKit Development."
+                    : "Wrote \(result.written.count). FAILED: \(result.failed.joined(separator: ", "))"
+            } label: {
+                Label("Populate CloudKit Schema", systemImage: "square.stack.3d.up")
+            }
+            .disabled(!icloudEnabled)
+
+            if let schemaProbeResult {
+                Text(schemaProbeResult).font(.caption).foregroundStyle(.secondary)
+            }
+        } header: {
+            Text("CloudKit Schema")
+        } footer: {
+            Text("Writes and then modifies one row of every synced model, so CloudKit "
+                 + "materializes all eight record types, then deletes the rows. The schema "
+                 + "survives the cleanup. Run this on an iCloud-enabled device before "
+                 + "promotion — a record type nothing has written does not exist in "
+                 + "Development, and Production is read-only afterwards.")
+        }
     }
     #endif
 

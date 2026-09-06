@@ -202,17 +202,51 @@ struct CoverageReport {
 
 extension CoverageReport {
 
-    /// A scene's vocabulary: every tile key across its pages, page links removed.
+    /// A scene's **reachable** vocabulary: every tile key across its pages, with
+    /// page links, spacers and concealed words removed.
     ///
     /// Links are chrome, not words. A `body_health` tile is a door to a page;
     /// counting it as vocabulary inflates the scene and puts a word the child
     /// cannot say into "never used". Order is page order, deduplicated — a word
     /// on three pages is one word.
+    ///
+    /// **A concealed word is not reachable either**, and this is the distinction
+    /// sparse boards exist to preserve. If concealed words stayed in the
+    /// denominator, a caregiver who concealed ten words to teach six would read
+    /// "used 6 of 60" and conclude the child ignores fifty — when forty of them
+    /// were drawn as empty space and could not be pressed. A report has to
+    /// measure what the child could actually reach. Their count is not lost;
+    /// `concealedKeys(of:)` has it.
+    ///
+    /// A spacer is not a word at all and never appears in either.
     static func vocabularyKeys(of pages: [PageSpec]) -> [String] {
         var seen = Set<String>()
         var keys: [String] = []
         for page in pages {
-            for tile in page.tiles where tile.link.isEmpty {
+            for tile in page.tiles where tile.link.isEmpty && !tile.isEmptyCell {
+                if seen.insert(tile.key).inserted { keys.append(tile.key) }
+            }
+        }
+        return keys
+    }
+
+    /// Words placed on the board but concealed — present, and not available.
+    ///
+    /// Deliberately its own list rather than a flag inside coverage: "on the
+    /// board but switched off" is a different fact from "available and unused",
+    /// and a caregiver reading the report needs to be able to tell which one a
+    /// number describes.
+    ///
+    /// A word concealed on one page and available on another is *available* —
+    /// conceal is per-placement, and the child can still reach it.
+    static func concealedKeys(of pages: [PageSpec]) -> [String] {
+        let reachable = Set(vocabularyKeys(of: pages))
+        var seen = Set<String>()
+        var keys: [String] = []
+        for page in pages {
+            for tile in page.tiles
+            where tile.link.isEmpty && tile.isConcealed && !tile.isSpacer
+                && !reachable.contains(tile.key) {
                 if seen.insert(tile.key).inserted { keys.append(tile.key) }
             }
         }

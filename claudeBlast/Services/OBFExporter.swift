@@ -103,6 +103,33 @@ enum OBFExporter {
             }
 
             for entry in pageEntries {
+                // Both kinds of gap leave as a gap: `grid.order` takes null for
+                // a cell with nothing in it. No button, no image, no id.
+                //
+                // ## Why a concealed word is not exported as `hidden: true`
+                //
+                // OBF has the field, we emitted it, and it is the more faithful
+                // statement — the word is on the board and unavailable. CoughDrop
+                // honours it. **Cboard does not**, on a button that also carries
+                // `load_board`, and shows the word anyway.
+                //
+                // That asymmetry decides it. A reader that ignores `hidden`
+                // hands the child vocabulary a therapist deliberately took away,
+                // on a board they believe is the one they configured. A reader
+                // that sees a gap is merely missing a word. We cannot control
+                // which reader opens the file, so the export states the thing
+                // that is safe to misread.
+                //
+                // The cost is real and one-directional: the concealed word does
+                // NOT travel in the .obz, so an .obz is not a lossless copy of a
+                // board that uses conceal. `.blasterscene` is — it carries
+                // `isConcealed` per placement — and it is the right format for
+                // moving a board between Blaster devices. See
+                // `docs/obf-interop.md`.
+                if entry.isEmptyCell {
+                    order.append(nil)
+                    continue
+                }
                 guard let tile = tileLookup[entry.key] else { continue }
                 let buttonID = entry.key
 

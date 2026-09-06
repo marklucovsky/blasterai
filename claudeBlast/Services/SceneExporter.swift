@@ -36,13 +36,23 @@ enum SceneExporter {
 
         // Every key the scene references, so art is collected in one pass rather
         // than one fetch per tile.
-        let allKeys = scene.pages.flatMap { $0.tiles.map(\.key) }
+        // Spacers name no word, so they have no art to collect.
+        let allKeys = scene.pages.flatMap { page in
+            page.tiles.filter { !$0.isSpacer }.map(\.key)
+        }
         let storedArt = context.map {
             ExportArtResolver.storedArt(for: allKeys, tileLookup: tileLookup, context: $0)
         } ?? [:]
 
         let exportPages: [ExportablePage] = scene.pages.map { page in
             let pageTiles: [ExportablePageTile] = page.tiles.compactMap { entry in
+                // A gap travels as itself. It resolves to no TileModel, so the
+                // lookup guard below would drop it — and dropping it closes the
+                // hole and shifts every tile after it, so the board the
+                // recipient opens is not the board that was shared.
+                if entry.isSpacer {
+                    return ExportablePageTile(key: entry.key, isAudible: false, link: "")
+                }
                 guard let tile = tileLookup[entry.key] else { return nil }
 
                 // Collect tiles that are not in the default vocabulary or have custom images
@@ -58,7 +68,9 @@ enum SceneExporter {
                 return ExportablePageTile(
                     key: tile.key,
                     isAudible: entry.isAudible,
-                    link: entry.link
+                    link: entry.link,
+                    // Only when set, so the common case adds nothing to the file.
+                    isConcealed: entry.isConcealed ? true : nil
                 )
             }
             return ExportablePage(key: page.key, tiles: pageTiles)
