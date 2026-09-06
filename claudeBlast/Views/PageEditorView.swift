@@ -45,8 +45,12 @@ struct PageEditorView: View {
     /// Page-level share. A page leaves as a vocabulary pack — see `ShareBoardSheet`.
     @State private var isSharingPage = false
 
-    /// Rename. Nil when closed; the draft name while open.
-    @State private var renameDraft: String?
+    /// Rename sheet presentation. Separate from `renameDraft` on purpose — see
+    /// `rename(to:)`.
+    @State private var isRenaming = false
+    /// What is typed in the rename field. Owned here so the sheet can be a plain
+    /// binding, and deliberately NOT the presentation state.
+    @State private var renameDraft = ""
 
     private var tileLookup: [String: TileModel] {
         Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
@@ -102,7 +106,10 @@ struct PageEditorView: View {
             }
             .buttonStyle(.plain)
             Spacer()
-            Button { renameDraft = page?.displayName ?? "" } label: {
+            Button {
+                renameDraft = page?.displayName ?? ""
+                isRenaming = true
+            } label: {
                 Label("Rename", systemImage: "pencil")
                     .font(.subheadline.weight(.medium))
             }
@@ -179,12 +186,11 @@ struct PageEditorView: View {
         .navigationTitle(page?.title ?? pageKey)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { pageEditorToolbar }
-        .sheet(isPresented: Binding(get: { renameDraft != nil },
-                                    set: { if !$0 { renameDraft = nil } })) {
+        .sheet(isPresented: $isRenaming) {
             PageRenameSheet(
                 currentTitle: page?.title ?? pageKey,
                 pageKey: pageKey,
-                draft: Binding(get: { renameDraft ?? "" }, set: { renameDraft = $0 }),
+                draft: $renameDraft,
                 onSave: { rename(to: $0) })
         }
         .sheet(isPresented: $isSharingPage) {
@@ -340,7 +346,7 @@ struct PageEditorView: View {
             link.displayName = trimmed.isEmpty ? PageNaming.displayName(pageKey) : trimmed
         }
         try? modelContext.save()
-        renameDraft = nil
+        isRenaming = false
     }
 
     /// Add a deliberate gap at the front of the page.
