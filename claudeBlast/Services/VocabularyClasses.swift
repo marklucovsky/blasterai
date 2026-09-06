@@ -82,6 +82,15 @@ enum VocabularyClasses {
         // Generic concrete objects / tools / equipment / vehicles that don't fit a
         // more specific class (handcuffs, badge, hose, ladder, tractor).
         VocabularyClass(name: "object", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
+        // Letters and numbers. Drawn rather than generated (`GlyphTile`), and
+        // caregiver-selectable so a family can add a letter we did not ship —
+        // an accented character, a numeral past ten — and have it render.
+        //
+        // A letter has no part of speech: it is not a word, and on a published
+        // letter board it is neutral. A number is a `determiner` — "three
+        // cookies" quantifies, which is what the Fitzgerald key colours it for.
+        VocabularyClass(name: "letter", defaultPartOfSpeech: nil, isCaregiverSelectable: true),
+        VocabularyClass(name: "number", defaultPartOfSpeech: .determiner, isCaregiverSelectable: true),
         // Structural / function classes — not caregiver-creatable content.
         //
         // `core` is the one genuinely mixed class: its bundled words split across

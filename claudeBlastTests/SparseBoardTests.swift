@@ -204,6 +204,46 @@ struct SparseBoardTests {
         #expect(page.tiles[0].isConcealed == false)
     }
 
+    // MARK: - Bulk conceal
+
+    /// The rule the selection bar enforces, tested on the data rather than the
+    /// view: a toggle over a mixed selection has no honest answer, so the
+    /// control names the one thing it will do and refuses when there is not one.
+    private func action(for entries: [TileEntry]) -> String {
+        if entries.isEmpty { return "conceal" }
+        if entries.allSatisfy({ $0.isConcealed }) { return "reveal" }
+        if entries.allSatisfy({ !$0.isConcealed }) { return "conceal" }
+        return "mixed"
+    }
+
+    @Test("All-visible offers Conceal, all-concealed offers Reveal")
+    func uniformSelectionsOfferOneAction() {
+        #expect(action(for: [TileEntry(key: "a"), TileEntry(key: "b")]) == "conceal")
+        #expect(action(for: [TileEntry(key: "a", isConcealed: true),
+                             TileEntry(key: "b", isConcealed: true)]) == "reveal")
+    }
+
+    /// Neither label is true of a mixed selection, and flipping each tile would
+    /// leave the caregiver the same mixture inverted — which is nobody's intent.
+    @Test("A mixed selection offers neither")
+    func mixedSelectionRefuses() {
+        #expect(action(for: [TileEntry(key: "a"),
+                             TileEntry(key: "b", isConcealed: true)]) == "mixed")
+    }
+
+    /// A gap has no word to hide. Concealing one would store a no-op as if it
+    /// meant something, and would make an all-spacer selection look uniform.
+    @Test("Bulk conceal skips spacers")
+    func bulkConcealSkipsSpacers() {
+        var entries = [TileEntry(key: "eat"), TileEntry.spacer()]
+        for index in entries.indices where !entries[index].isSpacer {
+            entries[index].isConcealed = true
+        }
+        #expect(entries[0].isConcealed)
+        #expect(!entries[1].isConcealed, "a spacer was concealed")
+        #expect(entries[1].isEmptyCell, "and it is still a gap")
+    }
+
     // MARK: - Print
 
     /// A gap must survive a print filter. Dropping it would close the hole and

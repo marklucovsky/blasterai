@@ -156,8 +156,18 @@ final class TileImageResolver {
 
     /// Resolve a tile's real art in a specific image set — no placeholder, no
     /// master-set backfill. Returns nil when that set genuinely lacks the tile.
+    ///
+    /// **A glyph is never lacking.** Nil here means "this set has no art for
+    /// this word", which the review strip draws as an empty slot inviting
+    /// generation. For a letter or a number that is a lie: there is no file
+    /// because there never needs to be one, and every set can draw it. The
+    /// caregiver concealing the ZERO tile — because the class counts from one —
+    /// should see the same 0 in the strip that the child sees on the board, not
+    /// five placeholders suggesting the tile is unfinished.
     func image(for key: String, in imageSet: ImageSetID) -> UIImage? {
-        rawImage(for: artKey(for: key), in: imageSet)
+        let art = artKey(for: key)
+        if let glyph = GlyphTile.image(for: art, in: imageSet) { return glyph }
+        return rawImage(for: art, in: imageSet)
     }
 
     /// The full fallback chain against an explicit set — what `image(for:)` does,
@@ -176,6 +186,13 @@ final class TileImageResolver {
 
         // Everything below is about where the ART lives, so it follows the alias.
         let art = artKey(for: key)
+
+        // A letter or number is drawn, not stored. It sits below the photo
+        // override — a caregiver who photographs a fridge magnet A means it —
+        // and above everything else, because there is no file to find and no
+        // point falling through to a placeholder for a glyph we can always draw.
+        if let glyph = GlyphTile.image(for: art, in: imageSet) { return glyph }
+
         if let img = rawImage(for: art, in: imageSet) { return img }
         if imageSet != ImageSetID.universalBackfill,
            let img = rawImage(for: art, in: ImageSetID.universalBackfill) { return img }
@@ -194,6 +211,9 @@ final class TileImageResolver {
     /// app for it. Counting art should never cost what drawing it costs.
     func hasArt(for key: String, in imageSet: ImageSetID) -> Bool {
         let art = artKey(for: key)
+        // A glyph always has art, in every set, without a file existing — so it
+        // must never be reported as a word needing generation.
+        if GlyphTile.isGlyphKey(art) { return true }
         if bundledArtExists(for: art, in: imageSet) { return true }
         return variantExists(for: art, in: imageSet)
     }

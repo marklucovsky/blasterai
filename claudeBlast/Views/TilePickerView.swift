@@ -126,6 +126,22 @@ struct TilePickerView: View {
             }
             return true
         }
+        .sorted(by: Self.naturalOrder)
+    }
+
+    /// Finder-style ordering, so 2 comes before 10.
+    ///
+    /// The `@Query` sorts by `key`, which is a plain string compare — correct
+    /// for words and visibly wrong the moment a key ends in a number, because
+    /// `number_10` sorts between `number_1` and `number_2`. We know why; a
+    /// caregiver looking at a Numbers pack listed 0, 1, 10, 2, 3 does not, and
+    /// should not have to.
+    ///
+    /// `localizedStandardCompare` is the same comparison Finder uses for
+    /// filenames: it reads runs of digits as numbers. That makes this correct
+    /// for any future pack whose keys are numbered, not just this one.
+    private static func naturalOrder(_ a: TileModel, _ b: TileModel) -> Bool {
+        a.key.localizedStandardCompare(b.key) == .orderedAscending
     }
 
     /// Grid tiles that can actually be selected — on-page ones show for context

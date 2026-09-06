@@ -40,5 +40,19 @@
     "displayName": "Vehicles",
     "version": "1.1.0",
     "file": "pack_vehicles"
+  },
+  {
+    "id": "packs.blasterai.app/letters",
+    "slug": "letters",
+    "displayName": "Letters",
+    "version": "1.0.0",
+    "file": "pack_letters"
+  },
+  {
+    "id": "packs.blasterai.app/numbers",
+    "slug": "numbers",
+    "displayName": "Numbers",
+    "version": "1.0.0",
+    "file": "pack_numbers"
   }
 ]

@@ -498,7 +498,10 @@ ordering only makes sense once the colour decision is understood.
 | 0 | docs | this plan section | doc-only, direct to main |
 | 1 | **cleanup** | S4 §1 `bassketball` delete · §2 `cls_help` frame regen · §3 print label shrink-to-fit · §4 `isStructuralChrome` ×5 sites · §5 `NOTICE` rewrite (Apache-2.0) · §6 CLAUDE.md test-name check | mechanical; §4 unblocks PR 2 |
 | 2 | **colour** | `partOfSpeechRaw` on TileModel · 4-layer resolver · `VocabularyClass.color` → `defaultPartOfSpeech` · drop `PartOfSpeechIndex.overrides` · resolver takes a tile, not a string (~12 sites) · Fitzgerald palette · filled cards · card ignores dark mode | **the only S6 schema deadline** |
-| 3 | **sparse boards** | `TileEntry.isHidden` · `key: "<spacer>"` reserved token · one empty-cell render path · coverage counts hidden ≠ spacer · OBF `hidden:true` / `null` | blob-local, no schema change |
+| 3 | **sparse boards** | `TileEntry.isConcealed` (not `isHidden` — `hide` is the word-level safety hide) · unique `<spacer>#…` keys · one empty-cell render path · coverage counts concealed ≠ spacer · bulk conceal/reveal · OBF gap | blob-local, no schema change · **merged (#66)** |
+| 3.4 | **page rename** | `PageSpec.displayName`, key never moves · rename in the page editor · travels in scene share, print, OBF | **merged (#67, #68)** |
+| 3.5 | **letters & numbers** | `GlyphTile` draws a–z and 0–10 · two packs · natural sort · glyphs in the per-set review strip | zero bytes; no generated art |
+| 3.6 | **colour mapping** | therapist-editable part-of-speech → colour, per child | ⚠️ **schema deadline** — see below |
 | 4 | **gates** | §9 scene validation on activate · §10 iCloud toggle confirmation both directions · modal progress for long ops · audit sibling one-tap actions | two live lockouts + the stray-tap iCloud flip |
 | 5 | **compact + names** | §12 Coverage / Patterns / coverage grid at phone width · §11 profile-name audit | both are "reviewed on the wrong device or by the wrong reader" |
 | 6 | **tester readiness** | AdminGate hardening · PIN recovery · no-key path verified · beta-review notes | no-key path is the likeliest rejection cause |
@@ -677,6 +680,121 @@ Both live on `TileEntry`, inside the `pagesData` JSON blob (`Models/Scene.swift:
 colour work: part of speech is per-*word* (`TileModel`, syncs, one answer
 everywhere), hidden and spacer are per-*placement*. The same word can be hidden on
 the school board and visible at home — and orange in both places.
+
+### A therapist can change what the colours mean (raised 2026-09-06)
+
+Mark, on CVI: *"it might make sense for a therapist to be able to manage/update
+our grammar-type ↔ colour mappings."*
+
+**This is clinical, not customisation.** A child with cortical visual impairment
+often has one reliably-perceived colour — commonly red or yellow — and reduced
+discrimination generally. The Modified Fitzgerald palette PR 2 adopted assumes
+eight distinguishable hues, and for a CVI child several of them collapse into
+each other. A board whose colour system the child cannot see is not merely
+unhelpful; it teaches nothing while looking like it does.
+
+Adjacent needs the same lever serves: a therapist whose school district
+standardises on a different key, a family colour-blind in a specific band, and
+the Goossens' variants that differ from Fitzgerald on prepositions.
+
+**It is cheap now precisely because of how PR 2 landed.** `TileColorResolver` is
+already the single source of truth, every surface routes through it, and the axis
+is `PartOfSpeech` — eleven cases. The whole mapping is eleven colour values.
+
+#### Scope: per child — and why that differs from the image set
+
+There is a precedent pulling the other way, and it is worth being explicit about
+why we are not following it. **The image set is a device setting.** A child can
+run Classic Light while her therapist's iPad runs Classic Dark, and nobody set
+that per child. Mark, 2026-09-06: that was a balance tradeoff — the choice is
+static for a given child and the control is five rows, so a device-level setting
+that someone sets once is not worth a synced per-child field.
+
+A colour map breaks both halves of that argument:
+
+- **It is not simple.** Eleven mappings, not one of five rows — a data structure
+  rather than a pick.
+- **It is a property of the child, not the screen.** CVI is a fact about how
+  *this* child sees, and it has to be true on every device that child touches.
+  The image set is a rendering preference; the colour map is clinical.
+
+So: per child, on `ChildProfile`, beside `brownsStageRaw` and `languageRaw` —
+which the profile already carries for exactly this class of fact.
+
+#### A colour map is a thing you can send
+
+Mark's framing, and it changes the shape: *"ideally a therapist can create and
+manage colour maps and then cut/paste or text the map to the right patient."*
+
+That makes the map an **artifact**, not a bag of settings — the same move scenes
+and vocabulary packs already made, and for the same reason. An SLP works with
+many children; a palette tuned for one CVI presentation is worth reusing, and
+the person who can build a good one is rarely the person holding the device it
+needs to be on.
+
+It is also the smallest shareable thing in the app by a wide margin: eleven
+name→colour pairs. Small enough that **text is a plausible transport** — a
+compact JSON blob that survives a paste into Messages — which is a lighter path
+than a file share, and does not need a share sheet, a UTI, or an import screen
+to be useful on day one.
+
+Shape: `ChildProfile` stores one synced `String` holding the map as JSON, empty
+meaning "the Fitzgerald default". Sparse — only what the therapist changed — so
+the default palette stays in code and can be improved later without rewriting
+stored data. A name travels with it, so a caregiver can see which map their
+child is on.
+
+#### Exports flatten; they do not carry the map
+
+Mark, settling the question: printed sheets and `.obz` files are **one-way
+transforms of this screen, to paper or to another app**. They already flatten the
+device's current settings — the active image set most obviously — and the colour
+map is one more of those.
+
+So a printed board and an exported `.obz` use whatever palette is in force when
+the export runs, baked in, with no separate mapping travelling alongside. That is
+the honest statement for a format that cannot resolve it later anyway: OBF's
+`background_color` is a literal colour per button, not a reference to a system.
+
+The corollary is worth stating for whoever reads this next: an export made for a
+CVI child carries that child's palette permanently, so it is not a neutral
+starting point for a different child. The lossless, re-configurable copy is the
+`.blasterscene`, exactly as it is for conceal.
+
+#### The deadline
+
+`ChildProfile` is a synced model, so **the field must land before S6 promotion**
+or it can never land at all. Same reasoning as `partOfSpeechRaw` in PR 2 and
+`languageRaw` / `brownsStageRaw` in S3 3A — and that pattern is now proven end to
+end rather than assumed: `CD_partOfSpeechRaw` was confirmed present in the
+CloudKit Development schema on 2026-09-05 having never been written a non-empty
+value, which is the defaulted-property rule working exactly as `SchemaVersions`
+claims.
+
+The field is not optional to ship. Only the editor is.
+
+#### What ships
+
+1. **The field**, empty, before promotion. Non-negotiable.
+2. **Resolution** through it in `TileColorResolver`, so a stored override wins
+   over the Fitzgerald default. One place — it is already the single source, and
+   every surface routes through it.
+3. **The editor, in the profile editor.** That is where the child's other
+   clinical settings live, and it keeps "this is about this child" legible. A
+   list of the eleven types with their current swatch, a reset per type and for
+   the whole palette, because a therapist experimenting needs a way back.
+4. **Seeded with a sample or two** — Mark: a nice touch, and more than that. A
+   therapist should not have to invent a high-contrast palette from first
+   principles, and a named preset is how we say we know what this is for. At
+   minimum: the Fitzgerald default, and one CVI-oriented high-contrast map.
+5. **Send/receive by text**, once the above is real.
+
+#### Open question
+
+Whether a shared **scene** should be able to carry a colour map. It belongs to
+the child rather than the board, which argues no — but an SLP sending a fully
+configured board to a family may well mean the colours too. Decide with Brandi,
+alongside the part-of-speech questions already queued for her.
 
 ### Carried from S4
 

@@ -1,0 +1,139 @@
+{
+  "id": "packs.blasterai.app/letters",
+  "slug": "letters",
+  "displayName": "Letters",
+  "version": "1.0.0",
+  "icon": "letters",
+  "words": [
+    {
+      "key": "letter_a",
+      "wordClass": "letter",
+      "displayName": "A"
+    },
+    {
+      "key": "letter_b",
+      "wordClass": "letter",
+      "displayName": "B"
+    },
+    {
+      "key": "letter_c",
+      "wordClass": "letter",
+      "displayName": "C"
+    },
+    {
+      "key": "letter_d",
+      "wordClass": "letter",
+      "displayName": "D"
+    },
+    {
+      "key": "letter_e",
+      "wordClass": "letter",
+      "displayName": "E"
+    },
+    {
+      "key": "letter_f",
+      "wordClass": "letter",
+      "displayName": "F"
+    },
+    {
+      "key": "letter_g",
+      "wordClass": "letter",
+      "displayName": "G"
+    },
+    {
+      "key": "letter_h",
+      "wordClass": "letter",
+      "displayName": "H"
+    },
+    {
+      "key": "letter_i",
+      "wordClass": "letter",
+      "displayName": "I"
+    },
+    {
+      "key": "letter_j",
+      "wordClass": "letter",
+      "displayName": "J"
+    },
+    {
+      "key": "letter_k",
+      "wordClass": "letter",
+      "displayName": "K"
+    },
+    {
+      "key": "letter_l",
+      "wordClass": "letter",
+      "displayName": "L"
+    },
+    {
+      "key": "letter_m",
+      "wordClass": "letter",
+      "displayName": "M"
+    },
+    {
+      "key": "letter_n",
+      "wordClass": "letter",
+      "displayName": "N"
+    },
+    {
+      "key": "letter_o",
+      "wordClass": "letter",
+      "displayName": "O"
+    },
+    {
+      "key": "letter_p",
+      "wordClass": "letter",
+      "displayName": "P"
+    },
+    {
+      "key": "letter_q",
+      "wordClass": "letter",
+      "displayName": "Q"
+    },
+    {
+      "key": "letter_r",
+      "wordClass": "letter",
+      "displayName": "R"
+    },
+    {
+      "key": "letter_s",
+      "wordClass": "letter",
+      "displayName": "S"
+    },
+    {
+      "key": "letter_t",
+      "wordClass": "letter",
+      "displayName": "T"
+    },
+    {
+      "key": "letter_u",
+      "wordClass": "letter",
+      "displayName": "U"
+    },
+    {
+      "key": "letter_v",
+      "wordClass": "letter",
+      "displayName": "V"
+    },
+    {
+      "key": "letter_w",
+      "wordClass": "letter",
+      "displayName": "W"
+    },
+    {
+      "key": "letter_x",
+      "wordClass": "letter",
+      "displayName": "X"
+    },
+    {
+      "key": "letter_y",
+      "wordClass": "letter",
+      "displayName": "Y"
+    },
+    {
+      "key": "letter_z",
+      "wordClass": "letter",
+      "displayName": "Z"
+    }
+  ]
+}
