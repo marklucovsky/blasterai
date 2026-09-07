@@ -129,6 +129,31 @@ the reports should shape whether the range picker is a term selector, a
 free-form pair of dates, or a "since last review" marker — and those are
 different designs, not different defaults.
 
+## Adding a word is the tile picker's fallthrough path
+
+Raised 2026-09-07, while verifying that the keyless path holds (it does — see
+`docs/final-countdown-plan.md` gate 6).
+
+`TilePickerView` is built for **finding an existing word**: search, filter by
+class or pack, multi-select, add. Creating a word that does not exist yet is
+reached by failing at that — type a word, get no results, choose a word class,
+tap Add. It works, and Mark's read is that it "has room for improvement but it
+works", so this is not a gate.
+
+What makes it worth revisiting: creating a word is not a rarer act than finding
+one, it is the act a caregiver performs when the board does not yet fit their
+child — which is exactly when they are most invested and least tolerant of
+friction. The flow currently treats it as the error branch of search.
+
+Related, and the reason this is not urgent: **our symbol library is generated,
+so it has no edges.** Other AAC platforms ship a fixed set to pick from at this
+moment; a caregiver there eventually hits its end. A caregiver here does not.
+The trade is that theirs is instant and free where ours costs a key, a few
+seconds and a fraction of a cent — and keyless, the word still arrives, just as
+a placeholder until art is generated later. Worth saying plainly in store and
+site copy, where "unlimited symbols" reads as marketing but "their library ends,
+ours doesn't" is simply true.
+
 ---
 
 *Add new cross-cutting items here as stubs; promote to a dedicated note + worktree

@@ -904,12 +904,26 @@ being restated here; the two entries that shape a decision:
   A key buys four things and nothing else: sentence generation, AI scene and page
   generation, word moderation, and art for newly added words.
 
-  **The one gap to confirm, not assume:** what a keyless caregiver sees when they add a
-  word. Art generation needs a key, so a new word falls through to a placeholder. Mark's
-  read is that adding words keyless "is not bad" — verify it on device, because that is
-  the single place the keyless story could break, and it is the thing a reviewer probing
-  the app is most likely to try. `GlyphTile` (PR 3.5) is the precedent for drawing
-  something rather than nothing.
+  **Verified on device, 2026-09-07.** The add-word path holds keyless. From the page
+  editor: ＋Tiles → search finds nothing → pick a type → Add. The new words land on the
+  page as placeholders, and from there either fix them one at a time (AI or existing
+  media) or leave the page editor, where the scene editor offers to do all the art at
+  once — or, without a key, says that it could. Both halves work; the keyless one simply
+  stops before the art.
+
+  **Where we differ from other AAC platforms, and it is not a deficit.** They ship a fixed
+  symbol library to pick from when adding a word. So do we — ours is generated, which
+  means it has no edges. Their library ends; ours does not. The honest trade is that
+  theirs is instant and free where ours costs a key, a few seconds and a fraction of a
+  cent.
+
+  State it that way in the S5 claims refresh and any store copy. "Unlimited symbols" reads
+  as marketing; "their library ends, ours doesn't" is just true, and it is the more useful
+  sentence for a therapist who has hit the end of one.
+
+  **Backlog, not a gate:** the tile picker is built for *finding* an existing word, so
+  adding a new one is the fallthrough — search, fail, choose a class, Add. Mark: *"it has
+  room for improvement but it works."* Recorded in `docs/architecture-backlog.md`.
 
   Beta-review notes say all of the above plainly. Round 1 stays **internal testers only**,
   with no beta review at all.
