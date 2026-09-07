@@ -10,7 +10,7 @@ import SwiftData
 
 /// How much of a scene a child reaches, by part of speech.
 ///
-/// The grammatical axis made visible. `wordClass` colours the tiles and steers
+/// The grammatical axis made visible. `wordClass` colors the tiles and steers
 /// the sentence generator; this answers a therapist's question instead — which
 /// pronouns does this scene have, has she ever pressed a question word, what
 /// should be modelled next.
@@ -310,7 +310,7 @@ struct CoverageView: View {
                           available: Int, fraction: Double) -> some View {
         HStack(spacing: 12) {
             // Orange at nought: an untouched page or kind is the row worth
-            // stopping on, and colour finds it faster than reading down a column
+            // stopping on, and color finds it faster than reading down a column
             // of percentages.
             CoverageRing(fraction: fraction, tint: used == 0 ? .orange : .blue)
                 .frame(width: 28, height: 28)

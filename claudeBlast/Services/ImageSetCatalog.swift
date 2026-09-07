@@ -100,7 +100,7 @@ extension ImageSetID {
 /// Carried as **channel values, not a label**, because a label does not work:
 /// the first offline pilot asked for "medium skin tone (Fitzpatrick IV)" and got
 /// back rgb(176,80,24) — terracotta, and darker than the *dark* reference. The
-/// model needs the target colour. Blue is the channel that decides whether a
+/// model needs the target color. Blue is the channel that decides whether a
 /// brown reads as skin or as rust, so the prompt states it as a ratio too.
 ///
 /// These are the same values `tools/build_tone_variants.py` built the shipped

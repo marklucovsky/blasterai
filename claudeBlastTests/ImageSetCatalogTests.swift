@@ -110,7 +110,7 @@ struct ImageSetCatalogTests {
 
     // MARK: - Tone variants
 
-    /// The tone sets are Classic with skin recoloured and nothing else, so they
+    /// The tone sets are Classic with skin recolored and nothing else, so they
     /// must generate new words in Classic's style. Keying the style on the set id
     /// instead would miss `image_styles.json` (which has no `classic_medium`
     /// entry) and silently drop every tone-set word-add to the generic fallback.
@@ -122,7 +122,7 @@ struct ImageSetCatalogTests {
         }
     }
 
-    /// A set on the tone scale without a target cannot recolour a new word, so a
+    /// A set on the tone scale without a target cannot recolor a new word, so a
     /// caregiver's added word would arrive as the only light-skinned figure in
     /// their set — the exact absence these sets exist to remove.
     ///

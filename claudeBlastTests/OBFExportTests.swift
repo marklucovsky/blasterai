@@ -216,18 +216,18 @@ struct OBFExportTests {
         }
     }
 
-    @Test("Colours are written in OBF's rgb() syntax, not hex")
-    func coloursUseRGBSyntax() throws {
+    @Test("Colors are written in OBF's rgb() syntax, not hex")
+    func colorsUseRGBSyntax() throws {
         TestStore.reset()
         let context = TestStore.container.mainContext
         let (scene, lookup) = makeScene(context: context)
 
         let button = try #require(OBFExporter.boards(for: scene, tileLookup: lookup)
             .boards[0].buttons.first)
-        let colour = try #require(button.background_color)
-        #expect(colour.hasPrefix("rgb("))
-        #expect(colour.hasSuffix(")"))
-        #expect(!colour.contains("#"))
+        let color = try #require(button.background_color)
+        #expect(color.hasPrefix("rgb("))
+        #expect(color.hasSuffix(")"))
+        #expect(!color.contains("#"))
     }
 
     // MARK: - Licence

@@ -113,11 +113,11 @@ enum PartOfSpeech: String, CaseIterable, Codable, Identifiable, Sendable {
 /// rather than guessing. That was the honest answer when the only consumer was a
 /// coverage report about *core* words, which are ours.
 ///
-/// Colour changed what nil costs. A caregiver's "grandma" rendering
+/// Color changed what nil costs. A caregiver's "grandma" rendering
 /// furniture-gray on a board where every other noun is orange is a visible
 /// defect, not a missing table row — so `TileModel.resolvedPartOfSpeech` adds a
 /// derivation below this one and never answers nil for a real word. This stays
-/// strict, and the split is deliberate: guessing is right for a colour and wrong
+/// strict, and the split is deliberate: guessing is right for a color and wrong
 /// for a count.
 enum PartOfSpeechIndex {
 
@@ -144,7 +144,7 @@ enum PartOfSpeechIndex {
     /// the entries that differ from the bundle, which in practice is a handful.
     ///
     /// **Without this the report and the board disagree.** A word a therapist
-    /// re-classified would take its new colour on the tile and still be counted
+    /// re-classified would take its new color on the tile and still be counted
     /// under its old part of speech in coverage — the sort of split that is
     /// invisible until someone reads the report carefully.
     private static var stored: [String: PartOfSpeech] = [:]
@@ -177,7 +177,7 @@ enum PartOfSpeechIndex {
     /// and a report that pads its counts with guesses is worth less than one
     /// that says it does not know — the finding that started this axis (zero
     /// question words on the board) only means anything if the counts are
-    /// honest. For colour, which must never answer nil for a real word, use
+    /// honest. For color, which must never answer nil for a real word, use
     /// `TileModel.resolvedPartOfSpeech`.
     static func partOfSpeech(for key: String) -> PartOfSpeech? {
         stored[key] ?? bundled[key]

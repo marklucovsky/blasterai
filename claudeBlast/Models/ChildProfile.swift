@@ -264,6 +264,62 @@ final class ChildProfile {
     /// BlasterScene.name to land on at app launch / session-revert.
     /// Empty = honor the device's currently-active scene.
     var defaultSceneKey: String = ""
+    /// This child's part-of-speech → color overrides, as JSON.
+    /// **Empty means the Fitzgerald default**, which is where every profile
+    /// starts.
+    ///
+    /// ## Why the child and not the device
+    ///
+    /// There is a precedent pulling the other way: the **image set is a device
+    /// setting**. A child can run Classic Light while her therapist's iPad runs
+    /// Classic Dark, and nobody set that per child — the choice is static and the
+    /// control is five rows, so a device-level setting somebody sets once was the
+    /// better trade.
+    ///
+    /// A color map breaks both halves of that argument. It is eleven mappings
+    /// rather than a pick from five, and it is a fact about **how this child
+    /// sees** rather than a rendering preference. A child with cortical visual
+    /// impairment often has one reliably-perceived color and reduced
+    /// discrimination generally, so several of the eight Fitzgerald hues collapse
+    /// into each other for them — and a board whose color system the child
+    /// cannot see teaches nothing while looking like it does. That has to be true
+    /// on every device the child touches.
+    ///
+    /// ## Sparse, and a map rather than eleven fields
+    ///
+    /// Only what the therapist changed is stored, so the default palette stays in
+    /// code and can be improved later without rewriting anyone's data. One String
+    /// rather than eleven color fields because the palette is an *artifact* a
+    /// therapist builds, names and sends to a family — the same move scenes and
+    /// vocabulary packs already made — and because eleven synced fields could
+    /// never be reshaped after promotion, where a JSON blob can.
+    ///
+    /// Taken as schema insurance on the now-proven precedent: a synced property
+    /// can be added before CloudKit promotion and never after.
+    /// `CD_partOfSpeechRaw` was confirmed present in the Development schema on
+    /// 2026-09-05 having never been written a non-empty value, which is the
+    /// defaulted-property rule working exactly as `SchemaVersions` claims.
+    var colorMapData: String = ""
+
+    /// The caregiver's saved color palettes, as a JSON array of `TileColorMap`.
+    ///
+    /// **Lives on the system profile**, which is the caregiver's own record —
+    /// the one auto-seeded on every device with a stable shared id, currently
+    /// called Sandbox. A library belongs to the person building palettes, not to
+    /// any one child: the whole point is reuse across children, and the person
+    /// who can build a good CVI palette is rarely the person holding the device
+    /// it needs to be on.
+    ///
+    /// Synced, deliberately. A therapist's scenes, palettes and packs should
+    /// travel wherever their iCloud does — Mark, 2026-09-07 — so the iPad they
+    /// configure on and the iPhone they carry show the same library.
+    ///
+    /// Empty means no saved palettes. Same schema-insurance reasoning as
+    /// `colorMapData`: a synced property can be added before promotion and never
+    /// after, and where the library ultimately *lives* can still change, since
+    /// the system profile survives the rename to Caregiver unmoved.
+    var colorMapLibrary: String = ""
+
     /// Therapist-only notes. Never fed to the prompt.
     var notes: String = ""
     /// Hint only — `ChildProfileResolver` resolves the true active profile

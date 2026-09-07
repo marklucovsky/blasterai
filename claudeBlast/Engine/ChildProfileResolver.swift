@@ -64,6 +64,11 @@ final class ChildProfileResolver {
     ///    and the synchronous getters use safe fallbacks.
     func refresh() {
         refreshOverride()
+        // Whoever ends up active, their palette goes with them. Done in `defer`
+        // so every exit from this function keeps the two in step — a board drawn
+        // in the previous child's colors is the exact failure the map exists to
+        // prevent, and it would be invisible on a device with one profile.
+        defer { TileColorResolver.refreshActiveMap(from: active) }
         guard let ctx = context else {
             active = nil
             return

@@ -113,28 +113,28 @@ struct TileView: View {
       withAnimation(.easeOut(duration: 0.45).delay(0.16)) { pulseScale = 1.0; glow = 0.0 }
     }
 
-    /// The colour a tile carries: its part of speech, or blue for a nav tile,
+    /// The color a tile carries: its part of speech, or blue for a nav tile,
     /// which is wayfinding rather than vocabulary.
     private var accent: Color {
         isNavigation ? TileColorResolver.navigation : TileColorResolver.color(for: tile)
     }
 
-    /// The card is a coloured card with the picture on a white plate inside it —
+    /// The card is a colored card with the picture on a white plate inside it —
     /// the shape every published AAC board uses, and the shape our own printed
     /// sheets already used while the screen did not.
     ///
-    /// **The colour is the card, not its edge.** This used to be a 3pt border at
+    /// **The color is the card, not its edge.** This used to be a 3pt border at
     /// 0.6 alpha over a 0.12 fill, and side by side with cboard on identical
     /// tiles the board read monochrome from three feet away: a hairline around a
-    /// white card against a card that *is* the colour. Colour only teaches if it
+    /// white card against a card that *is* the color. Color only teaches if it
     /// is legible at the distance a board is actually used from.
     ///
-    /// **The card does not follow dark mode, deliberately.** Fitzgerald colours
+    /// **The card does not follow dark mode, deliberately.** Fitzgerald colors
     /// are taught as constants — the green ones are doing words, wherever and
     /// whenever you look at the board. A board is a physical object, and the
     /// chrome around it going dark while the board itself stays put is both
     /// truer and bolder than any appearance-aware tint could be at these sizes.
-    /// Everything here is therefore a literal colour, never a semantic one.
+    /// Everything here is therefore a literal color, never a semantic one.
     @ViewBuilder
     private var tileCard: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -172,8 +172,8 @@ struct TileView: View {
         // tile toggled it in and out of the tray, so the grid had to show
         // membership. It has not worked that way for a long time — the tray is
         // edited in the tray — and the cost is now much higher than the stale
-        // affordance: orange is *nouns*. A tile that changes colour on tap
-        // contradicts the one thing the colour is there to teach, and it does it
+        // affordance: orange is *nouns*. A tile that changes color on tap
+        // contradicts the one thing the color is there to teach, and it does it
         // at the exact moment the child is looking at the tile. Single-word mode
         // never had this treatment; the grid now matches it.
         .overlay(
