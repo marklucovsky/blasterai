@@ -295,12 +295,54 @@ extension AdminView {
     @ViewBuilder
     var storageSection: some View {
         Section("Storage") {
-            Toggle("iCloud Sync", isOn: $icloudEnabled)
+            // Confirmed in BOTH directions, and deliberately not a plain Toggle.
+            //
+            // §10: a Mac install came back with `icloud_enabled = true` that
+            // nobody meant to set. DEBUG registers it false and onboarding seeds
+            // from that, so a stored true is an explicit write — and the likeliest
+            // author is a tap that queued during one of the long unresponsive
+            // stretches after a load run and landed on whatever was under the
+            // finger when the run loop caught up.
+            //
+            // **The mechanism is the point, not the mishap.** A UI that stops
+            // answering does not stop accepting: touches queue, and they are
+            // delivered against the layout that exists when processing resumes.
+            // Every control in reach becomes one that can fire on its own.
+            //
+            // This one matters because it is not a preference — it is a storage
+            // decision. The ModelContainer is rebuilt at next launch against a
+            // different configuration, which store is authoritative changes, and
+            // turning it ON can pull a large sync onto a device that was
+            // deliberately local. A confirmation defeats the queued-tap case
+            // outright, because a stray tap cannot also confirm.
+            Toggle("iCloud Sync", isOn: Binding(
+                get: { icloudEnabled },
+                set: { pendingICloud = $0 }))
             if icloudEnabled {
                 Text("iCloud sync takes effect on next launch.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+        }
+        .confirmationDialog(
+            pendingICloud == true ? "Turn on iCloud Sync?" : "Turn off iCloud Sync?",
+            isPresented: Binding(get: { pendingICloud != nil },
+                                 set: { if !$0 { pendingICloud = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button(pendingICloud == true ? "Turn On" : "Turn Off") {
+                if let pending = pendingICloud { icloudEnabled = pending }
+                pendingICloud = nil
+            }
+            Button("Cancel", role: .cancel) { pendingICloud = nil }
+        } message: {
+            // Says what actually happens, not "are you sure" — the caregiver
+            // cannot weigh a decision they have not been told the shape of.
+            Text(pendingICloud == true
+                 ? "Syncing starts at next launch. Anything already in your iCloud "
+                   + "will download to this device, which can take a while on a large board."
+                 : "This device stops syncing at next launch. Everything already in "
+                   + "iCloud is kept, and this device keeps its own copy.")
         }
 
         // The pre-promotion gate. See docs/cloudkit-schema-checklist.md.

@@ -16,6 +16,13 @@ struct ContentView: View {
     @Environment(ImportCoordinator.self) private var importCoordinator
     @Environment(CaregiverMenuCoordinator.self) private var caregiverMenu
     @Environment(AdminRouteCoordinator.self) private var adminRoute
+    // Read here only to hand back to presented content — see PresentedEnvironment.
+    @Environment(SentenceEngine.self) private var sentenceEngine
+    @Environment(NavigationCoordinator.self) private var navigationCoordinator
+    @Environment(TileImageResolver.self) private var imageResolver
+    @Environment(ChildProfileResolver.self) private var profileResolver
+    @Environment(SceneArtCoordinator.self) private var sceneArtCoordinator
+    @Environment(\.modelContext) private var modelContext
     @AppStorage(AppSettingsKey.demoMode) private var demoMode = false
 
     @Query private var deviceProfiles: [DeviceProfile]
@@ -87,6 +94,7 @@ struct ContentView: View {
                             TileScriptPlaybackOverlay()
                         }
                     }
+                    .modifier(presentedEnvironment)
             }
             // The caregiver menu (long-press Home in the tray) requests a
             // destination; present it here, where the cover lives. It is wrapped
@@ -149,6 +157,7 @@ struct ContentView: View {
                 ImportRouteSheet(url: wrapper.url) {
                     pendingImportSheet = nil
                 }
+                .modifier(presentedEnvironment)
             }
     }
 
@@ -176,6 +185,83 @@ struct ContentView: View {
             // which is what lets script commands drive admin surfaces without
             // each one needing its own gate.
             AdminGate { TileScriptView() }
+        }
+    }
+}
+
+// MARK: - Environment for presented content
+
+extension ContentView {
+    /// The app's environment, captured here and re-applied to anything this view
+    /// presents.
+    ///
+    /// A presentation is supposed to inherit the environment, and mostly appears
+    /// to. It does not when SwiftUI builds the presented view's
+    /// `PresentationHostingController` *eagerly*: `init` asks the new host for
+    /// its `bridgedPresentation` preference, and that preference walk evaluates
+    /// the presented body before the host is attached to the presenting graph.
+    /// Every `@Environment(X.self)` in that body then force-unwraps a value that
+    /// is not there yet — the whole environment is absent, not one injection,
+    /// which is why the console showed `Set a .modelContext in view's
+    /// environment to use Query` immediately before the fatal error.
+    ///
+    /// It takes two things to reach: a presented root that is itself a
+    /// presentation source (AdminView's TabView carries an `.alert`, so the
+    /// preference walk goes through it), and a present-while-dismissing
+    /// sequence, which is what `SheetBridge` does when it calls `present` from
+    /// the outgoing controller's `viewDidDisappear`. Entering Admin from the
+    /// caregiver menu is exactly that: the popover dismisses and the cover
+    /// presents in one turn. It crashed every time on Mac.
+    ///
+    /// **These values come from ContentView's own resolved properties, not from
+    /// the presented graph**, so they are populated no matter when SwiftUI
+    /// decides to evaluate the body. That is the entire point — a modifier that
+    /// *read* the environment inside the presented tree would find it just as
+    /// empty.
+    var presentedEnvironment: PresentedEnvironment {
+        PresentedEnvironment(
+            engine: sentenceEngine,
+            navigation: navigationCoordinator,
+            scriptRunner: scriptRunner,
+            scriptRecorder: scriptRecorder,
+            images: imageResolver,
+            profiles: profileResolver,
+            sceneArt: sceneArtCoordinator,
+            caregiverMenu: caregiverMenu,
+            adminRoute: adminRoute,
+            importCoordinator: importCoordinator,
+            modelContext: modelContext)
+    }
+
+    /// Mirrors what `claudeBlastApp` injects at the root. Adding an environment
+    /// object there means adding it here, or the object is present on the board
+    /// and absent in Admin.
+    struct PresentedEnvironment: ViewModifier {
+        let engine: SentenceEngine
+        let navigation: NavigationCoordinator
+        let scriptRunner: TileScriptRunner
+        let scriptRecorder: TileScriptRecorder
+        let images: TileImageResolver
+        let profiles: ChildProfileResolver
+        let sceneArt: SceneArtCoordinator
+        let caregiverMenu: CaregiverMenuCoordinator
+        let adminRoute: AdminRouteCoordinator
+        let importCoordinator: ImportCoordinator
+        let modelContext: ModelContext
+
+        func body(content: Content) -> some View {
+            content
+                .environment(engine)
+                .environment(navigation)
+                .environment(scriptRunner)
+                .environment(scriptRecorder)
+                .environment(images)
+                .environment(profiles)
+                .environment(sceneArt)
+                .environment(caregiverMenu)
+                .environment(adminRoute)
+                .environment(importCoordinator)
+                .environment(\.modelContext, modelContext)
         }
     }
 }

@@ -34,6 +34,15 @@ extension View {
             .environment(TileScriptRecorder())
             .environment(ImportCoordinator())
             .environment(SceneArtCoordinator())
+            // The four below were missing, so any preview of a view that reads
+            // them crashed on the same force-unwrap the Mac hit at runtime.
+            // `previewEnvironment` has to stay a complete mirror of what
+            // `claudeBlastApp` injects, or it silently stops covering the views
+            // it exists for.
+            .environment(TileImageResolver())
+            .environment(ChildProfileResolver())
+            .environment(CaregiverMenuCoordinator())
+            .environment(AdminRouteCoordinator())
             .modelContainer(previewContainer)
     }
 }

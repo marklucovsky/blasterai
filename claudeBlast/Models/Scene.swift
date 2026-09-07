@@ -342,17 +342,35 @@ final class BlasterScene {
     /// exactly that — and the moment of activation is the one that matters:
     /// this is where an unreachable home page becomes a board that will not
     /// draw.
-    func activate(context: ModelContext) throws {
+    /// Make this the child's board.
+    ///
+    /// Returns what it had to do to get there — repairs applied, warnings worth
+    /// showing — and throws `SceneActivation.Refusal` when the scene genuinely
+    /// cannot be shown. **The result is `@discardableResult` but the message is
+    /// not decorative:** a scene that quietly repaired itself is the state
+    /// `docs/s4-cleanup.md` §9 was written about, where a caregiver's board
+    /// changed under them with no explanation.
+    ///
+    /// Validation happens *before* anything is mutated, so a refused activation
+    /// leaves the previously active scene alone rather than deactivating it and
+    /// then failing — which would be a second way to end up with no board.
+    @discardableResult
+    func activate(context: ModelContext) throws -> SceneActivation.Outcome {
+        let vocabulary = Set(
+            ((try? context.fetch(FetchDescriptor<TileModel>())) ?? []).map(\.key))
+        let outcome = try SceneActivation.check(self, vocabulary: vocabulary)
+
         let allScenes = try context.fetch(FetchDescriptor<BlasterScene>())
         for scene in allScenes where scene.isActive {
             scene.isActive = false
         }
-        let pages = self.pages
-        if !pages.isEmpty, !pages.contains(where: { $0.key == homePageKey }),
-           let first = pages.first {
-            homePageKey = first.key
+        for repair in outcome.repairs {
+            switch repair {
+            case .adoptedHomePage(let key): homePageKey = key
+            }
         }
         self.isActive = true
+        return outcome
     }
 
     /// Deactivate this scene and restore the default scene.

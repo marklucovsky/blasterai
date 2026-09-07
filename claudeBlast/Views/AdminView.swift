@@ -67,6 +67,22 @@ struct AdminView: View {
     /// because the tab lives in an extension and cannot hold its own state.
     @State var showUsageReport = false
     @State var isResetting = false
+    /// The iCloud value awaiting confirmation. Nil when nothing is pending —
+    /// deliberately `Bool?` rather than a flag plus a value, because two
+    /// separate pieces of state admit a combination that means nothing.
+    @State var pendingICloud: Bool?
+
+    /// What the last scene activation had to repair, warn about, or refuse.
+    @State var activationNotice: ActivationNotice?
+
+    /// Shown after activating a scene that was not clean. Identifiable so it can
+    /// drive an alert directly, with no separate "is showing" flag to fall out of
+    /// step with it.
+    struct ActivationNotice: Identifiable {
+        let id = UUID()
+        let title: String
+        let message: String
+    }
     #if DEBUG
     /// Outcome of the last CloudKit schema exercise — see CloudKitSchemaExerciser.
     @State var schemaProbeResult: String?
@@ -159,7 +175,15 @@ struct AdminView: View {
             deviceTab.tag(AdminRoute.device)
             activityTab.tag(AdminRoute.activity)
         }
-
+        // On the TabView, not inside a tab: activation is triggered from both
+        // the Now tab and the Scenes tab, and an alert attached to whichever
+        // tab happened to be showing would be torn down the moment activation
+        // switched tabs.
+        .alert(item: $activationNotice) { notice in
+            Alert(title: Text(notice.title),
+                  message: Text(notice.message),
+                  dismissButton: .default(Text("OK")))
+        }
     }
 
     // MARK: - Tile Lookup

@@ -272,10 +272,16 @@ struct claudeBlastTests {
 
         let scene1 = BlasterScene(name: "Default", isDefault: true, isActive: true)
         let scene2 = BlasterScene(name: "Therapy", isActive: false)
+        // Both scenes need a page. Activation now validates before it mutates,
+        // and a scene with no pages is refused outright — there is nothing to
+        // show and no page to adopt as home. This test is about exclusivity, so
+        // it gets the minimum that makes a scene showable.
+        scene1.pages = [PageSpec(key: "home", tiles: [TileEntry(key: "eat")])]
+        scene2.pages = [PageSpec(key: "home", tiles: [TileEntry(key: "eat")])]
         context.insert(scene1)
         context.insert(scene2)
 
-        try scene2.activate(context: context)
+        _ = try scene2.activate(context: context)
 
         #expect(!scene1.isActive)
         #expect(scene2.isActive)

@@ -51,6 +51,28 @@ enum SceneImporter {
         /// while the local copy is edited): nothing was written, the caller must
         /// prompt and re-call with a resolution.
         var conflict: SceneImportConflict = .none
+
+        /// What is odd about the scene that just landed, in the same vocabulary
+        /// activation uses.
+        ///
+        /// Deliberately the *same* checks rather than a second set: a file is
+        /// judged the same way whether it is arriving or being switched to, so
+        /// the two layers cannot drift into disagreeing about what "broken"
+        /// means. Nothing here is fatal. The scene is imported either way and
+        /// the caregiver decides — which is why these are warnings on a landed
+        /// import rather than reasons to refuse one.
+        var warnings: [SceneActivation.Warning] = []
+
+        /// Words this import created, for `undo`. Not a count: an undo that
+        /// removes the board and leaves its vocabulary behind is a half-undo,
+        /// and those words would sit in the caregiver's word list forever with
+        /// nothing pointing at them.
+        var newTileKeys: [String] = []
+
+        /// Whether `undo` is meaningful. False for an update, where the incoming
+        /// content has already overwritten the copy that was there and deleting
+        /// the scene would take the caregiver's own board with it.
+        var isUndoable: Bool { !wasUpdate && conflict == .none }
     }
 
     /// An incoming update matches a scene the receiver has locally edited.
@@ -157,6 +179,7 @@ enum SceneImporter {
         let analysis = analyze(exportable, deviceTiles: deviceTiles)
 
         var newTileCount = 0
+        var newTileKeys: [String] = []
         var oversizedImages: [String] = []
         var imageUpdatedKeys: [String] = []
 
@@ -229,6 +252,7 @@ enum SceneImporter {
             context.insert(tile)
             tileLookup[tile.key] = tile
             newTileCount += 1
+            newTileKeys.append(tile.key)
             applyArt(incoming)
         }
 
@@ -375,6 +399,15 @@ enum SceneImporter {
             scene = newScene; wasUpdate = false
         }
 
+        // Judge what landed, not what was in the file: `pages` has already had
+        // unknown words dropped, so these are the faults that survive into the
+        // board the child would actually see.
+        //
+        // `try?` is not laziness — the one throwing case is `noPages`, which is
+        // refused far above, so a throw here is unreachable by construction.
+        let vocabulary = Set(tileLookup.keys)
+        let warnings = (try? SceneActivation.check(scene, vocabulary: vocabulary))?.warnings ?? []
+
         return ImportResult(
             scene: scene,
             skippedKeys: skippedKeys,
@@ -385,8 +418,43 @@ enum SceneImporter {
             // Only offer a "from …" tag when we actually created a NEW,
             // non-first-party scene with no author — not on a refresh of a scene
             // already present, and never for BlasterAI content.
-            needsReceiverLabel: !wasUpdate && incomingAuthor.isEmpty && !scene.isFirstParty
+            needsReceiverLabel: !wasUpdate && incomingAuthor.isEmpty && !scene.isFirstParty,
+            warnings: warnings,
+            newTileKeys: newTileKeys
         )
+    }
+
+    /// Remove what an import just added.
+    ///
+    /// Offered when a scene lands with something wrong with it. The alternative
+    /// — telling the caregiver their new board is broken and leaving them to
+    /// find and delete it themselves — is how a word list fills with debris from
+    /// files that were never any good.
+    ///
+    /// Takes the words with it. They were created by this import and nothing
+    /// else can be pointing at them yet, so leaving them would strand vocabulary
+    /// the caregiver never chose and cannot easily account for.
+    ///
+    /// Refuses an update, where "undo" has no meaning: the incoming content has
+    /// already replaced what was there, deleting the scene would delete the
+    /// caregiver's own board, and this cannot put the old version back.
+    @MainActor
+    static func undo(_ result: ImportResult, context: ModelContext) throws {
+        guard result.isUndoable else { return }
+        let keys = Set(result.newTileKeys)
+        let tiles = ((try? context.fetch(FetchDescriptor<TileModel>())) ?? [])
+            .filter { keys.contains($0.key) }
+        // Art variants are keyed by tile key rather than by a relationship, so
+        // they do not cascade — they have to go explicitly, or they outlive the
+        // word and silently re-attach to a later word that reuses the key.
+        let artKeys = Set(tiles.map(\.artKey))
+        let variants = ((try? context.fetch(FetchDescriptor<TileArtVariant>())) ?? [])
+            .filter { artKeys.contains($0.tileKey) }
+        try context.transaction {
+            context.delete(result.scene)
+            for variant in variants { context.delete(variant) }
+            for tile in tiles { context.delete(tile) }
+        }
     }
 
     /// Parse ExportableScene from JSON data without importing — for preview purposes.

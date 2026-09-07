@@ -784,7 +784,18 @@ final class TileScriptRunner {
             Self.logger.warning("TileScript: scene '\(name)' not found")
             return
         }
-        try? target.activate(context: modelContext)
+        // A script has no caregiver watching an alert, so this one logs rather
+        // than presents — but it must not swallow the outcome either. A script
+        // that silently switched to an unusable scene is a demo that goes wrong
+        // on camera with no explanation of why.
+        do {
+            let outcome = try target.activate(context: modelContext)
+            if let message = outcome.message {
+                Self.logger.warning("TileScript: scene '\(name)' activated with notes — \(message)")
+            }
+        } catch {
+            Self.logger.error("TileScript: scene '\(name)' cannot be activated — \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Command Description

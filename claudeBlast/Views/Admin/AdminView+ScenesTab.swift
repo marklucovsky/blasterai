@@ -237,8 +237,26 @@ extension AdminView {
         try? modelContext.save()
     }
 
+    /// Activate, and say what happened.
+    ///
+    /// Every call site used to be `try?`, which is how §9's "never silently"
+    /// was actually being broken: `activate` already repaired a dangling home
+    /// page, and the caregiver's board changed under them with no explanation.
+    /// A thrown refusal went nowhere either.
     func activateScene(_ scene: BlasterScene) {
-        try? scene.activate(context: modelContext)
+        do {
+            let outcome = try scene.activate(context: modelContext)
+            try? modelContext.save()
+            if let message = outcome.message {
+                activationNotice = ActivationNotice(title: "Scene Activated", message: message)
+            }
+        } catch {
+            // Nothing was mutated — `activate` validates before it touches
+            // anything — so the previously active scene is still the board.
+            activationNotice = ActivationNotice(
+                title: "Can't Use This Scene",
+                message: error.localizedDescription)
+        }
     }
 
     /// Clone-on-write for an immutable system scene: take an editable copy,
@@ -250,8 +268,7 @@ extension AdminView {
             scene, in: modelContext,
             authorID: DeviceProfileStore.ensureAuthorID(context: modelContext),
             authorName: DeviceProfileStore.authorName(context: modelContext))
-        try? copy.activate(context: modelContext)
-        try? modelContext.save()
+        activateScene(copy)
         sceneToClone = nil
         navigateToNewScene = copy       // reuse the post-generation editor route
     }

@@ -233,11 +233,39 @@ struct SceneImportSheet: View {
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
+    /// Anything the caregiver should know landed differently from what the
+    /// sender presumably meant. Not fatal — the scene imported — but the banner
+    /// must not read as an unqualified success when it is one of these.
+    private func problems(_ result: SceneImporter.ImportResult) -> [String] {
+        var lines: [String] = []
+        if !result.skippedKeys.isEmpty {
+            lines.append("\(result.skippedKeys.count) word\(result.skippedKeys.count == 1 ? "" : "s") "
+                         + "not on this device, left out: \(result.skippedKeys.joined(separator: ", "))")
+        }
+        for warning in result.warnings {
+            switch warning {
+            case .noReachableWords:
+                lines.append("Nothing on this board can be pressed — every cell is a gap or is concealed. "
+                             + "That may be deliberate; reveal words in the page editor when you're ready.")
+            case .missingWords(let keys):
+                lines.append("Words this board points at that aren't here: \(keys.joined(separator: ", "))")
+            }
+        }
+        if !result.oversizedImages.isEmpty {
+            lines.append("\(result.oversizedImages.count) image\(result.oversizedImages.count == 1 ? " was" : "s were") "
+                         + "too large and were not copied.")
+        }
+        return lines
+    }
+
     @ViewBuilder
     private func importResultBanner(_ result: SceneImporter.ImportResult) -> some View {
+        let problems = problems(result)
+        let isClean = problems.isEmpty
         VStack(alignment: .leading, spacing: 4) {
-            Label(bannerTitle(result), systemImage: "checkmark.circle.fill")
-                .foregroundStyle(.green).font(.headline)
+            Label(isClean ? bannerTitle(result) : "\(bannerTitle(result)) — check this one",
+                  systemImage: isClean ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                .foregroundStyle(isClean ? .green : .orange).font(.headline)
             if result.wasUpdate {
                 Text("This scene was already on your device (matched by id) — refreshed in place, not duplicated.")
                     .font(.caption).foregroundStyle(.secondary)
@@ -248,9 +276,8 @@ struct SceneImportSheet: View {
             if !result.imageUpdatedKeys.isEmpty {
                 Text("\(result.imageUpdatedKeys.count) image\(result.imageUpdatedKeys.count == 1 ? "" : "s") updated").font(.caption)
             }
-            if !result.skippedKeys.isEmpty {
-                Text("\(result.skippedKeys.count) tile(s) not found: \(result.skippedKeys.joined(separator: ", "))")
-                    .font(.caption).foregroundStyle(.orange)
+            ForEach(problems, id: \.self) { line in
+                Text(line).font(.caption).foregroundStyle(.orange)
             }
             // The file carried no author — let the receiver tag who it's from
             // ("from Greta"), like naming a contact. Optional; saved on Done too.
@@ -263,11 +290,21 @@ struct SceneImportSheet: View {
                     .textInputAutocapitalization(.words)
                     .onSubmit { saveReceiverLabel(result.scene) }
             }
-            Button("Done") {
-                if result.needsReceiverLabel { saveReceiverLabel(result.scene) }
-                onDismiss()
+            HStack {
+                Button("Done") {
+                    if result.needsReceiverLabel { saveReceiverLabel(result.scene) }
+                    onDismiss()
+                }
+                .buttonStyle(.bordered)
+                // Offered only alongside a problem, and only for a scene this
+                // import created. On an update it would delete the caregiver's
+                // own board and could not put the old version back.
+                if !problems.isEmpty && result.isUndoable {
+                    Button("Delete Import", role: .destructive) { undoImport(result) }
+                        .buttonStyle(.bordered)
+                }
             }
-            .buttonStyle(.bordered).padding(.top, 4)
+            .padding(.top, 4)
         }
         .padding()
         .background(RoundedRectangle(cornerRadius: 12).fill(.green.opacity(0.1)))
@@ -346,5 +383,17 @@ struct SceneImportSheet: View {
     private func saveReceiverLabel(_ scene: BlasterScene) {
         scene.receivedLabel = receiverLabel.trimmingCharacters(in: .whitespacesAndNewlines)
         try? modelContext.save()
+    }
+
+    private func undoImport(_ result: SceneImporter.ImportResult) {
+        do {
+            try SceneImporter.undo(result, context: modelContext)
+            try? modelContext.save()
+            onDismiss()
+        } catch {
+            // Leave the sheet up. The scene is still there and still usable —
+            // saying nothing and dismissing would look like the delete worked.
+            self.error = error.localizedDescription
+        }
     }
 }
