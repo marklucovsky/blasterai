@@ -209,6 +209,9 @@ teaches on decides the shape. See [[project_wordclass_taxonomy_review]].
 
 **Raised:** 2026-09-03, out of two live lockouts on the iPad mini.
 
+**Landed:** 2026-09-07, S5 PR 4. `SceneActivation` + `activate` returning its
+outcome; all four call sites now report instead of `try?`.
+
 Right now anything can be activated, and a scene with a structural fault takes
 the device with it. Two ways in were hit within an hour:
 
@@ -270,6 +273,9 @@ containment, not as the fix.
 
 **Raised:** 2026-09-03, from the Mac install after a large load run. Same class
 as item 9.
+
+**Landed:** 2026-09-07, S5 PR 4. The iCloud toggle confirms in both directions
+and says what actually happens.
 
 The Mac install came back with `icloud_enabled = true`, which nobody meant to
 set. DEBUG registers it `false` and onboarding seeds its toggle from that, so a

@@ -215,7 +215,7 @@ extension AdminView {
             Section("Active Scene") {
                 ForEach(scenes) { scene in
                     Button {
-                        try? scene.activate(context: modelContext)
+                        activateScene(scene)
                     } label: {
                         HStack {
                             Text(scene.name)
