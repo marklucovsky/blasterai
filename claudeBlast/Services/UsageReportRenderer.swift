@@ -124,10 +124,10 @@ enum UsageReportRenderer {
     // MARK: - Text helpers
 
     private static func draw(_ text: String, _ writer: inout PageWriter,
-                             font: UIFont, colour: UIColor = .label,
+                             font: UIFont, color: UIColor = .label,
                              spacingAfter: CGFloat = 4, indent: CGFloat = 0) {
         let width = writer.contentWidth - indent
-        let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: colour]
+        let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: color]
         let height = (text as NSString).boundingRect(
             with: CGSize(width: width, height: .greatestFiniteMagnitude),
             options: [.usesLineFragmentOrigin, .usesFontLeading],
@@ -159,7 +159,7 @@ enum UsageReportRenderer {
         writer.need(34)
         writer.advance(10)
         draw(text, &writer, font: .systemFont(ofSize: 13, weight: .semibold),
-             colour: .label, spacingAfter: 2)
+             color: .label, spacingAfter: 2)
         let line = CGRect(x: writer.margin, y: writer.y, width: writer.contentWidth, height: 0.6)
         UIColor.separator.setFill()
         UIBezierPath(rect: line).fill()
@@ -174,12 +174,12 @@ enum UsageReportRenderer {
         var subtitle = r.periodLabel
         if !r.sceneName.isEmpty { subtitle += " · \(r.sceneName)" }
         subtitle += " · generated \(r.generatedAt.formatted(date: .abbreviated, time: .shortened))"
-        draw(subtitle, &w, font: .systemFont(ofSize: 10), colour: .secondaryLabel,
+        draw(subtitle, &w, font: .systemFont(ofSize: 10), color: .secondaryLabel,
              spacingAfter: 10)
 
         if r.isSingleWord {
             draw("Single word mode. Counts are words pressed; there are no generated sentences, and so no escalation.",
-                 &w, font: .systemFont(ofSize: 9), colour: .secondaryLabel, spacingAfter: 8)
+                 &w, font: .systemFont(ofSize: 9), color: .secondaryLabel, spacingAfter: 8)
         }
     }
 
@@ -217,7 +217,7 @@ enum UsageReportRenderer {
 
         if r.summary.previous != nil {
             draw("Change is against the period immediately before this one.", &w,
-                 font: .systemFont(ofSize: 9), colour: .secondaryLabel, spacingAfter: 6)
+                 font: .systemFont(ofSize: 9), color: .secondaryLabel, spacingAfter: 6)
         }
     }
 
@@ -276,7 +276,7 @@ enum UsageReportRenderer {
             }
             w.advance(4)
             draw("Every week in this period folded onto one, so a habit shows as a column.",
-                 &w, font: .systemFont(ofSize: 9), colour: .secondaryLabel, spacingAfter: 4)
+                 &w, font: .systemFont(ofSize: 9), color: .secondaryLabel, spacingAfter: 4)
         }
 
         drawDailyBars(&w, r)
@@ -310,10 +310,10 @@ enum UsageReportRenderer {
 
         if let first = days.first, let last = days.last {
             let range = "\(first.date.formatted(.dateTime.month(.abbreviated).day())) – \(last.date.formatted(.dateTime.month(.abbreviated).day()))"
-            draw(range, &w, font: .systemFont(ofSize: 8), colour: .tertiaryLabel, spacingAfter: 2)
+            draw(range, &w, font: .systemFont(ofSize: 8), color: .tertiaryLabel, spacingAfter: 2)
         }
         draw("Light bars are words said; dark bars are how many of them were different. The gap between the two is the part worth watching — saying more is not the same as saying more things.",
-             &w, font: .systemFont(ofSize: 9), colour: .secondaryLabel, spacingAfter: 4)
+             &w, font: .systemFont(ofSize: 9), color: .secondaryLabel, spacingAfter: 4)
     }
 
     private static func hourLabel(_ hour: Int) -> String {
@@ -352,7 +352,7 @@ enum UsageReportRenderer {
             }
             if c.unattributedPresses > 0 {
                 draw("\(c.unattributedPresses) earlier presses were recorded before pages were, and count towards no page — so these figures understate use.",
-                     &w, font: .systemFont(ofSize: 8), colour: .tertiaryLabel, spacingAfter: 4)
+                     &w, font: .systemFont(ofSize: 8), color: .tertiaryLabel, spacingAfter: 4)
             }
         }
 
@@ -370,7 +370,7 @@ enum UsageReportRenderer {
             draw(c.wentQuiet.joined(separator: ", "), &w,
                  font: .systemFont(ofSize: 10), spacingAfter: 2)
             draw("Used before, and not in this period.", &w,
-                 font: .systemFont(ofSize: 9), colour: .secondaryLabel, spacingAfter: 4)
+                 font: .systemFont(ofSize: 9), color: .secondaryLabel, spacingAfter: 4)
         }
     }
 
@@ -409,13 +409,13 @@ enum UsageReportRenderer {
         guard !r.sessions.isEmpty else {
             sectionHeading("Sessions", &w)
             draw("Nothing was recorded in this period.", &w,
-                 font: .systemFont(ofSize: 10), colour: .secondaryLabel)
+                 font: .systemFont(ofSize: 10), color: .secondaryLabel)
             return
         }
 
         sectionHeading("Sessions", &w)
         draw("A session is a run of use with no gap longer than ten minutes.", &w,
-             font: .systemFont(ofSize: 9), colour: .secondaryLabel, spacingAfter: 6)
+             font: .systemFont(ofSize: 9), color: .secondaryLabel, spacingAfter: 6)
 
         for session in r.sessions {
             let minutes = Int(session.duration / 60)
@@ -435,7 +435,7 @@ enum UsageReportRenderer {
                     let time = entry.createdAt.formatted(date: .omitted, time: .shortened)
                     let said = entry.sentence.isEmpty ? "—" : entry.sentence
                     draw("\(time)   \(said)", &w, font: .systemFont(ofSize: 9),
-                         colour: .secondaryLabel, spacingAfter: 1, indent: 14)
+                         color: .secondaryLabel, spacingAfter: 1, indent: 14)
                 }
             }
             w.advance(4)
@@ -444,7 +444,7 @@ enum UsageReportRenderer {
         if !includeUtterances {
             w.advance(4)
             draw("This report shows how much and when, not what was said. A version including the sentences can be shared separately.",
-                 &w, font: .systemFont(ofSize: 9), colour: .secondaryLabel)
+                 &w, font: .systemFont(ofSize: 9), color: .secondaryLabel)
         }
     }
 }

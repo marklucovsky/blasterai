@@ -13,12 +13,12 @@ struct TileSelection: Sendable, Equatable, Hashable {
     let wordClass: String
 
     /// Part of speech captured when the tile was tapped, so a chip in the tray
-    /// and the tile on the board cannot disagree about colour.
+    /// and the tile on the board cannot disagree about color.
     ///
     /// Snapshotted rather than re-derived at render time because the first layer
     /// of resolution — a therapist's stored correction — lives on `TileModel`,
     /// which a selection does not carry. Deriving from `wordClass` alone in the
-    /// tray would quietly paint the chip a different colour from the tile the
+    /// tray would quietly paint the chip a different color from the tile the
     /// child just pressed.
     let partOfSpeech: PartOfSpeech?
 

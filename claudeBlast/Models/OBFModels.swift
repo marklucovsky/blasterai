@@ -74,7 +74,7 @@ struct OBFButton: Codable {
     /// What the button says when pressed. Omitted for a navigation button, which
     /// travels rather than speaks.
     var vocalization: String?
-    /// `rgb(r, g, b)` — OBF's colour syntax, not hex.
+    /// `rgb(r, g, b)` — OBF's color syntax, not hex.
     var background_color: String?
     var border_color: String?
     /// Set on a button that opens another board.

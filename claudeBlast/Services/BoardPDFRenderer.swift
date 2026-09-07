@@ -639,7 +639,7 @@ enum BoardPDFRenderer {
         // It used to be a bare picture with a caption under it — no frame, no
         // tint, nothing to say where one tile stopped and the next began. That
         // reads as a contact sheet, not a board, and it throws away the
-        // wordClass colour a child and caregiver have already learned on screen.
+        // wordClass color a child and caregiver have already learned on screen.
         // The card, its tint, its border and the link indicator all mirror
         // `TileView.tileCard` so the laminated sheet and the iPad agree.
         let radius = max(3, card.width * 0.09)

@@ -487,9 +487,9 @@ struck single-core-board preset is a simplification, not a cut.
 S4's cleanup list was never cleared — S4 closed on its exit criteria with
 `docs/s4-cleanup.md` §1–§6 and §9–§12 still open. Mark's call, 2026-09-04: those
 roll into S5 as if they had belonged all along, and PR 1 clears the mechanical
-half of them. Two new pieces of scope arrived the same day (tile colour and
+half of them. Two new pieces of scope arrived the same day (tile color and
 sparse boards); both are recorded below before the PR table, because the PR
-ordering only makes sense once the colour decision is understood.
+ordering only makes sense once the color decision is understood.
 
 ### PR ordering
 
@@ -497,13 +497,13 @@ ordering only makes sense once the colour decision is understood.
 |---|---|---|---|
 | 0 | docs | this plan section | doc-only, direct to main |
 | 1 | **cleanup** | S4 §1 `bassketball` delete · §2 `cls_help` frame regen · §3 print label shrink-to-fit · §4 `isStructuralChrome` ×5 sites · §5 `NOTICE` rewrite (Apache-2.0) · §6 CLAUDE.md test-name check | mechanical; §4 unblocks PR 2 |
-| 2 | **colour** | `partOfSpeechRaw` on TileModel · 4-layer resolver · `VocabularyClass.color` → `defaultPartOfSpeech` · drop `PartOfSpeechIndex.overrides` · resolver takes a tile, not a string (~12 sites) · Fitzgerald palette · filled cards · card ignores dark mode | **the only S6 schema deadline** |
+| 2 | **color** | `partOfSpeechRaw` on TileModel · 4-layer resolver · `VocabularyClass.color` → `defaultPartOfSpeech` · drop `PartOfSpeechIndex.overrides` · resolver takes a tile, not a string (~12 sites) · Fitzgerald palette · filled cards · card ignores dark mode | **the only S6 schema deadline** |
 | 3 | **sparse boards** | `TileEntry.isConcealed` (not `isHidden` — `hide` is the word-level safety hide) · unique `<spacer>#…` keys · one empty-cell render path · coverage counts concealed ≠ spacer · bulk conceal/reveal · OBF gap | blob-local, no schema change · **merged (#66)** |
 | 3.4 | **page rename** | `PageSpec.displayName`, key never moves · rename in the page editor · travels in scene share, print, OBF | **merged (#67, #68)** |
 | 3.5 | **letters & numbers** | `GlyphTile` draws a–z and 0–10 · two packs · natural sort · glyphs in the per-set review strip | zero bytes; no generated art |
-| 3.6 | **colour mapping** | therapist-editable part-of-speech → colour, per child | ⚠️ **schema deadline** — see below |
+| 3.6 | **color mapping** | therapist-editable part-of-speech → color, per child | ⚠️ **schema deadline** — see below |
 | 4 | **gates** | §9 scene validation on activate · §10 iCloud toggle confirmation both directions · modal progress for long ops · audit sibling one-tap actions | two live lockouts + the stray-tap iCloud flip |
-| 5 | **compact + names** | §12 Coverage / Patterns / coverage grid at phone width · §11 profile-name audit | both are "reviewed on the wrong device or by the wrong reader" |
+| 5 | **compact + names** | §12 Coverage / Patterns / coverage grid at phone width · **§11 profile model** — see below | both are "reviewed on the wrong device or by the wrong reader" |
 | 6 | **tester readiness** | AdminGate hardening · PIN recovery · no-key path verified · beta-review notes | no-key path is the likeliest rejection cause |
 | 7 | **launch assets** | claims refresh · ASC record · icon audit · privacy labels · screenshots iPad/iPhone/Mac | exit criteria live here |
 
@@ -513,7 +513,7 @@ both render against the palette it establishes.
 ### The palette is ours, and it should not be (decided 2026-09-04)
 
 `VocabularyClasses.swift` says it plainly — *"Colors mirror the legacy switch"*.
-We invented the colourway, and it colours by **semantic category** (food red,
+We invented the colorway, and it colors by **semantic category** (food red,
 animal brown, places blue). No clinical practice uses that axis.
 
 What every board we are compared against uses is the **Fitzgerald Key**: a
@@ -528,12 +528,12 @@ proposed.
 **We have the data.** `43ce69b` shipped `PartOfSpeech` + `PartOfSpeechIndex`.
 496 of 507 vocabulary keys are in `Resources/parts_of_speech.json`; the 11 that
 are not are exactly the structural chrome that `isStructuralChrome` names, and
-they *should* fall through to chrome styling rather than a word colour. There is
+they *should* fall through to chrome styling rather than a word color. There is
 no gap to fill.
 
 **Mapping** (Modified Fitzgerald, as Snap Core First and TouchChat teach it):
 
-| PartOfSpeech | colour |
+| PartOfSpeech | color |
 |---|---|
 | pronoun | yellow |
 | verb | green |
@@ -547,24 +547,24 @@ no gap to fill.
 
 **Three consequences, accepted deliberately:**
 
-1. **The palette collapses from ~20 colours to 8.** Food stops being red and
+1. **The palette collapses from ~20 colors to 8.** Food stops being red and
    becomes orange like every other noun; mint, teal, cyan and brown leave the
-   board entirely. Colour no longer distinguishes food from places. That is the
-   trade Fitzgerald makes on purpose — fewer colours, but ones a therapist teaches
+   board entirely. Color no longer distinguishes food from places. That is the
+   trade Fitzgerald makes on purpose — fewer colors, but ones a therapist teaches
    and a child carries elsewhere. Every existing board and PDF changes appearance.
 2. **"White" does not survive a naive fill.** Function words are white on a
-   Fitzgerald board because the card sits against a coloured surround. On our
+   Fitzgerald board because the card sits against a colored surround. On our
    white ground that is invisible, so it becomes a neutral card with a visible
    outline.
-3. **The tile card does not follow dark mode.** Fitzgerald colours are taught as
+3. **The tile card does not follow dark mode.** Fitzgerald colors are taught as
    constants; a board is a physical object. The card stays light in both
    appearances and only the chrome around it goes dark. This is also the better
-   answer to "the colour needs to be bolder in dark mode" — a light card on a dark
+   answer to "the color needs to be bolder in dark mode" — a light card on a dark
    ground is the boldest version available, and it costs no new constants.
 
-**Colour on the edge is why ours reads flat.** `TileView.swift:139–149` draws a
+**Color on the edge is why ours reads flat.** `TileView.swift:139–149` draws a
 `lineWidth: 3` border at `opacity(0.6)` over an `opacity(0.12)` fill. Side by side
-with cboard on the same tiles, their colour *is* the card and ours is a hairline
+with cboard on the same tiles, their color *is* the card and ours is a hairline
 around a white card — the board reads monochrome from three feet away. Our own
 PDFs are closer to cboard than our app is, because the print renderer fills.
 
@@ -577,7 +577,7 @@ PDFs are closer to cboard than our app is, because the print renderer fills.
 4. nil                         structural chrome only (home, page_*, nav)
 ```
 
-**Reporting stops after layer 2; colour runs all four.** "Strict" means *no
+**Reporting stops after layer 2; color runs all four.** "Strict" means *no
 guessing*, not *table only*: a therapist's stored answer is not a guess, so
 coverage must honour it; a derivation is, so coverage must not.
 
@@ -589,7 +589,7 @@ Layer 1 must outrank layer 2, or a therapist correcting a *bundled* word (callin
 words most likely to be argued about.
 
 **Layer 3 was measured, not assumed.** Deriving from `wordClass` — which the
-caregiver already picks when creating a word — gives **92.3% colour accuracy**
+caregiver already picks when creating a word — gives **92.3% color accuracy**
 across the caregiver-selectable classes. Every one of the 36 misses is a *bundled*
 word, which has an exact table entry and never reaches the derivation; the misses
 concentrate in function words (prepositions filed as `describe`, pronouns filed as
@@ -605,7 +605,7 @@ Two structural changes fall out and should land in the same PR:
   cleaning up.
 - **`VocabularyClass.color` becomes `defaultPartOfSpeech`.** A column swap, not a
   new file: the catalogue that already declares what classes exist also declares
-  what each one is grammatically, so there is no parallel switch to drift. Colour
+  what each one is grammatically, so there is no parallel switch to drift. Color
   leaves the catalogue entirely.
 
 The resolver must also move to where a tile is in hand. `wordClassColor(_ String)`
@@ -620,7 +620,7 @@ land before S6 promotion.** It is the only deadline-bearing item in S5.
 
 It is taken as insurance, on the S3 3A precedent (`languageRaw`, `brownsStageRaw`).
 v1 derives; the field ships empty. It exists so that a therapist can correct a
-colour and have it stick, and so a classifier run at word-add time (we already call
+color and have it stick, and so a classifier run at word-add time (we already call
 `WordModerationService` there and it could return a part of speech in the same
 response) can persist its answer. Without it, `overrides` is in-memory only: the
 answer dies at relaunch and the same word renders orange on the iPad and gray on
@@ -677,29 +677,29 @@ side of spacers exists.
 
 Both live on `TileEntry`, inside the `pagesData` JSON blob (`Models/Scene.swift:179–197`)
 — **not a synced schema change, and no S6 deadline.** Note the symmetry with the
-colour work: part of speech is per-*word* (`TileModel`, syncs, one answer
+color work: part of speech is per-*word* (`TileModel`, syncs, one answer
 everywhere), hidden and spacer are per-*placement*. The same word can be hidden on
 the school board and visible at home — and orange in both places.
 
-### A therapist can change what the colours mean (raised 2026-09-06)
+### A therapist can change what the colors mean (raised 2026-09-06)
 
 Mark, on CVI: *"it might make sense for a therapist to be able to manage/update
-our grammar-type ↔ colour mappings."*
+our grammar-type ↔ color mappings."*
 
 **This is clinical, not customisation.** A child with cortical visual impairment
-often has one reliably-perceived colour — commonly red or yellow — and reduced
+often has one reliably-perceived color — commonly red or yellow — and reduced
 discrimination generally. The Modified Fitzgerald palette PR 2 adopted assumes
 eight distinguishable hues, and for a CVI child several of them collapse into
-each other. A board whose colour system the child cannot see is not merely
+each other. A board whose color system the child cannot see is not merely
 unhelpful; it teaches nothing while looking like it does.
 
 Adjacent needs the same lever serves: a therapist whose school district
-standardises on a different key, a family colour-blind in a specific band, and
+standardises on a different key, a family color-blind in a specific band, and
 the Goossens' variants that differ from Fitzgerald on prepositions.
 
 **It is cheap now precisely because of how PR 2 landed.** `TileColorResolver` is
 already the single source of truth, every surface routes through it, and the axis
-is `PartOfSpeech` — eleven cases. The whole mapping is eleven colour values.
+is `PartOfSpeech` — eleven cases. The whole mapping is eleven color values.
 
 #### Scope: per child — and why that differs from the image set
 
@@ -710,21 +710,21 @@ that per child. Mark, 2026-09-06: that was a balance tradeoff — the choice is
 static for a given child and the control is five rows, so a device-level setting
 that someone sets once is not worth a synced per-child field.
 
-A colour map breaks both halves of that argument:
+A color map breaks both halves of that argument:
 
 - **It is not simple.** Eleven mappings, not one of five rows — a data structure
   rather than a pick.
 - **It is a property of the child, not the screen.** CVI is a fact about how
   *this* child sees, and it has to be true on every device that child touches.
-  The image set is a rendering preference; the colour map is clinical.
+  The image set is a rendering preference; the color map is clinical.
 
 So: per child, on `ChildProfile`, beside `brownsStageRaw` and `languageRaw` —
 which the profile already carries for exactly this class of fact.
 
-#### A colour map is a thing you can send
+#### A color map is a thing you can send
 
 Mark's framing, and it changes the shape: *"ideally a therapist can create and
-manage colour maps and then cut/paste or text the map to the right patient."*
+manage color maps and then cut/paste or text the map to the right patient."*
 
 That makes the map an **artifact**, not a bag of settings — the same move scenes
 and vocabulary packs already made, and for the same reason. An SLP works with
@@ -733,7 +733,7 @@ the person who can build a good one is rarely the person holding the device it
 needs to be on.
 
 It is also the smallest shareable thing in the app by a wide margin: eleven
-name→colour pairs. Small enough that **text is a plausible transport** — a
+name→color pairs. Small enough that **text is a plausible transport** — a
 compact JSON blob that survives a paste into Messages — which is a lighter path
 than a file share, and does not need a share sheet, a UTI, or an import screen
 to be useful on day one.
@@ -748,13 +748,13 @@ child is on.
 
 Mark, settling the question: printed sheets and `.obz` files are **one-way
 transforms of this screen, to paper or to another app**. They already flatten the
-device's current settings — the active image set most obviously — and the colour
+device's current settings — the active image set most obviously — and the color
 map is one more of those.
 
 So a printed board and an exported `.obz` use whatever palette is in force when
 the export runs, baked in, with no separate mapping travelling alongside. That is
 the honest statement for a format that cannot resolve it later anyway: OBF's
-`background_color` is a literal colour per button, not a reference to a system.
+`background_color` is a literal color per button, not a reference to a system.
 
 The corollary is worth stating for whoever reads this next: an export made for a
 CVI child carries that child's palette permanently, so it is not a neutral
@@ -791,10 +791,65 @@ The field is not optional to ship. Only the editor is.
 
 #### Open question
 
-Whether a shared **scene** should be able to carry a colour map. It belongs to
+Whether a shared **scene** should be able to carry a color map. It belongs to
 the child rather than the board, which argues no — but an SLP sending a fully
-configured board to a family may well mean the colours too. Decide with Brandi,
+configured board to a family may well mean the colors too. Decide with Brandi,
 alongside the part-of-speech questions already queued for her.
+
+### One caregiver, N children (settles §11)
+
+§11 asked what the seeded profiles should be called and whether `Legacy` and
+`Sandbox` both need to exist. Mark's answer, 2026-09-07, is better than a
+rename: **neither name survives, because the model is wrong.**
+
+- **One caregiver profile.** The default, bootstrapped one. Undeletable.
+- **Up to N child profiles**, added and deleted freely, and eventually
+  shareable.
+- **No Legacy. No Sandbox.**
+
+#### Most of this already exists under the wrong name
+
+The Sandbox **is** the caregiver profile. `isSystem == true`, a stable *shared*
+id (`system.sandbox`, deliberately identical on every device), auto-seeded at
+bootstrap, undeletable, and `ChildProfileResolver`'s fallback for "no specific
+child". It needs a name and a place in the UI, not a rewrite.
+
+`Legacy` is migration debris. `ProfileMigration` seeds it only when
+`wasInstalled` — from prior `UserDefaults` on an upgrade — and `OnboardingView`
+already treats the literal string `"Legacy"` as "no name yet". **All devices are
+wiped before first use** (2026-08-24, reaffirmed 2026-09-06), so no upgrade path
+survives for it to serve. It can be deleted outright rather than renamed, which
+also removes the "Legacy" that turned up as the title of the first usage-report
+PDF — the observation that opened §11.
+
+#### The work
+
+1. Rename the system profile to **Caregiver** (`kSandboxProfileDefaultName`),
+   and take the seeding of `Legacy` out of `ProfileMigration`.
+2. Split the Profiles page in two: the caregiver's own profile, then the
+   children. One list mixing them is what made "why are there two of these"
+   unanswerable.
+3. Audit which surfaces show a profile name at all — still the useful half of
+   §11, and the reason the report was headed "Legacy".
+
+The caregiver profile is already carrying weight: `colorMapLibrary` (PR 3.6)
+lives there, because a saved palette belongs to the person building palettes
+rather than to any one child. Expect more of a therapist's world to accumulate
+there — Mark: *"a therapist's world of scenes, color schemes, vocabulary packs
+should travel with her wherever her iCloud is available."*
+
+#### Profile sharing — a plan entry, not this PR
+
+Sharing a child profile the way scenes and packs are shared is the natural next
+step, and it is deliberately **not** scoped here. A shared profile would carry
+the color map, the voice, Brown's stage and the tile cap — which is to say it
+clones a person's clinical setup, not a preference. That deserves its own
+thinking: what a receiving device does with a name, whether the child's *identity*
+travels or only their configuration, and whether an SLP handing a family a
+profile is doing something meaningfully different from handing them a board.
+
+Worth raising with Brandi alongside the part-of-speech and color-map questions
+already queued.
 
 ### Carried from S4
 

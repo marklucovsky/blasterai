@@ -203,7 +203,7 @@ struct SceneEditorView: View {
                 } header: {
                     Text("Complete \(style.displayName)")
                 } footer: {
-                    Text("These words have art in some \(style.displayName) styles but not all of them. Completing recolours the pictures you already have — it doesn't draw new ones, so the figures stay the same.")
+                    Text("These words have art in some \(style.displayName) styles but not all of them. Completing recolors the pictures you already have — it doesn't draw new ones, so the figures stay the same.")
                 }
             }
 

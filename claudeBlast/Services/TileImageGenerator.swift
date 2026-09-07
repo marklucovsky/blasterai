@@ -185,14 +185,14 @@ enum TileImageGenerator {
         }
     }
 
-    /// Does this picture contain a person — anything with skin to recolour?
+    /// Does this picture contain a person — anything with skin to recolor?
     ///
     /// **A tone transform applied to a picture with no person destroys it.** The
     /// prompt asserts "the figure currently has light skin", and the model obeys
     /// an instruction about a figure by inventing one: adding "White House" gave
     /// a building in Light and a *child eating dinner* in Medium and Dark, and
     /// "speed boat" became a boy eating a sandwich. The prompt cannot be softened
-    /// into "recolour any skin you find" — it earns its accuracy by being
+    /// into "recolor any skin you find" — it earns its accuracy by being
     /// specific, and hedging it costs tone precision on the tiles that do have
     /// people.
     ///
@@ -259,7 +259,7 @@ enum TileImageGenerator {
 
     /// Apply one variant transform, `from` → `to`, within a style.
     ///
-    /// Skin tone is the only transform that exists today, so this is a recolour.
+    /// Skin tone is the only transform that exists today, so this is a recolor.
     /// A style whose variants differ some other way would branch here on what
     /// `to` declares — the shape of the call, one image in and one image out, is
     /// what the generation loop depends on and would not change.
@@ -272,7 +272,7 @@ enum TileImageGenerator {
     /// ## Why one image and an explicit target, not an exemplar
     ///
     /// The first version passed **two** images to /images/edits — the new art plus
-    /// an existing correctly-toned tile as a colour swatch — on the reasoning that
+    /// an existing correctly-toned tile as a color swatch — on the reasoning that
     /// a tone cannot be described in words. That shipped and was wrong on both
     /// counts. Multi-image input to gpt-image-1 is *reference composition*, not an
     /// edit of the first image: adding "swimmer" with all styles on came back as
@@ -348,19 +348,19 @@ enum TileImageGenerator {
         should be about \(target.bluePercent)% of red and green about \
         \(target.greenPercent)% of red. A tone with too little blue reads as \
         orange, rust or terracotta, which is wrong. Keep it soft and slightly \
-        desaturated — a natural skin tone, not a saturated colour. Do not go \
+        desaturated — a natural skin tone, not a saturated color. Do not go \
         darker than \(target.hex); err lighter if anything.
 
         HAIR: if the hair is blond, yellow, golden, light brown, or any pale \
-        colour, you MUST change it to dark brown. Pale hair on brown skin is wrong \
+        color, you MUST change it to dark brown. Pale hair on brown skin is wrong \
         and is the most common mistake made on this task. Hair that is already \
         dark stays exactly as it is. Keep strong value contrast at the hairline so \
-        it reads clearly against the skin, and never tint hair with the skin colour.
+        it reads clearly against the skin, and never tint hair with the skin color.
 
         Change NOTHING else. Same person, same pose, same facial expression, same \
-        hairstyle, same clothing and identical clothing colours, same objects, \
+        hairstyle, same clothing and identical clothing colors, same objects, \
         same background, same black outlines at the same weight, same composition. \
-        Do not redraw or restyle. Do not recolour clothing, food, bread, wood, \
+        Do not redraw or restyle. Do not recolor clothing, food, bread, wood, \
         sand, or any object — only skin. No text anywhere.
         """
     }

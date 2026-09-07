@@ -22,7 +22,7 @@ import SwiftUI
 /// letterforms. It also sidesteps the problem that decides whether a letter tile
 /// works at all, which is legibility at tile size.
 ///
-/// The standing preference already pointed here: colours and shapes prefer
+/// The standing preference already pointed here: colors and shapes prefer
 /// deterministic code renders over AI, and `render_shapes.py` /
 /// `render_color_spheres.py` are the precedent. This is the same argument with
 /// no counter-argument left.

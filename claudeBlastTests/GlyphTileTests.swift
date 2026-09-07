@@ -76,7 +76,7 @@ struct GlyphTileTests {
         let light = try #require(GlyphTile.image(for: "letter_a", in: ImageSetID.classic, size: 64))
         let dark = try #require(GlyphTile.image(for: "letter_a", in: ImageSetID.highContrast, size: 64))
         #expect(corner(of: light) != corner(of: dark),
-                "both sets drew the same paper colour")
+                "both sets drew the same paper color")
     }
 
     /// A glyph has no skin tone, so the three Classic sets share one rendering —

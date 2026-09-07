@@ -36,7 +36,7 @@ final class TileModel: Identifiable {
     ///
     /// ## Why the field exists before a writer does
     ///
-    /// Part of speech drives tile colour (`TileColorResolver`), and colour is the
+    /// Part of speech drives tile color (`TileColorResolver`), and color is the
     /// one thing on a board a therapist teaches against. They will disagree with
     /// us about a word — `more` as a verb rather than a determiner is the obvious
     /// one — and a correction has to stick, on every device.

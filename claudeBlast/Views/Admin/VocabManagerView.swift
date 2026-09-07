@@ -220,8 +220,8 @@ struct VocabManagerView: View {
         } else {
             // Both axes, because they answer different questions and a caregiver
             // comparing two words needs to see which one differs. The swatch is
-            // the tile's actual colour on the board, so this row is also how you
-            // find a word whose colour looks wrong without hunting the grid.
+            // the tile's actual color on the board, so this row is also how you
+            // find a word whose color looks wrong without hunting the grid.
             HStack(spacing: 5) {
                 Text(tile.wordClass)
                 if let pos = tile.resolvedPartOfSpeech {

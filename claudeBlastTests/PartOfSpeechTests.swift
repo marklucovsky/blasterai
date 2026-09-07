@@ -135,7 +135,7 @@ struct PartOfSpeechTests {
     }
 
     /// Layer 3. A caregiver-added word is in no table, and must still get a
-    /// colour — this is the layer that stops "grandma" rendering as chrome.
+    /// color — this is the layer that stops "grandma" rendering as chrome.
     @Test("A caregiver word derives from the class the caregiver picked")
     func unknownWordDerivesFromItsClass() {
         #expect(tile("zzz_grandma", "people").resolvedPartOfSpeech == .noun)
@@ -151,7 +151,7 @@ struct PartOfSpeechTests {
     }
 
     /// The invariant that matters for the board: **every real word gets a
-    /// colour.** A word that resolves to nil renders as furniture, which is the
+    /// color.** A word that resolves to nil renders as furniture, which is the
     /// failure this whole chain exists to prevent — and it would appear silently,
     /// on one tile, on somebody's board.
     @Test("No bundled word resolves to chrome")
@@ -170,8 +170,8 @@ struct PartOfSpeechTests {
 
     // MARK: - Fitzgerald palette
 
-    /// The colours a therapist teaches must actually differ from each other.
-    @Test("The Fitzgerald buckets are distinct colours")
+    /// The colors a therapist teaches must actually differ from each other.
+    @Test("The Fitzgerald buckets are distinct colors")
     func fitzgeraldBucketsAreDistinct() {
         let buckets: [PartOfSpeech] = [.pronoun, .verb, .adjective, .noun,
                                        .question, .negation, .social, .preposition]
@@ -181,8 +181,8 @@ struct PartOfSpeechTests {
 
     /// Fitzgerald groups these, and so do we — pink for social, neutral for
     /// function words.
-    @Test("Grouped parts of speech share a colour")
-    func groupedPartsShareAColour() {
+    @Test("Grouped parts of speech share a color")
+    func groupedPartsShareAColor() {
         #expect(TileColorResolver.color(for: .social)
                 == TileColorResolver.color(for: .interjection))
         #expect(TileColorResolver.color(for: .determiner)
@@ -215,8 +215,8 @@ struct PartOfSpeechTests {
         }
     }
 
-    @Test("Chrome and a missing tile take the chrome colour, not a word colour")
-    func chromeTakesChromeColour() {
+    @Test("Chrome and a missing tile take the chrome color, not a word color")
+    func chromeTakesChromeColor() {
         #expect(TileColorResolver.color(for: nil as PartOfSpeech?) == TileColorResolver.chrome)
         #expect(TileColorResolver.color(for: nil as TileModel?) == TileColorResolver.chrome)
         #expect(TileColorResolver.color(for: tile("home", "navigation"))
@@ -227,7 +227,7 @@ struct PartOfSpeechTests {
 
     /// The gap this closes: a correction lives on `TileModel`, but
     /// `CoverageReport` looks words up by key. Without the projection the tile
-    /// would take its new colour while coverage still counted it under the old
+    /// would take its new color while coverage still counted it under the old
     /// part of speech — a split nobody sees until they read the report.
     @Test("A stored correction reaches the key-based lookup")
     func correctionReachesReporting() {

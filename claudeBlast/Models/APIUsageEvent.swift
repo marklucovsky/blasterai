@@ -42,7 +42,7 @@ enum UsageCause: String, Codable, CaseIterable {
     /// not the endpoint, matching `sceneRefine` / `pageRefine` / `sentenceRefine`.
     case tileImageRefine
     /// The vision check that decides whether a new picture even *has* skin to
-    /// recolour. Pennies against the art it gates, but recorded so a run's call
+    /// recolor. Pennies against the art it gates, but recorded so a run's call
     /// count adds up: one of these precedes every multi-variant style.
     case tileArtClassify
 

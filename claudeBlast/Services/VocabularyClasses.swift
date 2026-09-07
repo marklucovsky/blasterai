@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import Observation
 
 struct VocabularyClass: Identifiable, Hashable {
     /// The `wordClass` string stored on tiles and sent to the AI as a hint.
@@ -25,10 +26,10 @@ struct VocabularyClass: Identifiable, Hashable {
     /// Part of speech a word of this class gets when nothing better is known —
     /// the third layer of `TileModel.resolvedPartOfSpeech`, below a stored
     /// answer and the bundled table. Nil for structural chrome, which has no
-    /// part of speech and takes no word colour.
+    /// part of speech and takes no word color.
     ///
-    /// This replaced a per-class `color`. Colour now comes from part of speech,
-    /// so a colour here would be a second source competing with the first.
+    /// This replaced a per-class `color`. Color now comes from part of speech,
+    /// so a color here would be a second source competing with the first.
     let defaultPartOfSpeech: PartOfSpeech?
     /// Whether the caregiver "New Word" creator offers this class. Structural /
     /// function classes (core, navigation, question) are not caregiver content.
@@ -42,9 +43,9 @@ struct VocabularyClass: Identifiable, Hashable {
 enum VocabularyClasses {
     /// Canonical word classes in caregiver-facing display order.
     ///
-    /// The second column used to be a colour. It is now the part of speech a
+    /// The second column used to be a color. It is now the part of speech a
     /// word of this class falls back to when neither a stored answer nor the
-    /// bundled table knows — the derivation layer, measured at **92.3% colour
+    /// bundled table knows — the derivation layer, measured at **92.3% color
     /// accuracy** across the caregiver-selectable classes.
     ///
     /// Every miss in that measurement is a *bundled* word, which has an exact
@@ -88,7 +89,7 @@ enum VocabularyClasses {
         //
         // A letter has no part of speech: it is not a word, and on a published
         // letter board it is neutral. A number is a `determiner` — "three
-        // cookies" quantifies, which is what the Fitzgerald key colours it for.
+        // cookies" quantifies, which is what the Fitzgerald key colors it for.
         VocabularyClass(name: "letter", defaultPartOfSpeech: nil, isCaregiverSelectable: true),
         VocabularyClass(name: "number", defaultPartOfSpeech: .determiner, isCaregiverSelectable: true),
         // Structural / function classes — not caregiver-creatable content.
@@ -130,9 +131,9 @@ enum VocabularyClasses {
     static var caregiverSelectable: [VocabularyClass] { all.filter(\.isCaregiverSelectable) }
 }
 
-/// Single source of truth for tile colour.
+/// Single source of truth for tile color.
 ///
-/// ## Colour means part of speech, not category
+/// ## Color means part of speech, not category
 ///
 /// It used to mean semantic category — food red, animal brown, places blue — a
 /// palette this project invented (`VocabularyClasses` said so outright: "Colors
@@ -144,9 +145,9 @@ enum VocabularyClasses {
 /// teach against: yellow pronouns, green verbs, blue describing words, orange
 /// nouns, purple questions, red for no, pink social, neutral function words.
 ///
-/// The cost, accepted deliberately: ~20 colours collapse to 8, food stops being
-/// red, and colour no longer separates food from places. That is the trade
-/// Fitzgerald makes on purpose — fewer colours, but ones a therapist teaches and
+/// The cost, accepted deliberately: ~20 colors collapse to 8, food stops being
+/// red, and color no longer separates food from places. That is the trade
+/// Fitzgerald makes on purpose — fewer colors, but ones a therapist teaches and
 /// a child carries elsewhere.
 ///
 /// ## Why a tile, not a wordClass string
@@ -156,7 +157,7 @@ enum VocabularyClasses {
 enum TileColorResolver {
 
     /// Structural chrome — home, page links, next/previous page. Not a word, so
-    /// no word colour: it reads as furniture, which is what it is.
+    /// no word color: it reads as furniture, which is what it is.
     static let chrome = Color.gray
 
     /// A tile that takes the board somewhere.
@@ -172,13 +173,66 @@ enum TileColorResolver {
 
     /// Function words (prepositions, determiners, conjunctions) are *white* on a
     /// published Fitzgerald board, which works because the card sits against a
-    /// coloured surround. Ours sit on the page, so white would be invisible; they
+    /// colored surround. Ours sit on the page, so white would be invisible; they
     /// get a near-neutral that still draws an edge.
     static let functionWord = Color(red: 0.62, green: 0.64, blue: 0.67)
 
-    /// The Modified Fitzgerald Key.
+    /// The active child's palette, when they have one.
+    ///
+    /// Held in memory rather than fetched per call: color is asked for once per
+    /// tile per render, on a board that can hold a hundred, so this must not
+    /// touch the store. `refreshActiveMap(from:)` reloads it, the same shape as
+    /// `PartOfSpeechIndex.stored`.
+    ///
+    /// **Empty is the overwhelmingly common case** and costs one dictionary
+    /// lookup that misses.
+    static var activeMap: TileColorMap { Palette.shared.map }
+
+    /// Load the active child's palette. Call at launch and whenever the active
+    /// child or their map changes.
+    @MainActor
+    static func refreshActiveMap(from profile: ChildProfile?) {
+        Palette.shared.map = TileColorMap.decode(profile?.colorMapData ?? "")
+    }
+
+    /// Why the palette lives on an `@Observable` box rather than in a `static
+    /// var`.
+    ///
+    /// It was a plain static, and changing a color did not redraw anything — the
+    /// board only picked it up on the next navigation, because something else
+    /// happened to force a re-render. SwiftUI cannot invalidate a view over a
+    /// value it was never told the view depends on, and a static read inside a
+    /// body is invisible to it.
+    ///
+    /// Observation fixes that without touching a single call site: every
+    /// `TileColorResolver.color(for:)` evaluated during a view body reads
+    /// `Palette.shared.map` through this box, which registers the dependency —
+    /// so assigning a new palette invalidates exactly the views that drew with
+    /// the old one.
+    @Observable
+    final class Palette {
+        @MainActor static let shared = Palette()
+        var map = TileColorMap()
+        private init() {}
+    }
+
+    /// The Modified Fitzgerald Key, unless this child sees differently.
     static func color(for partOfSpeech: PartOfSpeech?) -> Color {
         guard let partOfSpeech else { return chrome }
+        // The child's own map wins. Sparse, so anything they did not change
+        // falls through to the default below — which means the default palette
+        // can still be improved without rewriting anyone's stored overrides.
+        if let override = activeMap.color(for: partOfSpeech) { return override }
+        return fitzgerald(partOfSpeech)
+    }
+
+    /// The unmodified key, ignoring any child's overrides.
+    ///
+    /// The editor needs this: a color well showing the *current* color would
+    /// echo the override back, and a therapist could then neither see what they
+    /// were changing nor what resetting would restore — the same trap
+    /// "Automatic" fell into in the word-type picker.
+    static func fitzgerald(_ partOfSpeech: PartOfSpeech) -> Color {
         switch partOfSpeech {
         case .pronoun:     return Color(red: 0.98, green: 0.80, blue: 0.20)   // yellow
         case .verb:        return Color(red: 0.30, green: 0.72, blue: 0.35)   // green
@@ -194,17 +248,17 @@ enum TileColorResolver {
         }
     }
 
-    /// Colour for a tile — the entry point every surface should use.
+    /// Color for a tile — the entry point every surface should use.
     ///
     /// Optional because several surfaces render a placement whose word may not
     /// resolve (a page built from a scene whose vocabulary did not travel). A
-    /// missing tile is chrome: no word, no word colour.
+    /// missing tile is chrome: no word, no word color.
     static func color(for tile: TileModel?) -> Color {
         guard let tile else { return chrome }
         return color(for: tile.resolvedPartOfSpeech)
     }
 
-    /// Colour for a tray chip. The selection carries the part of speech it was
+    /// Color for a tray chip. The selection carries the part of speech it was
     /// created with, so a chip always matches the tile it came from.
     static func color(for selection: TileSelection) -> Color {
         color(for: selection.partOfSpeech)

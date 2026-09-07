@@ -247,7 +247,7 @@ struct SceneImageBatchSheet: View {
     }
 
     /// Named for what the run is doing — "New Word Art" over a run that is
-    /// recolouring existing pictures would misdescribe both the work and the bill.
+    /// recoloring existing pictures would misdescribe both the work and the bill.
     private var title: String {
         switch controller.mode {
         case .newArt: "New Word Art"

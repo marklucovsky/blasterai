@@ -61,7 +61,7 @@ enum OBFExporter {
         return (max(1, Int(ceil(Double(count) / Double(columns)))), columns)
     }
 
-    /// OBF writes colours as `rgb(r, g, b)`, not hex.
+    /// OBF writes colors as `rgb(r, g, b)`, not hex.
     static func rgbString(_ color: Color) -> String {
         let ui = UIColor(color)
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0

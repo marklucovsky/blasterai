@@ -261,7 +261,7 @@ final class TileImageResolver {
     ///
     /// Every set now resolves from `TileImageSets/`. The asset catalog holds no
     /// tile art at all since ARASAAC was removed — only the app icon and accent
-    /// colour.
+    /// color.
     private func bundledImage(for key: String, in imageSet: ImageSetID) -> UIImage? {
         // Catalog lookup rather than a switch: an installed set has no case to
         // match, and adding a set should not require editing this function.

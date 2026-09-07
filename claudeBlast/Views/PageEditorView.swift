@@ -439,9 +439,9 @@ struct PageTileCell: View {
             ZStack(alignment: .topTrailing) {
                 // The editor draws the tile the way the child will see it.
                 //
-                // It was a bare picture, which was survivable while colour was a
-                // hairline nobody arranged by. Now that colour means part of
-                // speech, a caregiver grouping the board into colour blocks — the
+                // It was a bare picture, which was survivable while color was a
+                // hairline nobody arranged by. Now that color means part of
+                // speech, a caregiver grouping the board into color blocks — the
                 // whole point of a Fitzgerald layout — was doing it blind here and
                 // only finding out on the board.
                 ZStack {
@@ -516,11 +516,11 @@ struct TilePropertiesSheet: View {
     /// The tile's part of speech, and the control that lets a therapist correct
     /// it.
     ///
-    /// **It sets the part of speech, not the colour**, even though colour is
-    /// what a caregiver notices. Picking a colour directly would break the axis
-    /// the colour stands for: two words could end up the same colour with
+    /// **It sets the part of speech, not the color**, even though color is
+    /// what a caregiver notices. Picking a color directly would break the axis
+    /// the color stands for: two words could end up the same color with
     /// different parts of speech, and the coverage report would then disagree
-    /// with the board. One axis, and the colour follows from it.
+    /// with the board. One axis, and the color follows from it.
     ///
     /// "Automatic" is the normal state and names what it resolved to, so the
     /// difference between *nobody has said* and *someone chose this* stays
@@ -555,7 +555,7 @@ struct TilePropertiesSheet: View {
     }
 
     /// Writes through to the model, and keeps `PartOfSpeechIndex` in step so the
-    /// coverage report counts the word the same way the board colours it.
+    /// coverage report counts the word the same way the board colors it.
     private func partOfSpeechBinding(_ tile: TileModel) -> Binding<PartOfSpeech?> {
         Binding(
             get: { tile.storedPartOfSpeech },
@@ -738,7 +738,7 @@ struct TilePropertiesSheet: View {
         }
     }
 }
-/// A dot in the tile's real board colour. Drawn rather than an SF Symbol so it
+/// A dot in the tile's real board color. Drawn rather than an SF Symbol so it
 /// survives every context that would otherwise template-render it.
 @ViewBuilder
 func partOfSpeechSwatch(_ color: Color, size: CGFloat = 12) -> some View {
@@ -750,9 +750,9 @@ func partOfSpeechSwatch(_ color: Color, size: CGFloat = 12) -> some View {
 
 /// The word-type list.
 ///
-/// A pushed list rather than a menu because the colour is the point, and a menu
+/// A pushed list rather than a menu because the color is the point, and a menu
 /// renders its option icons monochrome. Here each row owns its own swatch, so a
-/// therapist picks the colour they can see.
+/// therapist picks the color they can see.
 struct PartOfSpeechPickerList: View {
     @Binding var selection: PartOfSpeech?
     /// What Automatic works out to for this tile, so the row is never a mystery.
@@ -766,7 +766,7 @@ struct PartOfSpeechPickerList: View {
                 row(nil, label: automaticRowLabel, color: TileColorResolver.color(for: automatic))
             } footer: {
                 Text("Automatic uses the word's own type, or the class it was created with. "
-                     + "Choose a type to override it — the tile's colour follows.")
+                     + "Choose a type to override it — the tile's color follows.")
             }
 
             Section("Word type") {

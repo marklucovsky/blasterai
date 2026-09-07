@@ -34,7 +34,15 @@ struct VoicePickerSection: View {
     /// within tier. Premium / Enhanced are downloaded by the user via
     /// Settings → Accessibility → Spoken Content → Voices and sound
     /// dramatically more natural than the bundled default voice.
-    private var englishVoices: [AVSpeechSynthesisVoice] {
+    ///
+    /// **Computed once, not once per render.** `speechVoices()` is a system call
+    /// that logs on every invocation — in the simulator it emits an "Error
+    /// fetching voices … using fallback voices" line each time — and this used
+    /// to run from a computed property, so a form that re-rendered filled the
+    /// console with hundreds of them. That is noise a real crash then hides in.
+    /// The installed voice list does not change while a sheet is open, so once
+    /// is right on the merits too.
+    private static let englishVoices: [AVSpeechSynthesisVoice] = {
         AVSpeechSynthesisVoice.speechVoices()
             .filter { $0.language.hasPrefix("en") }
             .sorted {
@@ -43,7 +51,9 @@ struct VoicePickerSection: View {
                 }
                 return $0.name < $1.name
             }
-    }
+    }()
+
+    private var englishVoices: [AVSpeechSynthesisVoice] { Self.englishVoices }
 
     private var hasHighQualityVoice: Bool {
         englishVoices.contains { $0.quality == .enhanced || $0.quality == .premium }
