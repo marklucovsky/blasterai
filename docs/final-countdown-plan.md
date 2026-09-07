@@ -878,11 +878,55 @@ being restated here; the two entries that shape a decision:
 - **PIN recovery** — "reinstall the app" is not acceptable for a family whose child's
   voice lives in the app. Minimum viable: recovery via a known-good path that does not
   destroy data.
-- **Reviewer / no-key path** — verify the app is genuinely usable with **no** OpenAI key
-  (single-word mode + mock provider), and write beta-review notes that say so. This is the
-  single most likely rejection cause: if the app looks broken without a key, that is a
-  rejection regardless of how good it is with one. Recommendation stands that round 1 is
-  **internal testers only**, with no beta review at all.
+- **Keyless is a product mode, not a fallback.** Mark, 2026-09-07: *"we simply run in
+  stock AAC single-word mode. I suspect that many/most child devices will run without a
+  key, in this mode, until their caregivers and families are comfortable with sentence
+  generation."*
+
+  That reframes this gate. The old wording — "verify the app is usable with no key" — was
+  defensive, as though keyless were a review workaround to survive. It is the majority
+  configuration on a child's device, and the AI is something a family grows into. An App
+  Review reviewer succeeds by exactly the road a real keyless family takes, which is the
+  right shape for the same reason it is right for them.
+
+  Mark's analogy from Tibls: a recipe app is useless without recipes, and the answer was
+  not to explain that to the reviewer — it was to bootstrap the empty store and offer
+  three paths to succeed. Ours are already built:
+
+  1. **Bundled starter scenes** — a working board on first launch, before anything is
+     configured.
+  2. **Vocabulary packs** — Farm, Tide Pools, Dinosaurs, Mealtime, Vehicles, Space,
+     Letters, Numbers. Build a themed board without a key.
+  3. **The editor** — arrange, conceal, reveal, rename, print, share.
+
+  Plus speech, the activity log, coverage, and PDF / OBZ export. All keyless.
+
+  A key buys four things and nothing else: sentence generation, AI scene and page
+  generation, word moderation, and art for newly added words.
+
+  **Verified on device, 2026-09-07.** The add-word path holds keyless. From the page
+  editor: ＋Tiles → search finds nothing → pick a type → Add. The new words land on the
+  page as placeholders, and from there either fix them one at a time (AI or existing
+  media) or leave the page editor, where the scene editor offers to do all the art at
+  once — or, without a key, says that it could. Both halves work; the keyless one simply
+  stops before the art.
+
+  **Where we differ from other AAC platforms, and it is not a deficit.** They ship a fixed
+  symbol library to pick from when adding a word. So do we — ours is generated, which
+  means it has no edges. Their library ends; ours does not. The honest trade is that
+  theirs is instant and free where ours costs a key, a few seconds and a fraction of a
+  cent.
+
+  State it that way in the S5 claims refresh and any store copy. "Unlimited symbols" reads
+  as marketing; "their library ends, ours doesn't" is just true, and it is the more useful
+  sentence for a therapist who has hit the end of one.
+
+  **Backlog, not a gate:** the tile picker is built for *finding* an existing word, so
+  adding a new one is the fallthrough — search, fail, choose a class, Add. Mark: *"it has
+  room for improvement but it works."* Recorded in `docs/architecture-backlog.md`.
+
+  Beta-review notes say all of the above plainly. Round 1 stays **internal testers only**,
+  with no beta review at all.
 
 ### App Store Connect
 
@@ -926,6 +970,44 @@ The App Store Connect record is complete, and a build could be uploaded into it 
 
 **Identity:** build 1 exists, in testers' hands, and the path that produced it is a script
 someone else could run.
+
+### Gifted evaluator keys — before the first external invite
+
+Mark, 2026-09-07: *"the instant I send an invite to an external tester I will want to have
+already built the key sharing and update code."* That is the deadline — not a date, an
+event. Internal round 1 does not need it; the first external invite does, and it must
+exist before that invite goes out rather than in response to it.
+
+Design is already agreed in full: [[project_gifted_eval_keys]]. A sealed package texted to
+the evaluator, a passcode delivered out of band, PBKDF2-HMAC-SHA256 (reuse `PINAuth`, do
+not add a second KDF) into AES-GCM — authenticated, so tampering fails decryption and
+provenance comes free with no signing keypair. Expiry, evaluator name and key sealed
+inside. A `tools/` script that mints uniformly and writes a **ledger row**, because the
+question months later is "key `sk-…7f2a` is burning money — whose is it?", and metadata in
+git with secrets in the Keychain, never the reverse. Lost passcode means reissue, never
+recover.
+
+**No schema deadline.** Keys live in the Keychain and a document format; nothing synced,
+nothing that promotion freezes. That is why this sits in S6 rather than S5.
+
+**Why it is worth building for ~25 people.** Not scale — the opposite. These are chosen
+deliberately for influence, so a bad first five minutes is at its most expensive.
+Eliminating friction matters *more* when the audience is small and hand-picked, not less.
+Pasting a 50-character key on an iPhone is the most likely reason such an evaluator stops
+before seeing the app.
+
+**Prerequisite, owned by Mark, before this is designed further:** check whether OpenAI
+projects support **per-project budget caps**. Do not assert current OpenAI capabilities
+from memory — check the dashboard. If they do, most of the security conversation collapses
+into configuration: one project per evaluator, key scoped to it, delete the project and the
+key dies, raise the cap to refill, spend cannot exceed the cap whatever the key does, and
+usage is attributed per project already. A leaked key drains its own cap and stops, which
+is the difference between 25 outstanding keys being something to sleep through or
+something to monitor.
+
+Either way the app is unaffected: the package carries "a key, an expiry, a label". Whether
+that key is project-scoped with a cap or a raw account key is OpenAI-side and changeable
+without touching the format or shipping a build.
 
 ### CloudKit promotion — first, before anything else
 
