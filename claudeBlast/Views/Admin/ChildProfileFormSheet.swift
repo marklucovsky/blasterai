@@ -108,6 +108,36 @@ struct ChildProfileFormSheet: View {
     @State private var namePrompt: NamePrompt?
     @State private var draftName = ""
 
+    /// The form as it stood when it opened. Compared against, rather than a
+    /// `hasEdited` flag set from every control's `onChange`, because a flag is
+    /// one missed control away from being wrong — and the cost of it being wrong
+    /// here is a caregiver losing a palette they spent ten minutes on.
+    @State private var loaded: Snapshot?
+    /// Raised when Cancel is pressed with work outstanding.
+    @State private var showDiscardPrompt = false
+
+    private struct Snapshot: Equatable {
+        var name: String
+        var stage: BrownsStage
+        var voiceID: String
+        var maxTiles: Int
+        var ttsRate: Float
+        var ttsVolume: Float
+        var colorMap: TileColorMap
+    }
+
+    private var current: Snapshot {
+        Snapshot(name: name, stage: stage, voiceID: voiceID, maxTiles: maxTiles,
+                 ttsRate: ttsRate, ttsVolume: ttsVolume, colorMap: colorMap)
+    }
+
+    /// Whether closing now would throw work away. Before `load` runs there is
+    /// nothing to lose, so an early tap is not treated as destructive.
+    private var hasUnsavedChanges: Bool {
+        guard let loaded else { return false }
+        return current != loaded
+    }
+
     /// What the name prompt is for. Deliberately an enum rather than two flags:
     /// two booleans admit a state where both are true.
     private enum NamePrompt: Identifiable {
@@ -216,11 +246,36 @@ struct ChildProfileFormSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", action: onDismiss)
+                    Button("Cancel") {
+                        // Deliberate exit with work outstanding asks; the
+                        // accidental one (below) is refused without a dialog,
+                        // because a dialog raised by a stray touch is its own
+                        // kind of noise.
+                        if hasUnsavedChanges { showDiscardPrompt = true } else { onDismiss() }
+                    }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save", action: save).disabled(!canSave)
                 }
+            }
+            // An iPad form sheet dismisses on a tap outside it — the same
+            // gesture as scrolling the list behind it — and this form holds work
+            // that cannot be recovered. A colorway is eleven deliberate
+            // decisions about one child's vision, and they were going in the bin
+            // on a misplaced touch.
+            //
+            // Only while there is something to lose, so opening a profile just
+            // to look at it still closes the easy way. SwiftUI gives no callback
+            // when it swallows the gesture, so the way out is the Cancel button
+            // that is already in the toolbar — which does ask.
+            .interactiveDismissDisabled(hasUnsavedChanges)
+            .confirmationDialog("Discard changes?",
+                                isPresented: $showDiscardPrompt,
+                                titleVisibility: .visible) {
+                Button("Discard", role: .destructive, action: onDismiss)
+                Button("Keep Editing", role: .cancel) { }
+            } message: {
+                Text("This profile has changes that have not been saved.")
             }
             .onAppear(perform: load)
             .alert(namePromptTitle, isPresented: Binding(
@@ -506,6 +561,8 @@ struct ChildProfileFormSheet: View {
             ttsVolume = profile.ttsVolume
             colorMap = TileColorMap.decode(profile.colorMapData)
         }
+        // After the fields are populated, so an untouched form compares equal.
+        loaded = current
     }
 
     private func save() {
