@@ -140,7 +140,7 @@ enum DeviceRole: String, CaseIterable, Codable {
         case .patient:
             return "This device is for a non-verbal child to use as their voice. Admin is locked behind a PIN (and biometrics where the device has them) so the child can't change things by accident. The child's profile drives the voice and AI prompts."
         case .caregiver:
-            return "This device is for you — a therapist, parent, or family member. The Sandbox profile drives generic use; you can add real patient profiles and switch between them to tune scenes. Admin is open by default."
+            return "This device is for you — a therapist, parent, or family member. Your own profile drives generic use; you can add child profiles and switch between them to tune scenes. Admin is open by default."
         }
     }
 

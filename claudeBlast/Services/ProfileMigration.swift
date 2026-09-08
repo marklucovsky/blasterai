@@ -8,87 +8,63 @@
 import SwiftData
 import Foundation
 
-/// Default display name for the Sandbox profile. The caregiver can rename
-/// it from Admin → Profiles, but the row is always identified by `isSystem`.
-let kSandboxProfileDefaultName = "Sandbox"
+/// Default display name for the caregiver's own profile. Renameable from
+/// Admin → Profiles; the row is always identified by `isSystem`, never by name.
+///
+/// It was called "Sandbox", which described its job to us and nothing at all to
+/// a caregiver. The name matters more than it used to: it heads the usage report
+/// a therapist reads, and it sits in a list beside real children's names.
+let kCaregiverProfileDefaultName = "My Profile"
 
-/// Stable, SHARED id for the Sandbox profile — fixed, not a random UUID. The
-/// Sandbox is auto-seeded independently on every device, so a random id would
-/// give each device a different `childID`; anything keyed on the active child
+/// Stable, SHARED id for the caregiver profile — fixed, not a random UUID. It is
+/// auto-seeded independently on every device, so a random id would give each
+/// device a different `childID`; anything keyed on the active child
 /// (durable-override `stableKey`, `SentenceCache.childID`, `LoggedUtterance`)
 /// would then only line up cross-device by luck of CloudKit dedup. A fixed id
-/// makes the Sandbox's childID identical everywhere by construction, so caregiver
+/// makes this row's childID identical everywhere by construction, so caregiver
 /// overrides sync correctly on the profile caregivers actually test on.
-let kSandboxProfileID = "system.sandbox"
+///
+/// The string is unchanged on purpose. The value is internal — nothing displays it — and it is
+/// the join key that makes this row the same row on every one of the caregiver's
+/// devices. Renaming the constant is free; changing the string would fork it.
+let kCaregiverProfileID = "system.sandbox"
 
 /// One-shot migration that runs after `BootstrapLoader` at app launch.
 ///
-/// Three jobs:
+/// Two jobs:
 /// 1. Materialize the singleton `DeviceProfile` and normalize any unrecognized
 ///    role value onto the two-mode model (anything but `patient` → `caregiver`).
-/// 2. Ensure exactly one Sandbox (`isSystem == true`) ChildProfile exists.
-///    The resolver returns this profile when no real child is active, so
-///    the engine never has to handle an empty roster.
-/// 3. For *returning users* (`bootstrapInstalled` was already true at
-///    launch), seed a "Legacy" real ChildProfile pre-populated with their
-///    prior voice and tile-cap. Onboarding pre-fills from it.
+/// 2. Ensure exactly one caregiver (`isSystem == true`) ChildProfile exists.
+///    The resolver returns this profile when no child is active, so the engine
+///    never has to handle an empty roster.
+///
+/// It used to have a third: seeding a "Legacy" profile from a returning user's
+/// prior voice and tile-cap. That is gone. It produced a second undeletable-
+/// looking row beside the caregiver profile with no way for anyone to tell why
+/// either was there, and the name — chosen when nothing displayed it — ended up
+/// as the largest word on the first usage report. One profile now covers both
+/// jobs, and a returning user's settings are already on the device anyway.
 enum ProfileMigration {
 
     /// Run after `BootstrapLoader.loadDefaultVocabulary` / `needsBootstrap`.
     ///
     /// - Parameters:
     ///   - context: model context to mutate
-    ///   - seedLegacy: pass `true` for returning users (the
-    ///     `bootstrapInstalled` flag was set before this launch), `false`
-    ///     for fresh installs.
     ///   - defaults: injected for test isolation. Defaults to `.standard`.
-    ///   - now: clock injection for the Legacy profile's seed timestamp.
+    ///   - now: clock injection for the seeded profile's timestamp.
     static func ensureProfilesAfterBootstrap(
         context: ModelContext,
-        seedLegacy: Bool,
         defaults: UserDefaults = .standard,
         now: Date = .now
     ) {
         let device = DeviceProfileStore.ensure(context: context)
         normalizeLegacyRole(device)
-        ensureSandboxProfile(context: context, now: now)
-
-        guard seedLegacy else { return }
-
-        let existing = (try? context.fetch(FetchDescriptor<ChildProfile>())) ?? []
-        // Skip if there's already a real (non-Sandbox) child profile.
-        if existing.contains(where: { !$0.isSystem }) { return }
-
-        let voiceID = defaults.string(forKey: AppSettingsKey.speechVoiceIdentifier) ?? ""
-        // tile_cap_per_group is engine-clamped to [2, 8]; mirror that here.
-        let rawCap = defaults.integer(forKey: AppSettingsKey.tileCapPerGroup)
-        let tileCap = rawCap > 0 ? min(8, max(2, rawCap)) : 4
-
-        let isoFormatter = ISO8601DateFormatter()
-        isoFormatter.formatOptions = [.withInternetDateTime]
-        // The prior install's tile cap is the only signal we have about how
-        // this child communicates, and it happens to be exactly what a stage
-        // encodes — so derive rather than guess. A returning user on 6 tiles
-        // was building long sentences; one on 4 was not.
-        let legacy = ChildProfile(
-            displayName: "Legacy",
-            brownsStage: BrownsStage.implied(byTileCap: tileCap),
-            voiceIdentifier: voiceID,
-            maxSelectedTiles: tileCap,
-            defaultSceneKey: "",
-            notes: "Seeded from prior install at \(isoFormatter.string(from: now))",
-            isActive: true
-        )
-        context.insert(legacy)
-        // The Legacy real profile is now active — deactivate Sandbox so the
-        // resolver routes engine config through Legacy rather than the
-        // generic defaults.
-        deactivateSandboxIfActive(context: context)
+        ensureCaregiverProfile(context: context, now: now)
     }
 
-    // MARK: - Sandbox profile
+    // MARK: - Caregiver profile
 
-    private static func ensureSandboxProfile(context: ModelContext, now: Date) {
+    private static func ensureCaregiverProfile(context: ModelContext, now: Date) {
         let existing = (try? context.fetch(
             FetchDescriptor<ChildProfile>(predicate: #Predicate { $0.isSystem })
         )) ?? []
@@ -103,28 +79,18 @@ enum ProfileMigration {
         // no real child yet speaks one word per tap rather than generating
         // sentences for a child nobody has described. Onboarding replaces this
         // with a stage a caregiver actually chose.
-        let sandbox = ChildProfile(
-            displayName: kSandboxProfileDefaultName,
+        let caregiver = ChildProfile(
+            displayName: kCaregiverProfileDefaultName,
             brownsStage: .one,
             voiceIdentifier: "",
             defaultSceneKey: "",
-            notes: "Default profile used when no real child is active.",
-            // Sandbox is active iff no real profile owns the slot already.
+            notes: "Used when no child is selected. Holds this caregiver's own settings.",
+            // Active iff no real profile owns the slot already.
             isActive: !anyRealActive,
             isSystem: true
         )
-        sandbox.id = kSandboxProfileID   // stable across devices (see constant)
-        context.insert(sandbox)
-    }
-
-    private static func deactivateSandboxIfActive(context: ModelContext) {
-        let sandboxes = (try? context.fetch(
-            FetchDescriptor<ChildProfile>(predicate: #Predicate { $0.isSystem })
-        )) ?? []
-        for s in sandboxes where s.isActive {
-            s.isActive = false
-            s.modifiedAt = .now
-        }
+        caregiver.id = kCaregiverProfileID   // stable across devices (see constant)
+        context.insert(caregiver)
     }
 
     // MARK: - Role normalization

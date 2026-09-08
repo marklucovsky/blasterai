@@ -263,7 +263,7 @@ struct OnboardingView: View {
                         .foregroundStyle(.blue)
                 }
                 Label {
-                    Text("Caregiver mode includes a built-in Sandbox profile so the app works out of the box. Add real patient profiles whenever you're ready.")
+                    Text("Caregiver mode gives you your own profile so the app works out of the box. Add child profiles whenever you're ready.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } icon: {
@@ -520,7 +520,7 @@ struct OnboardingView: View {
                 ? "Your patient device is set up. Tap Open Blaster to start."
                 : "\(childName)'s device is ready. Tap Open Blaster to start."
         case .caregiver:
-            return "Caregiver mode is on. The Sandbox profile is active; add real patient profiles anytime from Admin → Profiles."
+            return "Caregiver mode is on. Your own profile is active; add child profiles anytime from Admin → Profiles."
         }
     }
 
@@ -624,17 +624,17 @@ struct OnboardingView: View {
     // MARK: - Pre-fill from Legacy seed
 
     private func prefillFromExistingProfileIfAny() {
-        // Only pre-fill from a *real* profile. The Sandbox always exists
-        // post-migration, but treating it as "the user's prior input"
-        // would seed the patient form with "Sandbox" as the child's name.
+        // Only pre-fill from a *real* profile. The caregiver profile always
+        // exists post-migration, but treating it as "the user's prior input"
+        // would seed the patient form with the caregiver's own profile name.
         let realProfiles = (try? modelContext.fetch(
             FetchDescriptor<ChildProfile>(predicate: #Predicate { !$0.isSystem })
         )) ?? []
-        guard let legacy = realProfiles.first else { return }
-        childName = legacy.displayName == "Legacy" ? "" : legacy.displayName
-        childStage = legacy.brownsStage
-        childVoiceID = legacy.voiceIdentifier
-        childMaxTiles = legacy.maxSelectedTiles
+        guard let prior = realProfiles.first else { return }
+        childName = prior.displayName
+        childStage = prior.brownsStage
+        childVoiceID = prior.voiceIdentifier
+        childMaxTiles = prior.maxSelectedTiles
 
         // Pre-fill the device display name too if we can recover it.
         if let device = DeviceProfileStore.current(context: modelContext) {

@@ -28,17 +28,39 @@ extension AdminView {
         }
     }
 
-    // MARK: - Profiles section (child roster)
+    // MARK: - Profiles section (caregiver + child roster)
+
+    /// The caregiver's own profile — exactly one, always present, undeletable.
+    var caregiverProfile: ChildProfile? { childProfiles.first(where: \.isSystem) }
+
+    /// The children. One list, and it no longer has a second undeletable row
+    /// mixed into it that a caregiver had no way to account for.
+    var realProfiles: [ChildProfile] { childProfiles.filter { !$0.isSystem } }
 
     @ViewBuilder
     var profilesSection: some View {
+        // Two sections rather than one list with a badge in it. The caregiver
+        // profile and a child are different kinds of thing — one is who is
+        // using the app, the others are who it is for — and a single roster
+        // made that a matter of noticing a grey capsule.
+        if let caregiver = caregiverProfile {
+            Section {
+                profileRow(caregiver)
+            } header: {
+                Text("This Caregiver")
+            } footer: {
+                Text("Your own settings and saved color sets. Used when no child "
+                     + "is selected, so the app always has something to work from.")
+            }
+        }
+
         Section {
-            if childProfiles.isEmpty {
+            if realProfiles.isEmpty {
                 Text("No child profiles yet.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(childProfiles) { profile in
+                ForEach(realProfiles) { profile in
                     profileRow(profile)
                 }
             }
@@ -49,7 +71,7 @@ extension AdminView {
             }
         } header: {
             HStack {
-                Text("Child Profiles")
+                Text("Children")
                 Spacer()
                 if let active = profileResolver.active {
                     Text("Active: \(active.displayName)")
@@ -74,7 +96,7 @@ extension AdminView {
                     HStack(spacing: 6) {
                         Text(profile.displayName).font(.body)
                         if profile.isSystem {
-                            Text("Sandbox")
+                            Text("You")
                                 .font(.caption2.weight(.semibold))
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
@@ -83,7 +105,7 @@ extension AdminView {
                         }
                     }
                     Text(profile.isSystem
-                         ? "Default when no real patient is active"
+                         ? "Active when no child is selected"
                          : "\(profile.brownsStage.label) · max \(profile.effectiveTileCap) tiles")
                         .font(.caption)
                         .foregroundStyle(.secondary)

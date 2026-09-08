@@ -78,7 +78,7 @@ extension AdminView {
         }
         .fileImporter(
             isPresented: $isImporting,
-            allowedContentTypes: [.blasterScene, .blasterPack, .json],
+            allowedContentTypes: [.blasterScene, .blasterPack, .blasterColorway, .json],
             allowsMultipleSelection: false
         ) { result in
             handleFileImport(result)

@@ -224,7 +224,7 @@ struct PatientTransitionSheet: View {
             Section {
                 if realPatients.isEmpty {
                     Label {
-                        Text("No patient profiles yet. Open the Profiles tab and add one before switching modes.")
+                        Text("No child profiles yet. Open the Profiles tab and add one before switching modes.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } icon: {
@@ -538,7 +538,7 @@ struct CaregiverTransitionSheet: View {
     private var optionsPage: some View {
         Form {
             Section {
-                Text("This swaps the active patient profile for the Sandbox profile and removes the patient handoff. Nothing is deleted — you can return to Patient mode anytime.")
+                Text("This swaps the active child profile for your own and removes the patient handoff. Nothing is deleted — you can return to Patient mode anytime.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             } header: {

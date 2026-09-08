@@ -14,6 +14,8 @@ struct PatternsView: View {
     private var allEntries: [LoggedUtterance]
     @Query(sort: \TileModel.key) private var allTiles: [TileModel]
 
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
     @AppStorage(AppSettingsKey.activityRange) private var rangeRaw = ActivityLogView.Window.week.rawValue
 
     private var window: ActivityLogView.Window {
@@ -114,31 +116,53 @@ struct PatternsView: View {
             let lookup = Dictionary(r.cells.map { ("\($0.weekday)-\($0.hour)", $0.presses) },
                                     uniquingKeysWith: { a, _ in a })
             Section {
+                // Fixed cell size plus a horizontal scroll, rather than cells
+                // that divide the available width.
+                //
+                // The columns come from the data: a board used from 7am to 8pm
+                // gives fourteen of them. Dividing a phone's ~350pt by fourteen
+                // left ~23pt per cell before the weekday gutter, and the hour
+                // labels under them became unreadable — a heatmap nobody can
+                // read the axes of is decoration.
+                //
+                // The weekday gutter sits OUTSIDE the scroll. Scrolling the
+                // labels away with the cells would leave rows that cannot be
+                // told apart, which is the one thing this chart is for.
                 VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 2) {
-                        Text("").frame(width: 30)
-                        ForEach(Array(hours), id: \.self) { hour in
-                            Text(hourLabel(hour))
-                                .font(.system(size: 9))
-                                .foregroundStyle(.tertiary)
-                                .frame(maxWidth: .infinity)
-                        }
-                    }
-                    ForEach(r.weekdays, id: \.self) { weekday in
-                        HStack(spacing: 2) {
-                            Text(weekdayLabel(weekday))
-                                .font(.system(size: 10))
-                                .foregroundStyle(.secondary)
-                                .frame(width: 30, alignment: .trailing)
-                            ForEach(Array(hours), id: \.self) { hour in
-                                let count = lookup["\(weekday)-\(hour)"] ?? 0
-                                RoundedRectangle(cornerRadius: 2)
-                                    .fill(heatColor(count, busiest: r.busiestCell))
-                                    .aspectRatio(1, contentMode: .fit)
-                                    .frame(maxWidth: .infinity)
-                                    .accessibilityLabel("\(weekdayLabel(weekday)) \(hourLabel(hour)): \(count)")
+                    HStack(alignment: .top, spacing: 2) {
+                        VStack(spacing: 3) {
+                            Color.clear.frame(width: 30, height: hourLabelHeight)
+                            ForEach(r.weekdays, id: \.self) { weekday in
+                                Text(weekdayLabel(weekday))
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 30, height: heatCell, alignment: .trailing)
                             }
                         }
+                        ScrollView(.horizontal) {
+                            VStack(alignment: .leading, spacing: 3) {
+                                HStack(spacing: 2) {
+                                    ForEach(Array(hours), id: \.self) { hour in
+                                        Text(hourLabel(hour))
+                                            .font(.system(size: 9))
+                                            .foregroundStyle(.tertiary)
+                                            .frame(width: heatCell, height: hourLabelHeight)
+                                    }
+                                }
+                                ForEach(r.weekdays, id: \.self) { weekday in
+                                    HStack(spacing: 2) {
+                                        ForEach(Array(hours), id: \.self) { hour in
+                                            let count = lookup["\(weekday)-\(hour)"] ?? 0
+                                            RoundedRectangle(cornerRadius: 2)
+                                                .fill(heatColor(count, busiest: r.busiestCell))
+                                                .frame(width: heatCell, height: heatCell)
+                                                .accessibilityLabel("\(weekdayLabel(weekday)) \(hourLabel(hour)): \(count)")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        .scrollBounceBehavior(.basedOnSize)
                     }
                     HStack(spacing: 6) {
                         Text("quiet").font(.caption2).foregroundStyle(.secondary)
@@ -156,7 +180,8 @@ struct PatternsView: View {
                 Text("When words get used")
             } footer: {
                 if r.weekdays.count > 1 {
-                    Text("Every week in this period folded onto one, so a habit shows as a column rather than scattered dots. Worth knowing before a session gets booked.")
+                    Text("Every week in this period folded onto one, so a habit shows as a column rather than scattered dots. Worth knowing before a session gets booked."
+                         + (hours.count > 8 ? " Scroll sideways for the rest of the day." : ""))
                 } else {
                     // One row is an hour strip, not a heatmap, and should not be
                     // described as if it says something about weekdays.
@@ -165,6 +190,12 @@ struct PatternsView: View {
             }
         }
     }
+
+    /// Big enough that the hour label under a column stays legible. Cells are
+    /// square, so this is the width too.
+    private var heatCell: CGFloat { horizontalSizeClass == .compact ? 22 : 28 }
+
+    private var hourLabelHeight: CGFloat { 12 }
 
     private func weekdayLabel(_ weekday: Int) -> String {
         let symbols = Calendar.current.shortWeekdaySymbols

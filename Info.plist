@@ -28,14 +28,19 @@
 				<string>com.claudeblast.pack</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Blaster Color Set</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.claudeblast.colorway</string>
+			</array>
+		</dict>
 	</array>
-	<!--
-	  Export compliance: Blaster uses only standard HTTPS/TLS (URLSession to
-	  api.openai.com) and Apple-provided cryptography (Keychain, PBKDF2 via
-	  CryptoKit for the admin PIN, CloudKit transport). That is exempt under
-	  the App Store's encryption rules. Declaring it here stops App Store
-	  Connect from prompting for export compliance on every single upload.
-	-->
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>UIBackgroundModes</key>
@@ -87,6 +92,29 @@
 				<key>public.mime-type</key>
 				<array>
 					<string>application/vnd.claudeblast.pack+json</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.json</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Blaster Color Set</string>
+			<key>UTTypeIconFiles</key>
+			<array/>
+			<key>UTTypeIdentifier</key>
+			<string>com.claudeblast.colorway</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>blastercolors</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>application/vnd.claudeblast.colorway+json</string>
 				</array>
 			</dict>
 		</dict>

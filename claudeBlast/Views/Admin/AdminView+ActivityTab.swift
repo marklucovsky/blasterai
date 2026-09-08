@@ -16,6 +16,7 @@ extension AdminView {
                 // and cache diagnostics are secondary, below it.
                 activitySummarySection
                 recentActivitySection
+                activityLinksSection
                 aiUsageSection
                 cachePerformanceSection
                 sentenceCacheSection
@@ -48,20 +49,6 @@ extension AdminView {
     var escalatedThisWeekCount: Int {
         utterancesThisWeek.count { $0.repetitionCount > 0 }
     }
-    /// Most-tapped tiles this week, highest first. Carries the key + wordClass
-    /// so the chip can render the real tile image.
-    var topTilesThisWeek: [(key: String, value: String, wordClass: String, count: Int)] {
-        var counts: [String: Int] = [:]
-        for u in utterancesThisWeek {
-            for key in u.tileKeys { counts[key, default: 0] += 1 }
-        }
-        return counts.sorted { $0.value > $1.value }
-            .prefix(10)
-            .map { (key: $0.key,
-                    value: tileLookup[$0.key]?.value ?? $0.key,
-                    wordClass: tileLookup[$0.key]?.wordClass ?? "",
-                    count: $0.value) }
-    }
     var recentUtterances: [LoggedUtterance] { Array(loggedUtterances.prefix(5)) }
 
     func tileSelections(forKeys keys: [String]) -> [TileSelection] {
@@ -84,25 +71,31 @@ extension AdminView {
             }
             .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
 
-            if topTilesThisWeek.isEmpty {
+            if topClusters.isEmpty {
                 Text("No activity logged this week yet.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("MOST USED")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            ForEach(Array(topTilesThisWeek.enumerated()), id: \.offset) { _, item in
-                                MostUsedTileChip(key: item.key, value: item.value,
-                                                 wordClass: item.wordClass, count: item.count)
-                            }
-                        }
-                    }
+                // A vertical list, not a sideways-scrolling strip of chips.
+                //
+                // The strip put the most-used words in the one direction a List
+                // does not scroll, so reading past the third took a gesture that
+                // fights the page — and on a phone only three fitted, which made
+                // a ranked list look like a top three. Rows cost nothing here:
+                // this section is already a list.
+                //
+                // It also showed the wrong unit. The chips ranked individual
+                // *words* while the rows below ranked repeated *utterances*, and
+                // the two sat inches apart looking like the same thing with
+                // different numbers. Per-word ranking still exists, on Coverage,
+                // where it is the whole point of the screen.
+                Text("MOST USED")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 2, trailing: 16))
+                ForEach(topClusters) { cluster in
+                    clusterSnippetRow(cluster)
                 }
-                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 8, trailing: 16))
             }
         } header: {
             Text("Activity — This Week")
@@ -110,6 +103,11 @@ extension AdminView {
             Text("Counts of finalized utterances. Escalated = the child repeated the same words to insist harder.")
         }
     }
+
+    /// How many repeated combinations the summary lists. Five rather than the
+    /// three it showed when a ten-chip strip sat above it: this list is now the
+    /// whole of "most used", and three reads as a podium rather than a ranking.
+    private var topClusterCount: Int { 5 }
 
     /// The week's repeated combinations, from the same function the full log
     /// uses.
@@ -121,12 +119,20 @@ extension AdminView {
     var topClusters: [ActivityCluster] {
         let cal = Calendar.current
         guard let cutoff = cal.date(byAdding: .day, value: -7, to: cal.startOfDay(for: .now)) else {
-            return Array(ActivityGrouping.clusters(loggedUtterances).clusters.prefix(3))
+            return Array(ActivityGrouping.clusters(loggedUtterances).clusters.prefix(topClusterCount))
         }
         let recent = loggedUtterances.filter { $0.createdAt >= cutoff }
-        return Array(ActivityGrouping.clusters(recent).clusters.prefix(3))
+        return Array(ActivityGrouping.clusters(recent).clusters.prefix(topClusterCount))
     }
 
+    /// Recent now means recent.
+    ///
+    /// This section was titled "Recent" and led with the week's most-repeated
+    /// combinations — its own footer had to explain that it was "what was
+    /// repeated this week, then the latest utterances." A header that needs a
+    /// footnote to correct it is the wrong header. Repetition moved up into the
+    /// summary, where it belongs beside the counts, and this shows the latest
+    /// utterances and nothing else.
     @ViewBuilder
     var recentActivitySection: some View {
         Section {
@@ -135,15 +141,24 @@ extension AdminView {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {
-                // Repetition first: a caregiver scanning this tab wants what
-                // kept happening, not the last five things that happened.
-                ForEach(topClusters) { cluster in
-                    clusterSnippetRow(cluster)
-                }
-                ForEach(recentUtterances.prefix(3)) { utterance in
+                ForEach(recentUtterances.prefix(5)) { utterance in
                     recentUtteranceRow(utterance)
                 }
             }
+        } header: {
+            Text("Recent")
+        } footer: {
+            Text("The latest utterances, newest first. Read-only review for therapists and partners.")
+        }
+    }
+
+    /// Where the deeper screens live, in their own section.
+    ///
+    /// They were the tail of a list of utterances, which read as more log rows
+    /// until you noticed the chevrons.
+    @ViewBuilder
+    var activityLinksSection: some View {
+        Section {
             NavigationLink {
                 ActivityLogView()
             } label: {
@@ -164,10 +179,8 @@ extension AdminView {
             } label: {
                 Label("Share report", systemImage: "square.and.arrow.up")
             }
-        } header: {
-            Text("Recent")
         } footer: {
-            Text("What was repeated this week, then the latest utterances. Read-only review for therapists and partners. Coverage asks how much of a scene is actually being used and which kinds of words go untouched; Patterns asks when the board gets reached for, and whether the range is widening.")
+            Text("Coverage asks how much of a scene is actually being used and which kinds of words go untouched; Patterns asks when the board gets reached for, and whether the range is widening.")
         }
     }
 
@@ -527,14 +540,11 @@ extension AdminView {
         }
         _ = BootstrapLoader.loadDefaultVocabulary(context: modelContext)
         // Match cold-launch behavior: re-seed the DeviceProfile placeholder
-        // and the Sandbox ChildProfile so the user lands in the same state
+        // and the caregiver ChildProfile so the user lands in the same state
         // as a fresh install. Without this, the Admin Profiles list comes
         // back empty after a reset and the resolver has nothing to fall
         // back to until OnboardingCommit creates a real profile.
-        ProfileMigration.ensureProfilesAfterBootstrap(
-            context: modelContext,
-            seedLegacy: false
-        )
+        ProfileMigration.ensureProfilesAfterBootstrap(context: modelContext)
 
         // Commit the STORE before claiming in UserDefaults that it was seeded.
         //
@@ -592,29 +602,3 @@ struct LogTileStrip: View {
     }
 }
 
-/// A "most used" chip: the real tile image + its word + a ×N usage count.
-struct MostUsedTileChip: View {
-    let key: String
-    let value: String
-    let wordClass: String
-    let count: Int
-
-    var body: some View {
-        HStack(spacing: 5) {
-            TileImageView(key: key, wordClass: wordClass)
-                .frame(width: 26, height: 26)
-                .background(TileColorResolver.color(forWordClass: wordClass).opacity(0.12))
-                .clipShape(RoundedRectangle(cornerRadius: 5))
-            Text(value)
-                .font(.caption)
-                .lineLimit(1)
-            Text("×\(count)")
-                .font(.caption2.monospacedDigit())
-                .foregroundStyle(.secondary)
-        }
-        .padding(.leading, 4)
-        .padding(.trailing, 10)
-        .padding(.vertical, 4)
-        .background(Capsule().fill(Color(.secondarySystemFill)))
-    }
-}

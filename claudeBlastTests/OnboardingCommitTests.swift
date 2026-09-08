@@ -214,16 +214,16 @@ struct OnboardingCommitTests {
         let secret = InMemorySecretStore()
         let defaults = isolatedDefaults()
 
-        // Simulate the post-migration state: Legacy ChildProfile + placeholder
-        // DeviceProfile already exist before onboarding runs.
-        let legacy = ChildProfile(
-            displayName: "Legacy",
+        // Simulate a device that already carries a child — one synced from the
+        // caregiver's other device, say — before onboarding runs.
+        let existing = ChildProfile(
+            displayName: "Prior Child",
             brownsStage: .twoThree,
             voiceIdentifier: "",
             maxSelectedTiles: 4,
             isActive: true
         )
-        ctx.insert(legacy)
+        ctx.insert(existing)
         _ = DeviceProfileStore.ensure(context: ctx)
 
         OnboardingCommit.apply(patientInputs(name: "Aubrey"),

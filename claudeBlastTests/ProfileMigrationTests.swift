@@ -27,143 +27,87 @@ struct ProfileMigrationTests {
         return d
     }
 
-    @Test func freshInstall_doesNotSeedLegacy() throws {
+    /// One profile, and it is the caregiver's. There is no longer a second
+    /// seeded row: "Legacy" was a migration artefact that arrived beside the
+    /// caregiver profile with nothing to tell a caregiver why either existed,
+    /// and its name ended up as the title of the first usage report.
+    @Test func freshInstall_seedsOnlyTheCaregiverProfile() throws {
         let container = try makeContainer()
         let ctx = container.mainContext
         let defaults = isolatedDefaults()
         defaults.set("com.apple.voice.test", forKey: AppSettingsKey.speechVoiceIdentifier)
         defaults.set(5, forKey: AppSettingsKey.tileCapPerGroup)
 
-        ProfileMigration.ensureProfilesAfterBootstrap(
-            context: ctx,
-            seedLegacy: false,
-            defaults: defaults
-        )
+        ProfileMigration.ensureProfilesAfterBootstrap(context: ctx, defaults: defaults)
 
-        // DeviceProfile always materialized.
         #expect(try ctx.fetch(FetchDescriptor<DeviceProfile>()).count == 1)
-        // Sandbox profile is always present; no real (Legacy) profile on
-        // a fresh install.
         let kids = try ctx.fetch(FetchDescriptor<ChildProfile>())
         #expect(kids.count == 1)
         #expect(kids[0].isSystem == true)
-        #expect(kids[0].isActive == true) // Sandbox is the resolver fallback
-        #expect(kids[0].id == kSandboxProfileID) // stable, shared across devices
+        #expect(kids[0].isActive == true) // the resolver's fallback
+        #expect(kids[0].id == kCaregiverProfileID) // stable, shared across devices
     }
 
-    /// The Sandbox is auto-seeded independently per device, so its id must be a
-    /// fixed constant (not a random UUID) — otherwise `childID`-keyed data
-    /// (durable overrides, cache, logs) wouldn't line up cross-device. Simulate
-    /// two independent installs and assert they converge on the same Sandbox id.
-    @Test func sandbox_hasStableIdAcrossIndependentInstalls() throws {
-        func seedSandboxID() throws -> String {
-            let ctx = try makeContainer().mainContext
-            ProfileMigration.ensureProfilesAfterBootstrap(
-                context: ctx, seedLegacy: false, defaults: isolatedDefaults())
-            let sandbox = try #require(
-                try ctx.fetch(FetchDescriptor<ChildProfile>()).first { $0.isSystem })
-            return sandbox.id
-        }
-        #expect(try seedSandboxID() == kSandboxProfileID)
-        #expect(try seedSandboxID() == seedSandboxID())   // identical across installs
-    }
-
-    @Test func returningUser_seedsLegacyFromUserDefaults() throws {
+    /// A returning user gets the same thing a fresh install does. Their prior
+    /// voice and tile-cap are still in UserDefaults where the engine reads them;
+    /// what is gone is the extra *profile* that used to be conjured to hold them.
+    @Test func returningUser_getsNoExtraProfile() throws {
         let container = try makeContainer()
         let ctx = container.mainContext
         let defaults = isolatedDefaults()
         defaults.set("com.apple.voice.compact.en-US.Samantha",
                      forKey: AppSettingsKey.speechVoiceIdentifier)
         defaults.set(5, forKey: AppSettingsKey.tileCapPerGroup)
+        defaults.set(true, forKey: AppSettingsKey.bootstrapInstalled)
 
-        let stableNow = Calendar.current.date(from: DateComponents(
-            year: 2026, month: 6, day: 4))!
-        ProfileMigration.ensureProfilesAfterBootstrap(
-            context: ctx,
-            seedLegacy: true,
-            defaults: defaults,
-            now: stableNow
-        )
+        ProfileMigration.ensureProfilesAfterBootstrap(context: ctx, defaults: defaults)
 
         let kids = try ctx.fetch(FetchDescriptor<ChildProfile>())
-        // Legacy real profile + Sandbox.
-        #expect(kids.count == 2)
-        let legacy = kids.first(where: { !$0.isSystem })!
-        #expect(legacy.displayName == "Legacy")
-        #expect(legacy.isActive == true)
-        #expect(legacy.voiceIdentifier == "com.apple.voice.compact.en-US.Samantha")
-        #expect(legacy.maxSelectedTiles == 5)
-        #expect(legacy.brownsStage == .fourPlus)   // seeded cap of 5 implies IV+
-        // Sandbox exists but is NOT active (Legacy owns the active slot).
-        let sandbox = kids.first(where: { $0.isSystem })!
-        #expect(sandbox.isActive == false)
+        #expect(kids.count == 1)
+        #expect(kids[0].isSystem == true)
+        #expect(!kids.contains { $0.displayName == "Legacy" })
     }
 
-    @Test func returningUser_withUnsetDefaults_seedsLegacyWithSafeDefaults() throws {
-        let container = try makeContainer()
-        let ctx = container.mainContext
-        let defaults = isolatedDefaults()
-        // No keys set.
-
-        ProfileMigration.ensureProfilesAfterBootstrap(
-            context: ctx,
-            seedLegacy: true,
-            defaults: defaults
-        )
-
-        let kids = try ctx.fetch(FetchDescriptor<ChildProfile>())
-        // Legacy real profile + Sandbox.
-        #expect(kids.count == 2)
-        let legacy = kids.first(where: { !$0.isSystem })!
-        #expect(legacy.voiceIdentifier == "")
-        #expect(legacy.maxSelectedTiles == 4) // safe fallback
+    /// The caregiver profile is auto-seeded independently per device, so its id
+    /// must be a fixed constant (not a random UUID) — otherwise `childID`-keyed
+    /// data (durable overrides, cache, logs) would not line up cross-device.
+    /// Simulate two independent installs and assert they converge.
+    @Test func caregiverProfile_hasStableIdAcrossIndependentInstalls() throws {
+        func seedID() throws -> String {
+            let ctx = try makeContainer().mainContext
+            ProfileMigration.ensureProfilesAfterBootstrap(
+                context: ctx, defaults: isolatedDefaults())
+            let caregiver = try #require(
+                try ctx.fetch(FetchDescriptor<ChildProfile>()).first { $0.isSystem })
+            return caregiver.id
+        }
+        #expect(try seedID() == kCaregiverProfileID)
+        #expect(try seedID() == seedID())   // identical across installs
     }
 
-    @Test func returningUser_clampsOutOfRangeTileCap() throws {
-        let container = try makeContainer()
-        let ctx = container.mainContext
-        let defaults = isolatedDefaults()
-        defaults.set(99, forKey: AppSettingsKey.tileCapPerGroup) // out of range
-
-        ProfileMigration.ensureProfilesAfterBootstrap(
-            context: ctx,
-            seedLegacy: true,
-            defaults: defaults
-        )
-
-        let kids = try ctx.fetch(FetchDescriptor<ChildProfile>())
-        let legacy = kids.first(where: { !$0.isSystem })!
-        #expect(legacy.maxSelectedTiles == 8) // clamped to engine max
-    }
-
-    @Test func idempotent_doesNotSeedLegacyTwice() throws {
+    @Test func idempotent_neverDuplicatesTheCaregiverProfile() throws {
         let container = try makeContainer()
         let ctx = container.mainContext
         let defaults = isolatedDefaults()
 
-        ProfileMigration.ensureProfilesAfterBootstrap(
-            context: ctx, seedLegacy: true, defaults: defaults)
-        ProfileMigration.ensureProfilesAfterBootstrap(
-            context: ctx, seedLegacy: true, defaults: defaults)
-        ProfileMigration.ensureProfilesAfterBootstrap(
-            context: ctx, seedLegacy: true, defaults: defaults)
+        for _ in 0..<3 {
+            ProfileMigration.ensureProfilesAfterBootstrap(context: ctx, defaults: defaults)
+        }
 
-        // Legacy + Sandbox, never duplicated.
         let kids = try ctx.fetch(FetchDescriptor<ChildProfile>())
-        #expect(kids.count == 2)
+        #expect(kids.count == 1)
         #expect(kids.filter { $0.isSystem }.count == 1)
-        #expect(kids.filter { !$0.isSystem }.count == 1)
         #expect(try ctx.fetch(FetchDescriptor<DeviceProfile>()).count == 1)
     }
 
-    @Test func skipsLegacy_whenChildProfileAlreadyExists() throws {
+    /// A child that arrived from another synced device keeps the active slot —
+    /// seeding must not steal it, or the board changes under a caregiver who
+    /// merely launched the app on a second device.
+    @Test func existingChildKeepsTheActiveSlot() throws {
         let container = try makeContainer()
         let ctx = container.mainContext
         let defaults = isolatedDefaults()
-        defaults.set("com.apple.voice.test", forKey: AppSettingsKey.speechVoiceIdentifier)
 
-        // User already has a child (e.g., went through onboarding on another
-        // synced device).
         let existing = ChildProfile(
             displayName: "Aubrey",
             brownsStage: .twoThree,
@@ -173,34 +117,32 @@ struct ProfileMigrationTests {
         )
         ctx.insert(existing)
 
-        ProfileMigration.ensureProfilesAfterBootstrap(
-            context: ctx, seedLegacy: true, defaults: defaults)
+        ProfileMigration.ensureProfilesAfterBootstrap(context: ctx, defaults: defaults)
 
         let kids = try ctx.fetch(FetchDescriptor<ChildProfile>())
-        // Aubrey (existing real) + Sandbox. Legacy not seeded since real exists.
-        #expect(kids.count == 2)
-        let aubrey = kids.first(where: { !$0.isSystem })!
-        #expect(aubrey.displayName == "Aubrey") // unchanged
-        #expect(aubrey.voiceIdentifier == "real-voice")
+        #expect(kids.count == 2)   // Aubrey + the caregiver profile
+        let aubrey = try #require(kids.first { !$0.isSystem })
+        #expect(aubrey.displayName == "Aubrey")
+        #expect(aubrey.isActive)
+        let caregiver = try #require(kids.first { $0.isSystem })
+        #expect(!caregiver.isActive)
     }
 
-    // MARK: - Sandbox + role normalization
+    // MARK: - Caregiver profile + role normalization
 
-    @Test func sandboxProfile_seededOnce() throws {
+    @Test func caregiverProfile_seededOnce() throws {
         let container = try makeContainer()
         let ctx = container.mainContext
         let defaults = isolatedDefaults()
 
-        ProfileMigration.ensureProfilesAfterBootstrap(
-            context: ctx, seedLegacy: false, defaults: defaults)
-        ProfileMigration.ensureProfilesAfterBootstrap(
-            context: ctx, seedLegacy: false, defaults: defaults)
+        ProfileMigration.ensureProfilesAfterBootstrap(context: ctx, defaults: defaults)
+        ProfileMigration.ensureProfilesAfterBootstrap(context: ctx, defaults: defaults)
 
-        let sandboxes = try ctx.fetch(FetchDescriptor<ChildProfile>(
+        let seeded = try ctx.fetch(FetchDescriptor<ChildProfile>(
             predicate: #Predicate { $0.isSystem }
         ))
-        #expect(sandboxes.count == 1)
-        #expect(sandboxes[0].displayName == kSandboxProfileDefaultName)
+        #expect(seeded.count == 1)
+        #expect(seeded[0].displayName == kCaregiverProfileDefaultName)
     }
 
     /// The invariant, stated without reference to any particular retired value:
@@ -221,8 +163,7 @@ struct ProfileMigrationTests {
         device.roleRaw = raw
         ctx.insert(device)
 
-        ProfileMigration.ensureProfilesAfterBootstrap(
-            context: ctx, seedLegacy: false, defaults: defaults)
+        ProfileMigration.ensureProfilesAfterBootstrap(context: ctx, defaults: defaults)
 
         let fetched = try ctx.fetch(FetchDescriptor<DeviceProfile>())[0]
         #expect(fetched.roleRaw == "caregiver")
@@ -239,7 +180,7 @@ struct ProfileMigrationTests {
         ctx.insert(device)
 
         ProfileMigration.ensureProfilesAfterBootstrap(
-            context: ctx, seedLegacy: false, defaults: defaults)
+            context: ctx, defaults: defaults)
 
         let fetched = try ctx.fetch(FetchDescriptor<DeviceProfile>())[0]
         #expect(fetched.roleRaw == "patient")

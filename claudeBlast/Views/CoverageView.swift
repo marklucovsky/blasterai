@@ -136,11 +136,18 @@ struct CoverageView: View {
                 } label: {
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
+                            // The label yields, the count does not. At phone
+                            // width a long part-of-speech name would otherwise
+                            // push "12 of 340" into an ellipsis, and the number
+                            // is the entire content of the row.
                             Text(row.label)
-                            Spacer()
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                            Spacer(minLength: 8)
                             Text("\(row.used) of \(row.available)")
                                 .font(.subheadline.monospacedDigit())
                                 .foregroundStyle(.secondary)
+                                .fixedSize()
                         }
                         ProgressView(value: row.usedFraction)
                             .tint(row.used == 0 ? .orange : .blue)

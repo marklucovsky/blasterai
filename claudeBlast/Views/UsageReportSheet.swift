@@ -44,9 +44,20 @@ struct UsageReportSheet: View {
         scenes.first { $0.isActive } ?? scenes.first
     }
 
+    /// The name to put on the report, or empty when there is nobody to name.
+    ///
+    /// The caregiver profile is not a child. Passing its name here is what put
+    /// **"Legacy"** — and would now put "My Profile" — as the largest word on a
+    /// document a therapist reads, describing a child who does not exist. An
+    /// empty name is honest: `UsageReport` already has a form for that.
+    private var reportSubjectName: String {
+        guard let active = profileResolver.active, !active.isSystem else { return "" }
+        return active.displayName
+    }
+
     private var report: UsageReport {
         UsageReport.make(
-            childName: profileResolver.active?.displayName ?? "",
+            childName: reportSubjectName,
             scene: activeScene,
             periodLabel: window.rawValue,
             inWindow: windowedEntries,
@@ -137,8 +148,7 @@ struct UsageReportSheet: View {
     }
 
     private var childName: String {
-        let name = profileResolver.active?.displayName ?? ""
-        return name.isEmpty ? "the child" : name
+        reportSubjectName.isEmpty ? "the child" : reportSubjectName
     }
 
     @ViewBuilder

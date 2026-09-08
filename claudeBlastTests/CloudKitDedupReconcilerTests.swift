@@ -178,30 +178,23 @@ struct CloudKitDedupReconcilerTests {
         #expect(active[0].id == "p2")   // resolveActive: most-recent modifiedAt
     }
 
-    @Test func legacySeed_collapses_userNamedProfileSurvives() throws {
+    /// Two profiles that merely share a name are two different children, and
+    /// nothing may collapse them.
+    ///
+    /// This replaces a test for a pass that existed only to clean up after the
+    /// "Legacy" seed, which no longer exists. Worth keeping the shape: the
+    /// reconciler collapses by *identity*, and a name has never been one.
+    @Test func profilesSharingANameAreNotCollapsed() throws {
         let container = try makeContainer()
         let ctx = container.mainContext
-        func legacy(_ id: String, active: Bool) -> ChildProfile {
-            let p = profile("Legacy", id: id, isSystem: false, active: active)
-            p.notes = "Seeded from prior install at 2026-06-01T00:00:00Z"
-            return p
-        }
-        ctx.insert(legacy("l1", active: false))
-        ctx.insert(legacy("l2", active: true))   // active seed → survives
-        ctx.insert(legacy("l3", active: false))
-        // A profile the user adopted + renamed (no seed notes) must NOT be collapsed.
-        let emma = profile("Emma", id: "emma", isSystem: false, active: false)
-        emma.notes = ""
-        ctx.insert(emma)
+        ctx.insert(profile("Emma", id: "emma-1", isSystem: false, active: true))
+        ctx.insert(profile("Emma", id: "emma-2", isSystem: false, active: false))
 
         CloudKitDedupReconciler.reconcile(context: ctx)
 
         let reals = try ctx.fetch(FetchDescriptor<ChildProfile>(predicate: #Predicate { !$0.isSystem }))
-        #expect(reals.count == 2)                                   // one Legacy + Emma
-        let legacies = reals.filter { $0.displayName == "Legacy" }
-        #expect(legacies.count == 1)
-        #expect(legacies[0].id == "l2")                             // active seed survived
-        #expect(reals.contains { $0.id == "emma" })                // renamed profile untouched
+        #expect(reals.count == 2)
+        #expect(Set(reals.map(\.id)) == ["emma-1", "emma-2"])
     }
 
     // MARK: - Cache

@@ -869,6 +869,93 @@ being restated here; the two entries that shape a decision:
   *drops* toolbar items rather than collapsing them — expect quiet truncation
   rather than an obvious break.
 
+### Provisioning, not profile sharing (decided 2026-09-07)
+
+Sharing a `ChildProfile` device-to-device was the obvious next move after "one
+caregiver, N children". It is the wrong one, and it is worth writing down why,
+because the reasoning generalises.
+
+Mark: *"what is the purpose… It's probably all about provisioning a child onto a
+fresh device where they are going to need a profile and scene to get started. The
+profile for the child is most likely created at device install time when selecting
+patient mode. Injecting a profile into the device doesn't do much other than
+establish their level and possible color schemes."*
+
+The profile is **already created** on a fresh device, by onboarding, at the moment
+patient mode is chosen. So a shared profile arrives after the only thing it could
+have created already exists, and carries just two useful fields: Brown's stage and
+a colorway. That is a small payload wearing the costume of a big feature.
+
+**What a fresh device actually needs is a board it can talk with.** That is a
+scene, the vocabulary behind it, and — for a child who does not see the default
+palette — a colorway. The unit worth sharing is therefore a **provisioning
+bundle**: one or more scenes, one or more vocab packs, and a color setting,
+received as a set.
+
+That is also the shape that scales past one therapist. Mark: *"this feels like the
+real path to focus on if we get traction with entities like school districts."* A
+district does not hand out profiles; it hands out a standard starting
+configuration, and expects twenty devices to come up the same way.
+
+**Not now.** The bundle is a post-launch feature and should be designed against a
+real district conversation rather than guessed at. Until then: *"point to point
+sharing of scenes, vocab packs, and allowing the therapist to push a color scheme
+is enough."*
+
+Two of those three already ship — `.blasterscene` and `.blasterpack`. Which leaves
+**two things that can be shared and are not**:
+
+- **A colorway** — a named `TileColorMap`, the therapist's answer for one child's
+  vision. **Done, S5 PR 5.** It could previously be built, named and saved to the
+  caregiver's library, and reached no other device except through that
+  caregiver's own iCloud — which is no help at all, because the therapist will
+  never be on the family's iCloud. Same shape as the usage report: the real
+  recipient is on the other side of a text message.
+- **An encrypted OpenAI API key** — gate 6, already designed. See
+  `project_gifted_eval_keys`: the key travels as ciphertext, the passcode by a
+  different channel, and neither the raw key nor the passcode is ever committed.
+  Sequenced for S6, before the first external TestFlight invite, because that is
+  the moment it becomes load-bearing.
+
+**Arrival semantics: applied on receipt.** Built 2026-09-07.
+
+The first draft of this section had it follow the pack rule — land in the
+library, be applied by the receiving caregiver. Mark overruled that, and the
+reason is who is holding the device: *"I do think it should be activated on
+receipt. We should just make sure to save the current settings if they are
+modified/not-saved and then blindly apply the colorway."*
+
+The recipient of a colorway is frequently a parent who cannot easily work the
+color editor — which is precisely why a therapist is sending them colors. A
+confirmation step there is a way for the fix to not arrive. So it applies, with
+no prompt and no preview.
+
+**What makes that safe is that nothing is lost.** `ColorwayImporter.apply` files
+the colors currently in force into the caregiver's library before overwriting
+them, so "put it back how it was" is one tap in the profile editor. Two details
+that are load-bearing rather than incidental:
+
+- **"Unsaved" is decided by content, not by name.** A caregiver who started from
+  a preset and tweaked two colors holds a map whose name still matches a library
+  entry while its contents no longer do. Matching on name would call that saved
+  and destroy it.
+- **An incoming name collision suffixes rather than replaces.** `ColorMapLibrary.store`
+  replaces by name, so a received set called "Warm" would otherwise silently
+  overwrite the caregiver's own "Warm". An identical map under the same name is
+  not a collision — it is the same thing arriving twice.
+
+A colorway that overrides nothing is refused outright: applying it would reset
+the child to the defaults, which is destructive wearing the costume of an import.
+
+Format: `.blastercolors`, `application/vnd.claudeblast.colorway+json`, registered
+in all three of the places `BlasterFileFormat` warns about.
+
+**Whatever ships must be registered in three places.** `BlasterFileFormat` carries
+the standing warning: `CFBundleDocumentTypes`, the `onOpenURL` guard, and the
+`fileImporter` content types all have to agree. When the pack format was added the
+guard was missed, and a file then arrived, launched the app, and vanished — no
+sheet, no error, nothing to explain it.
+
 ### Tester-readiness code work
 
 - **`AdminGate` hardening** — enroll the PIN at enable-time rather than at the gate,
