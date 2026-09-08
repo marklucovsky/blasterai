@@ -148,24 +148,16 @@ struct claudeBlastApp: App {
         // the first launch after upgrade. Idempotent; no-op on fresh installs.
         OpenAIKeyVault.migrateFromUserDefaultsIfNeeded()
 
-        // Select provider: env var wins (consumed silently — env users get
-        // their key persisted to Keychain so standalone re-launches keep
-        // working), then Keychain, then Mock.
-        let provider: any SentenceProvider
-        if let envKey = ProcessInfo.processInfo.environment["OPENAI_API_KEY"]?
-            .trimmingCharacters(in: .whitespaces),
-           !envKey.isEmpty {
-            OpenAIKeyVault.setKey(envKey)
-            provider = OpenAISentenceProvider(apiKey: envKey)
-        } else {
-            let choice = UserDefaults.standard.string(forKey: AppSettingsKey.providerChoice) ?? "openai"
-            if choice == "openai", let storedKey = OpenAIKeyVault.currentKey() {
-                provider = OpenAISentenceProvider(apiKey: storedKey)
-            } else {
-                provider = MockSentenceProvider()
-            }
-        }
-        let engine = SentenceEngine(provider: provider)
+        // Env var wins (consumed silently — env users get their key persisted to
+        // the Keychain so standalone re-launches keep working), then Keychain,
+        // then Mock. The rule lives in `ProviderSelection` rather than here
+        // because nothing in an App initializer can be tested, and the keyless
+        // branch is the one our own devices never take.
+        let selection = ProviderSelection.choose()
+        let engine = SentenceEngine(provider: ProviderSelection.makeProvider())
+        // A keyless launch is a single-word device, not a device quietly running
+        // on the mock. See `ProviderSelection.Choice`.
+        engine.isMissingKey = (selection == .noKey)
         let storedAudio = UserDefaults.standard.object(forKey: AppSettingsKey.audioEnabled)
         engine.audioEnabled = (storedAudio as? Bool) ?? true
         engine.voiceIdentifier = UserDefaults.standard.string(forKey: AppSettingsKey.speechVoiceIdentifier) ?? ""

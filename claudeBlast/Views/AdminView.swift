@@ -126,6 +126,12 @@ struct AdminView: View {
     /// via the enum itself so `navigationDestination(item:)` can bind to them.
     @State var vocabDetail: AdminRoute.Detail?
     @State var deviceDetail: AdminRoute.Detail?
+    /// Confirmation before the API key is deleted from the Keychain.
+    @State var isRemovingAPIKey = false
+
+    /// Set when "Lock Admin" is switched on with no PIN stored, so the PIN is
+    /// chosen there and then rather than at the next gate.
+    @State var isEnrollingPIN = false
     @State var pendingPatientTransition = false
     @State var pendingCaregiverTransition = false
 

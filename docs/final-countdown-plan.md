@@ -504,7 +504,8 @@ ordering only makes sense once the color decision is understood.
 | 3.6 | **color mapping** | therapist-editable part-of-speech → color, per child | ⚠️ **schema deadline** — see below |
 | 4 | **gates** | §9 scene validation on activate · §10 iCloud toggle confirmation both directions · modal progress for long ops · audit sibling one-tap actions | two live lockouts + the stray-tap iCloud flip |
 | 5 | **compact + names** | §12 Coverage / Patterns / coverage grid at phone width · **§11 profile model** — see below | both are "reviewed on the wrong device or by the wrong reader" |
-| 6 | **tester readiness** | AdminGate hardening · PIN recovery · no-key path verified · beta-review notes | no-key path is the likeliest rejection cause |
+| 6 | **tester readiness** | AdminGate hardening · PIN recovery · no-key path verified | no-key path is the likeliest rejection cause |
+| 6.5 | **positioning** | the order of the pitch · beta-review notes · site + deck + video recut · onboarding copy | see below — split out of 6 on 2026-09-07 |
 | 7 | **launch assets** | claims refresh · ASC record · icon audit · privacy labels · screenshots iPad/iPhone/Mac | exit criteria live here |
 
 PR 2 is sequenced early because it is the only irreversible item, and PRs 3 and 5
@@ -955,6 +956,100 @@ the standing warning: `CFBundleDocumentTypes`, the `onOpenURL` guard, and the
 `fileImporter` content types all have to agree. When the pack format was added the
 guard was missed, and a file then arrived, launched the app, and vanished — no
 sheet, no error, nothing to explain it.
+
+### The order of the pitch (decided 2026-09-07)
+
+Beta-review notes were a line item inside PR 6 until Mark pulled them out, and
+the reason is not that they are long. They are the same document as the site and
+the deck, and all three currently lead with the wrong thing.
+
+Mark: *"I think a lot of our deck/site over-rotates on sentence generation mode
+for the child. While this is one of our more compelling features from a tech
+standpoint, from a more conservative SLP perspective I'm sure it's going to be a
+much longer sell."*
+
+That is the whole risk in one sentence. Sentence generation is the most
+technically interesting thing here and the least safe thing to open with. An SLP
+evaluating AAC has professional reasons to distrust software that puts words in a
+child's mouth, and a first impression that leads with it invites a decision
+before anything else has been seen. **The feature is not the problem; its
+position in the argument is.**
+
+**The order a first look should arrive in:**
+
+1. **Modern AAC that does what an SLP expects.** Boards, pages, motor-planned
+   positions, Fitzgerald colors, print, OBF/OBZ. Nothing to grant, nothing to
+   configure, no account.
+2. **Cross-device and in sync.** The therapist's boards on her iPad, the family's
+   on theirs, the same child's history in both.
+3. **Data an SLP can act on.** Coverage, patterns, the shareable usage report —
+   which words are reached, which sit untouched, when the board gets used and
+   whether the range is widening.
+
+   High in the order on purpose. This is not a supporting feature, it is a
+   *reason to adopt* for the exact audience most likely to be sceptical of items
+   4 and 5, and it is the only part of the pitch that hands a therapist something
+   for a session note. It also arrives before any mention of AI, which matters:
+   it is all computed locally from what the child actually pressed, with no key
+   and no model involved.
+4. **Substantial AI for the caregiver**, once a key is installed — scene and page
+   generation, art for any word they can name, moderation. Note who is holding
+   the device: the adult.
+5. **Sentence generation as an advanced mode**, one switch on, one switch off.
+
+**Cost transparency is what makes 4 and 5 safe to consider**, and it belongs
+beside them rather than in a footnote. Mark: *"we did a great job on usage
+trends, usage costs, etc. I think this transparency needs to find its way into
+the deck."*
+
+BYOK plus a per-month cost readout plus a usage log is a specific answer to the
+specific fear — that this is a meter running against a family or a district with
+no way to see it. The honest version is strong on its own: the key is theirs, the
+spend is theirs, the app shows what it spent and on what, and turning the feature
+off stops it. Very few AI products in this space can say all four.
+
+**Two distinct transparencies, and they answer different objections.** The
+clinical one (item 3) answers *"does this give me anything I can use?"* The cost
+one answers *"what is this going to run me, and can I see it?"* Collapsing them
+into one "transparency" slide loses both.
+
+Mark: *"our deck/site needs to introduce these advanced concepts BUT it can not
+cause people to dismiss it outright."*
+
+**This is not only a marketing problem.** The app's own onboarding leads the same
+way: the first screen reads *"A voice for non-verbal children. Pick tiles, hear
+sentences"*, and the third card on it is *"Bring your own AI key"* — so the first
+forty words a new user reads put sentence generation and an API key ahead of the
+board. A reviewer, a therapist and a parent all meet that screen before anything
+else. Onboarding copy therefore belongs in this PR, not in the claims refresh.
+
+**The site predates most of the product.** Mark: *"these are just capabilities we
+build after the site, so we need to address with some updates."* This is not only
+a reordering job — audited 2026-09-07 against `~/src/blasterai-site`:
+
+- The site's `h1` is **"Tiles in. A real sentence out."** The deck's solution
+  slide is **"For the child: tap tiles → speak in full sentences"**, and its AI
+  section runs *1 · Sentences, 2 · Images, 3 · Boards & vocabulary* — sentence
+  generation is literally item one of three, on both surfaces.
+- Mentioned **nowhere** across `index`, `deck`, `faq`, `about`: coverage,
+  patterns, the usage report, OBF/OBZ, vocabulary packs, Fitzgerald colors,
+  colorways, Brown's Stages, conceal/reveal. `print` and `Mac` appear once each.
+
+So the two things Mark now wants leading the pitch — data an SLP can act on, and
+visible cost — are the two the site never mentions, while the thing to move down
+the order is the headline of both surfaces. Everything shipped in S3–S5 is
+missing: Brown's Stages, Mac support, the share surface, PDF boards, OBF/OBZ,
+tile-image export, the usage report, coverage, patterns, sparse boards, page
+rename, letters and numbers, the Fitzgerald palette and therapist colorways.
+
+**Scope.** Review notes, site, deck, onboarding copy, and recutting whatever
+video no longer matches the order. The site is a separate repo
+(`~/src/blasterai-site`, direct-to-main, no PRs), so this PR carries the app-side
+copy and the notes; the site lands alongside it.
+
+**Sequencing.** Before PR 7. The claims refresh checks that what we say is true;
+this decides what we say first, and there is no point auditing sentences that are
+about to be reordered.
 
 ### Tester-readiness code work
 
