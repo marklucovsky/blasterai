@@ -62,15 +62,24 @@ Four sessions, each with one identity:
 
 | # | Gate | Session |
 |---|------|---------|
-| 1 | CloudKit container is Development-only; TestFlight runs against **Production** | **6** |
+| 1 | CloudKit container is Development-only; TestFlight runs against **Production** | **OPEN — S6** |
 | 2 | Privacy manifest / export compliance / version numbers | ✅ S1 |
 | 3 | Bundle size | ✅ S2 |
 | 4 | Token/cost accounting | ✅ S2 |
-| 5 | Mac never built or tested; AdminGate assumes Face ID | **3** |
-| 6 | BYOK: a beta reviewer has no OpenAI key | **5** |
-| 7 | PIN recovery is still "reinstall the app" | **5** |
-| 8 | `ChildProfile.languageRaw` / `brownsStageRaw` must **exist** before promotion | **3A, deadline S6** |
-| 9 | `ChildProfile.birthday` must be **gone** before promotion — a stored child DOB | **3F, deadline S6** |
+| 5 | Mac never built or tested; AdminGate assumes Face ID | ✅ S3 (`2c8cd74`), hardened S5 #74 |
+| 6 | BYOK: a beta reviewer has no OpenAI key | ✅ S5 — verified on device 2026-09-07 |
+| 7 | PIN recovery is still "reinstall the app" | ✅ S5 #74 — device passcode |
+| 8 | `ChildProfile.languageRaw` / `brownsStageRaw` must **exist** before promotion | fields present; **re-confirm at S6 promotion** |
+| 9 | `ChildProfile.birthday` must be **gone** before promotion — a stored child DOB | gone (`9701a0d`); **re-confirm at S6 promotion** |
+
+**Gate 1 is the only genuinely open gate**, and it is the one that gates build 1.
+Gates 8 and 9 are satisfied in code but stay listed, because they are verified
+*at* promotion rather than before it — a green row here is not a substitute for
+looking at the schema on the day.
+
+Gate 6 changed meaning rather than closing quietly: keyless is not a reviewer
+workaround to survive, it is the majority configuration on a child's device. See
+§"Tester-readiness code work".
 
 **Gates 8 and 9 are the only irreversible deadlines in the countdown, and they point in
 opposite directions.** A CloudKit Production schema is additive-only forever (Appendix B
@@ -1145,6 +1154,74 @@ confirmed 2026-09-02: **repo and app images are Apache-2.0 with no additional co
 ### Exit criteria
 
 The App Store Connect record is complete, and a build could be uploaded into it today.
+
+---
+
+## Session 5.5 — positioning & launch assets
+
+**Opened 2026-09-08, `main` @ `3b3f16a`. On `main`, not in a worktree.**
+
+S5 closed at PR 6. Everything left — the old rows 6.5 and 7 — is docs, the
+separate site repo, and the App Store Connect console. A worktree buys nothing
+for prose, so this session works direct-to-main and spins a short-lived branch
+only where Swift is touched (the onboarding copy, last).
+
+Numbered 5.5 rather than folded into S6 because **S6 means "CloudKit promotion,
+scripted release, build 1"** across this plan, the gate table and the project
+memory, and that meaning is load-bearing.
+
+### The external invite is one milestone, not three deadlines
+
+Mark, 2026-09-08: *"I view TestFlight as the place where we distribute
+production/non-debug builds to myself & kurt AND externals like brandi++. Not
+every build in testflight goes to externals. It has to work well in my hands and
+demonstrate production grade cloudkit before I will invite the externals."*
+
+Round 1 is **Mark and Kurt as internal testers** — no Beta App Review, because
+internal testers hold App Store Connect team accounts. Kurt needs one; that is
+the dependency.
+
+The **first external invite** is a single milestone with three prerequisites,
+which had been tracked as three separate deadlines:
+
+1. Production CloudKit demonstrated — gate 1, S6.
+2. Beta App Review passed — external testing requires it, internal does not.
+3. Gifted evaluator keys built, so an external tester can generate sentences
+   without buying their own OpenAI credit.
+
+**Consequence:** the beta-review notes are *preparation* in this session, not a
+blocking gate. Nothing here waits on Apple.
+
+### Phases
+
+1. **Docs hygiene** — this section, the gate table, and `docs/s4-cleanup.md`
+   statuses. Done 2026-09-08.
+2. **Positioning** — `docs/positioning-2026-09.md` as the single source, then the
+   site (`~/src/blasterai-site`, direct-to-main, no PRs). Video: inventory what
+   no longer matches, do not recut yet.
+3. **Beta-review notes** — `docs/beta-review-notes.md`.
+4. **Claims refresh** — `docs/claims-audit-2026-09.md`, re-running the
+   2026-07-20 discipline over everything S2–S5 changed.
+5. **ASC record + assets** — screenshots iPad/iPhone/Mac via the existing
+   TileScript `shots_*.yaml` capture path, description, keywords, privacy labels
+   verified against `PrivacyInfo.xcprivacy`, icon audit for iOS 26 and Mac.
+6. **Onboarding copy** — one short-lived worktree + PR. The only Swift.
+
+### Session 5 close-out
+
+`main` @ `3b3f16a`, **755 tests**, PRs **#64–#74**: cleanup (#64) · Fitzgerald
+color + `partOfSpeechRaw` (#65) · sparse boards (#66) · page rename (#67, #68) ·
+letters & numbers (#69) · therapist color mapping (#70) · scene-activation and
+toggle gates (#72) · one caregiver N children + colorway sharing (#73) ·
+AdminGate hardening, PIN recovery, keyless testability (#74).
+
+Both S5 schema deadlines are satisfied in code: `TileModel.partOfSpeechRaw` and
+`ChildProfile.colorMapData` / `colorMapLibrary`. `CD_partOfSpeechRaw` was
+confirmed present in the Development schema on 2026-09-05.
+
+Deferred out of S5 by name: profile sharing and the provisioning bundle (both
+post-launch — see §"Provisioning, not profile sharing"), and the encrypted
+evaluator key (S6, gated on the external-invite milestone above).
 
 ---
 

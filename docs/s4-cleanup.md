@@ -3,12 +3,19 @@
 Small defects found while building session 4, deliberately not fixed in the PR
 that surfaced them. Cleared in a cleanup PR before the session closes.
 
-Add to this list rather than derailing a feature branch; delete an entry when it
-lands.
+Add to this list rather than derailing a feature branch.
+
+**Entries are kept after they land, marked `**Landed:**` with the date and PR,
+rather than deleted.** The original rule was to delete them; in practice the
+reasoning in an entry outlives the fix and is what the next person needs. Every
+entry below now carries a status — if one does not, that is a bug in this file,
+not an item still open.
 
 ---
 
 ## 1. `p3d_bassketball.heic` ships and is unreachable
+
+**Landed:** 2026-09-05, S5 PR 1 (#64).
 
 **Found:** 2026-09-01, during a tile-art coverage audit for the PDF renderer.
 
@@ -45,6 +52,8 @@ vocabulary keys. That audit is worth keeping:
 
 ## 2. `help` classic art has a drawn frame baked into the image
 
+**Landed:** 2026-09-05, S5 PR 1 (#64).
+
 **Found:** 2026-09-01, visible on any printed board and in the app grid.
 
 `cls_help` carries its own white box and thin black border inside the PNG, so the
@@ -66,6 +75,8 @@ explicitly.
 
 ## 3. Long tile labels truncate in print
 
+**Landed:** 2026-09-05, S5 PR 1 (#64).
+
 **Found:** 2026-09-01, on a 9-across core board: "graham crac…".
 
 At core-board density the label band is ~1 inch wide, which a few of the longer
@@ -80,6 +91,8 @@ word slightly smaller beats half a word at the size asked for.
 ---
 
 ## 4. The "not vocabulary" predicate is copy-pasted in five places
+
+**Landed:** 2026-09-05, S5 PR 1 (#64).
 
 **Found:** 2026-09-01, while fixing page-link tiles travelling inside a pack.
 
@@ -96,6 +109,8 @@ treats a page's tiles as a word list inherits the rule instead of forgetting it.
 ---
 
 ## 5. `NOTICE` describes art the app no longer ships — **S5, not this session**
+
+**Landed:** 2026-09-05, S5 PR 1 (#64).
 
 **Found:** 2026-09-02, while deciding what licence an exported `.obz` should
 assert.
@@ -127,6 +142,8 @@ on their behalf. See `docs/obf-interop.md`.
 
 ## 6. A test that references a `private` symbol can vanish without failing
 
+**Landed:** 2026-09-05, S5 PR 1 (#64).
+
 **Found:** 2026-09-02, while adding coverage for the `bundleImage` alias bug.
 
 A new test in `BoardPrintTests` referenced `PrintImageCache`, which is
@@ -148,6 +165,8 @@ before believing a green run.
 ---
 
 ## 7. No question words in the vocabulary at all
+
+**Landed:** S4, `43ce69b`.
 
 **Found:** 2026-09-02, from Brandi asking how we assure a child has the core
 words they need.
@@ -176,6 +195,8 @@ export PR.**
 ---
 
 ## 8. A part-of-speech axis is for discovery, not for the generator
+
+**Landed:** S4, `43ce69b`.
 
 **Raised:** 2026-09-02, alongside item 7.
 
@@ -264,8 +285,9 @@ rather than in isolation.
 - Scene arriving by import or sync in any of the above states, where no
   caregiver was present at the moment it became invalid.
 
-**Not started.** Recorded so the two shipped patches are understood as
-containment, not as the fix.
+Recorded so the two shipped patches are understood as containment, not as the
+fix. The containment landed; the enumeration above is what `SceneActivation` was
+written against.
 
 ---
 
@@ -319,7 +341,6 @@ caregiver would be on while waiting for it.
    structural change: factory reset (already confirmed), Flush All on the cache,
    scene activation and deletion, Remove PIN.
 
-**Not started.**
 
 ---
 
@@ -354,7 +375,6 @@ the question is which surfaces show a profile name at all — and whether an
 unnamed profile should show *something else* rather than a placeholder that reads
 as a real child's name.
 
-**Not started.**
 
 ---
 
@@ -387,5 +407,4 @@ Related to the S3 finding that SwiftUI toolbars silently *drop* items at narrow
 widths rather than collapsing them — the failure mode here is likely to be quiet
 truncation rather than an obvious break.
 
-**Not started.**
 
