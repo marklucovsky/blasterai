@@ -98,7 +98,15 @@ final class ChildProfileResolver {
     }
 
     /// The mode the active child's stage implies, ignoring any device override.
-    var stageMode: InteractionMode { active?.interactionMode ?? .sentence }
+    ///
+    /// Falls back through `fallbackStage`, which is Stage I, rather than
+    /// straight to `.sentence`. The two lines disagreed: this type declares the
+    /// no-profile baseline as Stage I precisely because it is *"better to
+    /// under-serve than to hand a child sentences they cannot parse"*, and then
+    /// handed them sentences anyway.
+    var stageMode: InteractionMode {
+        active?.interactionMode ?? Self.fallbackStage.interactionMode
+    }
 
     /// Set (or clear, with `nil`) this device's temporary mode override.
     /// Deliberately does **not** touch the active child's Brown's Stage — see
@@ -157,8 +165,9 @@ final class ChildProfileResolver {
     }
 
     /// Interaction mode in force: this device's temporary override if set,
-    /// otherwise the projection of the active child's Brown's Stage. Defaults
-    /// to AI sentences when no real profile is active (Sandbox/pre-onboarding).
+    /// otherwise the projection of the active child's Brown's Stage. With no
+    /// active profile it follows `fallbackStage` — single-word — because the
+    /// safe direction to be wrong in is the quiet one.
     var interactionMode: InteractionMode { modeOverride ?? stageMode }
     var activeChildID: String? { active?.id }
 

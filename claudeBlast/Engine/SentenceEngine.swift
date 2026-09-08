@@ -118,7 +118,63 @@ final class SentenceEngine {
     var currentPageKey: String = ""
 
     var interactionMode: InteractionMode {
-        scriptedModeOverride ?? (profileResolver?.interactionMode ?? .sentence)
+        // No usable key forces single-word, whatever the child's stage says.
+        //
+        // Not a preference being overridden — a stage the device cannot deliver.
+        // Sentence mode with a dead key means every tap produces silence, and
+        // with no key at all it would mean the mock inventing sentences nobody
+        // asked for. Single-word is the honest behaviour in both cases, and it
+        // is what a plain AAC device does.
+        if isKeyRejected || isMissingKey { return .singleWord }
+        return scriptedModeOverride ?? (profileResolver?.interactionMode ?? .sentence)
+    }
+
+    /// Set when OpenAI rejects the key outright — revoked, expired, or out of
+    /// credit.
+    ///
+    /// Distinct from an ordinary failure on purpose. A network blip is worth
+    /// retrying on the next tap; a 401 is not, and retrying it forever is how a
+    /// device ends up silently failing every generation with nothing said to
+    /// anyone. This is the state that stops the retrying and says so.
+    ///
+    /// In memory rather than stored: the fix is usually a new key, and a stale
+    /// flag surviving a relaunch would keep a working key in the doghouse. A
+    /// dead key re-proves itself dead on the first tap after launch, which costs
+    /// one request.
+    private(set) var isKeyRejected = false
+
+    /// True when there is no key and OpenAI is the chosen provider.
+    ///
+    /// Deliberately separate from "the provider happens to be the mock". Mock is
+    /// a legitimate explicit choice — the eval harness and the load scripts run
+    /// on it, and there sentence mode is exactly what is wanted. What must never
+    /// happen is a caregiver removing their key and the child silently switching
+    /// to invented sentences.
+    var isMissingKey = false
+
+    /// Clear the rejection — the caregiver has entered a different key.
+    func clearKeyRejection() { isKeyRejected = false }
+
+    /// Whether a failure means *this key is finished* rather than *try again*.
+    ///
+    /// Static and pure so it can be tested without an engine, a network or a
+    /// clock — the generation path that consumes it is private, and a test
+    /// reaching into that would compile to nothing and silently pass (see the
+    /// note in CLAUDE.md).
+    ///
+    /// 401 and 403 only. A 500 is OpenAI having a bad day and a timeout is the
+    /// train going into a tunnel; condemning the key for either would drop a
+    /// working device into fallback until it was relaunched.
+    static func isKeyRejection(_ error: Error) -> Bool {
+        guard case OpenAIError.httpError(let status, _) = error else { return false }
+        return status == 401 || status == 403
+    }
+
+    /// Record a generation failure. Terminal ones latch; the rest are ignored.
+    func noteGenerationFailure(_ error: Error) {
+        guard Self.isKeyRejection(error) else { return }
+        isKeyRejected = true
+        Self.logger.error("generate: key rejected — falling back to single-word")
     }
 
     /// Idle debounce before auto-generation; backed by AppStorage.
@@ -987,6 +1043,10 @@ final class SentenceEngine {
             let tileKeys = tiles.map(\.key).joined(separator: ", ")
             let secs = String(format: "%.3f", elapsed.timeInterval)
             Self.logger.error("generate: source=api elapsed=\(secs)s tiles=[\(tileKeys)] error=\"\(error.localizedDescription)\"")
+            // 401/403 is terminal, not transient. Recording it flips
+            // `interactionMode` to single-word, so the very next tap speaks its
+            // word instead of reaching for a model that will refuse again.
+            noteGenerationFailure(error)
             guard tiles == activeGroup.tiles else {
                 isThinking = false
                 return
@@ -1003,6 +1063,12 @@ final class SentenceEngine {
                 // user tapped to hear it — repeat the existing sentence unchanged
                 // so there's still audible feedback (just not louder/escalated).
                 if repetition > 0 { speak(sentence) }
+            } else if isKeyRejected, !tiles.isEmpty {
+                // The tap that discovered the key was dead still deserves an
+                // answer. Speak the words themselves rather than leaving the
+                // child with silence and a tray they have to clear by hand.
+                speak(tiles.map(\.value).joined(separator: " "))
+                activeGroup.state = .unlockedEditable
             } else {
                 activeGroup.state = .unlockedEditable
             }

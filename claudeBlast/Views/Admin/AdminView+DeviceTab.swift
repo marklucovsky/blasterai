@@ -128,10 +128,48 @@ extension AdminView {
                 Toggle("Lock Admin\(biometry.hasHardware ? " (\(biometry.displayName) or PIN)" : " with a PIN")",
                        isOn: Binding(
                         get: { device.requireFaceIDForAdmin },
-                        set: { device.requireFaceIDForAdmin = $0 }
+                        set: { isOn in
+                            device.requireFaceIDForAdmin = isOn
+                            // Choose the credential now, not at the next gate.
+                            //
+                            // Switching the lock on used to store a flag and
+                            // nothing else, leaving the *next* Admin entry to
+                            // demand a PIN be invented on the spot — the worst
+                            // possible moment, and on a Mac with no biometry the
+                            // only credential the device will ever have.
+                            if isOn && device.adminPINHash == nil {
+                                isEnrollingPIN = true
+                            }
+                        }
                        ))
                 .disabled(device.role == .patient) // patient always on
+                .sheet(isPresented: $isEnrollingPIN) {
+                    PINSetupSheet(device: device) { stored in
+                        // A lock with no credential behind it is worse than no
+                        // lock, so backing out of the PIN backs out of the lock.
+                        //
+                        // Conditioned on the device ending up with no PIN, not on
+                        // the sheet being cancelled: the same sheet is used to
+                        // *change* an existing PIN, and cancelling that must
+                        // leave both the old PIN and the lock exactly as they
+                        // were rather than switching Admin's lock off.
+                        if !stored && device.adminPINHash == nil {
+                            device.requireFaceIDForAdmin = false
+                        }
+                    }
+                }
                 if device.adminPINHash != nil {
+                    // Changing a PIN you still have is an ordinary errand, and it
+                    // belongs here rather than at the gate.
+                    //
+                    // The gate's "Forgot your PIN?" is a *lockout* path: it only
+                    // appears once biometry has failed or is absent. On a phone
+                    // with Face ID that is almost never — entry succeeds before
+                    // the PIN screen is ever drawn — so a caregiver who simply
+                    // wants a different PIN had no way in but Remove, then Set,
+                    // which leaves the lock briefly enabled with nothing behind
+                    // it.
+                    Button("Change PIN") { isEnrollingPIN = true }
                     // On a device with no biometry the PIN is the ONLY credential,
                     // so removing it while Admin is locked has no fallback to fall
                     // back to — it locks the caregiver out of their own device.
@@ -139,6 +177,11 @@ extension AdminView {
                     Button("Remove PIN", role: .destructive) {
                         device.adminPINHash = nil
                         device.adminPINSalt = nil
+                        // The throttle belonged to the credential that just went
+                        // away. Left behind, it would greet the next PIN with a
+                        // lockout earned by a PIN that no longer exists.
+                        device.adminPINFailedAttempts = 0
+                        device.adminPINLockedUntil = nil
                         device.modifiedAt = .now
                     }
                     .disabled(pinIsOnlyWayIn)
@@ -152,9 +195,13 @@ extension AdminView {
                             .foregroundStyle(.secondary)
                     }
                 } else if device.requireFaceIDForAdmin {
+                    // Reachable on a device whose lock was switched on before
+                    // enrolment moved here. An actionable button rather than a
+                    // note that says it will happen to you later.
+                    Button("Set a PIN") { isEnrollingPIN = true }
                     Text(biometry.hasHardware
-                         ? "PIN not set — you'll be asked to create one next time \(biometry.displayName) fails."
-                         : "PIN not set — you'll be asked to create one next time you open Admin.")
+                         ? "No PIN set. Without one, \(biometry.displayName) is the only way into Admin."
+                         : "No PIN set. This device has no biometric unlock, so Admin cannot be opened until you set one.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -171,6 +218,37 @@ extension AdminView {
                     Text("Set via environment")
                         .foregroundStyle(.green)
                 }
+                // The env path stores a key as well as using one.
+                //
+                // `ProviderSelection` writes `OPENAI_API_KEY` into the Keychain
+                // on launch so a relaunch from the Home screen — outside the
+                // scheme — keeps working. That is deliberate, and it means this
+                // device holds a key that outlives the variable. With Remove
+                // only in the branch below, there was no way to clear it without
+                // first editing the scheme.
+                //
+                // Its own dialog rather than the one below: only one branch of
+                // this `if` is ever built, so there is no second presenter to
+                // race, and the copy has to say something different — this one
+                // cannot promise the AI will stop.
+                if !apiKey.isEmpty {
+                    Button("Remove Stored Key", role: .destructive) {
+                        isRemovingAPIKey = true
+                    }
+                    .confirmationDialog("Remove the key saved on this device?",
+                                        isPresented: $isRemovingAPIKey,
+                                        titleVisibility: .visible) {
+                        Button("Remove Key", role: .destructive) { apiKey = "" }
+                        Button("Cancel", role: .cancel) { }
+                    } message: {
+                        // Only an Xcode launch injects the variable. Tapping the
+                        // app icon does not, because iOS launches it — so the key
+                        // stays removed until you run from a scheme again. The
+                        // first version of this said the next launch would
+                        // restore it, which is wrong everywhere except Xcode.
+                        Text("The key is deleted from this device. If you relaunch from Xcode with an API Key environment variable set, that launch restores it.")
+                    }
+                }
             } else {
                 Picker("Provider", selection: $providerChoice) {
                     Text("OpenAI").tag("openai")
@@ -179,11 +257,78 @@ extension AdminView {
                     Text("Mock").tag("mock")
                 }
                 if providerChoice == "openai" {
+                    // A rejected key is not a failed request, and must not read
+                    // like one. Until this existed, a revoked key produced
+                    // silence on every tap with nothing anywhere to explain it —
+                    // the tester's report is "it stopped working".
+                    if sentenceEngine.isKeyRejected {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Label("This key was rejected", systemImage: "exclamationmark.triangle.fill")
+                                .font(.headline)
+                                .foregroundStyle(.orange)
+                            Text("OpenAI refused it — it may have been revoked, expired, or the account may be out of credit. "
+                                 + "Paste a new key below to start generating sentences again.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            // The reassurance is the point: a caregiver reading
+                            // this needs to know the child is not stuck.
+                            Text("Until then this device speaks each word as it is tapped, exactly as it would with no key at all. Nothing else is affected.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                     OpenAIKeyEntrySection(apiKey: $apiKey, showCostEstimate: false)
                     if apiKey.isEmpty {
                         Text("Enter your OpenAI API key to enable AI sentence generation.")
                             .font(.caption)
                             .foregroundStyle(.orange)
+                    } else {
+                        // There was no way to take a key back out.
+                        //
+                        // Clearing the masked field technically worked — the
+                        // vault deletes on an empty write — but nothing said so,
+                        // and a `SecureField` showing a stored secret is not an
+                        // affordance anyone reads as "delete". The only reliable
+                        // route was a factory reset.
+                        //
+                        // It matters for three ordinary situations, none of them
+                        // edge cases: a family deciding they are not ready for
+                        // AI after all; an iPad going back to the therapist who
+                        // lent it, or on to another child; and an evaluator
+                        // finishing with a key that was given to them.
+                        //
+                        // Switching Provider to Mock is not the same thing. That
+                        // stops the calls and leaves the key in the Keychain.
+                        Button("Remove API Key", role: .destructive) {
+                            isRemovingAPIKey = true
+                        }
+                        .confirmationDialog("Remove the API key from this device?",
+                                            isPresented: $isRemovingAPIKey,
+                                            titleVisibility: .visible) {
+                            Button("Remove Key", role: .destructive) {
+                                // Through the same binding the field writes, so
+                                // the vault delete and the provider swap both
+                                // happen on the existing onChange.
+                                apiKey = ""
+                            }
+                            Button("Cancel", role: .cancel) { }
+                        } message: {
+                            // Says what keeps working, not just what stops. The
+                            // keyless configuration is a supported way to run
+                            // this app, not a broken one, and a caregiver
+                            // deciding about AI deserves to hear that before
+                            // they decide rather than after.
+                            // Leads with what remains, because what remains is
+                            // almost all of it. The AI features enhance a
+                            // working AAC app; they are not the app. Copy that
+                            // opens with a list of losses reads as a warning
+                            // about breaking the device, and a caregiver
+                            // weighing whether they are ready for AI deserves
+                            // better than being frightened out of the decision.
+                            Text("Blaster keeps working as it does now — boards, speech, packs, the editor, print and export are unchanged. "
+                                 + "The AI assist features need a key: sentence generation, scene and page generation, "
+                                 + "word moderation, and art for new words. You can add a key back any time.")
+                        }
                     }
                 }
             }
@@ -218,6 +363,11 @@ extension AdminView {
         .onChange(of: providerChoice) { applyProvider() }
         .onChange(of: apiKey) {
             OpenAIKeyVault.setKey(apiKey)
+            // A different key has not been rejected — it has not been tried. The
+            // flag is about one credential, so it must not outlive it, or a
+            // caregiver who fixes the problem stays in single-word mode with no
+            // way to tell why.
+            sentenceEngine.clearKeyRejection()
             applyProvider()
         }
         .onChange(of: audioEnabled) { sentenceEngine.audioEnabled = audioEnabled }
@@ -382,6 +532,13 @@ extension AdminView {
         } else {
             newProvider = MockSentenceProvider()
         }
+        // Removing a key must not hand the child the mock.
+        //
+        // Both branches above build a provider, because the engine needs one —
+        // but only an *explicit* Mock choice means "generate fake sentences".
+        // Choosing OpenAI with no key means this device has no AI, and a device
+        // with no AI speaks each word as it is tapped.
+        sentenceEngine.isMissingKey = (providerChoice == "openai" && apiKey.isEmpty)
         sentenceEngine.switchProvider(newProvider)
     }
 }

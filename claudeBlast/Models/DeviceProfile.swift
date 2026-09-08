@@ -26,6 +26,35 @@ final class DeviceProfile {
     /// Wired in commit 6; declared here so the schema is stable.
     var adminPINHash: Data?
     var adminPINSalt: Data?
+
+    /// Consecutive wrong PINs. Reset to zero by a correct one.
+    ///
+    /// On the *device profile* rather than in the gate's `@State` for the reason
+    /// the throttle exists at all: `AdminGate.didAuth` lives and dies with one
+    /// presentation, so a counter beside it is cleared by closing the sheet and
+    /// opening it again — which is exactly what someone guessing would do.
+    var adminPINFailedAttempts: Int = 0
+
+    /// When PIN entry becomes available again. Nil when not throttled.
+    ///
+    /// Stored as an absolute date, not a countdown, so it survives the app being
+    /// force-quit. Wall-clock, and therefore movable by changing the device
+    /// clock — acceptable here and worth naming: the threat model is a curious
+    /// child, and a child who can reason their way to the Date & Time settings
+    /// to defeat a five-minute delay has earned it. Hardening this into
+    /// monotonic time would cost a stored boot reference and buy nothing against
+    /// the person we are actually slowing down.
+    var adminPINLockedUntil: Date?
+
+    /// When the PIN was last reset via device-owner authentication.
+    ///
+    /// Recorded, not yet shown. The recovery path is deliberately reachable — it
+    /// inherits the device's own trust boundary rather than trying to beat it —
+    /// so whether a caregiver should be *told* a reset happened is a real
+    /// question, and this is the fact any such notice would need. Nil until one
+    /// happens. Device-local, so keeping it costs nothing.
+    var adminPINResetAt: Date?
+
     var onboardingCompleted: Bool = false
     /// Temporarily run **this device** in a different interaction mode than the
     /// active child's Brown's Stage implies. `InteractionMode.rawValue`, or
