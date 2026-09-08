@@ -984,6 +984,14 @@ child's mouth, and a first impression that leads with it invites a decision
 before anything else has been seen. **The feature is not the problem; its
 position in the argument is.**
 
+**Reweight, do not reverse.** Mark, 2026-09-08: *"I'm looking for a more subtle
+approach here, not a dramatic reversal."* Sentence generation stays — it is the
+most compelling thing here technically, and the demo that makes people lean in.
+What changes is its position in the argument, not its prominence within the
+argument. The failure mode to avoid is over-correcting into a pitch that
+undersells the AI, which would be its own kind of dishonest and would waste the
+strongest thing we have. It is the closing act, not the opening one.
+
 **The order a first look should arrive in:**
 
 1. **Modern AAC that does what an SLP expects.** Boards, pages, motor-planned
