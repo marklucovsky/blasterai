@@ -54,10 +54,12 @@ struct CoverageGridView: View {
                     }
                 }
 
-                Text(footnote)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 4)
+                if !footnote.isEmpty {
+                    Text(footnote)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 4)
+                }
             }
             .padding(16)
         }
@@ -68,13 +70,42 @@ struct CoverageGridView: View {
     @ViewBuilder
     private var header: some View {
         let used = keys.filter { usedKeys.contains($0) }.count
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
-            Text("\(used) of \(keys.count) used")
-                .font(.headline.monospacedDigit())
-            Text(keys.isEmpty ? "" : "· \(Int((Double(used) / Double(keys.count) * 100).rounded()))%")
+        // Split by function, not by length.
+        //
+        // Whatever governs *how to read* the grid has to arrive before it. On a
+        // long page the note underneath is a scroll away, so a caregiver forms a
+        // reading, reaches the caveat, and has to unform it — and the caveat
+        // most worth having is precisely the one that says the arrangement means
+        // less than it looks like it does.
+        //
+        // What stays below is the part you act on after looking, which is a
+        // genuine footnote. See `footnote`.
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text("\(used) of \(keys.count) used")
+                    .font(.headline.monospacedDigit())
+                Text(keys.isEmpty ? "" : "· \(Int((Double(used) / Double(keys.count) * 100).rounded()))%")
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+            Text(readingNote)
+                .font(.footnote)
                 .foregroundStyle(.secondary)
-            Spacer()
         }
+    }
+
+    /// How to read the grid. Above it, always.
+    ///
+    /// Neither line depends on width, because reflow does not: the child's own
+    /// board reflows to fill whatever screen it is on. There is no faithful
+    /// layout on a big screen and an unfaithful one on a small screen — order
+    /// holds everywhere and wrapping is decided everywhere, so saying so once
+    /// is both simpler and more accurate than apologising for the phone.
+    private var readingNote: String {
+        let legend = "Dimmed words have never been pressed."
+        return isPositional
+            ? legend + " Listed in page order — relative placement is correct, but the ultimate layout reflows to fill available screen real estate."
+            : legend + " Listed alphabetically — a part of speech can appear anywhere within a scene."
     }
 
     @ViewBuilder
@@ -109,13 +140,19 @@ struct CoverageGridView: View {
         .accessibilityLabel("\(tile?.value ?? key), \(isUsed ? "used" : "never used")")
     }
 
+    /// What to do about it, once you have looked. A real footnote.
+    ///
+    /// Phrased as a run of neighbours rather than "a whole row or column",
+    /// which is what it used to say. Reflow moves the wrap point, so a row is
+    /// not a stable thing to point at — but relative order survives, so a
+    /// stretch of adjacent words going untouched still means what it always
+    /// meant.
     private var footnote: String {
         let unused = keys.count - keys.filter { usedKeys.contains($0) }.count
         guard unused > 0 else {
             return "Every word here has been used at least once."
         }
-        return isPositional
-            ? "Dimmed words have never been pressed, shown where they sit on the page. A whole row or column dimmed usually means the tiles are hard to reach rather than the wrong words."
-            : "Dimmed words have never been pressed. These are listed alphabetically — a part of speech has no position on the board, so there is no layout to read into the arrangement."
+        guard isPositional else { return "" }
+        return "A run of neighbouring words all dimmed usually means that stretch of the page is hard to reach, rather than the wrong words."
     }
 }

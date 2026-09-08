@@ -13,18 +13,21 @@ import UIKit
 
 /// Routes an incoming file to the sheet that understands it.
 ///
-/// A scene and a pack arrive by the identical road — a file open, an iMessage
-/// attachment, the in-app picker — and differ only in what they mean. One view
-/// owns that decision so no caller has to repeat it, and so a file with the
-/// wrong extension fails with an explanation rather than a decode error.
+/// A scene, a pack and a colorway arrive by the identical road — a file open, an
+/// iMessage attachment, the in-app picker — and differ only in what they mean.
+/// One view owns that decision so no caller has to repeat it, and so a file with
+/// the wrong extension fails with an explanation rather than a decode error.
 struct ImportRouteSheet: View {
     let url: URL
     let onDismiss: () -> Void
 
     var body: some View {
-        if url.pathExtension.lowercased() == BlasterPackFormat.fileExtension {
+        switch url.pathExtension.lowercased() {
+        case BlasterPackFormat.fileExtension:
             PackImportSheet(url: url, onDismiss: onDismiss)
-        } else {
+        case BlasterColorwayFormat.fileExtension:
+            ColorwayImportSheet(url: url, onDismiss: onDismiss)
+        default:
             SceneImportSheet(url: url, onDismiss: onDismiss)
         }
     }

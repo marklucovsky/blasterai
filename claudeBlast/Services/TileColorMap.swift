@@ -88,6 +88,28 @@ struct TileColorMap: Codable, Hashable {
     /// Starting points, because a therapist should not have to invent a
     /// high-contrast palette from first principles — and a named preset is how
     /// the app says it knows what this is for.
+    /// The colors offered inline when a therapist taps a swatch.
+    ///
+    /// A fixed grid rather than a color wheel, for two reasons. The practical
+    /// one: `ColorPicker` hands off to a system picker, and on Mac that is a
+    /// free-floating panel this binary cannot reach — Designed-for-iPad is
+    /// UIKit-only, so there is no way to close it, place it, or stop it taking
+    /// key window away from the sheet underneath. The Save button went dead.
+    ///
+    /// The better one: for the case this feature exists for, an arbitrary hue is
+    /// not what is wanted. CVI work is about a small number of saturated,
+    /// reliably-discriminated colors, and a wheel invites picking two that a
+    /// child cannot tell apart. `Custom…` is still there for a therapist
+    /// matching a specific hue they already know a child perceives.
+    ///
+    /// Saturated hues first, neutrals last — the order a therapist scans.
+    static let palette: [String] = [
+        "#E53935", "#F4511E", "#FDD835", "#7CB342",
+        "#00897B", "#00ACC1", "#1E88E5", "#3949AB",
+        "#8E24AA", "#D81B60", "#F06292", "#6D4C41",
+        "#000000", "#616161", "#BDBDBD", "#FFFFFF",
+    ]
+
     static let presets: [TileColorMap] = [highContrastCVI, warmLowDiscrimination]
 
     /// For a child who reliably perceives few hues.

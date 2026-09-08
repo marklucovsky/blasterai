@@ -88,6 +88,10 @@ struct ChildProfileFormSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ChildProfileResolver.self) private var profileResolver
 
+    /// Which row's color palette is open. One piece of state, not a flag plus a
+    /// value, so there is no combination that means nothing.
+    @State private var editingColorFor: PartOfSpeech?
+
     @State private var name: String = ""
     @State private var stage: BrownsStage = .one
     @State private var voiceID: String = ""
@@ -103,6 +107,36 @@ struct ChildProfileFormSheet: View {
     /// Name being typed when saving or renaming. Nil when no prompt is open.
     @State private var namePrompt: NamePrompt?
     @State private var draftName = ""
+
+    /// The form as it stood when it opened. Compared against, rather than a
+    /// `hasEdited` flag set from every control's `onChange`, because a flag is
+    /// one missed control away from being wrong — and the cost of it being wrong
+    /// here is a caregiver losing a palette they spent ten minutes on.
+    @State private var loaded: Snapshot?
+    /// Raised when Cancel is pressed with work outstanding.
+    @State private var showDiscardPrompt = false
+
+    private struct Snapshot: Equatable {
+        var name: String
+        var stage: BrownsStage
+        var voiceID: String
+        var maxTiles: Int
+        var ttsRate: Float
+        var ttsVolume: Float
+        var colorMap: TileColorMap
+    }
+
+    private var current: Snapshot {
+        Snapshot(name: name, stage: stage, voiceID: voiceID, maxTiles: maxTiles,
+                 ttsRate: ttsRate, ttsVolume: ttsVolume, colorMap: colorMap)
+    }
+
+    /// Whether closing now would throw work away. Before `load` runs there is
+    /// nothing to lose, so an early tap is not treated as destructive.
+    private var hasUnsavedChanges: Bool {
+        guard let loaded else { return false }
+        return current != loaded
+    }
 
     /// What the name prompt is for. Deliberately an enum rather than two flags:
     /// two booleans admit a state where both are true.
@@ -212,11 +246,36 @@ struct ChildProfileFormSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", action: onDismiss)
+                    Button("Cancel") {
+                        // Deliberate exit with work outstanding asks; the
+                        // accidental one (below) is refused without a dialog,
+                        // because a dialog raised by a stray touch is its own
+                        // kind of noise.
+                        if hasUnsavedChanges { showDiscardPrompt = true } else { onDismiss() }
+                    }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save", action: save).disabled(!canSave)
                 }
+            }
+            // An iPad form sheet dismisses on a tap outside it — the same
+            // gesture as scrolling the list behind it — and this form holds work
+            // that cannot be recovered. A colorway is eleven deliberate
+            // decisions about one child's vision, and they were going in the bin
+            // on a misplaced touch.
+            //
+            // Only while there is something to lose, so opening a profile just
+            // to look at it still closes the easy way. SwiftUI gives no callback
+            // when it swallows the gesture, so the way out is the Cancel button
+            // that is already in the toolbar — which does ask.
+            .interactiveDismissDisabled(hasUnsavedChanges)
+            .confirmationDialog("Discard changes?",
+                                isPresented: $showDiscardPrompt,
+                                titleVisibility: .visible) {
+                Button("Discard", role: .destructive, action: onDismiss)
+                Button("Keep Editing", role: .cancel) { }
+            } message: {
+                Text("This profile has changes that have not been saved.")
             }
             .onAppear(perform: load)
             .alert(namePromptTitle, isPresented: Binding(
@@ -241,12 +300,12 @@ struct ChildProfileFormSheet: View {
     @ViewBuilder
     private var colorSection: some View {
         Section {
-            // A plain filled circle, not a `ColorPicker`.
-            //
-            // `ColorPicker` draws its own rainbow ring on every row, and eleven
-            // of them reads as decoration competing with the colors themselves —
-            // which are the actual content here. The header says what to tap, so
-            // the affordance does not need to be drawn eleven times.
+            // A plain filled circle, not a `ColorPicker`. Eleven rainbow rings
+            // read as decoration competing with the colors themselves, which
+            // are the actual content here — and the footer says what to tap, so
+            // the affordance does not need drawing eleven times. See
+            // `colorWell(for:)` for why this is our own control rather than a
+            // system one wearing a disguise.
             ForEach(PartOfSpeech.display) { pos in
                 HStack(spacing: 10) {
                     Text(pos.label)
@@ -285,6 +344,22 @@ struct ChildProfileFormSheet: View {
                     namePrompt = .saveCurrent
                 } label: {
                     Label("Save These Colors…", systemImage: "square.and.arrow.down")
+                }
+            }
+
+            // Send it to the device that needs it.
+            //
+            // A colorway is worked out by a therapist and needed on a child's
+            // iPad, and those are almost never the same device — the therapist
+            // will not be on the family's iCloud, so the library syncing across
+            // *her* devices does not help this child at all. Same reasoning as
+            // the usage report: the real recipient is on the other side of a
+            // text message.
+            if !colorMap.isEmpty, let file = colorwayFile {
+                ShareLink(item: file, preview: SharePreview(colorMap.name.isEmpty
+                                                            ? "Blaster colors"
+                                                            : colorMap.name)) {
+                    Label("Send These Colors…", systemImage: "square.and.arrow.up")
                 }
             }
 
@@ -338,29 +413,88 @@ struct ChildProfileFormSheet: View {
         }
     }
 
-    /// A plain swatch that opens the system color editor in one tap.
+    /// A swatch that opens a palette, inline.
     ///
-    /// It **is** a `ColorPicker`, with our own circle laid over its rainbow ring
-    /// and `allowsHitTesting(false)` so the touch still reaches the control
-    /// underneath. That ring is the only thing wrong with `ColorPicker` here —
-    /// eleven of them read as decoration competing with the colors themselves,
-    /// which are the actual content.
+    /// This replaces a `ColorPicker` with our own circle laid over its rainbow
+    /// ring. That trick worked on iOS and fell apart on Mac twice over: the
+    /// circle did not match the shape of Mac's color well, so eleven rows drew
+    /// as misaligned blobs; and the picker underneath opened the shared system
+    /// color panel, a window this binary cannot reach — Designed-for-iPad is
+    /// UIKit-only, so nothing here can close it or stop it taking key window,
+    /// which left the sheet's own Save button dead under it.
     ///
-    /// The alternative was a sheet of our own that then presented the system
-    /// picker, and that is what this replaces: an extra tap, an extra surface,
-    /// and the ring still showing up on the row inside it.
+    /// Masking a system control was the mistake. This does not mask anything:
+    /// the swatch is ours, the palette is ours, and the system picker is reached
+    /// deliberately through `Custom…` rather than by every tap.
     @ViewBuilder
     private func colorWell(for pos: PartOfSpeech) -> some View {
-        ColorPicker("", selection: binding(for: pos), supportsOpacity: false)
-            .labelsHidden()
-            .overlay(
-                Circle()
-                    .fill(colorMap.color(for: pos) ?? TileColorResolver.fitzgerald(pos))
-                    .overlay(Circle().strokeBorder(Color.primary.opacity(0.18),
-                                                   lineWidth: 0.5))
-                    .allowsHitTesting(false)
-            )
-            .accessibilityLabel("\(pos.label) color")
+        Button {
+            editingColorFor = pos
+        } label: {
+            Circle()
+                .fill(colorMap.color(for: pos) ?? TileColorResolver.fitzgerald(pos))
+                .overlay(Circle().strokeBorder(Color.primary.opacity(0.18), lineWidth: 0.5))
+                .frame(width: 28, height: 28)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(pos.label) color")
+        // Bound to this row rather than to the Section. A `.popover` on the
+        // Section is torn down whenever the Form re-renders — which is every
+        // keystroke elsewhere in the sheet — and that is exactly how the first
+        // version of this dismissed itself the moment it opened.
+        .popover(isPresented: Binding(
+            get: { editingColorFor == pos },
+            set: { if !$0 { editingColorFor = nil } }
+        )) {
+            colorPalette(for: pos)
+                .presentationCompactAdaptation(.popover)
+        }
+    }
+
+    @ViewBuilder
+    private func colorPalette(for pos: PartOfSpeech) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(pos.label).font(.headline)
+
+            LazyVGrid(columns: Array(repeating: GridItem(.fixed(34), spacing: 10),
+                                     count: 4), spacing: 10) {
+                ForEach(TileColorMap.palette, id: \.self) { hex in
+                    let color = Color(hex: hex) ?? .gray
+                    Button {
+                        colorMap.set(color, for: pos)
+                        editingColorFor = nil
+                    } label: {
+                        Circle()
+                            .fill(color)
+                            .overlay(Circle().strokeBorder(Color.primary.opacity(0.25),
+                                                           lineWidth: 0.5))
+                            .frame(width: 30, height: 30)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(hex)
+                }
+            }
+
+            Divider()
+
+            if colorMap.color(for: pos) != nil {
+                Button {
+                    colorMap.set(nil, for: pos)
+                    editingColorFor = nil
+                } label: {
+                    Label("Use the Default", systemImage: "arrow.uturn.backward")
+                }
+            }
+
+            // The escape hatch, reached on purpose. On Mac this is still the
+            // detached system panel — that is the platform's picker and we do
+            // not get to change it — but nobody meets it by accident now.
+            ColorPicker(selection: binding(for: pos), supportsOpacity: false) {
+                Label("Custom…", systemImage: "eyedropper")
+            }
+        }
+        .padding()
+        .frame(minWidth: 240)
     }
 
     /// Writes through to the sparse map: setting a color records an override,
@@ -402,6 +536,20 @@ struct ChildProfileFormSheet: View {
         savedMaps = ColorMapLibrary.load(from: modelContext)
     }
 
+    /// The colorway as a file on disk, for `ShareLink`.
+    ///
+    /// Written to a temp URL rather than shared as raw `Data` because the file
+    /// *name* is the only thing the recipient sees before they tap it, and
+    /// "Colors — Warm Bias.blastercolors" tells them what it is where an
+    /// untitled attachment does not.
+    private var colorwayFile: URL? {
+        guard let data = try? ColorwayExporter.data(for: colorMap) else { return nil }
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent(ColorwayExporter.suggestedFileName(for: colorMap))
+        guard (try? data.write(to: url, options: .atomic)) != nil else { return nil }
+        return url
+    }
+
     private func load() {
         savedMaps = ColorMapLibrary.load(from: modelContext)
         if case let .edit(profile) = mode {
@@ -413,6 +561,8 @@ struct ChildProfileFormSheet: View {
             ttsVolume = profile.ttsVolume
             colorMap = TileColorMap.decode(profile.colorMapData)
         }
+        // After the fields are populated, so an untouched form compares equal.
+        loaded = current
     }
 
     private func save() {

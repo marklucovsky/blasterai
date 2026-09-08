@@ -42,7 +42,6 @@ enum CloudKitDedupReconciler {
         deleted += dedupeTiles(context)
         deleted += dedupeSystemScenes(context)
         deleted += dedupeSandbox(context)
-        deleted += dedupeLegacySeedProfiles(context)
         deleted += dedupeArtVariants(context)
         deleted += dedupeSentenceCache(context)
 
@@ -147,31 +146,6 @@ enum CloudKitDedupReconciler {
         if let winner = result.winners["sandbox"], !result.deleted.isEmpty {
             let deadIDs = Set(result.deleted.map { $0.id })
             repointChildID(context, from: deadIDs, to: winner.id)
-        }
-        return result.deleted.count
-    }
-
-    /// Collapse the migration-seeded **"Legacy"** profile. Like the Sandbox, it's
-    /// re-seeded per device by `ProfileMigration` (returning-user path), so it
-    /// duplicates under CloudKit — but it's `isSystem == false`, so the sandbox
-    /// pass doesn't catch it. Match ONLY the untouched seed by its exact signature
-    /// (name "Legacy" + the seed `notes` prefix); a user who renamed or edited it
-    /// no longer matches and is never deleted. Keeps the active/most-recent copy
-    /// and repoints childID references to it.
-    private static func dedupeLegacySeedProfiles(_ context: ModelContext) -> Int {
-        guard let profiles = try? context.fetch(FetchDescriptor<ChildProfile>()) else { return 0 }
-        let seeds = profiles.filter {
-            !$0.isSystem && $0.displayName == "Legacy"
-                && $0.notes.hasPrefix("Seeded from prior install")
-        }
-        guard seeds.count > 1 else { return 0 }
-        let result = collapse(seeds, context: context, keyOf: { _ in "legacy-seed" }) { a, b in
-            if a.isActive != b.isActive { return a.isActive }
-            if a.modifiedAt != b.modifiedAt { return a.modifiedAt > b.modifiedAt }
-            return a.id < b.id
-        }
-        if let winner = result.winners["legacy-seed"], !result.deleted.isEmpty {
-            repointChildID(context, from: Set(result.deleted.map { $0.id }), to: winner.id)
         }
         return result.deleted.count
     }

@@ -327,6 +327,10 @@ caregiver would be on while waiting for it.
 
 **Raised:** 2026-09-04, from the first usage-report PDF. Next session.
 
+**Landed:** 2026-09-07, S5 PR 5. Legacy deleted outright; Sandbox became the
+caregiver's own profile; the report no longer titles itself with a profile that
+is not a child.
+
 The report's title is the `ChildProfile.displayName`, so the first PDF built on
 Mark's iPad is headed **"Legacy"** — the name `ProfileMigration` gives the profile
 it seeds from prior UserDefaults. That was an internal label back when nothing
@@ -357,6 +361,10 @@ as a real child's name.
 ## 12. The new activity screens have not been seen on a phone
 
 **Raised:** 2026-09-04. Next session.
+
+**Landed:** 2026-09-07, S5 PR 5. Heatmap scrolls with a pinned weekday gutter;
+coverage rows protect the count; the coverage grid stopped claiming a layout
+reflow does not preserve. The most-used strip was replaced by a list.
 
 Coverage, Patterns and the coverage grid were built and reviewed on iPad and Mac.
 None has been looked at in a compact width, and each has a shape that compact

@@ -71,6 +71,7 @@ enum BlasterFileFormat {
     static let openableExtensions: Set<String> = [
         BlasterSceneFormat.fileExtension,
         BlasterPackFormat.fileExtension,
+        BlasterColorwayFormat.fileExtension,
     ]
 
     static func canOpen(_ url: URL) -> Bool {
