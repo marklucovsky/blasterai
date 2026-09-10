@@ -650,9 +650,13 @@ private struct ActiveTileCard: View {
     let tile: TileSelection
     let onTap: () -> Void
 
+    /// The selection carries the part of speech it was created with, so a chip
+    /// always matches the tile it came from even if the board has moved on.
+    private var accent: Color { TileColorResolver.color(for: tile) }
+
     var body: some View {
         Button(action: onTap) {
-            VStack(spacing: 3) {
+            VStack(spacing: 0) {
                 TileImageView(key: tile.key, wordClass: tile.wordClass)
                     // maxHeight, not height. The label is laid out at whatever
                     // the reader's text size makes it and the picture absorbs
@@ -660,29 +664,33 @@ private struct ActiveTileCard: View {
                     // exceeded the chip and spilled over its edges.
                     .frame(maxWidth: kActiveImageSize, maxHeight: kActiveImageSize)
                     .aspectRatio(1, contentMode: .fit)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .background(Color.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .padding(.horizontal, kCardVerticalPadding - 1)
+                    .padding(.top, kCardVerticalPadding - 1)
                 Text(tile.value)
-                    .font(.caption)
-                    .foregroundStyle(.primary)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(TileColorResolver.label(on: accent))
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .minimumScaleFactor(0.6)
                     .layoutPriority(1)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, GridLayoutCalculator.labelBandPadding)
             }
-            .padding(.horizontal, 6)
-            .padding(.vertical, kCardVerticalPadding)
             .frame(width: kActiveCardWidth, height: kActiveCardHeight)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(.systemBackground))
-                    .shadow(color: .black.opacity(0.10), radius: 3, y: 1)
-            )
-            // Retain the grid's wordClass color-coding in the tray so a chip
-            // reads as the same category it does on the board.
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(TileColorResolver.color(for: tile).opacity(0.6), lineWidth: 2.5)
-            )
+            // The chip is the tile, small: color as the card with the picture on
+            // a white plate inside it, and the word on the color underneath.
+            //
+            // It used to be a white card with a 2.5pt colored edge, which was
+            // the board's own old treatment. Now that a tile *is* its color, a
+            // hairline chip would read as a different category of thing from the
+            // tile the child just pressed — the tray's whole job is to say "these
+            // are the ones you picked".
+            .background(accent)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .shadow(color: .black.opacity(0.10), radius: 3, y: 1)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Remove \(tile.value)")
@@ -1162,29 +1170,33 @@ struct SingleWordPlayButton: View {
     }
 }
 
-/// The "bubble of tiles" used by the AdminView
-/// Activity Log. Each tile is a tinted capsule chip (image + label colored by wordClass),
+/// The "bubble of tiles" used by the AdminView Activity Log. Each word is a
+/// capsule wearing its own color — picture on a white plate, word on the color —
 /// wrapped in a rounded card with a soft shadow.
+///
+/// The last surface to stop tinting. A caregiver reading the log is looking at
+/// the same words the child pressed, and it should be possible to recognise a
+/// group by its colors alone.
 struct TileGroupBubble: View {
     let tiles: [TileSelection]
 
     var body: some View {
         HStack(spacing: 4) {
             ForEach(Array(tiles.enumerated()), id: \.offset) { _, tile in
+                let accent = TileColorResolver.color(for: tile)
                 HStack(spacing: 3) {
                     TileImageView(key: tile.key, wordClass: tile.wordClass)
                         .frame(width: kHistoryTileSize, height: kHistoryTileSize)
+                        .background(Color.white)
                         .clipShape(RoundedRectangle(cornerRadius: 4))
                     Text(tile.value)
                         .font(.caption2)
-                        .fontWeight(.medium)
-                        .foregroundStyle(.primary)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(TileColorResolver.label(on: accent))
                 }
                 .padding(.horizontal, 6)
                 .padding(.vertical, 3)
-                .background(
-                    Capsule().fill(TileColorResolver.color(for: tile).opacity(0.20))
-                )
+                .background(Capsule().fill(accent))
             }
         }
         .padding(.horizontal, 6)

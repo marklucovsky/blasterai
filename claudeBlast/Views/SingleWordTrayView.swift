@@ -35,7 +35,14 @@ struct SingleWordTrayView: View {
     /// left them visibly short of the tray they sit in and gave two frequently
     /// used controls a smaller target than they needed. Deriving both from one
     /// constant is what stops them drifting apart again.
-    static let stripHeight: CGFloat = 84
+    ///
+    /// **84 → 88 when the chip took the board's card treatment.** The arithmetic:
+    /// a 56pt square picture area, then a label *band* of
+    /// `labelBandPadding + ~13pt of 11pt text + labelBandPadding` = 19pt, where
+    /// the old caption cost `2pt of stack spacing + 13pt` = 15pt. Plus the
+    /// strip's own 6pt above and below: 56 + 19 + 12 = 87, rounded to 88.
+    /// The picture did not shrink; only the label's ground grew.
+    static let stripHeight: CGFloat = 88
 
     var body: some View {
         HStack(spacing: 8) {
@@ -103,8 +110,15 @@ struct SingleWordTrayView: View {
 
 // MARK: - Word chip
 
-/// One spoken word: image over its label, tinted by word class. Tapping removes
-/// it from the strip.
+/// One spoken word, drawn as the board tile it came from: the word's color as
+/// the card, the picture on a white plate inside it, the word on the color
+/// underneath. Tapping removes it from the strip.
+///
+/// It used to be a 0.14-opacity tint behind the picture with a hairline border
+/// and the word in grey beneath, on the tray's own material. That was the
+/// board's previous treatment, and once a tile *is* its color a tinted chip
+/// stops reading as the same object the child just pressed — which is the one
+/// thing this strip exists to say.
 private struct WordChip: View {
     /// The strip is a fixed-height band, so the word shrinks to fit rather
     /// than clipping — see the `minimumScaleFactor` below.
@@ -113,31 +127,37 @@ private struct WordChip: View {
     let tile: TileSelection
     let onTap: () -> Void
 
+    /// The card's square picture area — unchanged, so the strip did not have to
+    /// give up picture size to gain the band.
     private let size: CGFloat = 56
+    /// How far the white plate sits inside the colored card. 4 of 56 is the same
+    /// proportion `TileView` uses at board sizes (7 of ~92).
+    private let plateInset: CGFloat = 4
+
+    private var accent: Color { TileColorResolver.color(for: tile) }
 
     var body: some View {
         Button(action: onTap) {
-            VStack(spacing: 2) {
-                ZStack {
-                    TileColorResolver.color(for: tile).opacity(0.14)
-                    TileImageView(key: tile.key, wordClass: tile.wordClass)
-                        .padding(3)
-                }
-                .frame(width: size, height: size)
-                .clipShape(RoundedRectangle(cornerRadius: 9))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 9)
-                        .strokeBorder(TileColorResolver.color(for: tile).opacity(0.45), lineWidth: 1)
-                )
+            VStack(spacing: 0) {
+                TileImageView(key: tile.key, wordClass: tile.wordClass)
+                    .padding(2)
+                    .frame(width: size - plateInset * 2, height: size - plateInset * 2)
+                    .background(Color.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .padding(plateInset)
 
                 Text(tile.value)
                     .font(.system(size: wordSize, weight: .semibold))
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
-                    .foregroundStyle(.primary.opacity(0.85))
-                    .lineLimit(1)
-                    .frame(maxWidth: size + 6)
+                    .foregroundStyle(TileColorResolver.label(on: accent))
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 3)
+                    .padding(.vertical, GridLayoutCalculator.labelBandPadding)
             }
+            .frame(width: size)
+            .background(accent)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Remove \(tile.value)")

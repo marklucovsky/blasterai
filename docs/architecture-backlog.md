@@ -156,5 +156,84 @@ ours doesn't" is simply true.
 
 ---
 
+## A new word can only ever get the style you were standing on
+
+**Found 2026-09-08 on device** (iPad, `Core-First - My Copy`). Added `unicorn` and
+`princess` from the page editor. Both came out with Classic Light, Medium and Dark
+and nothing else — no Playful 3D, no High Contrast — and the scene editor then
+offered no way to finish them. The per-tile Tile Settings sheet was the only
+surface that could, one word at a time.
+
+**Two defects that compound.**
+
+1. **`generateAllStyles` defaults to `false`**, and the scene banner that carries
+   the toggle (`SceneEditorView.swift`) is also the only place it is offered
+   during a batch. `ArtPlan.plan(activeSet:allStyles: false)` then covers the
+   active set's style and its variants up to the active one — Classic Light,
+   Medium, Dark — which is correct for what it was asked, and not what the
+   caregiver expected.
+
+2. **The catch-up path is scoped to the active style, so it can never recover.**
+   The scene editor has exactly two batch offers and a word like this falls
+   through both:
+
+   - `tilesNeedingArt` (`SceneImageBatch.swift`) is *nothing resolves*. The word
+     has Classic art, so it resolves, so the section — and the toggle inside it —
+     disappears the moment the first run finishes.
+   - `tilesMissingVariants` reads `activeStyle` only (`SceneEditorView.swift`,
+     *"a style they don't use isn't a gap they can see"*). Classic is complete, so
+     it is empty. Playful 3D and High Contrast are separate `TileStyle`s, not
+     variants of Classic, and **no scene-level surface asks about a style other
+     than the active one.**
+
+   The comment defending (2) is right about the common case and wrong about this
+   one: the caregiver *does* see the gap — Tile Settings renders a dashed empty
+   slot per missing style — they just cannot act on it in bulk.
+
+**Shape of the fix.** A third offer beside the other two: words with art in the
+active style but missing from other generatable styles → "Complete Playful 3D for
+N words", or one row naming the count across styles. Reuse
+`SceneImageBatch.tilesMissingVariants` with the style passed in rather than read
+from the resolver. Separately, decide whether that scene toggle should default on
+— cost is the argument against, and the cost readout is now good enough to make
+the honest version affordable.
+
+Not a launch gate: keyless boards never hit it, and a single-style family never
+notices. It bites exactly the person evaluating us — someone trying all five sets.
+
+---
+
+## Tile-image export shares the naked picture, not the tile
+
+**Raised 2026-09-09, while reviewing the Fitzgerald card treatment.**
+`TileImageExporter` writes the artwork alone. That is right for re-importing into
+another AAC app, which wants a symbol and applies its own card, and it is what the
+"pick a page or a scene and ask for the images" pitch currently delivers.
+
+It is the wrong thing for the other half of who asks. A therapist building a
+worksheet, a teacher assembling training materials, a parent making a fridge
+strip: they want the tile as the child sees it — the Fitzgerald card, the white
+plate, the word on its colored band — because the *color* is the part that
+teaches, and a bare picture has thrown it away.
+
+So the export needs a choice, not a change: **picture only** (today's behaviour,
+still the default for OBF-adjacent uses) or **finished tile**, rendered at export
+size. `BoardPDFRenderer` already draws a finished tile for print, so the shape of
+the renderer exists; what does not exist is a single tile-card renderer both it
+and the exporter share, which is the actual work — the print card and the screen
+card are separately implemented today and have already drifted (print puts the
+label on top, the screen puts it underneath).
+
+Mark's call on that drift, same day: **leave it.** The two looks differing is not
+worth a refactor until someone asks. This note exists so that when someone does,
+the fix is known to be "one shared tile-card renderer" rather than a third
+implementation.
+
+Related: [[project_installable_image_sets]] — a set that travels needs its style
+prompt and subject overrides, and a finished-tile export is the same question
+asked about pixels instead of prompts.
+
+---
+
 *Add new cross-cutting items here as stubs; promote to a dedicated note + worktree
 when scheduled.*

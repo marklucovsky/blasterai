@@ -94,7 +94,7 @@ struct GridLayoutCalculatorTests {
         let large = spec(phonePortrait, scale: 3)
         #expect(large.rows >= 1)
         #expect(large.cols >= 1)
-        #expect(large.labelHeight == large.labelFontSize + 2)
+        #expect(large.labelHeight == GridLayoutCalculator.labelHeight(forFont: large.labelFontSize))
     }
 
     /// Default behaviour is unchanged — the scale parameter defaults to 1, so
@@ -118,7 +118,7 @@ struct GridLayoutCalculatorTests {
                                              userStep: 0,
                                              textScale: 2)
         #expect(s.labelFontSize > GridLayoutCalculator.labelFontSize(forTile: 88))
-        #expect(s.labelHeight == s.labelFontSize + 2)
+        #expect(s.labelHeight == GridLayoutCalculator.labelHeight(forFont: s.labelFontSize))
     }
 }
 }

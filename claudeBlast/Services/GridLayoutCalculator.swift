@@ -51,6 +51,21 @@ enum GridLayoutCalculator {
     private static let vPad: CGFloat = 8
     private static let spacing: CGFloat = 6
 
+    /// Vertical padding above and below the word in its colored label band.
+    ///
+    /// The label used to sit on the page background under the card, and 2pt of
+    /// margin was enough to keep it off the corner. It now sits *on* the tile's
+    /// own color, which makes it part of the card rather than a caption beneath
+    /// one — and a word touching the edge of a colored band reads as clipped.
+    ///
+    /// It is public and used by `TileView` and `HomeGridCell` because the cell
+    /// height computed here and the height those actually draw have to be the
+    /// same number. They were the same literal `2` in five places before.
+    static let labelBandPadding: CGFloat = 3
+
+    /// Total height of the label band for a given font size.
+    static func labelHeight(forFont font: CGFloat) -> CGFloat { font + labelBandPadding * 2 }
+
     // Form-factor base sizes (the "auto" tile size at userStep=0).
     // Device class is detected from the screen's shorter dimension so
     // orientation doesn't change the classification.
@@ -101,7 +116,7 @@ enum GridLayoutCalculator {
             return GridLayoutSpec(
                 tileSize: pref,
                 labelFontSize: labelFontSize(forTile: pref, scale: textScale),
-                labelHeight: labelFontSize(forTile: pref, scale: textScale) + 2,
+                labelHeight: labelHeight(forFont: labelFontSize(forTile: pref, scale: textScale)),
                 cols: 1, rows: 1, verticalSpacing: spacing
             )
         }
@@ -118,7 +133,7 @@ enum GridLayoutCalculator {
             let tileW = renderTile(forCols: cols, availW: availW)
             guard tileW >= minAcceptable && tileW <= maxAcceptable else { continue }
 
-            let cellH = tileW + labelFontSize(forTile: tileW, scale: textScale) + 2
+            let cellH = tileW + labelHeight(forFont: labelFontSize(forTile: tileW, scale: textScale))
             let rows = max(1, Int((availH + spacing) / (cellH + spacing)))
             let capacity = cols * rows
 
@@ -138,13 +153,13 @@ enum GridLayoutCalculator {
             if let b = best { return b }
             let cols = colsForTile(pref, availW: availW)
             let tileW = renderTile(forCols: cols, availW: availW)
-            let cellH = tileW + labelFontSize(forTile: tileW, scale: textScale) + 2
+            let cellH = tileW + labelHeight(forFont: labelFontSize(forTile: tileW, scale: textScale))
             let rows = max(1, Int((availH + spacing) / (cellH + spacing)))
             return (cols, rows, tileW, cols * rows)
         }()
 
         let labelF = labelFontSize(forTile: result.tileW, scale: textScale)
-        let cellH = result.tileW + labelF + 2
+        let cellH = result.tileW + labelHeight(forFont: labelF)
 
         // Distribute vertical slack as inter-row spacing, capped so gaps
         // don't get loose. Any remaining slack stays at the bottom of the
@@ -157,7 +172,7 @@ enum GridLayoutCalculator {
         let spec = GridLayoutSpec(
             tileSize: result.tileW,
             labelFontSize: labelF,
-            labelHeight: labelF + 2,
+            labelHeight: labelHeight(forFont: labelF),
             cols: result.cols,
             rows: result.rows,
             verticalSpacing: vSpacing
