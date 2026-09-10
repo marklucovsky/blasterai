@@ -659,46 +659,77 @@ struct TilePickerView: View {
         }
     }
 
+    /// The color this word will actually wear once it is on the board.
+    ///
+    /// A page link is chrome by part of speech but navigation-blue on a board,
+    /// and the picker has the same evidence `pageEntry(for:)` uses to decide —
+    /// so it can show the truth rather than a gray square that turns blue the
+    /// moment it lands.
+    private func pickerAccent(_ tile: TileModel) -> Color {
+        tile.wordClass == PageLink.wordClass
+            ? TileColorResolver.navigation
+            : TileColorResolver.color(for: tile)
+    }
+
+    /// One word in the Add Tiles grid, drawn as the tile it is about to become.
+    ///
+    /// It used to be a bare picture with a grey caption, which made this the one
+    /// grid in the app where a word carried no part-of-speech color — and it is
+    /// the grid where that information is most actionable, because the caregiver
+    /// is choosing words *by* what kind of word they need. Seeing that "more" is
+    /// a function word and "grandma" is a noun before either lands on the board
+    /// is the whole point of the key.
     @ViewBuilder
     private func pickerCell(_ tile: TileModel) -> some View {
         let onPage = existingKeys.contains(tile.key)
         let isSelected = selectedKeys.contains(tile.key)
+        let accent = pickerAccent(tile)
         Button {
             if onPage { return }   // already on the page — shown for context, not selectable
             if isSelected { selectedKeys.remove(tile.key) }
             else { selectedKeys.insert(tile.key) }
         } label: {
-            VStack(spacing: 3) {
+            VStack(spacing: 0) {
                 ZStack(alignment: .topTrailing) {
                     TileImageView(key: tile.bundleImage, wordClass: tile.wordClass)
-                    .aspectRatio(1, contentMode: .fit)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 3)
-                    )
-                    .shadow(color: .black.opacity(0.1), radius: 2, y: 1)
-                    .opacity(onPage ? 0.45 : 1)
+                        .aspectRatio(1, contentMode: .fit)
+                        .background(Color.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 5))
+                        .padding(4)
 
                     if onPage {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.caption)
                             .foregroundStyle(.white, Color.secondary)
-                            .offset(x: 4, y: -4)
+                            .padding(2)
                     } else if isSelected {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.caption)
                             .foregroundStyle(.white, Color.accentColor)
-                            .offset(x: 4, y: -4)
+                            .padding(2)
                     }
                 }
 
                 Text(tile.displayName)
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.system(size: 10, weight: .semibold))
                     .lineLimit(1)
-                    .foregroundStyle(onPage ? .tertiary : .secondary)
+                    .minimumScaleFactor(0.6)
+                    .foregroundStyle(TileColorResolver.label(on: accent))
                     .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 3)
+                    .padding(.vertical, GridLayoutCalculator.labelBandPadding)
             }
+            .background(accent)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            // The selection ring moved from the picture to the whole card. On a
+            // colored card a ring drawn around the picture alone reads as part
+            // of the artwork rather than as state.
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 3)
+            )
+            .shadow(color: .black.opacity(0.1), radius: 2, y: 1)
+            .opacity(onPage ? 0.45 : 1)
         }
         .buttonStyle(.plain)
     }

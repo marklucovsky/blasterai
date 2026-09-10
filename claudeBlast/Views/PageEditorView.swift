@@ -435,17 +435,19 @@ struct PageTileCell: View {
     }
 
     var body: some View {
-        VStack(spacing: 3) {
+        // The editor draws the tile the way the child will see it.
+        //
+        // It was a bare picture, which was survivable while color was a hairline
+        // nobody arranged by. Now that color means part of speech, a caregiver
+        // grouping the board into color blocks — the whole point of a Fitzgerald
+        // layout — was doing it blind here and only finding out on the board.
+        //
+        // The label joined the card for the same reason it did on the board: the
+        // arrangement being edited here has to look like the arrangement being
+        // read there, or the editor is showing a different object.
+        VStack(spacing: 0) {
             ZStack(alignment: .topTrailing) {
-                // The editor draws the tile the way the child will see it.
-                //
-                // It was a bare picture, which was survivable while color was a
-                // hairline nobody arranged by. Now that color means part of
-                // speech, a caregiver grouping the board into color blocks — the
-                // whole point of a Fitzgerald layout — was doing it blind here and
-                // only finding out on the board.
                 ZStack {
-                    accent
                     RoundedRectangle(cornerRadius: 5)
                         .fill(Color.white)
                         .padding(6)
@@ -453,17 +455,7 @@ struct PageTileCell: View {
                         .padding(8)
                 }
                 .aspectRatio(1, contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                .shadow(color: .black.opacity(0.1), radius: 2, y: 1)
-                .opacity(isConcealed ? 0.32 : 1)
-                .overlay(alignment: .center) {
-                    if isConcealed {
-                        Image(systemName: "eye.slash.fill")
-                            .font(.title3)
-                            .foregroundStyle(.white)
-                            .shadow(radius: 2)
-                    }
-                }
+
                 if !link.isEmpty {
                     Image(systemName: "arrow.right.circle.fill")
                         .font(.caption2)
@@ -471,12 +463,36 @@ struct PageTileCell: View {
                         .padding(4)
                 }
             }
+
             Text(tile.displayName)
-                .font(.system(size: 10, weight: .medium))
+                .font(.system(size: 10, weight: .semibold))
                 .lineLimit(1)
-                .foregroundStyle(.secondary)
+                .minimumScaleFactor(0.6)
+                .foregroundStyle(TileColorResolver.label(on: accent))
                 .frame(maxWidth: .infinity)
+                .padding(.horizontal, 3)
+                .padding(.vertical, GridLayoutCalculator.labelBandPadding)
         }
+        .background(accent)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .opacity(isConcealed ? 0.32 : 1)
+        // Outside the muting, and pinned to the square rather than the whole
+        // card: the badge says "this word is hidden", so it must stay legible on
+        // a tile that has been dimmed to a third, and it belongs over the
+        // picture, not floating between the picture and the word.
+        .overlay(alignment: .top) {
+            if isConcealed {
+                Color.clear
+                    .aspectRatio(1, contentMode: .fit)
+                    .overlay(
+                        Image(systemName: "eye.slash.fill")
+                            .font(.title3)
+                            .foregroundStyle(.white)
+                            .shadow(radius: 2)
+                    )
+            }
+        }
+        .shadow(color: .black.opacity(0.1), radius: 2, y: 1)
     }
 }
 

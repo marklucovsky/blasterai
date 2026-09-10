@@ -326,22 +326,32 @@ private struct ChipsRow: View {
 
     private let cornerRadius: CGFloat = 8
 
+    /// How far the white plate sits inside the colored chip. Proportional
+    /// rather than fixed, because `chipSize` is measured against whatever width
+    /// the sentence has left — the same 8% `TileView` uses at board sizes, with
+    /// a floor so a squeezed chip still has an edge of color.
+    private func plateInset(_ chip: CGFloat) -> CGFloat { max(2, chip * 0.08) }
+
     var body: some View {
         HStack(spacing: 4) {
             ForEach(Array(tiles.enumerated()), id: \.offset) { idx, tile in
+                let accent = TileColorResolver.color(for: tile)
                 Button(action: { onTap(idx) }) {
-                    ZStack {
-                        TileColorResolver.color(for: tile).opacity(0.14)
-                        TileImageView(key: tile.key, wordClass: tile.wordClass)
-                            .padding(2)
-                    }
-                    .frame(width: chipSize, height: chipSize)
-                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: cornerRadius)
-                            .strokeBorder(TileColorResolver.color(for: tile).opacity(0.45), lineWidth: 1)
-                    )
-                    .shadow(color: .black.opacity(0.08), radius: 1.5, y: 1)
+                    // Color as the card, picture on a white plate inside it —
+                    // the board's structure, minus the label the compact tray
+                    // has never had room for. It was a 0.14 tint behind the
+                    // picture with a hairline border, which on a phone sat
+                    // directly under a board of solid cards and read as a
+                    // different kind of object.
+                    TileImageView(key: tile.key, wordClass: tile.wordClass)
+                        .padding(2)
+                        .background(Color.white)
+                        .clipShape(RoundedRectangle(cornerRadius: cornerRadius - 3))
+                        .padding(plateInset(chipSize))
+                        .frame(width: chipSize, height: chipSize)
+                        .background(accent)
+                        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                        .shadow(color: .black.opacity(0.08), radius: 1.5, y: 1)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Remove \(tile.value)")
@@ -546,36 +556,29 @@ private struct TilePill: View {
 
     private let iconSize: CGFloat = 22
 
+    private var accent: Color { TileColorResolver.color(for: tile) }
+
     var body: some View {
         HStack(spacing: 5) {
-            ZStack {
-                TileColorResolver.color(for: tile).opacity(0.22)
-                TileImageView(key: tile.key, wordClass: tile.wordClass)
-                    .padding(1)
-            }
-            .frame(width: iconSize, height: iconSize)
-            .clipShape(Circle())
-            .overlay(
-                Circle()
-                    .strokeBorder(TileColorResolver.color(for: tile).opacity(0.55), lineWidth: 0.5)
-            )
+            // Same three parts as a tile, laid out along a capsule instead of
+            // stacked: color as the ground, picture on a white plate, word on
+            // the color. The tinted-fill version was the only place left where
+            // a word carried its color at 16% instead of wearing it.
+            TileImageView(key: tile.key, wordClass: tile.wordClass)
+                .padding(1)
+                .frame(width: iconSize, height: iconSize)
+                .background(Color.white)
+                .clipShape(Circle())
 
             Text(tile.value)
                 .font(.system(size: labelSize, weight: .semibold))
-                .foregroundStyle(.primary.opacity(0.85))
+                .foregroundStyle(TileColorResolver.label(on: accent))
                 .lineLimit(1)
         }
         .padding(.leading, 3)
         .padding(.trailing, 9)
         .padding(.vertical, 2)
-        .background(
-            Capsule()
-                .fill(TileColorResolver.color(for: tile).opacity(0.16))
-        )
-        .overlay(
-            Capsule()
-                .strokeBorder(TileColorResolver.color(for: tile).opacity(0.3), lineWidth: 0.5)
-        )
+        .background(Capsule().fill(accent))
     }
 }
 

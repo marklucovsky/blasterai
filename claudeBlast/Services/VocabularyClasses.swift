@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import UIKit
 import Observation
 
 struct VocabularyClass: Identifiable, Hashable {
@@ -262,6 +263,22 @@ enum TileColorResolver {
     /// created with, so a chip always matches the tile it came from.
     static func color(for selection: TileSelection) -> Color {
         color(for: selection.partOfSpeech)
+    }
+
+    /// Text color that stays readable on a tile's own color.
+    ///
+    /// Computed rather than tabulated because the set of colors this has to work
+    /// against is open: `navigation` is dark enough that black on it is
+    /// unreadable, pronoun yellow and the function-word neutral need black, and
+    /// a child's `TileColorMap` can put any color at all under the label. A
+    /// table would be a second palette to keep in step with the first.
+    ///
+    /// Rec. 709 luminance, the same weighting WCAG contrast uses. The split at
+    /// 0.5 puts every Fitzgerald color on the side a person would pick by eye.
+    static func label(on color: Color) -> Color {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        guard UIColor(color).getRed(&r, green: &g, blue: &b, alpha: &a) else { return .black }
+        return (0.2126 * r + 0.7152 * g + 0.0722 * b) >= 0.5 ? .black : .white
     }
 
     /// Degraded path for the few surfaces that hold a `wordClass` string and no

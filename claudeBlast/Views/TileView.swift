@@ -46,22 +46,46 @@ struct TileView: View {
             onTap()
         } label: {
             VStack(spacing: 0) {
-                // Full-bleed square image card
+                // Full-bleed square image card, then the word on the same color.
                 tileCard
-
-                // Small label below — the images already carry the word,
-                // so this is a subtle hint rather than the primary label
-                Text(tile.displayName)
-                    .font(.system(size: labelFontSize, weight: .medium))
-                    .lineLimit(1)
-                    // A whole word slightly smaller beats "hamb..." at the size
-                    // asked for. The label identifies the picture, and half a
-                    // word identifies nothing — least of all for a child who
-                    // cannot yet read and is matching shapes.
-                    .minimumScaleFactor(0.6)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity)
+                labelBand
             }
+            // The card treatment wraps BOTH, so the color runs behind the word
+            // and the tile is one object rather than a card with a caption under
+            // it. Everything below used to sit on `tileCard`; moving it out is
+            // most of this change.
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            // A nav tile deepens under the finger: a scale change is read against
+            // the edge as a reference, so a static edge is part of what made a
+            // small scale hard to see. Opacity only — changing its width made the
+            // edge shimmer.
+            //
+            // **A tile in the tray no longer restyles itself.** It used to take an
+            // orange border and an orange glow, from the days when tapping a grid
+            // tile toggled it in and out of the tray, so the grid had to show
+            // membership. It has not worked that way for a long time — the tray is
+            // edited in the tray — and the cost is now much higher than the stale
+            // affordance: orange is *nouns*. A tile that changes color on tap
+            // contradicts the one thing the color is there to teach, and it does it
+            // at the exact moment the child is looking at the tile. Single-word mode
+            // never had this treatment; the grid now matches it.
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .strokeBorder(
+                        isNavigation ? TileColorResolver.navigation.opacity(isPressed ? 1.0 : 0.0) : .clear,
+                        lineWidth: 3
+                    )
+            )
+            .shadow(color: .black.opacity(0.12), radius: 2, y: 1)
+            // Press "pop + glow": a thick bright ring + strong colored halo flashes
+            // on every tap (glow springs 0→1→0 with the bounce), so a press is
+            // unmistakable in motion and on camera.
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.white.opacity(glow), lineWidth: 6)
+            )
+            .shadow(color: Color.cyan.opacity(0.9 * glow), radius: 20)
+            .shadow(color: Color.cyan.opacity(0.6 * glow), radius: 9)
         }
         // Press state comes from the button style, not from a raw
         // `DragGesture(minimumDistance: 0)`.
@@ -113,6 +137,33 @@ struct TileView: View {
       withAnimation(.easeOut(duration: 0.45).delay(0.16)) { pulseScale = 1.0; glow = 0.0 }
     }
 
+    /// The word, on the tile's own color.
+    ///
+    /// It used to sit on the page background in `.secondary` grey, which made
+    /// every tile on the board end in the same neutral strip — so the colored
+    /// area was the square alone and the color had to compete with the artwork
+    /// filling it. Carrying it under the label gives each tile a band of solid,
+    /// unobstructed color at a fixed place in the cell, which is what makes a
+    /// row of them scan as a color from across the room.
+    ///
+    /// The picture still carries the word; this is a caption, not the label a
+    /// pre-reading child navigates by. So it stays small — only the ground it
+    /// sits on changed.
+    private var labelBand: some View {
+        Text(tile.displayName)
+            .font(.system(size: labelFontSize, weight: .semibold))
+            .lineLimit(1)
+            // A whole word slightly smaller beats "hamb..." at the size asked
+            // for. The label identifies the picture, and half a word identifies
+            // nothing — least of all for a child who cannot yet read and is
+            // matching shapes.
+            .minimumScaleFactor(0.6)
+            .foregroundStyle(TileColorResolver.label(on: accent))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, GridLayoutCalculator.labelBandPadding)
+            .background(accent)
+    }
+
     /// The color a tile carries: its part of speech, or blue for a nav tile,
     /// which is wayfinding rather than vocabulary.
     private var accent: Color {
@@ -161,38 +212,9 @@ struct TileView: View {
                     .padding(4)
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-        // A nav tile deepens under the finger: a scale change is read against the
-        // edge as a reference, so a static edge is part of what made a small
-        // scale hard to see. Opacity only — changing its width made the edge
-        // shimmer.
-        //
-        // **A tile in the tray no longer restyles itself.** It used to take an
-        // orange border and an orange glow, from the days when tapping a grid
-        // tile toggled it in and out of the tray, so the grid had to show
-        // membership. It has not worked that way for a long time — the tray is
-        // edited in the tray — and the cost is now much higher than the stale
-        // affordance: orange is *nouns*. A tile that changes color on tap
-        // contradicts the one thing the color is there to teach, and it does it
-        // at the exact moment the child is looking at the tile. Single-word mode
-        // never had this treatment; the grid now matches it.
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .strokeBorder(
-                    isNavigation ? TileColorResolver.navigation.opacity(isPressed ? 1.0 : 0.0) : .clear,
-                    lineWidth: 3
-                )
-        )
-        .shadow(color: .black.opacity(0.12), radius: 2, y: 1)
-        // Press "pop + glow": a thick bright ring + strong colored halo flashes
-        // on every tap (glow springs 0→1→0 with the bounce), so a press is
-        // unmistakable in motion and on camera.
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(Color.white.opacity(glow), lineWidth: 6)
-        )
-        .shadow(color: Color.cyan.opacity(0.9 * glow), radius: 20)
-        .shadow(color: Color.cyan.opacity(0.6 * glow), radius: 9)
+        // No clip, no ring, no shadow here any more — the enclosing VStack owns
+        // all of it, so the rounding and the glow follow the outside of the
+        // whole tile instead of cutting between the picture and the word.
     }
 
     // colorForWordClass is now a shared function in TileImageView.swift

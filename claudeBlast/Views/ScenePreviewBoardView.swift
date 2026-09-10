@@ -76,29 +76,39 @@ struct ScenePreviewBoardView: View {
             let dest = entry.link == "<home>" ? scene.homePageKey : entry.link
             if scene.page(withKey: dest) != nil { currentPageKey = dest }
         } label: {
-            VStack(spacing: 4) {
+            // Same rule as the board: part of speech, or blue for a nav tile.
+            // A preview whose colors are a 12% wash of the real ones cannot be
+            // used to check the one thing a preview is for — whether the board
+            // reads correctly before a child ever sees it.
+            let accent = isLink ? TileColorResolver.navigation : TileColorResolver.color(for: tile)
+            VStack(spacing: 0) {
                 ZStack(alignment: .topTrailing) {
                     TileImageView(key: tile?.bundleImage ?? entry.key,
                                   wordClass: tile?.wordClass ?? "")
+                        .padding(2)
                         .aspectRatio(1, contentMode: .fit)
+                        .background(Color.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 5))
+                        .padding(5)
                     if isLink {
                         Image(systemName: "arrow.right.circle.fill")
                             .font(.caption)
                             .symbolRenderingMode(.palette)
-                            .foregroundStyle(.white, .blue)
+                            .foregroundStyle(.white, TileColorResolver.navigation)
                             .padding(3)
                     }
                 }
                 Text(tile?.displayName ?? entry.key)
-                    .font(.caption2)
+                    .font(.caption2.weight(.semibold))
                     .lineLimit(1)
-                    .foregroundStyle(.primary)
+                    .minimumScaleFactor(0.6)
+                    .foregroundStyle(TileColorResolver.label(on: accent))
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 3)
+                    .padding(.vertical, GridLayoutCalculator.labelBandPadding)
             }
-            .padding(6)
-            .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(TileColorResolver.color(for: tile).opacity(0.12))
-            )
+            .background(accent)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
         }
         .buttonStyle(.plain)
     }

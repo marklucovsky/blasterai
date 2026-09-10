@@ -69,27 +69,39 @@ struct HomeGridCell: View {
             // Without the reserved label space the cell centres against the
             // tile's *full* height and hangs visibly low.
             VStack(spacing: 0) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color(.systemGray4))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .stroke(Color.primary.opacity(0.18), lineWidth: 1)
-                        )
-                    Image(systemName: "house.fill")
-                        .font(.system(size: glyphSize, weight: .semibold))
-                        .foregroundStyle(Color.primary.opacity(0.65))
-                }
-                .aspectRatio(1, contentMode: .fit)
+                // The glyph sits in the square region, where every neighbour's
+                // picture sits, so the row of images lines up across the board.
+                Color.clear
+                    .aspectRatio(1, contentMode: .fit)
+                    .overlay(
+                        Image(systemName: "house.fill")
+                            .font(.system(size: glyphSize, weight: .semibold))
+                            .foregroundStyle(Color.primary.opacity(0.65))
+                    )
 
                 // Empty stand-in for the tile label: reserves the same height so
-                // every row aligns, without labelling Home as a word.
+                // every row aligns, without labelling Home as a word. The
+                // padding has to match `TileView`'s label band exactly or Home
+                // sits high by twice it — the band is not just a font any more.
                 Text(" ")
-                    .font(.system(size: labelFontSize, weight: .medium))
+                    .font(.system(size: labelFontSize, weight: .semibold))
                     .lineLimit(1)
                     .frame(maxWidth: .infinity)
+                    .padding(.vertical, GridLayoutCalculator.labelBandPadding)
                     .accessibilityHidden(true)
             }
+            // The card covers the label band too, so Home is the same height as
+            // the tiles rather than a short square with dead space under it.
+            // Its shape and radius are `TileView`'s: Home is chrome, but chrome
+            // that is visibly the same *kind of object* as the words around it.
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color(.systemGray4))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(Color.primary.opacity(0.18), lineWidth: 1)
+            )
             .opacity(isEnabled ? 1 : 0.4)
             .scaleEffect(isPressed && isEnabled ? 0.94 : 1)
             .animation(.spring(response: 0.25, dampingFraction: 0.6), value: isPressed)
