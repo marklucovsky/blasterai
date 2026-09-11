@@ -32,7 +32,15 @@ struct LiveTier2EvalTests {
         var sentenceResults: [SentenceCaseResult] = []
         for c in EvalCases.sentences {
             let output = try await subject.generate(tiles: c.tiles)
-            let tier1 = Tier1.scoreSentence(output, tiles: c.tiles)
+            // Score at the stage the subject actually generated at.
+            //
+            // Without this the capture graded Stage II-III output against the
+            // `.fourPlus` default, and `dad_help` failed as "a raw echo of the
+            // tiles" — which is exactly what the echo rule was re-scoped to stop
+            // saying. `LiveTier1EvalTests` already passes the stage; this one
+            // was missed, so the Tier-2 capture has been marking a correct
+            // Stage II-III answer wrong ever since stages landed.
+            let tier1 = Tier1.scoreSentence(output, tiles: c.tiles, stage: subject.brownsStage)
             let verdict = try? await judge.scoreSentence(tiles: c.tiles, output: output)
             sentenceResults.append(SentenceCaseResult(
                 id: c.id, output: output,

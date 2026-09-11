@@ -280,3 +280,86 @@ xcodebuild -project claudeBlast.xcodeproj -scheme claudeBlast \
   -destination "platform=iOS Simulator,name=iPad Pro 11-inch (M5),OS=26.2" \
   -only-testing:claudeBlastTests/LiveTier1EvalTests test
 ```
+
+---
+
+# The judge, re-run against Brown's Stages — 2026-09-10
+
+The A3 table's escalate-rate and judge scores were measured against the old
+grade-level prompt and had been carried forward unmeasured ever since — the
+section above says so in as many words ("**Still not re-run:** the Tier-2
+judge"). The site was quoting `38% → 85%` off that stale row. Re-run rather than
+qualified, at Mark's call.
+
+Subject = `gpt-4o-mini` at Stage II-III (the harness default), Judge = `gpt-4o`.
+
+## Rollup
+
+| Surface | 2026-06-20 baseline | After A3 (grade) | **Brown's Stages, 2026-09-10** |
+|---|---|---|---|
+| Sentence Tier-1 | 100% | 100% | **100%** |
+| Sentence judge | 5.00/5 | 5.00/5 | **4.67/5** |
+| Escalation Tier-1 | 0% | 100% | **100%** |
+| Escalation escalate-rate | 38% | 85% | **94%** |
+| Escalation regressions | 3 | 1 | **0** |
+
+Escalation is better against stages than it ever was against the grade prompt:
+every ladder climbs monotonically, and the only non-escalating call in the whole
+run is the final rung of `pinkfong_video` — the documented ceiling effect on the
+deepest ladder, which has now been present in every capture since June and is
+not a regression.
+
+```
+chocolate   [1, 6, 9, 17]      I want chocolate. → I really want chocolate right now!
+                               → I really NEED chocolate right now! → I NEED CHOCOLATE NOW!!!
+mom_hungry  [0, 5, 9, 29]      … → Mom, I am SO, SO HUNGRY! I NEED FOOD NOW!!!
+go_home     [1, 6, 9, 20]      … → I WANT to GO HOME NOW!!!
+mom_snack   [0, 6, 9, 34]      the need frame still survives the feeling fix — control holds
+pinkfong    [1, 6, 15, 23, 23] deepest ladder, flat at the last rung (ceiling)
+```
+
+The sentence judge moving 5.00 → 4.67 is not a fault to chase. Stage II-III asks
+for shorter, plainer output than "2nd grade" did, and a judge rewarding richness
+will score that slightly lower by construction. Tier-1 is 10/10 and the wording
+is right for the stage.
+
+## The capture was grading at the wrong stage
+
+`dad_help` failed the first re-run as *"output is a raw echo of the tiles"* — the
+exact failure the stage-scoped echo rule was introduced to stop producing, and
+which the section above records as fixed.
+
+It was fixed, in `Tier1.scoreSentence`, whose `stage` parameter defaults to
+`.fourPlus`. `LiveTier1EvalTests` passes `stage: runner.brownsStage`.
+**`LiveTier2EvalTests` did not** — so the Tier-2 capture generated at Stage II-III
+and graded at Stage IV+, and had been doing so since stages landed. One
+argument, now passed.
+
+Worth stating plainly because it is the second time this file records the same
+lesson from the other direction: a green Tier-1 is not evidence escalation works,
+and a red one is not evidence it is broken. Read the sentences.
+
+## Residual wording nits — recorded, not chased
+
+- `more_drink` → "I want more drink." Grammatical enough to pass, and not what a
+  person says; "more to drink" is the natural form. The tiles are `more` +
+  `drink` and the model is honouring both literally.
+- `pinkfong_video` → "play Pinkfong and video." Same shape: two nouns conjoined
+  where one is really a modifier.
+
+Both are the category-honor rule doing its job at a cost. Neither is worth a
+prompt change on its own; if a third case shows up, the pattern is "conjoined
+object nouns read awkwardly at Stage II-III" and belongs in the word-class table.
+
+## Re-running this capture
+
+```
+TEST_RUNNER_RUN_LIVE_EVAL=1 \
+TEST_RUNNER_OPENAI_API_KEY="$OPENAI_API_KEY" \
+xcodebuild -project claudeBlast.xcodeproj -scheme claudeBlast \
+  -destination "platform=iOS Simulator,name=iPad Pro 11-inch (M5),OS=26.2" \
+  -only-testing:claudeBlastTests/LiveTier2EvalTests test
+```
+
+Costs roughly 10-20 cents (31 `gpt-4o-mini` calls, 15 `gpt-4o` judge calls), and
+note that xcodebuild's parallel clones run it twice unless you disable them.
