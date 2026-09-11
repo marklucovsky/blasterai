@@ -11,11 +11,25 @@ Tile Images
   distribution.
 
   No ARASAAC pictogram, and no other third-party artwork, ships in this
-  product. Earlier versions bundled ARASAAC pictograms under CC BY-NC-SA 4.0;
-  that set was removed in July 2026 and replaced. "ARASAAC" survives in the
-  source only as a description of a drawing style inside a generation prompt
-  (Resources/image_styles.json) — a style is not a licensable asset, and no
-  ARASAAC file remains.
+  product, and none is present anywhere in the current source tree.
+
+  Git history is the exception, and it matters if you build from an old
+  commit. Earlier versions bundled 493 ARASAAC pictograms under
+  CC BY-NC-SA 4.0. They were deleted in commit c203207 (July 2026) and
+  replaced with generated art, but deleting a file does not remove it from
+  history: every clone of this repository still contains those blobs, and
+  any checkout of a commit before c203207 will put them back on disk.
+
+  Those files remain under CC BY-NC-SA 4.0 and the Apache License above does
+  not extend to them. If you build, distribute, or reuse artwork from a tree
+  that predates c203207, you take on ARASAAC's terms for that artwork —
+  attribution, non-commercial use, and share-alike — regardless of what
+  LICENSE says at the root. Build from a commit at or after c203207 and
+  none of that applies.
+
+  "ARASAAC" also survives in the current source as a description of a drawing
+  style inside a generation prompt (Resources/image_styles.json). A style is
+  not a licensable asset, and no ARASAAC file remains in the working tree.
 
   Art a caregiver generates on their own device with their own OpenAI key
   belongs to them on the same terms, and this project asserts no license
