@@ -580,6 +580,7 @@ struct TileGridView: View {
             TileView(
                 tile: tile,
                 link: entry.link,
+                linkColor: entry.linkColor,
                 isAudible: entry.isAudible,
                 labelFontSize: labelFontSize,
                 scriptPulseKey: scriptRunner.tapPulseKey,

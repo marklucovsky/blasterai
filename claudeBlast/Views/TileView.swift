@@ -11,6 +11,9 @@ import SwiftData
 struct TileView: View {
     let tile: TileModel
     var link: String = ""
+    /// The `TileColorSlot.rawValue` this link is colored as. Nil on a word tile,
+    /// and on a link authored before folders could carry a color.
+    var linkColor: String? = nil
     var isAudible: Bool = true
     var labelFontSize: CGFloat = 11
     /// TileScript playback pulse: when `scriptPulseCount` changes and
@@ -72,7 +75,7 @@ struct TileView: View {
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
                     .strokeBorder(
-                        isNavigation ? TileColorResolver.navigation.opacity(isPressed ? 1.0 : 0.0) : .clear,
+                        isNavigation ? accent.opacity(isPressed ? 1.0 : 0.0) : .clear,
                         lineWidth: 3
                     )
             )
@@ -167,7 +170,9 @@ struct TileView: View {
     /// The color a tile carries: its part of speech, or blue for a nav tile,
     /// which is wayfinding rather than vocabulary.
     private var accent: Color {
-        isNavigation ? TileColorResolver.navigation : TileColorResolver.color(for: tile)
+        isNavigation
+            ? TileColorResolver.linkColor(slotRawValue: linkColor)
+            : TileColorResolver.color(for: tile)
     }
 
     /// The card is a colored card with the picture on a white plate inside it —
@@ -206,9 +211,13 @@ struct TileView: View {
                 .padding(9)
 
             if isNavigation {
+                // Drawn against the tile's own color rather than in a fixed
+                // blue. See `TileColorResolver.marker(on:)`: this badge stopped
+                // being decoration the moment folders stopped all being blue.
+                let badge = TileColorResolver.marker(on: accent)
                 Image(systemName: "arrow.right.circle.fill")
                     .font(.caption)
-                    .foregroundStyle(.white, TileColorResolver.navigation)
+                    .foregroundStyle(TileColorResolver.label(on: badge), badge)
                     .padding(4)
             }
         }

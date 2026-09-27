@@ -89,7 +89,7 @@ struct SceneMaterializerTests {
 
     @Test func link_inserts_whenNotPresent() throws {
         let m = try mat([PageJSON(key: "home", tiles: [
-            .link(key: "mom", to: "people", audible: false)
+            .link(key: "mom", to: "people", audible: false, color: nil)
         ])])
         let t = m.pages[0].tiles[0]
         #expect(t.key == "mom")
@@ -102,7 +102,7 @@ struct SceneMaterializerTests {
         // link should mutate the existing tile in its current position.
         let m = try mat([PageJSON(key: "home", tiles: [
             .keys(["eat","drink","mom"]),
-            .link(key: "drink", to: "drinks", audible: true),
+            .link(key: "drink", to: "drinks", audible: true, color: nil),
         ])])
         let keys = m.pages[0].tiles.map(\.key)
         #expect(keys == ["eat","drink","mom"])  // position preserved
@@ -129,9 +129,9 @@ struct SceneMaterializerTests {
 
     @Test func mixedCommands_buildExpectedPage() throws {
         let m = try mat([PageJSON(key: "home", tiles: [
-            .link(key: "mom", to: "people", audible: false),  // [mom→link]
+            .link(key: "mom", to: "people", audible: false, color: nil),  // [mom→link]
             .keys(["eat","drink"]),                            // [mom→link, eat, drink]
-            .link(key: "eat", to: "food", audible: true),     // mutate eat
+            .link(key: "eat", to: "food", audible: true, color: nil),     // mutate eat
             .classSelector(classes: ["food"], exclude: [], limit: nil, orderBy: .vocab),
             .remove("banana"),
         ])])

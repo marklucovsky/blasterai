@@ -102,6 +102,10 @@ struct ChildProfileFormSheet: View {
     /// This child's palette. Edited here because it belongs to the child, like
     /// their stage and their voice — see `TileColorMap`.
     @State private var colorMap = TileColorMap()
+    /// How page links take their color for this child. Sits beside the palette
+    /// because it is the same decision seen from further away: the palette says
+    /// what a folder's color means, this says whether a folder gets one.
+    @State private var linkColorMode = LinkColorMode.perTile
     /// The caregiver's saved palettes, loaded from the system profile.
     @State private var savedMaps: [TileColorMap] = []
     /// Name being typed when saving or renaming. Nil when no prompt is open.
@@ -124,11 +128,13 @@ struct ChildProfileFormSheet: View {
         var ttsRate: Float
         var ttsVolume: Float
         var colorMap: TileColorMap
+        var linkColorMode: LinkColorMode
     }
 
     private var current: Snapshot {
         Snapshot(name: name, stage: stage, voiceID: voiceID, maxTiles: maxTiles,
-                 ttsRate: ttsRate, ttsVolume: ttsVolume, colorMap: colorMap)
+                 ttsRate: ttsRate, ttsVolume: ttsVolume, colorMap: colorMap,
+                 linkColorMode: linkColorMode)
     }
 
     /// Whether closing now would throw work away. Before `load` runs there is
@@ -328,9 +334,22 @@ struct ChildProfileFormSheet: View {
                 }
             }
 
-            if !colorMap.isEmpty {
+            // One switch over every folder in every scene, so a caregiver who
+            // needs links to stand out does not have to edit them one at a time
+            // — including in a scene somebody else authored and sent them.
+            Picker("Folder Color", selection: $linkColorMode) {
+                ForEach(LinkColorMode.allCases) { mode in
+                    Text(mode.label).tag(mode)
+                }
+            }
+            Text(linkColorMode.detail)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            if !colorMap.isEmpty || linkColorMode != .perTile {
                 Button(role: .destructive) {
                     colorMap = TileColorMap()
+                    linkColorMode = .perTile
                 } label: {
                     Label("Reset to Default Colors", systemImage: "arrow.uturn.backward")
                 }
@@ -564,6 +583,7 @@ struct ChildProfileFormSheet: View {
             ttsRate = profile.ttsRate
             ttsVolume = profile.ttsVolume
             colorMap = TileColorMap.decode(profile.colorMapData)
+            linkColorMode = profile.linkColorMode
         }
         // After the fields are populated, so an untouched form compares equal.
         loaded = current
@@ -583,6 +603,7 @@ struct ChildProfileFormSheet: View {
             profile.ttsRate = ttsRate
             profile.ttsVolume = ttsVolume
             profile.colorMapData = colorMap.encoded
+            profile.linkColorMode = linkColorMode
             modelContext.insert(profile)
             if makeActive {
                 profileResolver.setActive(id: profile.id)
@@ -595,6 +616,7 @@ struct ChildProfileFormSheet: View {
             profile.ttsRate = ttsRate
             profile.ttsVolume = ttsVolume
             profile.colorMapData = colorMap.encoded
+            profile.linkColorMode = linkColorMode
             profile.modifiedAt = .now
             // `refresh()` re-reads the active profile AND its palette, so the
             // board picks up a color change on dismiss rather than at next

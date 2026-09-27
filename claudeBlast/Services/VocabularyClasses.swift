@@ -212,6 +212,7 @@ enum TileColorResolver {
     @MainActor
     static func refreshActiveMap(from profile: ChildProfile?) {
         Palette.shared.map = TileColorMap.decode(profile?.colorMapData ?? "")
+        Palette.shared.linkMode = profile?.linkColorMode ?? .perTile
     }
 
     /// Why the palette lives on an `@Observable` box rather than in a `static
@@ -232,8 +233,17 @@ enum TileColorResolver {
     final class Palette {
         @MainActor static let shared = Palette()
         var map = TileColorMap()
+        /// Carried here rather than read from the profile at draw time for the
+        /// same reason the map is: a board asks for color once per tile per
+        /// render, and this must not touch the store. Living on the same
+        /// observable box also means flipping the mode invalidates exactly the
+        /// views that drew with the old answer.
+        var linkMode = LinkColorMode.perTile
         private init() {}
     }
+
+    /// How this child's page links take their color.
+    static var activeLinkColorMode: LinkColorMode { Palette.shared.linkMode }
 
     /// The Modified Fitzgerald Key, unless this child sees differently.
     static func color(for partOfSpeech: PartOfSpeech?) -> Color {
@@ -285,6 +295,69 @@ enum TileColorResolver {
     static func color(for tile: TileModel?) -> Color {
         guard let tile else { return chrome }
         return color(for: tile.resolvedPartOfSpeech)
+    }
+
+    /// The color a page link draws in.
+    ///
+    /// - Parameter slotRawValue: the slot stored on the link
+    ///   (`TileEntry.linkColor`). Nil for a link authored before folders could
+    ///   carry a color, which draws as wayfinding — what every link used to do.
+    ///
+    /// The child's `LinkColorMode` is applied here rather than at each call
+    /// site, so a surface cannot forget it. The mode only changes which color is
+    /// looked up; nothing it does reaches stored data.
+    static func linkColor(slotRawValue: String?) -> Color {
+        guard activeLinkColorMode == .perTile,
+              let raw = slotRawValue,
+              let slot = TileColorSlot(rawValue: raw)
+        else { return navigation }
+        return color(for: slot)
+    }
+
+    /// Color for any slot, through the child's palette.
+    static func color(for slot: TileColorSlot) -> Color {
+        if let override = activeMap.color(for: slot) { return override }
+        return defaultColor(for: slot)
+    }
+
+    /// A shade of `color` that stands off it — darker over a light tile, lighter
+    /// over a dark one.
+    ///
+    /// **This is what tells a child a tile is a folder.** While every link was
+    /// the same blue, the little arrow badge was confirmation of something the
+    /// color had already said. Now that a folder can be the same orange as the
+    /// nouns beside it, the badge carries the whole signal on its own, and a
+    /// fixed blue circle on an arbitrary tile color is not a contrast anyone
+    /// designed. Mark, seeing it land: *"when links were always blue, that mark
+    /// was sort of like extra credit ... now it is the primary way someone knows
+    /// it's a link."*
+    ///
+    /// Staying in the tile's own hue, rather than going to black or white, is
+    /// the Vocal Flair move — their corner wedge is a higher-contrast shade of
+    /// the card, not a foreign color — and it keeps the badge from reading as a
+    /// second, competing piece of information.
+    ///
+    /// Rec. 709 luminance to decide the direction, the same weighting
+    /// `label(on:)` uses, so the badge and the word underneath never disagree
+    /// about whether a tile is light.
+    static func marker(on color: Color) -> Color {
+        let ui = UIColor(color)
+        var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        var r: CGFloat = 0, g: CGFloat = 0, bl: CGFloat = 0
+        guard ui.getHue(&h, saturation: &s, brightness: &b, alpha: &a),
+              ui.getRed(&r, green: &g, blue: &bl, alpha: &a)
+        else { return label(on: color) }
+
+        let luminance = 0.2126 * r + 0.7152 * g + 0.0722 * bl
+        if luminance >= 0.5 {
+            // Down and slightly richer. Pure white has no hue to keep, and
+            // drops to a dark neutral, which is correct.
+            return Color(hue: h, saturation: min(1, s * 1.15), brightness: b * 0.40)
+        }
+        // Up and washed out. Holding full saturation while raising brightness
+        // keeps a dark blue looking like the same blue and separates far less.
+        return Color(hue: h, saturation: s * 0.45,
+                     brightness: min(1, b + (1 - b) * 0.85))
     }
 
     /// Color for a tray chip. The selection carries the part of speech it was
