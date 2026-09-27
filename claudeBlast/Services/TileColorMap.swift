@@ -40,7 +40,12 @@ import SwiftData
 /// sharing is deliberately not built yet; the type is shaped for it.
 struct TileColorMap: Codable, Hashable {
     var name: String
-    /// `PartOfSpeech.rawValue` → hex, e.g. `"verb": "#4CB859"`. Sparse.
+    /// `TileColorSlot.rawValue` → hex, e.g. `"verb": "#4CB859"`. Sparse.
+    ///
+    /// For a part of speech that raw value **is** `PartOfSpeech.rawValue`, so
+    /// every palette saved before page links became colorable still reads
+    /// correctly and every colorway file already in circulation still imports.
+    /// See `TileColorSlot` for why the key type widened rather than the enum.
     var overrides: [String: String]
 
     init(name: String = "", overrides: [String: String] = [:]) {
@@ -50,16 +55,27 @@ struct TileColorMap: Codable, Hashable {
 
     var isEmpty: Bool { overrides.isEmpty }
 
+    func color(for slot: TileColorSlot) -> Color? {
+        overrides[slot.rawValue].flatMap(Color.init(hex:))
+    }
+
+    mutating func set(_ color: Color?, for slot: TileColorSlot) {
+        if let color {
+            overrides[slot.rawValue] = color.hexString
+        } else {
+            overrides.removeValue(forKey: slot.rawValue)
+        }
+    }
+
+    /// The part-of-speech spellings, kept because most callers hold a
+    /// `PartOfSpeech` and widening every one of them would be a large diff over
+    /// no behavior change.
     func color(for partOfSpeech: PartOfSpeech) -> Color? {
-        overrides[partOfSpeech.rawValue].flatMap(Color.init(hex:))
+        color(for: .partOfSpeech(partOfSpeech))
     }
 
     mutating func set(_ color: Color?, for partOfSpeech: PartOfSpeech) {
-        if let color {
-            overrides[partOfSpeech.rawValue] = color.hexString
-        } else {
-            overrides.removeValue(forKey: partOfSpeech.rawValue)
-        }
+        set(color, for: .partOfSpeech(partOfSpeech))
     }
 
     // MARK: - Storage
