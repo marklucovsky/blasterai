@@ -221,7 +221,9 @@
         },
         {
           "keys": [
-            "school"
+            "school",
+            "slide",
+            "swing"
           ]
         }
       ]

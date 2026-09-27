@@ -36,12 +36,17 @@ word whose home is unclear.
 THE `play` SELECTOR WAS NEVER WIRED UP
 --------------------------------------
 `play_activities` selects `art`/`toy`/`sports`/`games` but not `play`, so the
-three words in class `play` reached it through no selector at all. Two of them,
-`slide` and `swing`, had been hand-listed on `places` — a workaround for the
-missing selector, which is why `tricycle` was simply lost. Adding `play` to the
-class list fixes all three, and the hand-listed pair comes off `places` so they
-do not land on two pages. `school` stays: it is class `social`, and it really is
-a place.
+three words in class `play` reached it through no selector at all — `tricycle`
+was on no page. Adding `play` to the class list fixes all three.
+
+`slide` and `swing` stay hand-listed on `places` as well, so they are on two
+pages **on purpose**. I first read that hand-listing as a workaround for the
+missing selector and removed it; Mark: *"when my granddaughters talk about these
+they treat them as places: I want to go to the slide, or to the swing, or to the
+playground. They view them as destinations more so than the activity."* A word
+that is genuinely two categories to the child belongs in both, which is what the
+published boards do too. That is a different case from `don't` and `happy` above,
+which were on `describe` only because they had nowhere else to be.
 
 STILL UNPLACED, DELIBERATELY: `bus`
 -----------------------------------
@@ -93,16 +98,14 @@ def main():
         if isinstance(cl, list) and "play" not in cl:
             cl.append("play")
             print("play_activities: +class play  (slide/swing/tricycle)")
-    places = pages["places"]
-    for tile in places["tiles"]:
+    for tile in pages["places"]["tiles"]:
         keys = tile.get("keys")
-        if not keys:
+        if keys is None:
             continue
-        for moved in ("slide", "swing"):
-            if moved in keys:
-                keys.remove(moved)
-                print(f"places: -{moved}  (hand-listed workaround, now on play_activities)")
-    places["tiles"] = [t for t in places["tiles"] if t.get("keys") != []]
+        for both in ("slide", "swing"):
+            if both not in keys:
+                keys.append(both)
+                print(f"places: +{both}  (destination to a child; also on play_activities)")
 
     SCENE.write_text(json.dumps(scene, indent=2) + "\n")
 
