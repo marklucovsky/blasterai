@@ -108,6 +108,65 @@ struct GridLayoutCalculatorTests {
         #expect(implicit == explicit)
     }
 
+    // MARK: - Column parity across the iPad sizes
+
+    /// An 11" Pro and a 13" Pro, landscape, with the sentence tray taken off
+    /// the top — the geometry the board actually gets.
+    private func landscapeBoard(_ screen: CGSize, step: Int = 0) -> GridLayoutSpec {
+        GridLayoutCalculator.compute(
+            screenSize: screen,
+            geo: CGSize(width: max(screen.width, screen.height),
+                        height: min(screen.width, screen.height) - 134),
+            userStep: step)
+    }
+
+    private let iPad11 = CGSize(width: 834, height: 1210)
+    private let iPad13 = CGSize(width: 1032, height: 1376)
+
+    /// **The same board should reach the same way on both iPads.**
+    ///
+    /// Tile position is motor planning: a child learns where a word *is*. When
+    /// the 13" laid out 14 columns against the 11"'s 12, every row after the
+    /// first held different words on the two devices, and a home page whose
+    /// links fill the top row exactly on one wrapped on the other.
+    ///
+    /// Column parity is the property worth pinning. Row count legitimately
+    /// differs — the 13" is taller and shows more of the same board, which is
+    /// what a bigger screen should do.
+    @Test func bothIPadSizesAgreeOnColumnCount() {
+        #expect(landscapeBoard(iPad11).cols == landscapeBoard(iPad13).cols)
+    }
+
+    /// The 13" gets there by starting one density tick roomier, not by being
+    /// special-cased into a column count. If either base is retuned, the
+    /// relationship survives; a hard-coded 12 would not.
+    @Test func largeIPadStartsOneTickRoomier() {
+        let eleven = landscapeBoard(iPad11).tileSize
+        let thirteen = landscapeBoard(iPad13).tileSize
+        #expect(thirteen > eleven)
+        // 1.12 per tick, with slack for the width-fitting that follows.
+        #expect(thirteen / eleven > 1.05)
+        #expect(thirteen / eleven < 1.20)
+    }
+
+    /// The mini is deliberately outside this arrangement — 11" is the standard
+    /// the parity rule targets.
+    ///
+    /// Compared at *identical* geometry, so the only variable is the device
+    /// class. An earlier version of this test handed each device its own
+    /// screen and asserted the mini got fewer columns; that failed, and
+    /// correctly — given a 1133pt-wide canvas the mini's smaller base fits
+    /// *more* columns, not fewer. Column count is a property of the canvas,
+    /// and the thing the device class actually decides is tile size.
+    @Test func miniKeepsItsOwnSmallerBase() {
+        let geo = CGSize(width: 1133, height: 610)
+        func tile(_ screen: CGSize) -> CGFloat {
+            GridLayoutCalculator.compute(screenSize: screen, geo: geo, userStep: 0).tileSize
+        }
+        #expect(tile(miniPortrait) < tile(iPad11))
+        #expect(tile(iPad11) < tile(iPad13))
+    }
+
     // MARK: - Degenerate geometry
 
     /// A zero-height proposal happens during transitions. It must not return a

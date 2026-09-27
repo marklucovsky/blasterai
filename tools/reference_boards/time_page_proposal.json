@@ -1,0 +1,98 @@
+{
+  "_comment": [
+    "A Time page for the default scene. We have essentially none of this today:",
+    "of 35 candidate time words, `vocabulary.json` has two - `wait` and `again` -",
+    "and neither is really a time word.",
+    "",
+    "The gap is not cosmetic. Without it a child cannot place anything in time:",
+    "no 'I want to go to the park tomorrow', no 'we saw grandma yesterday', no",
+    "answering 'when?'. Every reference board carries this behind a TIME or WHEN",
+    "link - Vocal Flair has a 46-word Time page, and Aubrey's device has TIME in",
+    "its top row of folders.",
+    "",
+    "DELIBERATELY NOT A COPY OF THEIRS. Vocal Flair's Time page is built for an",
+    "adult: recent, current, brief, since, past, present, future, o'clock,",
+    "lately, season. Those are the words of someone discussing time, not a child",
+    "living in it. This takes the concrete end and leaves the abstractions.",
+    "",
+    "`birthday` is deliberately absent. It was removed from the product in",
+    "August 2026 along with the child's date of birth, and a Time page is",
+    "exactly where it would creep back in.",
+    "",
+    "ON COLOUR. There is no `adverb` case in PartOfSpeech - the codebase files",
+    "adverbs under `describe`, which resolves to adjective/blue (PartOfSpeech.swift",
+    "notes that `describe` 'mixes adjectives with adverbs'). So most of tier 1",
+    "comes out blue, the nouns orange, and before/after grey. That is correct",
+    "Fitzgerald behaviour for a category page, where a single colour is not the",
+    "goal the way it is in a home-page cluster.",
+    "",
+    "Whether `adverb` should become a real case is a separate decision. It is",
+    "additive and low risk - PartOfSpeech is derived rather than stored on a",
+    "synced model, and a TileColorMap that has never heard of it simply has no",
+    "override for it - but it is not required for this page to ship."
+  ],
+  "links": ["home"],
+  "clusters": [
+    {
+      "name": "tier 1 — when something happens, relative to now (blue: filed as describe)",
+      "words": ["now", "later", "soon", "today", "tomorrow", "yesterday", "tonight"]
+    },
+    {
+      "name": "tier 1 — parts of a day (orange: nouns)",
+      "words": ["morning", "afternoon", "night", "day"]
+    },
+    {
+      "name": "tier 1 — sequence (grey: prepositions)",
+      "words": ["before", "after"]
+    },
+    {
+      "name": "tier 2 — ordering a sequence of events (blue)",
+      "words": ["first", "next", "last"]
+    },
+    {
+      "name": "tier 2 — longer spans (orange: nouns)",
+      "words": ["time", "week", "weekend"]
+    },
+    {
+      "name": "tier 3 — frequency, the most abstract of the set (blue)",
+      "words": ["always", "never", "sometimes"]
+    }
+  ],
+  "already_have": {
+    "_comment": "Placed on the Time page too, by explicit key rather than class, because both currently live elsewhere.",
+    "wait": "actions / verb",
+    "again": "describe / adjective"
+  },
+  "new_words": {
+    "_comment": "Each needs a vocabulary.json entry AND a parts_of_speech.json entry, or it falls back to its word class and draws the wrong colour. wordClass drives which page a word can be pulled onto; partOfSpeech drives colour.",
+    "now":       {"wordClass": "describe", "partOfSpeech": "adjective"},
+    "later":     {"wordClass": "describe", "partOfSpeech": "adjective"},
+    "soon":      {"wordClass": "describe", "partOfSpeech": "adjective"},
+    "today":     {"wordClass": "describe", "partOfSpeech": "adjective"},
+    "tomorrow":  {"wordClass": "describe", "partOfSpeech": "adjective"},
+    "yesterday": {"wordClass": "describe", "partOfSpeech": "adjective"},
+    "tonight":   {"wordClass": "describe", "partOfSpeech": "adjective"},
+    "morning":   {"wordClass": "object",   "partOfSpeech": "noun"},
+    "afternoon": {"wordClass": "object",   "partOfSpeech": "noun"},
+    "night":     {"wordClass": "object",   "partOfSpeech": "noun"},
+    "day":       {"wordClass": "object",   "partOfSpeech": "noun"},
+    "before":    {"wordClass": "core",     "partOfSpeech": "preposition"},
+    "after":     {"wordClass": "core",     "partOfSpeech": "preposition"},
+    "first":     {"wordClass": "describe", "partOfSpeech": "adjective"},
+    "next":      {"wordClass": "describe", "partOfSpeech": "adjective"},
+    "last":      {"wordClass": "describe", "partOfSpeech": "adjective"},
+    "time":      {"wordClass": "object",   "partOfSpeech": "noun"},
+    "week":      {"wordClass": "object",   "partOfSpeech": "noun"},
+    "weekend":   {"wordClass": "object",   "partOfSpeech": "noun"},
+    "always":    {"wordClass": "describe", "partOfSpeech": "adjective"},
+    "never":     {"wordClass": "describe", "partOfSpeech": "adjective"},
+    "sometimes": {"wordClass": "describe", "partOfSpeech": "adjective"}
+  },
+  "art_notes": {
+    "_comment": "Time is the hardest art brief this project has had, because none of it has a referent to draw. Worth deciding before generating anything.",
+    "drawable": "today / tomorrow / yesterday / week / weekend read well as a calendar with a highlighted cell - the convention every symbol set uses, and children learn it.",
+    "day_parts": "morning / afternoon / night / tonight are a sun-and-sky scene at different positions. These are the easy ones.",
+    "hard": "now / later / soon / before / after / first / next / last / always / never / sometimes have no picture. Symbol sets draw them as a clock face with a region marked, or as arrows on a timeline. Both are conventions to be taught rather than pictures to be recognised.",
+    "alternative": "Letters and numbers already skip generation and use GlyphTile. A text-forward treatment for the abstract half is worth considering rather than generating art that teaches nothing."
+  }
+}

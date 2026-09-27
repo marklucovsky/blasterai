@@ -27,6 +27,23 @@ struct GiftedKeyRecordTests {
                          issuedAt: "2026-09-16T00:00:00+00:00", expiresAt: nil)
     }
 
+    /// An environment with no `OPENAI_API_KEY`, which is what these tests mean
+    /// by "this device has no key".
+    ///
+    /// They used the real `ProcessInfo`, and that made them fail for anyone
+    /// with a key in scope — which is everyone running from Xcode, because the
+    /// shared scheme sets `OPENAI_API_KEY` on the Run action and marks the Test
+    /// action `shouldUseLaunchSchemeArgsEnv = "YES"`. The test process inherits
+    /// it, `currentKey` returns the env value by design, and the assertion that
+    /// an empty store reads as nil can never hold.
+    ///
+    /// The env override winning is correct behaviour and `OpenAIKeyVaultTests`
+    /// covers it deliberately. What was wrong is asserting on a *store* while
+    /// leaving the environment free to answer first.
+    private final class NoEnvProcessInfo: ProcessInfo, @unchecked Sendable {
+        override var environment: [String: String] { [:] }
+    }
+
     // MARK: - Round trip
 
     @Test("A saved record reads back")
@@ -122,17 +139,17 @@ struct GiftedKeyRecordTests {
     @Test("A gift is refused while this device already holds a key")
     func refusesWhenOccupied() {
         let store = InMemorySecretStore(initial: "sk-the-caregivers-own-key")
-        #expect(OpenAIKeyVault.currentKey(env: ProcessInfo(), store: store) != nil)
+        #expect(OpenAIKeyVault.currentKey(env: NoEnvProcessInfo(), store: store) != nil)
     }
 
     @Test("A gift installs onto a device with no key")
     func installsWhenEmpty() {
         let store = InMemorySecretStore()
-        #expect(OpenAIKeyVault.currentKey(env: ProcessInfo(), store: store) == nil)
+        #expect(OpenAIKeyVault.currentKey(env: NoEnvProcessInfo(), store: store) == nil)
 
         let gift = payload()
         #expect(OpenAIKeyVault.setKey(gift.key, store: store))
-        #expect(OpenAIKeyVault.currentKey(env: ProcessInfo(), store: store) == gift.key)
+        #expect(OpenAIKeyVault.currentKey(env: NoEnvProcessInfo(), store: store) == gift.key)
     }
 
     // MARK: - Verifying before storing

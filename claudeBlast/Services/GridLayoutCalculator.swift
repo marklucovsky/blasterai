@@ -70,10 +70,31 @@ enum GridLayoutCalculator {
     // Device class is detected from the screen's shorter dimension so
     // orientation doesn't change the classification.
     private static let phoneMinDimMax: CGFloat = 600     // < 600pt → phone
-    private static let iPadMiniMinDimMax: CGFloat = 800  // 600–800 → iPad mini, ≥800 → larger iPad
+    private static let iPadMiniMinDimMax: CGFloat = 800  // 600–800 → iPad mini
+    /// ≥ 950pt on the short side → the 12.9"/13" class. An 11" Pro is 834.
+    private static let iPadLargeMinDim: CGFloat = 950
     private static let phoneBaseSize: CGFloat = 85
     private static let iPadMiniBaseSize: CGFloat = 88
     private static let iPadBaseSize: CGFloat = 99
+
+    /// The 13" default, and the reason it is not simply `iPadBaseSize`.
+    ///
+    /// Every iPad ≥ 800pt used to share one base, so the larger screen spent
+    /// its extra width on *more columns* rather than bigger tiles: 14 across on
+    /// a 13" against 12 on an 11". The board is the same board, so the row a
+    /// child learns to reach for moves between devices — and a home page whose
+    /// links fill the top row exactly on one iPad wraps on the other.
+    ///
+    /// Caregivers were already correcting this by hand; a 13" set to "Roomy"
+    /// lands on the 11"'s 12 columns. This makes that the default instead of a
+    /// discovery.
+    ///
+    /// The value is `iPadBaseSize * tickMultiplier` — exactly one density tick,
+    /// not a fitted constant. The statement is "a 13" starts one step roomier
+    /// than an 11"", which stays true if either number is ever retuned.
+    ///
+    /// The mini keeps its own smaller base. 11" is the standard this targets.
+    private static let iPadLargeBaseSize: CGFloat = 111  // 99 × 1.12, rounded
 
     // Hard bounds for tile size in any geometry / tick combination
     private static let minTileSize: CGFloat = 64
@@ -104,6 +125,7 @@ enum GridLayoutCalculator {
         let base: CGFloat = {
             if screenMin < phoneMinDimMax { return phoneBaseSize }
             if screenMin < iPadMiniMinDimMax { return iPadMiniBaseSize }
+            if screenMin >= iPadLargeMinDim { return iPadLargeBaseSize }
             return iPadBaseSize
         }()
         let scaled = CGFloat(Double(base) * pow(tickMultiplier, Double(userStep)))
