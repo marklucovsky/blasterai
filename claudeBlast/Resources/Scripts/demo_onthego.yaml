@@ -10,6 +10,6 @@ script:
   - comment: On the phone, out and about — a real need
   - wait: 1s
   - tiles:
-    - <home>, grandma, <body_health>, stomachache, <social>, bathroom
+    - <home>, <people>, grandma, <home>, <groups>, <body_health>, stomachache, <home>, <social>, bathroom, <home>
   - wait: 2s
   - comment: Demo complete

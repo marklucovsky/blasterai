@@ -14,18 +14,23 @@
           "audible": false
         },
         {
+          "link": "question",
+          "to": "questions",
+          "audible": false
+        },
+        {
+          "link": "places",
+          "to": "places",
+          "audible": false
+        },
+        {
           "link": "social",
           "to": "social",
           "audible": false
         },
         {
-          "link": "actions",
-          "to": "actions",
-          "audible": false
-        },
-        {
-          "link": "describe",
-          "to": "describe",
+          "link": "time",
+          "to": "time_when",
           "audible": false
         },
         {
@@ -39,28 +44,23 @@
           "audible": true
         },
         {
-          "link": "places",
-          "to": "places",
-          "audible": false
-        },
-        {
-          "link": "body_health",
-          "to": "body_health",
-          "audible": false
-        },
-        {
-          "link": "colors",
-          "to": "colors_shapes",
-          "audible": false
-        },
-        {
           "link": "play",
           "to": "play_activities",
           "audible": true
         },
         {
-          "link": "time",
-          "to": "time_when",
+          "link": "actions",
+          "to": "actions",
+          "audible": false
+        },
+        {
+          "link": "describe",
+          "to": "describe",
+          "audible": false
+        },
+        {
+          "link": "groups",
+          "to": "groups",
           "audible": false
         },
         {
@@ -76,7 +76,7 @@
             "some",
             "more",
             "all",
-            "please"
+            "don't"
           ]
         },
         {
@@ -145,11 +145,7 @@
       "key": "social",
       "tiles": [
         {
-          "class": [
-            "social",
-            "feeling",
-            "question"
-          ]
+          "class": "social"
         }
       ]
     },
@@ -180,17 +176,11 @@
       "key": "describe",
       "tiles": [
         {
-          "link": "weather",
-          "to": "weather",
-          "audible": false
-        },
-        {
           "class": "describe"
         },
         {
           "keys": [
-            "don't",
-            "happy"
+            "at"
           ]
         }
       ]
@@ -231,9 +221,9 @@
         },
         {
           "keys": [
+            "school",
             "slide",
-            "swing",
-            "school"
+            "swing"
           ]
         }
       ]
@@ -246,7 +236,8 @@
             "art",
             "toy",
             "sports",
-            "games"
+            "games",
+            "play"
           ]
         }
       ]
@@ -342,6 +333,47 @@
           "keys": [
             "ipad"
           ]
+        }
+      ]
+    },
+    {
+      "key": "questions",
+      "tiles": [
+        {
+          "class": "question"
+        }
+      ]
+    },
+    {
+      "key": "feelings",
+      "tiles": [
+        {
+          "class": "feeling"
+        }
+      ]
+    },
+    {
+      "key": "groups",
+      "tiles": [
+        {
+          "link": "body_health",
+          "to": "body_health",
+          "audible": false
+        },
+        {
+          "link": "weather",
+          "to": "weather",
+          "audible": false
+        },
+        {
+          "link": "colors",
+          "to": "colors_shapes",
+          "audible": false
+        },
+        {
+          "link": "feelings",
+          "to": "feelings",
+          "audible": false
         }
       ]
     }

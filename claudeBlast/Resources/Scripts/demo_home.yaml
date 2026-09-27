@@ -10,6 +10,6 @@ script:
   - comment: At home on the iPad — an escalating want
   - wait: 1s
   - tiles:
-    - <home>, mom, <places>, playground, swing
+    - <home>, <people>, mom, <home>, <places>, playground, swing, <home>
   - wait: 2s
   - comment: Demo complete

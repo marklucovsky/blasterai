@@ -621,6 +621,10 @@
     "wordClass": "actions"
   },
   {
+    "key": "feelings",
+    "wordClass": "object"
+  },
+  {
     "key": "fever",
     "wordClass": "health"
   },
@@ -793,6 +797,10 @@
   {
     "key": "grocery_store",
     "wordClass": "places"
+  },
+  {
+    "key": "groups",
+    "wordClass": "object"
   },
   {
     "key": "guess",

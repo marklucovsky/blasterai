@@ -162,17 +162,22 @@ struct claudeBlastTests {
         #expect(result.scene.baseName == "Core-First")
         #expect(result.scene.homePageKey == "home")
         // Core-First is sourced from scenes/core_first.json — 14 pages:
-        // home + 13 topic pages (people/social/actions/describe/food/drinks/
+        // home + 16 topic pages (people/social/actions/describe/food/drinks/
         // places/play_activities/body_health/colors_shapes/weather/time_when/
-        // keyboard). result.pages is the same materialized list, so the counts
-        // match.
+        // keyboard/questions/feelings/groups). result.pages is the same
+        // materialized list, so the counts match.
         //
         // Was 13. `food_drinks` was removed when `eat` and `drink` got separate
         // home-page links — it was reachable only from the combined link, and
         // `food` and `drinks` are built from class selectors that already hold
         // everything it listed. `time_when` and `keyboard` were added.
+        //
+        // Then 14 -> 17: `social` was three categories behind one door
+        // (`social`/`feeling`/`question`). `questions` and `feelings` split out
+        // so both are one tap from home, and `groups` collects the category
+        // folders that came off the home page to pay for them.
         #expect(result.scene.pages.count == result.pages.count)
-        #expect(result.scene.pages.count == 14)
+        #expect(result.scene.pages.count == 17)
         // The bundled scene is tagged as system-defined, which now also means
         // immutable — caregivers edit a clone instead.
         #expect(result.scene.systemSceneKey == "core_first")

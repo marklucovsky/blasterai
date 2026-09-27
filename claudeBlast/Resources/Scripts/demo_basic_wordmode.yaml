@@ -10,7 +10,7 @@ script:
   - comment: Basic AAC interaction flow
   - wait: 1s
   - tiles:
-    - <home>, dad, hungry, <food>, popsicle +
+    - <home>, <people>, dad, <home>, <groups>, <feelings>, hungry, <home>, <food>, popsicle, <home> +
 
   - wait: 2s
   - comment: Demo complete
