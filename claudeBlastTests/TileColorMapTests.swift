@@ -128,6 +128,140 @@ struct TileColorMapTests {
         #expect(TileColorResolver.fitzgerald(.verb).hexString != "#E00000")
     }
 
+    // MARK: - Page links are a color slot, not a part of speech
+
+    /// The whole design rests on this: `TileColorSlot`'s raw value for a part of
+    /// speech is *exactly* `PartOfSpeech.rawValue`, so every palette already
+    /// saved on a device — and every colorway file already sent to a family —
+    /// keeps resolving after page links became colorable.
+    ///
+    /// The other half of that bargain is that no part of speech may ever be
+    /// named `wayfinding` or `chrome`. Nothing in the compiler stops someone
+    /// adding one; this does.
+    @Test("Slot raw values match parts of speech and never collide")
+    func slotRawValuesDoNotCollide() {
+        for part in PartOfSpeech.allCases {
+            #expect(TileColorSlot.partOfSpeech(part).rawValue == part.rawValue)
+            #expect(TileColorSlot(rawValue: part.rawValue) == .partOfSpeech(part))
+        }
+        let reserved = [TileColorSlot.wayfinding.rawValue, TileColorSlot.chrome.rawValue]
+        for name in reserved {
+            #expect(PartOfSpeech(rawValue: name) == nil,
+                    "\(name) is now a part of speech and collides with a color slot")
+        }
+        #expect(TileColorSlot(rawValue: "wayfinding") == .wayfinding)
+        #expect(TileColorSlot(rawValue: "chrome") == .chrome)
+        #expect(TileColorSlot(rawValue: "not-a-slot") == nil)
+    }
+
+    /// A palette written before page links existed is keyed purely by part of
+    /// speech. It must still read through the widened API, or upgrading the app
+    /// would silently drop a therapist's work.
+    @Test("A palette saved before slots existed still resolves")
+    func legacyPaletteStillResolves() {
+        // Hand-built the old way: raw part-of-speech keys, no slot involved.
+        let legacy = TileColorMap(name: "Old", overrides: ["verb": "#E00000"])
+        #expect(legacy.color(for: .partOfSpeech(.verb))?.hexString == "#E00000")
+        #expect(legacy.color(for: PartOfSpeech.verb)?.hexString == "#E00000")
+        #expect(legacy.color(for: .wayfinding) == nil)
+
+        let profile = ChildProfile(displayName: "Test")
+        profile.colorMapData = legacy.encoded
+        TileColorResolver.refreshActiveMap(from: profile)
+        defer { TileColorResolver.refreshActiveMap(from: nil) }
+        #expect(TileColorResolver.color(for: .verb).hexString == "#E00000")
+    }
+
+    /// The point of the feature: a caregiver can recolor page links, because the
+    /// deep royal blue has to stay distinct from the adjective blue beside it and
+    /// whether it does is a fact about one child's vision.
+    @Test("A wayfinding override recolors page links")
+    func wayfindingOverrideRecolorsLinks() {
+        let shipped = TileColorResolver.navigationDefault
+        var map = TileColorMap(name: "Loud links")
+        map.set(Color(hex: "#FDD835"), for: .wayfinding)
+
+        let profile = ChildProfile(displayName: "Test")
+        profile.colorMapData = map.encoded
+        TileColorResolver.refreshActiveMap(from: profile)
+        defer { TileColorResolver.refreshActiveMap(from: nil) }
+
+        #expect(TileColorResolver.navigation.hexString == "#FDD835")
+        #expect(TileColorResolver.navigation != shipped)
+        // Recoloring links must not disturb any word color.
+        #expect(TileColorResolver.color(for: .adjective) == TileColorResolver.fitzgerald(.adjective))
+    }
+
+    /// Untouched, page links keep the shipped blue — the same sparseness rule
+    /// every word color follows.
+    @Test("Page links follow the shipped blue when untouched")
+    func wayfindingFollowsDefaultWhenUntouched() {
+        var map = TileColorMap()
+        map.set(Color(hex: "#E00000"), for: .verb)
+        let profile = ChildProfile(displayName: "Test")
+        profile.colorMapData = map.encoded
+        TileColorResolver.refreshActiveMap(from: profile)
+        defer { TileColorResolver.refreshActiveMap(from: nil) }
+
+        #expect(TileColorResolver.navigation == TileColorResolver.navigationDefault)
+        #expect(TileColorResolver.chrome == TileColorResolver.chromeDefault)
+    }
+
+    /// `defaultColor(for:)` is what the editor's swatch draws and what "Use the
+    /// Default" restores, so like `fitzgerald` it must ignore the active map.
+    @Test("The slot default ignores an active override")
+    func slotDefaultIgnoresOverride() {
+        var map = TileColorMap()
+        map.set(Color(hex: "#FDD835"), for: .wayfinding)
+        let profile = ChildProfile(displayName: "Test")
+        profile.colorMapData = map.encoded
+        TileColorResolver.refreshActiveMap(from: profile)
+        defer { TileColorResolver.refreshActiveMap(from: nil) }
+
+        #expect(TileColorResolver.defaultColor(for: .wayfinding) == TileColorResolver.navigationDefault)
+        #expect(TileColorResolver.defaultColor(for: .chrome) == TileColorResolver.chromeDefault)
+        for part in PartOfSpeech.allCases {
+            #expect(TileColorResolver.defaultColor(for: .partOfSpeech(part))
+                    == TileColorResolver.fitzgerald(part))
+        }
+    }
+
+    /// Every slot the editor lists must be one a caregiver can act on. `chrome`
+    /// is deliberately absent: it is the fallback for a word we could not
+    /// identify, so coloring it would say something about our data rather than
+    /// about the child.
+    @Test("The editor lists every word color plus page links, and not chrome")
+    func displayListIsCompleteAndExcludesChrome() {
+        #expect(TileColorSlot.display.contains(.wayfinding))
+        #expect(!TileColorSlot.display.contains(.chrome))
+        for part in PartOfSpeech.display {
+            #expect(TileColorSlot.display.contains(.partOfSpeech(part)))
+        }
+        #expect(TileColorSlot.display.count == PartOfSpeech.display.count + 1)
+        // Page links sit last: it answers a different question from the word
+        // colors above it.
+        #expect(TileColorSlot.display.last == .wayfinding)
+        for slot in TileColorSlot.display {
+            #expect(!slot.label.isEmpty)
+        }
+    }
+
+    /// A shared colorway carries raw keys straight through, so a therapist can
+    /// send a palette that recolors links without a format change.
+    @Test("A wayfinding override survives storage")
+    func wayfindingSurvivesStorage() {
+        var map = TileColorMap(name: "Loud links")
+        map.set(Color(hex: "#FDD835"), for: .wayfinding)
+        let restored = TileColorMap.decode(map.encoded)
+        #expect(restored.color(for: .wayfinding)?.hexString == "#FDD835")
+        #expect(restored.overrides["wayfinding"] == "#FDD835")
+
+        var cleared = restored
+        cleared.set(nil, for: .wayfinding)
+        #expect(cleared.color(for: .wayfinding) == nil)
+        #expect(cleared.isEmpty)
+    }
+
     @Test("No profile means the default palette")
     func noProfileMeansDefaults() {
         TileColorResolver.refreshActiveMap(from: nil)

@@ -157,9 +157,11 @@ enum VocabularyClasses {
 /// derivation needs its `wordClass`. See `TileModel.resolvedPartOfSpeech`.
 enum TileColorResolver {
 
-    /// Structural chrome — home, page links, next/previous page. Not a word, so
-    /// no word color: it reads as furniture, which is what it is.
-    static let chrome = Color.gray
+    /// Structural chrome — a tile with no word behind it. Not a word, so no word
+    /// color: it reads as furniture, which is what it is.
+    static var chrome: Color { activeMap.color(for: .chrome) ?? chromeDefault }
+
+    static let chromeDefault = Color.gray
 
     /// A tile that takes the board somewhere.
     ///
@@ -170,7 +172,23 @@ enum TileColorResolver {
     /// apart from them. Descriptors keep the lighter, more saturated blue the
     /// key specifies (a therapist teaches *that* one); navigation moves down and
     /// darker, which is also where this app's old `navigation` indigo sat.
-    static let navigation = Color(red: 0.16, green: 0.26, blue: 0.68)
+    ///
+    /// **A computed property, not a constant, so the child's palette reaches
+    /// it.** That is the whole point of `TileColorSlot.wayfinding`: the pair this
+    /// blue has to stay distinct from is the adjective blue directly beside it,
+    /// and whether it does is a fact about a particular child's vision. It also
+    /// lets a caregiver match the folder color of a WordPower device the child
+    /// already uses, which is worth more than our preference — matching across
+    /// devices is the reason a color key exists at all.
+    ///
+    /// Reading `activeMap` here is what makes an edit land immediately: the map
+    /// lives on an `@Observable` box, so any view body that drew with the old
+    /// color is invalidated when a new one is assigned. A `static let` could not
+    /// do that, and a caregiver who changes a color and sees nothing move
+    /// concludes the feature is broken.
+    static var navigation: Color { activeMap.color(for: .wayfinding) ?? navigationDefault }
+
+    static let navigationDefault = Color(red: 0.16, green: 0.26, blue: 0.68)
 
     /// Function words (prepositions, determiners, conjunctions) are *white* on a
     /// published Fitzgerald board, which works because the card sits against a
@@ -225,6 +243,16 @@ enum TileColorResolver {
         // can still be improved without rewriting anyone's stored overrides.
         if let override = activeMap.color(for: partOfSpeech) { return override }
         return fitzgerald(partOfSpeech)
+    }
+
+    /// The default for any slot, ignoring every override — what "Use the
+    /// Default" restores, and what the editor's swatch shows.
+    static func defaultColor(for slot: TileColorSlot) -> Color {
+        switch slot {
+        case .partOfSpeech(let part): return fitzgerald(part)
+        case .wayfinding: return navigationDefault
+        case .chrome: return chromeDefault
+        }
     }
 
     /// The unmodified key, ignoring any child's overrides.

@@ -90,7 +90,7 @@ struct ChildProfileFormSheet: View {
 
     /// Which row's color palette is open. One piece of state, not a flag plus a
     /// value, so there is no combination that means nothing.
-    @State private var editingColorFor: PartOfSpeech?
+    @State private var editingColorFor: TileColorSlot?
 
     @State private var name: String = ""
     @State private var stage: BrownsStage = .one
@@ -306,21 +306,21 @@ struct ChildProfileFormSheet: View {
             // the affordance does not need drawing eleven times. See
             // `colorWell(for:)` for why this is our own control rather than a
             // system one wearing a disguise.
-            ForEach(PartOfSpeech.display) { pos in
+            ForEach(TileColorSlot.display) { slot in
                 HStack(spacing: 10) {
-                    Text(pos.label)
-                    if colorMap.color(for: pos) != nil {
+                    Text(slot.label)
+                    if colorMap.color(for: slot) != nil {
                         Text("changed")
                             .font(.caption2)
                             .foregroundStyle(.purple)
                     }
                     Spacer()
-                    colorWell(for: pos)
+                    colorWell(for: slot)
                 }
                 .contextMenu {
-                    if colorMap.color(for: pos) != nil {
+                    if colorMap.color(for: slot) != nil {
                         Button(role: .destructive) {
-                            colorMap.set(nil, for: pos)
+                            colorMap.set(nil, for: slot)
                         } label: {
                             Label("Use the Default", systemImage: "arrow.uturn.backward")
                         }
@@ -409,7 +409,11 @@ struct ChildProfileFormSheet: View {
             Text("Tap a color to change it.\n\nTile color normally shows the type "
                  + "of word, using the key most AAC boards share. Change it when this "
                  + "child sees differently — with CVI, several of the default colors "
-                 + "can look alike. Anything left alone keeps the default.")
+                 + "can look alike. Anything left alone keeps the default.\n\n"
+                 + "Page Links are the tiles that open another page. They are not a "
+                 + "kind of word, so they get their own color — change it if this "
+                 + "child cannot tell a link from the describing words beside it, or "
+                 + "to match a device they already use.")
         }
     }
 
@@ -427,41 +431,41 @@ struct ChildProfileFormSheet: View {
     /// the swatch is ours, the palette is ours, and the system picker is reached
     /// deliberately through `Custom…` rather than by every tap.
     @ViewBuilder
-    private func colorWell(for pos: PartOfSpeech) -> some View {
+    private func colorWell(for slot: TileColorSlot) -> some View {
         Button {
-            editingColorFor = pos
+            editingColorFor = slot
         } label: {
             Circle()
-                .fill(colorMap.color(for: pos) ?? TileColorResolver.fitzgerald(pos))
+                .fill(colorMap.color(for: slot) ?? TileColorResolver.defaultColor(for: slot))
                 .overlay(Circle().strokeBorder(Color.primary.opacity(0.18), lineWidth: 0.5))
                 .frame(width: 28, height: 28)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(pos.label) color")
+        .accessibilityLabel("\(slot.label) color")
         // Bound to this row rather than to the Section. A `.popover` on the
         // Section is torn down whenever the Form re-renders — which is every
         // keystroke elsewhere in the sheet — and that is exactly how the first
         // version of this dismissed itself the moment it opened.
         .popover(isPresented: Binding(
-            get: { editingColorFor == pos },
+            get: { editingColorFor == slot },
             set: { if !$0 { editingColorFor = nil } }
         )) {
-            colorPalette(for: pos)
+            colorPalette(for: slot)
                 .presentationCompactAdaptation(.popover)
         }
     }
 
     @ViewBuilder
-    private func colorPalette(for pos: PartOfSpeech) -> some View {
+    private func colorPalette(for slot: TileColorSlot) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(pos.label).font(.headline)
+            Text(slot.label).font(.headline)
 
             LazyVGrid(columns: Array(repeating: GridItem(.fixed(34), spacing: 10),
                                      count: 4), spacing: 10) {
                 ForEach(TileColorMap.palette, id: \.self) { hex in
                     let color = Color(hex: hex) ?? .gray
                     Button {
-                        colorMap.set(color, for: pos)
+                        colorMap.set(color, for: slot)
                         editingColorFor = nil
                     } label: {
                         Circle()
@@ -477,9 +481,9 @@ struct ChildProfileFormSheet: View {
 
             Divider()
 
-            if colorMap.color(for: pos) != nil {
+            if colorMap.color(for: slot) != nil {
                 Button {
-                    colorMap.set(nil, for: pos)
+                    colorMap.set(nil, for: slot)
                     editingColorFor = nil
                 } label: {
                     Label("Use the Default", systemImage: "arrow.uturn.backward")
@@ -489,7 +493,7 @@ struct ChildProfileFormSheet: View {
             // The escape hatch, reached on purpose. On Mac this is still the
             // detached system panel — that is the platform's picker and we do
             // not get to change it — but nobody meets it by accident now.
-            ColorPicker(selection: binding(for: pos), supportsOpacity: false) {
+            ColorPicker(selection: binding(for: slot), supportsOpacity: false) {
                 Label("Custom…", systemImage: "eyedropper")
             }
         }
@@ -500,11 +504,11 @@ struct ChildProfileFormSheet: View {
     /// Writes through to the sparse map: setting a color records an override,
     /// and there is no way to record "the default" as an override, because the
     /// default is the absence of one.
-    private func binding(for partOfSpeech: PartOfSpeech) -> Binding<Color> {
+    private func binding(for slot: TileColorSlot) -> Binding<Color> {
         Binding(
-            get: { colorMap.color(for: partOfSpeech)
-                    ?? TileColorResolver.fitzgerald(partOfSpeech) },
-            set: { colorMap.set($0, for: partOfSpeech) }
+            get: { colorMap.color(for: slot)
+                    ?? TileColorResolver.defaultColor(for: slot) },
+            set: { colorMap.set($0, for: slot) }
         )
     }
 
