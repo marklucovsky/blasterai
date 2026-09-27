@@ -130,7 +130,7 @@ enum SceneMaterializer {
                 }
             }
 
-        case .link(let key, let to, let audible):
+        case .link(let key, let to, let audible, let color):
             guard keySet.contains(key) else {
                 throw MaterializeError.unknownVocabularyKey(key)
             }
@@ -138,8 +138,10 @@ enum SceneMaterializer {
                 // Update in place — preserves position the earlier command set.
                 tiles[idx].link = to
                 tiles[idx].isAudible = audible
+                tiles[idx].linkColor = color
             } else {
-                tiles.append(TileEntry(key: key, link: to, isAudible: audible))
+                tiles.append(TileEntry(key: key, link: to, isAudible: audible,
+                                       linkColor: color))
             }
 
         case .remove(let key):

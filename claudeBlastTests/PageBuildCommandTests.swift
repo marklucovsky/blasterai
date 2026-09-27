@@ -49,12 +49,41 @@ struct PageBuildCommandTests {
     @Test func link_decodes() throws {
         let json = #"{"link": "people", "to": "people", "audible": false}"#.data(using: .utf8)!
         let cmd = try JSONDecoder().decode(PageBuildCommand.self, from: json)
-        guard case .link(let key, let to, let audible) = cmd else {
+        guard case .link(let key, let to, let audible, let color) = cmd else {
             Issue.record("expected link"); return
         }
         #expect(key == "people")
         #expect(to == "people")
         #expect(audible == false)
+        // A link written before folders could carry a color must still decode,
+        // and must not invent one — absent means wayfinding, which is what every
+        // link did before.
+        #expect(color == nil)
+    }
+
+    @Test func link_decodes_a_color() throws {
+        let json = #"{"link": "actions", "to": "actions", "audible": false, "linkColor": "verb"}"#
+            .data(using: .utf8)!
+        let cmd = try JSONDecoder().decode(PageBuildCommand.self, from: json)
+        guard case .link(_, _, _, let color) = cmd else {
+            Issue.record("expected link"); return
+        }
+        #expect(color == "verb")
+    }
+
+    /// The color has to survive a round trip, or re-exporting a scene would
+    /// quietly strip every folder back to blue.
+    @Test func link_color_round_trips() throws {
+        let original = PageBuildCommand.link(key: "actions", to: "actions",
+                                             audible: false, color: "verb")
+        let data = try JSONEncoder().encode(original)
+        let back = try JSONDecoder().decode(PageBuildCommand.self, from: data)
+        #expect(back == original)
+        // Absent rather than null when there is no color, so an untouched scene
+        // file does not grow noise.
+        let plain = PageBuildCommand.link(key: "eat", to: "food", audible: true, color: nil)
+        let text = String(data: try JSONEncoder().encode(plain), encoding: .utf8) ?? ""
+        #expect(!text.contains("linkColor"))
     }
 
     @Test func remove_decodes() throws {
@@ -87,7 +116,7 @@ struct PageBuildCommandTests {
     }
 
     @Test func roundTrip_link() throws {
-        let original = PageBuildCommand.link(key: "eat", to: "<home>", audible: true)
+        let original = PageBuildCommand.link(key: "eat", to: "<home>", audible: true, color: nil)
         let data = try JSONEncoder().encode(original)
         let decoded = try JSONDecoder().decode(PageBuildCommand.self, from: data)
         #expect(decoded == original)
@@ -95,7 +124,7 @@ struct PageBuildCommandTests {
 
     @Test func roundTrip_fullPage() throws {
         let page = PageJSON(key: "home", tiles: [
-            .link(key: "people", to: "people", audible: false),
+            .link(key: "people", to: "people", audible: false, color: nil),
             .keys(["i","me","you","my","your","it"]),
             .classSelector(classes: ["actions"], exclude: ["eat"], limit: nil, orderBy: .vocab),
             .remove("stop"),

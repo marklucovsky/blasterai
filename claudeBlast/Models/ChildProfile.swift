@@ -320,6 +320,29 @@ final class ChildProfile {
     /// the system profile survives the rename to Caregiver unmoved.
     var colorMapLibrary: String = ""
 
+    /// How page links take their color: `LinkColorMode.rawValue`.
+    ///
+    /// Defaulted to `perTile`, which honours whatever slot each link carries.
+    /// The other two are blunt instruments on purpose — `alwaysWayfinding` for
+    /// a caregiver who needs every folder to shout, `alwaysAuto` for one who has
+    /// been handed a shared scene whose hand-picked colors they do not want.
+    ///
+    /// **A string-backed enum rather than a Bool, and that is not style.** This
+    /// lands after CloudKit promotion, so the property is permanent from the day
+    /// it ships and a Bool that later wanted a third state could never grow one.
+    /// Same rule as `brownsStageRaw` and `roleRaw`.
+    ///
+    /// Render-time only. It changes which color is looked up and never what a
+    /// link stores, so switching it back restores exactly the board that was
+    /// there before — see `TileEntry.linkColor` for why a stored color must not
+    /// move on its own.
+    var linkColorModeRaw: String = LinkColorMode.perTile.rawValue
+
+    var linkColorMode: LinkColorMode {
+        get { LinkColorMode(rawValue: linkColorModeRaw) ?? .perTile }
+        set { linkColorModeRaw = newValue.rawValue }
+    }
+
     /// Therapist-only notes. Never fed to the prompt.
     var notes: String = ""
     /// Hint only — `ChildProfileResolver` resolves the true active profile

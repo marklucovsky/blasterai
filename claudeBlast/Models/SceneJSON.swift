@@ -58,7 +58,15 @@ enum PageBuildCommand: Codable, Hashable {
     /// `link`: add or update a single tile that navigates to a page. If
     /// `key` is already present (e.g. via a prior class/keys command),
     /// update it in place — preserves position. Otherwise append.
-    case link(key: String, to: String, audible: Bool)
+    ///
+    /// `color` is an optional `TileColorSlot.rawValue` — `"verb"` for a folder
+    /// of doing words, `"wayfinding"` for a folder of folders. Absent means
+    /// wayfinding, which is what every link was before folders could be
+    /// colored. The literal `"auto"` asks `tools/resolve_link_colors.py` to
+    /// work the answer out from the destination page and write it back here;
+    /// it is an authoring instruction and must not survive into a shipped
+    /// scene. See `TileEntry.linkColor`.
+    case link(key: String, to: String, audible: Bool, color: String?)
 
     /// `remove`: remove the tile with this key from the working list, if
     /// present. No-op when the key is absent.
@@ -145,7 +153,8 @@ enum PageBuildCommand: Codable, Hashable {
             let key = try c.decode(String.self, forKey: .k("link"))
             let to = try c.decode(String.self, forKey: .k("to"))
             let audible = try c.decode(Bool.self, forKey: .k("audible"))
-            self = .link(key: key, to: to, audible: audible)
+            let color = try? c.decode(String.self, forKey: .k("linkColor"))
+            self = .link(key: key, to: to, audible: audible, color: color)
             return
         }
 
@@ -175,10 +184,11 @@ enum PageBuildCommand: Codable, Hashable {
             if orderBy != .vocab { try c.encode(orderBy.rawValue, forKey: .k("orderBy")) }
         case .keys(let keys):
             try c.encode(keys, forKey: .k("keys"))
-        case .link(let key, let to, let audible):
+        case .link(let key, let to, let audible, let color):
             try c.encode(key, forKey: .k("link"))
             try c.encode(to, forKey: .k("to"))
             try c.encode(audible, forKey: .k("audible"))
+            try c.encodeIfPresent(color, forKey: .k("linkColor"))
         case .remove(let key):
             try c.encode(key, forKey: .k("remove"))
         case .space(let count):

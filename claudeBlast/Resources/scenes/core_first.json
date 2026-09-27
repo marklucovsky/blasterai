@@ -11,57 +11,68 @@
         {
           "link": "people",
           "to": "people",
-          "audible": false
+          "audible": false,
+          "linkColor": "pronoun"
         },
         {
           "link": "question",
           "to": "questions",
-          "audible": false
+          "audible": false,
+          "linkColor": "question"
         },
         {
           "link": "places",
           "to": "places",
-          "audible": false
+          "audible": false,
+          "linkColor": "noun"
         },
         {
           "link": "social",
           "to": "social",
-          "audible": false
+          "audible": false,
+          "linkColor": "social"
         },
         {
           "link": "time",
           "to": "time_when",
-          "audible": false
+          "audible": false,
+          "linkColor": "adjective"
         },
         {
           "link": "eat",
           "to": "food",
-          "audible": true
+          "audible": true,
+          "linkColor": "noun"
         },
         {
           "link": "drink",
           "to": "drinks",
-          "audible": true
+          "audible": true,
+          "linkColor": "noun"
         },
         {
           "link": "play",
           "to": "play_activities",
-          "audible": true
+          "audible": true,
+          "linkColor": "noun"
         },
         {
           "link": "actions",
           "to": "actions",
-          "audible": false
+          "audible": false,
+          "linkColor": "verb"
         },
         {
           "link": "describe",
           "to": "describe",
-          "audible": false
+          "audible": false,
+          "linkColor": "adjective"
         },
         {
           "link": "groups",
           "to": "groups",
-          "audible": false
+          "audible": false,
+          "linkColor": "wayfinding"
         },
         {
           "keys": [
@@ -129,7 +140,8 @@
         {
           "link": "keyboard",
           "to": "keyboard",
-          "audible": false
+          "audible": false,
+          "linkColor": "wayfinding"
         }
       ]
     },
@@ -155,17 +167,20 @@
         {
           "link": "drink",
           "to": "drinks",
-          "audible": true
+          "audible": true,
+          "linkColor": "noun"
         },
         {
           "link": "eat",
           "to": "food",
-          "audible": true
+          "audible": true,
+          "linkColor": "noun"
         },
         {
           "link": "play",
           "to": "play_activities",
-          "audible": true
+          "audible": true,
+          "linkColor": "noun"
         },
         {
           "class": "actions"
@@ -191,7 +206,8 @@
         {
           "link": "drinks",
           "to": "drinks",
-          "audible": false
+          "audible": false,
+          "linkColor": "noun"
         },
         {
           "class": [
@@ -206,7 +222,8 @@
         {
           "link": "food",
           "to": "food",
-          "audible": false
+          "audible": false,
+          "linkColor": "noun"
         },
         {
           "class": "drinks"
@@ -358,22 +375,26 @@
         {
           "link": "body_health",
           "to": "body_health",
-          "audible": false
+          "audible": false,
+          "linkColor": "noun"
         },
         {
           "link": "weather",
           "to": "weather",
-          "audible": false
+          "audible": false,
+          "linkColor": "noun"
         },
         {
           "link": "colors",
           "to": "colors_shapes",
-          "audible": false
+          "audible": false,
+          "linkColor": "adjective"
         },
         {
           "link": "feelings",
           "to": "feelings",
-          "audible": false
+          "audible": false,
+          "linkColor": "adjective"
         }
       ]
     }

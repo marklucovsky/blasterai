@@ -133,12 +133,39 @@ struct TileEntry: Codable, Hashable, Identifiable {
     /// a workable teaching method rather than a rebuild every week.
     var isConcealed: Bool
 
+    /// For a link tile, the `TileColorSlot.rawValue` this folder is colored as —
+    /// `"verb"` for a page of doing words, `"wayfinding"` for a page of folders.
+    /// Nil on a word tile, and nil on any link authored before folders could
+    /// carry a color, which draws as wayfinding.
+    ///
+    /// ## Why a slot and not a hex
+    ///
+    /// Storing `"#4CB859"` would freeze the folder at one green while the child's
+    /// palette moved underneath it. Storing `verb` means the folder follows
+    /// whatever that child's palette says doing words look like — including on
+    /// the bundled Core-First board, whose *data* is immutable but whose colors
+    /// still come from the per-child palette layered over it.
+    ///
+    /// ## Why it is resolved here rather than computed when drawn
+    ///
+    /// The value is decided once, by whoever authored the link, and written
+    /// down. Recomputing it at render would mean a folder changing color because
+    /// a caregiver added three nouns to the page behind it — the same motor
+    /// planning argument that pins Home to cell 0 and that makes `isConcealed`
+    /// hold the cell. Colors are as much an invariant as positions.
+    ///
+    /// `"auto"` is an *authoring* instruction, never a stored value:
+    /// `tools/resolve_link_colors.py` rewrites it to a concrete slot, and
+    /// `--check` fails the build if any survives into a shipped scene.
+    var linkColor: String?
+
     init(key: String, link: String = "", isAudible: Bool = true,
-         isConcealed: Bool = false) {
+         isConcealed: Bool = false, linkColor: String? = nil) {
         self.key = key
         self.link = link
         self.isAudible = isAudible
         self.isConcealed = isConcealed
+        self.linkColor = linkColor
     }
 
     /// A deliberate gap: real estate with no word behind it.
@@ -171,11 +198,20 @@ struct TileEntry: Codable, Hashable, Identifiable {
     /// written to `BlasterScene.pagesData`, and **scene files shared from another
     /// device**, which is the one that would fail in a stranger's hands rather
     /// than in a migration we control.
+    ///
+    /// **Every new field has to be added here by hand, and forgetting is
+    /// silent.** `linkColor` was added to the struct, the scene DSL and the
+    /// materializer, and still arrived nil on every board: `BlasterScene.pages`
+    /// round-trips through `pagesData`, so this decoder is the only way a value
+    /// survives being stored. Nothing warned — the field simply decoded as nil
+    /// and every folder drew wayfinding blue, which looks exactly like a feature
+    /// nobody had turned on yet. `committedColorsMatchSwift` is what caught it.
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         key = try container.decode(String.self, forKey: .key)
         link = try container.decodeIfPresent(String.self, forKey: .link) ?? ""
         isAudible = try container.decodeIfPresent(Bool.self, forKey: .isAudible) ?? true
         isConcealed = try container.decodeIfPresent(Bool.self, forKey: .isConcealed) ?? false
+        linkColor = try container.decodeIfPresent(String.self, forKey: .linkColor)
     }
 }
