@@ -44,7 +44,12 @@ from pathlib import Path
 
 TILE_SETS = Path("tools/tile_sets")
 # Shown in this order. Only sets that exist on disk are rendered.
-DEFAULT_SETS = ["classic", "playful_3d", "high_contrast"]
+#
+# `high_contrast_v2`, not `high_contrast`: the unversioned folder is the earlier
+# generation and reaches no device — `sync_to_app.py` maps the shipped `hc`
+# prefix to v2. Reviewing the wrong one is easy to do and hard to notice, since
+# both are full sets of plausible High Contrast art.
+DEFAULT_SETS = ["classic", "playful_3d", "high_contrast_v2"]
 
 
 def resolve(root, key):
