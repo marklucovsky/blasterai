@@ -155,4 +155,60 @@ struct SceneMaterializerTests {
         #expect(m.homePageKey == "home")
         #expect(m.isDefault == true)
     }
+
+    // MARK: - Spacers
+
+    /// A gap holds a cell and says nothing.
+    @Test func spaceAppendsEmptyCells() throws {
+        let m = try mat([PageJSON(key: "home", tiles: [
+            .keys(["mom"]), .space(2), .keys(["dad"]),
+        ])])
+        let tiles = m.pages[0].tiles
+        #expect(tiles.count == 4)
+        #expect(tiles[0].key == "mom")
+        #expect(tiles[1].isSpacer)
+        #expect(tiles[2].isSpacer)
+        #expect(tiles[3].key == "dad")
+        // The point of a spacer: the grid must not filter it out, or the board
+        // reflows and every word after it moves.
+        #expect(tiles[1].isEmptyCell)
+    }
+
+    /// Every spacer needs its own identity.
+    ///
+    /// `TileEntry.id` *is* its key, so two gaps sharing one would collide in
+    /// any SwiftUI list and in the grid editor's selection. This is the reason
+    /// `space` is the one command that does not dedupe: for words, a repeat is
+    /// a mistake; for gaps, a repeat is the layout.
+    @Test func spacersAreDistinct() throws {
+        let m = try mat([PageJSON(key: "home", tiles: [.space(3)])])
+        let keys = m.pages[0].tiles.map(\.key)
+        #expect(keys.count == 3)
+        #expect(Set(keys).count == 3)
+    }
+
+    /// `{"space": true}` — the bare form, for nudging a cluster by one cell.
+    @Test func bareSpaceDecodesAsOne() throws {
+        let json = #"{"space": true}"#.data(using: .utf8)!
+        let cmd = try JSONDecoder().decode(PageBuildCommand.self, from: json)
+        #expect(cmd == .space(1))
+    }
+
+    /// A count decodes as itself, and a negative one is clamped rather than
+    /// throwing — a bad number in a bundled scene should cost a gap, not the
+    /// whole board.
+    @Test func spaceCountDecodes() throws {
+        func decode(_ s: String) throws -> PageBuildCommand {
+            try JSONDecoder().decode(PageBuildCommand.self, from: s.data(using: .utf8)!)
+        }
+        #expect(try decode(#"{"space": 4}"#) == .space(4))
+        #expect(try decode(#"{"space": -2}"#) == .space(0))
+    }
+
+    /// Round-trips, so a scene edited in the app and written back keeps its gaps.
+    @Test func spaceSurvivesEncoding() throws {
+        let original = PageBuildCommand.space(3)
+        let data = try JSONEncoder().encode(original)
+        #expect(try JSONDecoder().decode(PageBuildCommand.self, from: data) == original)
+    }
 }

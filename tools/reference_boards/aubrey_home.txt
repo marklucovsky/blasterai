@@ -1,0 +1,25 @@
+# WordPower Basic 48 — the home page of Aubrey's device.
+#
+# PRC-Saltillo WordPower Basic 48, running on TouchChat. Transcribed from a
+# screenshot of the vendor's own walkthrough, 2026-09-26, which replaces an
+# earlier transcription taken from a photograph of the device: that one was
+# taken at an angle, several words were misread, and it described a different
+# WordPower layout. Anything measured against the old file is wrong.
+#
+# This is the most important reference this project has. It is not a published
+# example board — it is the vocabulary a real child uses every day, from the
+# vendor with the largest installed base in this space, and it is what her SLP
+# is fluent in.
+#
+# 8 x 6 = 48 cells. Row 0 is category links. Column 0 is a utility strip
+# (keyboard, clear, punctuation, extra words) rather than vocabulary.
+# ALLCAPS entries are links, lowercase are speaking tiles.
+#
+# Transcription only - no art, no colours, no claim on the source system.
+
+ABC123|PEOPLE|QUESTIONS|PLACES|SOCIAL|TIME|DESCRIBE|GROUPS
+clear|i|me|don_t|that|a|the|more
+period|my|is|to|come|finish|for|good
+he|it|can|drink|eat|help|and|with
+she|you|do|go|like|play|listen|on
+EXTRAWORDS|your|have|want|ACTIONS|stop|watch|work

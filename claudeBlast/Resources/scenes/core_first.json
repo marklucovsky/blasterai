@@ -1,7 +1,7 @@
 {
   "key": "core_first",
   "name": "Core-First - System Supplied",
-  "description": "High-reach home with pronouns, verbs, and category links",
+  "description": "Sentence-first home: pronouns, verbs and function words, with categories behind links",
   "homePageKey": "home",
   "isDefault": true,
   "pages": [
@@ -29,14 +29,14 @@
           "audible": false
         },
         {
-          "link": "food",
+          "link": "eat",
           "to": "food",
-          "audible": false
+          "audible": true
         },
         {
-          "link": "drinks",
+          "link": "drink",
           "to": "drinks",
-          "audible": false
+          "audible": true
         },
         {
           "link": "places",
@@ -49,47 +49,9 @@
           "audible": false
         },
         {
-          "keys": [
-            "mom",
-            "dad",
-            "sister",
-            "brother",
-            "grandma",
-            "grandpa",
-            "baby",
-            "friend",
-            "hungry",
-            "thirsty",
-            "tired",
-            "hurt",
-            "sick",
-            "yes",
-            "no",
-            "i",
-            "you",
-            "me",
-            "my",
-            "your",
-            "it",
-            "that",
-            "here",
-            "want"
-          ]
-        },
-        {
-          "keys": [
-            "what",
-            "where",
-            "who",
-            "why",
-            "when",
-            "how"
-          ]
-        },
-        {
-          "link": "eat",
-          "to": "food_drinks",
-          "audible": true
+          "link": "colors",
+          "to": "colors_shapes",
+          "audible": false
         },
         {
           "link": "play",
@@ -97,104 +59,77 @@
           "audible": true
         },
         {
+          "link": "time",
+          "to": "time_when",
+          "audible": false
+        },
+        {
           "keys": [
+            "he",
+            "i",
+            "me",
+            "come",
             "go",
-            "help",
-            "stop",
-            "like",
+            "tell",
+            "listen",
+            "to",
+            "some",
             "more",
             "all",
-            "all_done",
-            "again",
-            "not",
-            "please",
-            "thank_you",
-            "sorry",
+            "please"
+          ]
+        },
+        {
+          "keys": [
+            "she",
+            "my",
+            "it",
+            "get",
+            "want",
+            "do",
+            "can",
+            "for",
+            "and",
+            "a",
+            "the",
+            "all_done"
+          ]
+        },
+        {
+          "keys": [
+            "you",
+            "your",
+            "that",
+            "help",
+            "like",
+            "finish",
+            "put",
+            "here",
             "in",
             "on",
-            "off",
-            "out",
             "up",
-            "down",
+            "not"
+          ]
+        },
+        {
+          "keys": [
+            "yes",
+            "no",
+            "stop",
+            "open",
+            "watch",
+            "work",
+            "is",
             "with",
-            "for"
+            "out",
+            "off",
+            "down"
           ]
         },
         {
-          "link": "weather",
-          "to": "weather",
+          "link": "keyboard",
+          "to": "keyboard",
           "audible": false
-        },
-        {
-          "link": "colors",
-          "to": "colors_shapes",
-          "audible": false
-        },
-        {
-          "keys": [
-            "draw",
-            "paint",
-            "color",
-            "sing",
-            "dance",
-            "read"
-          ]
-        }
-      ]
-    },
-    {
-      "key": "food_drinks",
-      "tiles": [
-        {
-          "link": "food",
-          "to": "food",
-          "audible": false
-        },
-        {
-          "link": "drinks",
-          "to": "drinks",
-          "audible": false
-        },
-        {
-          "keys": [
-            "hungry",
-            "thirsty",
-            "more",
-            "water",
-            "milk",
-            "juice",
-            "chocolate_milk",
-            "eat",
-            "drink",
-            "soda",
-            "iced_tea",
-            "milkshake",
-            "lemonade",
-            "ice_cubes",
-            "apple",
-            "banana",
-            "cookie",
-            "chocolate",
-            "cheese",
-            "yogurt",
-            "sandwich",
-            "fries",
-            "peanut_butter",
-            "blueberries",
-            "strawberry",
-            "popcorn",
-            "goldfish_cracker",
-            "graham_cracker",
-            "pretzel",
-            "popsicle",
-            "chips",
-            "cereal",
-            "pizza",
-            "eggs",
-            "please",
-            "all_done",
-            "no"
-          ]
         }
       ]
     },
@@ -244,6 +179,11 @@
     {
       "key": "describe",
       "tiles": [
+        {
+          "link": "weather",
+          "to": "weather",
+          "audible": false
+        },
         {
           "class": "describe"
         },
@@ -338,6 +278,70 @@
       "tiles": [
         {
           "class": "weather"
+        }
+      ]
+    },
+    {
+      "key": "time_when",
+      "tiles": [
+        {
+          "keys": [
+            "when",
+            "now",
+            "later",
+            "soon",
+            "today",
+            "tomorrow",
+            "yesterday",
+            "tonight"
+          ]
+        },
+        {
+          "keys": [
+            "morning",
+            "afternoon",
+            "night",
+            "day"
+          ]
+        },
+        {
+          "keys": [
+            "before",
+            "after",
+            "first",
+            "next",
+            "last"
+          ]
+        },
+        {
+          "keys": [
+            "time",
+            "week",
+            "weekend"
+          ]
+        },
+        {
+          "keys": [
+            "always",
+            "never",
+            "sometimes"
+          ]
+        },
+        {
+          "keys": [
+            "wait",
+            "again"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "keyboard",
+      "tiles": [
+        {
+          "keys": [
+            "ipad"
+          ]
         }
       ]
     }

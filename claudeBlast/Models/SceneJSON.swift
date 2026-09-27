@@ -33,7 +33,7 @@ struct PageJSON: Codable {
 
 /// Sum type of DSL commands applied to a page's working tile list. Each
 /// entry in a page's `tiles` array is one command. Encoded with implicit
-/// tagging — the present root key (class / keys / link / remove)
+/// tagging — the present root key (class / keys / link / remove / space)
 /// determines the case.
 ///
 /// JSON shapes:
@@ -42,6 +42,8 @@ struct PageJSON: Codable {
 ///   {"keys": ["i","me","you"]}                                    // explicit list
 ///   {"link": "people", "to": "people", "audible": false}          // link tile
 ///   {"remove": "stop"}                                            // drop a tile
+///   {"space": 3}                                                  // three empty cells
+///   {"space": true}                                               // one empty cell
 enum PageBuildCommand: Codable, Hashable {
     /// `class`: pull every vocabulary tile whose wordClass matches one of
     /// `classes`. Appended as audible (no link). Use exclude/limit/orderBy
@@ -61,6 +63,25 @@ enum PageBuildCommand: Codable, Hashable {
     /// `remove`: remove the tile with this key from the working list, if
     /// present. No-op when the key is absent.
     case remove(String)
+
+    /// `space`: append N deliberate gaps — cells that are drawn empty and do
+    /// not respond.
+    ///
+    /// The app has had spacers since the grid editor shipped (`TileEntry`'s
+    /// `<spacer>#…` token, `isEmptyCell`, and the no-filter rule in
+    /// `TileGridView`), but a bundled scene had no way to ask for one. So a
+    /// board authored in JSON could only be laid out by counting words, and any
+    /// alignment it achieved was accidental — add a word anywhere earlier and
+    /// every column below it shifts.
+    ///
+    /// That matters because the grid reflows. A cluster only reads as a block
+    /// if it begins at a multiple of the column count, and the only way to
+    /// arrange that without spacers is to pad with vocabulary, which spends a
+    /// cell on a word nobody chose.
+    ///
+    /// Each gap gets its own random key, because `TileEntry`'s identity *is*
+    /// its key and two identical ones would collide.
+    case space(Int)
 
     enum OrderBy: String, Codable {
         case vocab   // declaration order in vocabulary.json (default)
@@ -108,6 +129,18 @@ enum PageBuildCommand: Codable, Hashable {
             return
         }
 
+        if c.contains(.k("space")) {
+            // `{"space": 3}` for three gaps, or `{"space": true}` for one —
+            // the bare form is what an author reaches for when nudging a
+            // cluster onto a row boundary by a single cell.
+            if let count = try? c.decode(Int.self, forKey: .k("space")) {
+                self = .space(max(0, count))
+            } else {
+                self = .space(1)
+            }
+            return
+        }
+
         if c.contains(.k("link")) {
             let key = try c.decode(String.self, forKey: .k("link"))
             let to = try c.decode(String.self, forKey: .k("to"))
@@ -148,6 +181,8 @@ enum PageBuildCommand: Codable, Hashable {
             try c.encode(audible, forKey: .k("audible"))
         case .remove(let key):
             try c.encode(key, forKey: .k("remove"))
+        case .space(let count):
+            try c.encode(count, forKey: .k("space"))
         }
     }
 }

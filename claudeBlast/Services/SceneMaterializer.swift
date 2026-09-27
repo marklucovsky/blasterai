@@ -144,6 +144,15 @@ enum SceneMaterializer {
 
         case .remove(let key):
             tiles.removeAll { $0.key == key }
+
+        case .space(let count):
+            // Appended without any dedupe check, unlike every other command
+            // here. Those guard against placing the same word twice, which is
+            // a mistake; two gaps in a row is a layout, and `TileEntry.spacer()`
+            // mints a fresh random key each time so their identities differ.
+            for _ in 0..<count {
+                tiles.append(TileEntry.spacer())
+            }
         }
     }
 }

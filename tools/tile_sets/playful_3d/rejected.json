@@ -1,5 +1,14 @@
 {
-  "cheap": {"reason": "single coin minimal", "attempts": 3},
-  "dumb": {"reason": "no pedestal", "attempts": 3},
-  "terrific": {"reason": "thumbs up instead", "attempts": 3}
+  "cheap": {
+    "reason": "single coin minimal",
+    "attempts": 3
+  },
+  "dumb": {
+    "reason": "no pedestal",
+    "attempts": 3
+  },
+  "terrific": {
+    "reason": "thumbs up instead",
+    "attempts": 3
+  }
 }

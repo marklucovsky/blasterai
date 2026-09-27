@@ -146,6 +146,204 @@ HC_SUBJECT_OVERRIDES: dict[str, str] = {
         "middle, bright yellow on the bottom — with a small white wooden stick "
         "below. Just the one popsicle, nothing else"
     ),
+
+    # ---- Time vocabulary (2026-09) -------------------------------------
+    #
+    # Nearly the whole Time set needs an override, and for one reason: these
+    # subjects are *diagrams*, and a diagram states its own colours. Almost
+    # every other tile in this app is an object — "a red apple" — where the
+    # style's "white dominates on black" rule can take over harmlessly. A
+    # diagram cannot survive that: "seven white squares with bold black
+    # outlines" puts black lines on a black canvas and returns a blank field,
+    # and "plain grey silhouettes on a pure white background" inverts the set's
+    # premise outright.
+    #
+    # So each of these restates the same drawing in this set's own materials:
+    # white strokes and fills on black, with the accent colours the style
+    # already encourages kept for the parts that carry the meaning — the red
+    # square that means *today*, the coloured neighbour that means the day
+    # being named. The grammar of each family is preserved exactly; only the
+    # palette changes.
+    #
+    # `next` and `last` are absent on purpose: they are composed from `first`
+    # by tools/compose_queue.py, in this set as in Classic.
+
+    # calendar strip
+    "today": (
+        "A horizontal row of seven equal squares in one single row, joined edge "
+        "to edge, each square drawn as a bold WHITE outline on the black canvas. "
+        "The fourth square, in the exact middle, is filled solid bright red. The "
+        "other six squares are empty black inside their white outlines. No "
+        "numbers, no letters"
+    ),
+    # A BAR, not a row of squares — and no negations.
+    #
+    # Two failures, in opposite directions, taught this. Described as "a
+    # horizontal row of seven squares" these came back as two stacked rows of
+    # four. Adding "never stacked and never two rows" made it worse: both tiles
+    # returned two rows again. A negation names the thing it forbids, and naming
+    # it is enough to summon it — the same way "no grey field" produced grey
+    # fields in Classic.
+    #
+    # So neither tile mentions rows at all. A *bar* is one-dimensional by
+    # definition and cannot be stacked without ceasing to be a bar, which makes
+    # the constraint structural instead of stated. Same move that fixed the
+    # Classic family, where "calendar" had to become "a strip of squares"
+    # because the model's prior for a calendar is a month grid.
+    "tomorrow": (
+        "One long horizontal white bar lying flat across the middle of the "
+        "canvas, much wider than it is tall, divided along its length into seven "
+        "equal segments by thick white dividing lines. Two segments next to each "
+        "other in the middle are filled: the left one of the two solid bright "
+        "red, the right one of the two solid bright green. A bright green arrow "
+        "above the bar points right. No numbers"
+    ),
+    "yesterday": (
+        "One long horizontal white bar lying flat across the middle of the "
+        "canvas, much wider than it is tall, divided along its length into seven "
+        "equal segments by thick white dividing lines. Two segments next to each "
+        "other in the middle are filled: the right one of the two solid bright "
+        "red, the left one of the two solid bright blue. A bright blue arrow "
+        "above the bar points left. No numbers"
+    ),
+    "week": (
+        "A horizontal row of seven equal squares in one single row, joined edge "
+        "to edge, each drawn as a bold WHITE outline on the black canvas, with "
+        "the whole row enclosed together inside one thick bright blue rounded "
+        "outline. No numbers, no letters"
+    ),
+    "weekend": (
+        "A horizontal row of seven equal squares in one single row, joined edge "
+        "to edge, each drawn as a bold WHITE outline on the black canvas. The "
+        "five squares on the left are empty black inside their outlines. The two "
+        "squares at the right-hand end, both of them, are filled solid bright "
+        "orange. No numbers, no letters"
+    ),
+
+    # clock family
+    "time": (
+        "One single large round analog clock face drawn as a thick WHITE circle "
+        "with bold white hour and minute hands and plain white tick marks around "
+        "the edge, on the black canvas. No numerals, no letters"
+    ),
+    "now": (
+        "One single large round analog clock face drawn as a thick WHITE circle "
+        "with bold white hands and plain white tick marks, on the black canvas, "
+        "with a bright red downward-pointing triangular marker resting directly "
+        "on top of the clock pointing at it. No numerals"
+    ),
+    "later": (
+        "One single large round analog clock face drawn as a thick WHITE circle "
+        "with bold white hands and plain white tick marks, on the black canvas, "
+        "with a thick bright blue arrow curving clockwise around the outside of "
+        "the clock from the top round to the right side. No numerals"
+    ),
+    "soon": (
+        "One single large round analog clock face drawn as a thick WHITE circle "
+        "with bold white hands and plain white tick marks, on the black canvas, "
+        "with a short thick bright green arrow curving clockwise around the "
+        "outside of the clock covering only a small arc near the top. No numerals"
+    ),
+    "always": (
+        "One single large round analog clock face drawn as a thick WHITE circle "
+        "with bold white hands and plain white tick marks, on the black canvas, "
+        "with a thick bright green arrow forming a complete unbroken circle all "
+        "the way around the outside of the clock, its ends meeting. No numerals"
+    ),
+    "never": (
+        "One single large round analog clock face drawn as a thick WHITE circle "
+        "with bold white hands and plain white tick marks, on the black canvas, "
+        "with a thick bright red circle-and-diagonal-slash prohibition symbol "
+        "drawn boldly over the top of it. No numerals"
+    ),
+    "sometimes": (
+        "A horizontal row of four round analog clock faces, all the same size, "
+        "each drawn as a thick WHITE circle with white hands and white tick "
+        "marks on the black canvas. The first and the third from the left are "
+        "filled solid bright green inside; the other two are empty black inside "
+        "their white outlines. No numerals"
+    ),
+
+    # sequence — three panels, grey reference becomes a white-outlined cube
+    "before": (
+        "Three plain square panels in a horizontal row, evenly spaced and the "
+        "same size, each drawn as a bold WHITE outline on the black canvas, "
+        "joined by thin white arrows pointing left to right. The MIDDLE panel "
+        "contains a white cube and is the reference point. The LEFT panel "
+        "contains a solid bright red ball and its outline is thick bright red. "
+        "The RIGHT panel is empty"
+    ),
+    "after": (
+        "Three plain square panels in a horizontal row, evenly spaced and the "
+        "same size, each drawn as a bold WHITE outline on the black canvas, "
+        "joined by thin white arrows pointing left to right. The MIDDLE panel "
+        "contains a white cube and is the reference point. The RIGHT panel "
+        "contains a solid bright red ball and its outline is thick bright red. "
+        "The LEFT panel is empty"
+    ),
+
+    # ordinal — only `first` is generated; next/last are composed from it
+    # HIGH CONTRAST DOES NOT DO PROFILES, SO THIS ONE DOES NOT ASK FOR ONE.
+    #
+    # Classic and Playful 3D show the queue in side view, every figure facing
+    # left, which is what makes the row read as a line with a front and a back.
+    # This set will not: its own descriptor calls for "ONE giant subject" in
+    # "simple flat shapes", and asked for four profiles it returns four plain
+    # circular heads. Pushed harder — "each head carries a small nose bump on
+    # its LEFT side" — it put a nose on the coloured child only and left the
+    # other three bald, which is worse than no profile at all, because now the
+    # marked figure differs in two ways instead of one.
+    #
+    # So this set states the ordinal with position alone: four identical
+    # front-facing figures, one of them coloured. Nothing about the tile claims
+    # a direction, so nothing about it can contradict one. The queue reading is
+    # lost here and the position reading — the part that actually carries the
+    # word — survives intact.
+    "first": (
+        "Four identical simple humanoid pictogram figures standing in a "
+        "straight horizontal row, evenly spaced, with a clear gap of black "
+        "background between each pair so none of them touch or overlap. Every "
+        "figure is exactly the same shape, size and posture as the others: a "
+        "plain round head above a simple body, seen straight on from the front. "
+        "No noses, no faces, no eyes, no mouths, no hair and no profiles — the "
+        "heads are plain circles. Three of the figures are solid WHITE. The "
+        "leftmost figure is the only one drawn in colour, with a bright red "
+        "shirt and blue trousers, and its head is a plain circle exactly like "
+        "the others. No arrows, no pointers, no markers"
+    ),
+
+    # sun and moon — object plus marker, no scene
+    "day": (
+        "One single large sun with bold evenly-spaced triangular rays radiating "
+        "all the way around it, drawn in solid bright yellow on the black "
+        "canvas. There is no sky, no ground, no horizon and no landscape — only "
+        "the sun"
+    ),
+    "morning": (
+        "A sun with bold triangular rays drawn in solid bright yellow on the "
+        "black canvas, with a thick bright green arrow beside it pointing "
+        "straight UP. There is no sky, no ground, no horizon and no landscape — "
+        "only the sun and the arrow"
+    ),
+    "afternoon": (
+        "A sun with bold triangular rays drawn in solid bright yellow on the "
+        "black canvas, with a thick bright orange arrow beside it pointing "
+        "straight DOWN. There is no sky, no ground, no horizon and no landscape "
+        "— only the sun and the arrow"
+    ),
+    "night": (
+        "A large crescent moon drawn in solid white on the black canvas, with "
+        "three small bright yellow four-pointed stars around it. There is no "
+        "sky, no ground, no horizon and no landscape — only the moon and the "
+        "stars"
+    ),
+    "tonight": (
+        "A large crescent moon drawn in solid white on the black canvas, with "
+        "three small bright yellow four-pointed stars around it, and a bright "
+        "red downward-pointing triangular marker directly above the moon. There "
+        "is no sky, no ground, no horizon and no landscape — only the moon, the "
+        "stars and the marker"
+    ),
 }
 
 

@@ -1,0 +1,77 @@
+{
+  "_comment": [
+    "Proposed replacement home page for the default scene. A design document,",
+    "not a scene: run tools/check_board_words.py over it before it becomes one.",
+    "",
+    "The principle is the one the diff against Aubrey's board exposed: our home",
+    "page is a sampler of every category, hers is a surface for building a",
+    "sentence. Category CONTENTS move behind the links that already exist, and",
+    "the freed cells buy the verbs and function words a sentence actually needs.",
+    "",
+    "Clusters are contiguous in reading order rather than placed in fixed",
+    "columns, because the grid is a flow layout and column position is not",
+    "stable across devices. Reading order is the only spatial promise we can",
+    "keep on every screen, so the clustering has to live there.",
+    "",
+    "Every cluster is ONE colour. That is the actual content of Brandi's advice:",
+    "clustering by part of speech only teaches anything if the block reads as a",
+    "block. An earlier draft grouped by meaning instead - 'quantity and",
+    "negation' together - and the checker caught that it spanned grey, red, blue",
+    "and pink, which is four blocks wearing one label.",
+    "",
+    "Links are one contiguous run at the top. Brandi offered two options -",
+    "colour each folder to match its category, or keep them uniform and put",
+    "them all in one row. The first does not survive contact with our pages:",
+    "'people' holds both nouns (mom, student) and pronouns (I, you), so there",
+    "is no single correct colour for the folder that opens it."
+  ],
+  "links": [
+    "people", "social", "actions", "describe", "food", "drinks",
+    "places", "body_health", "play_activities", "colors_shapes", "weather"
+  ],
+  "clusters": [
+    {
+      "name": "pronouns (yellow) — who the sentence is about, first in reading order",
+      "words": ["i", "me", "my", "you", "your", "it", "that"]
+    },
+    {
+      "name": "verbs (green) — the engine; all of these are currently buried behind the actions link",
+      "words": ["want", "go", "get", "do", "like", "eat", "drink", "help",
+                "play", "put", "open", "take", "tell", "turn", "watch",
+                "come", "read", "look", "make", "is"]
+    },
+    {
+      "name": "function words (grey) — prepositions, determiners, conjunctions",
+      "words": ["to", "in", "on", "off", "out", "up", "down", "with", "for",
+                "here", "more", "all", "some", "at", "a", "the", "and"]
+    },
+    {
+      "name": "negation (red) — deliberately its own colour, and adjacent to nothing else",
+      "words": ["no", "not", "stop"]
+    },
+    {
+      "name": "social (pink) — the few that earn a home-page cell rather than a link",
+      "words": ["yes", "please", "all_done"]
+    },
+    {
+      "name": "describe (light blue) — the two highest-frequency modifiers",
+      "words": ["again", "good"]
+    }
+  ],
+  "new_words": {
+    "_comment": "These five do not exist yet. Each needs a vocabulary.json entry AND an entry in parts_of_speech.json, or it will fall back to its word class and be drawn the wrong colour. Art in every shipped set comes after.",
+    "at": {"wordClass": "core", "partOfSpeech": "preposition"},
+    "a": {"wordClass": "core", "partOfSpeech": "determiner"},
+    "the": {"wordClass": "core", "partOfSpeech": "determiner"},
+    "and": {"wordClass": "core", "partOfSpeech": "conjunction"},
+    "is": {"wordClass": "core", "partOfSpeech": "verb"}
+  },
+  "moves_off_home": {
+    "_comment": "Where each displaced word goes. Every one already has a link on the home page, which is why none of them is lost.",
+    "people": ["mom", "dad", "sister", "brother", "grandma", "grandpa", "baby", "friend"],
+    "question": ["what", "where", "who", "why", "when", "how"],
+    "social": ["thank_you", "sorry"],
+    "body_health": ["hungry", "thirsty", "tired", "hurt", "sick"],
+    "play_activities": ["draw", "paint", "color", "sing", "dance"]
+  }
+}

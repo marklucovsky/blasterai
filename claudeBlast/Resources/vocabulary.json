@@ -1,11 +1,23 @@
 [
   {
+    "key": "a",
+    "wordClass": "core"
+  },
+  {
     "key": "actions",
     "wordClass": "actions"
   },
   {
     "key": "afraid",
     "wordClass": "feeling"
+  },
+  {
+    "key": "after",
+    "wordClass": "core"
+  },
+  {
+    "key": "afternoon",
+    "wordClass": "object"
   },
   {
     "key": "again",
@@ -26,6 +38,14 @@
   {
     "key": "alone",
     "wordClass": "describe"
+  },
+  {
+    "key": "always",
+    "wordClass": "describe"
+  },
+  {
+    "key": "and",
+    "wordClass": "core"
   },
   {
     "key": "angry",
@@ -66,6 +86,10 @@
   {
     "key": "asleep",
     "wordClass": "describe"
+  },
+  {
+    "key": "at",
+    "wordClass": "core"
   },
   {
     "key": "away",
@@ -131,6 +155,10 @@
   {
     "key": "bedroom",
     "wordClass": "places"
+  },
+  {
+    "key": "before",
+    "wordClass": "core"
   },
   {
     "key": "behind",
@@ -433,6 +461,10 @@
     "wordClass": "describe"
   },
   {
+    "key": "day",
+    "wordClass": "object"
+  },
+  {
     "key": "describe",
     "wordClass": "describe"
   },
@@ -607,6 +639,10 @@
   {
     "key": "finish",
     "wordClass": "actions"
+  },
+  {
+    "key": "first",
+    "wordClass": "describe"
   },
   {
     "key": "fixed",
@@ -914,6 +950,10 @@
     "wordClass": "toy"
   },
   {
+    "key": "is",
+    "wordClass": "core"
+  },
+  {
     "key": "it",
     "wordClass": "core"
   },
@@ -928,6 +968,10 @@
   {
     "key": "jump",
     "wordClass": "actions"
+  },
+  {
+    "key": "keyboard",
+    "wordClass": "object"
   },
   {
     "key": "kick",
@@ -948,6 +992,14 @@
   {
     "key": "lake",
     "wordClass": "places"
+  },
+  {
+    "key": "last",
+    "wordClass": "describe"
+  },
+  {
+    "key": "later",
+    "wordClass": "describe"
   },
   {
     "key": "laundry",
@@ -1122,6 +1174,10 @@
     "wordClass": "describe"
   },
   {
+    "key": "morning",
+    "wordClass": "object"
+  },
+  {
     "key": "mouth",
     "wordClass": "body"
   },
@@ -1150,7 +1206,15 @@
     "wordClass": "actions"
   },
   {
+    "key": "never",
+    "wordClass": "describe"
+  },
+  {
     "key": "new",
+    "wordClass": "describe"
+  },
+  {
+    "key": "next",
     "wordClass": "describe"
   },
   {
@@ -1166,6 +1230,10 @@
     "wordClass": "social"
   },
   {
+    "key": "night",
+    "wordClass": "object"
+  },
+  {
     "key": "no",
     "wordClass": "social"
   },
@@ -1179,6 +1247,10 @@
   },
   {
     "key": "not",
+    "wordClass": "describe"
+  },
+  {
+    "key": "now",
     "wordClass": "describe"
   },
   {
@@ -1603,6 +1675,14 @@
     "wordClass": "core"
   },
   {
+    "key": "sometimes",
+    "wordClass": "describe"
+  },
+  {
+    "key": "soon",
+    "wordClass": "describe"
+  },
+  {
     "key": "sore_throat",
     "wordClass": "health"
   },
@@ -1735,6 +1815,10 @@
     "wordClass": "core"
   },
   {
+    "key": "the",
+    "wordClass": "core"
+  },
+  {
     "key": "them",
     "wordClass": "people",
     "bundleImage": "they"
@@ -1780,6 +1864,10 @@
     "wordClass": "weather"
   },
   {
+    "key": "time",
+    "wordClass": "object"
+  },
+  {
     "key": "tired",
     "wordClass": "feeling",
     "bundleImage": "tired"
@@ -1793,6 +1881,10 @@
     "wordClass": "food"
   },
   {
+    "key": "today",
+    "wordClass": "describe"
+  },
+  {
     "key": "together",
     "wordClass": "describe"
   },
@@ -1803,6 +1895,14 @@
   {
     "key": "tomato",
     "wordClass": "food"
+  },
+  {
+    "key": "tomorrow",
+    "wordClass": "describe"
+  },
+  {
+    "key": "tonight",
+    "wordClass": "describe"
   },
   {
     "key": "toothache",
@@ -1935,6 +2035,14 @@
     "wordClass": "weather"
   },
   {
+    "key": "week",
+    "wordClass": "object"
+  },
+  {
+    "key": "weekend",
+    "wordClass": "object"
+  },
+  {
     "key": "wet",
     "wordClass": "describe"
   },
@@ -2013,6 +2121,10 @@
   {
     "key": "yes",
     "wordClass": "social"
+  },
+  {
+    "key": "yesterday",
+    "wordClass": "describe"
   },
   {
     "key": "yogurt",
