@@ -11,7 +11,7 @@ script:
   - wait: 1s
   - tileSet: classic_light
   - tiles:
-    - <home>, mom, <food>, popsicle, cookie, <home> +
+    - <home>, <people>, mom, <home>, <food>, popsicle, cookie, <home> +
   - wait: 2s
   - screenshot: 01-classic_light
   - tileSet: classic_medium
