@@ -105,7 +105,7 @@ struct ChildProfileFormSheet: View {
     /// How page links take their color for this child. Sits beside the palette
     /// because it is the same decision seen from further away: the palette says
     /// what a folder's color means, this says whether a folder gets one.
-    @State private var linkColorMode = LinkColorMode.perTile
+    @State private var linkColorMode = LinkColorMode.standard
     /// The caregiver's saved palettes, loaded from the system profile.
     @State private var savedMaps: [TileColorMap] = []
     /// Name being typed when saving or renaming. Nil when no prompt is open.
@@ -346,10 +346,10 @@ struct ChildProfileFormSheet: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            if !colorMap.isEmpty || linkColorMode != .perTile {
+            if !colorMap.isEmpty || linkColorMode != .standard {
                 Button(role: .destructive) {
                     colorMap = TileColorMap()
-                    linkColorMode = .perTile
+                    linkColorMode = .standard
                 } label: {
                     Label("Reset to Default Colors", systemImage: "arrow.uturn.backward")
                 }

@@ -349,7 +349,21 @@ final class ChildProfile {
 
     /// How page links take their color: `LinkColorMode.rawValue`.
     ///
-    /// Defaulted to `perTile`, which honours whatever slot each link carries.
+    /// **Defaults to `alwaysWayfinding` — one blue for every folder.**
+    ///
+    /// Not because it is better. Destination colouring is the more informative
+    /// default on screen, and the reason it is not the default is that the
+    /// person who has to teach with it preferred the blue. Brandi, reviewing
+    /// the board: *"I like the blue links and I think that could work well for
+    /// a light-tech flip book option later down the road."* A colour key is
+    /// worth exactly what the clinician using it thinks it is worth, and this
+    /// is the first release any clinician has seen.
+    ///
+    /// Both are one tap apart, and the per-child setting is the whole point:
+    /// whichever way this lands for one child, the other is still there. Revisit
+    /// once there is feedback from more than one SLP — her stated reason was a
+    /// printed flip book, which may mean the answer differs between paper and
+    /// screen rather than being one answer at all.
     /// The other two are blunt instruments on purpose — `alwaysWayfinding` for
     /// a caregiver who needs every folder to shout, `alwaysAuto` for one who has
     /// been handed a shared scene whose hand-picked colors they do not want.
@@ -363,10 +377,10 @@ final class ChildProfile {
     /// link stores, so switching it back restores exactly the board that was
     /// there before — see `TileEntry.linkColor` for why a stored color must not
     /// move on its own.
-    var linkColorModeRaw: String = LinkColorMode.perTile.rawValue
+    var linkColorModeRaw: String = LinkColorMode.standard.rawValue
 
     var linkColorMode: LinkColorMode {
-        get { LinkColorMode(rawValue: linkColorModeRaw) ?? .perTile }
+        get { LinkColorMode(rawValue: linkColorModeRaw) ?? .standard }
         set { linkColorModeRaw = newValue.rawValue }
     }
 

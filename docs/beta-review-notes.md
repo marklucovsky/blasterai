@@ -156,18 +156,19 @@ reviewer needs so a keyless app does not read as a broken one.
 <!-- /pdf-only -->
 > ### Folder colours — new in this build
 >
-> The top row of the home board is folders. They used to be one blue. Now each
-> takes the colour of the words behind it: **people** yellow for pronouns,
-> **actions** green for verbs, **describe** blue, **questions** purple.
-> **groups** and **keyboard** stay blue — a folder of folders is not a kind of
-> word.
+> The top row of the home board is folders, and they arrive all one blue. The
+> app can also colour each one by the words behind it — **people** yellow for
+> pronouns, **actions** green for verbs, **describe** blue, **questions**
+> purple — and we would like you to decide which is right.
 >
-> This is the part we are least sure about.
+> Blue is the default only because the SLP advising us preferred it. We are
+> genuinely unsure, and this is the part we most want argued with.
 >
-> A. **Does the top row tell you anything?** A green folder standing over a
->    green block of verbs — help, or just more colour?
-> B. **Turn it off.** Admin → the child's profile → **Folder Color** → *Always
->    the Link Color*. Which do you prefer, and **for whom** — the child, or you?
+> A. **Turn the colours on.** Admin → the child's profile → **Folder Color** →
+>    *As Each Link Is Set*. Look at the top row before and after.
+> B. **Which do you prefer, and for whom** — the child, or you? Does a green
+>    folder standing over a green block of verbs help, or is it just more
+>    colour?
 > C. **Print it both ways** (Share → Printable PDF). We suspect the answer
 >    differs on paper, where nothing navigates and a folder is a landmark
 >    rather than a category. Tell us if that is nonsense.

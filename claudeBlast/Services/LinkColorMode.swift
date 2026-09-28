@@ -51,6 +51,15 @@ enum LinkColorMode: String, CaseIterable, Identifiable, Sendable {
     /// navigation first and vocabulary second.
     case alwaysWayfinding
 
+    /// What a profile gets when nobody has chosen, what an unreadable stored
+    /// value falls back to, and what is used when no child is resolved.
+    ///
+    /// Named once because those are three places that must agree: a default of
+    /// one and a fallback of the other means a board changes appearance when a
+    /// profile fails to load, which looks like a bug in the colours rather than
+    /// a bug in the loading.
+    static let standard = LinkColorMode.alwaysWayfinding
+
     var id: String { rawValue }
 
     var label: String {

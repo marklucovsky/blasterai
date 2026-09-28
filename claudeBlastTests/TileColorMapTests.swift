@@ -192,6 +192,43 @@ struct TileColorMapTests {
         #expect(TileColorResolver.color(for: .adjective) == TileColorResolver.fitzgerald(.adjective))
     }
 
+    /// **A fresh profile gets one blue for every folder.**
+    ///
+    /// Not because it is better — destination colouring is the more informative
+    /// default on screen. It is the default because the clinician who has to
+    /// teach with it preferred the blue, and this is the first release any
+    /// clinician has seen.
+    ///
+    /// Asserted because nothing did: the default was flipped and the whole
+    /// suite stayed green, which means it could flip back the same way.
+    @Test("A new child gets uniform blue folders")
+    func defaultLinkColorModeIsWayfinding() {
+        #expect(LinkColorMode.standard == .alwaysWayfinding)
+        #expect(ChildProfile(displayName: "New").linkColorMode == .alwaysWayfinding)
+    }
+
+    /// The stored default, the unreadable-value fallback and the no-profile
+    /// fallback are three places that must agree. A default of one and a
+    /// fallback of the other means a board changes appearance when a profile
+    /// fails to load — which looks like a bug in the colours rather than a bug
+    /// in the loading.
+    @Test("Every path to 'nobody chose' lands on the same mode")
+    func defaultLinkColorModeIsConsistent() {
+        let child = ChildProfile(displayName: "New")
+        #expect(child.linkColorMode == LinkColorMode.standard)
+
+        child.linkColorModeRaw = "not-a-mode"
+        #expect(child.linkColorMode == LinkColorMode.standard)
+
+        TileColorResolver.refreshActiveMap(from: nil)
+        #expect(TileColorResolver.activeLinkColorMode == LinkColorMode.standard)
+
+        // And a link with a stored slot still draws blue under it, which is
+        // what the default actually means on the board.
+        #expect(TileColorResolver.linkColor(slotRawValue: "verb")
+                == TileColorResolver.navigation)
+    }
+
     /// Untouched, page links keep the shipped blue — the same sparseness rule
     /// every word color follows.
     @Test("Page links follow the shipped blue when untouched")

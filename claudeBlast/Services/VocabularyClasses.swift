@@ -212,7 +212,7 @@ enum TileColorResolver {
     @MainActor
     static func refreshActiveMap(from profile: ChildProfile?) {
         Palette.shared.map = TileColorMap.decode(profile?.colorMapData ?? "")
-        Palette.shared.linkMode = profile?.linkColorMode ?? .perTile
+        Palette.shared.linkMode = profile?.linkColorMode ?? .standard
     }
 
     /// Why the palette lives on an `@Observable` box rather than in a `static
@@ -238,7 +238,7 @@ enum TileColorResolver {
         /// render, and this must not touch the store. Living on the same
         /// observable box also means flipping the mode invalidates exactly the
         /// views that drew with the old answer.
-        var linkMode = LinkColorMode.perTile
+        var linkMode = LinkColorMode.standard
         private init() {}
     }
 
