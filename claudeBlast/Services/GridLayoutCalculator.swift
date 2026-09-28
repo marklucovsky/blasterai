@@ -74,7 +74,21 @@ enum GridLayoutCalculator {
     /// ≥ 950pt on the short side → the 12.9"/13" class. An 11" Pro is 834.
     private static let iPadLargeMinDim: CGFloat = 950
     private static let phoneBaseSize: CGFloat = 85
-    private static let iPadMiniBaseSize: CGFloat = 88
+
+    /// The mini's default, dialled so it lands on the 11"'s 12 columns.
+    ///
+    /// At 88 the acceptance band reached down to 78.6pt, and 13 columns fit at
+    /// 79pt — inside by 0.4pt. 13×5 out-counted 12×5, so the mini laid out one
+    /// column more than every other iPad and every tile after the first row sat
+    /// one place off from where a child had learned it. The capacity rule was
+    /// never asked whether the answer matched the other devices.
+    ///
+    /// 92 moves the band's floor to 82.1pt, which excludes 13 columns; 12 lands
+    /// at ~86pt and still fits five rows in landscape, so the home page stays on
+    /// one screen. Measured on the simulator before and after: 13×5 · 65/pg ·
+    /// 79pt became 12×5 · 60/pg · 86pt. `miniMatchesTheOtherIPadsColumnCount`
+    /// pins it.
+    private static let iPadMiniBaseSize: CGFloat = 92
     private static let iPadBaseSize: CGFloat = 99
 
     /// The 13" default, and the reason it is not simply `iPadBaseSize`.
@@ -93,7 +107,8 @@ enum GridLayoutCalculator {
     /// not a fitted constant. The statement is "a 13" starts one step roomier
     /// than an 11"", which stays true if either number is ever retuned.
     ///
-    /// The mini keeps its own smaller base. 11" is the standard this targets.
+    /// The mini keeps its own smaller base, tuned to the same 12 columns.
+    /// 11" is the standard both target.
     private static let iPadLargeBaseSize: CGFloat = 111  // 99 × 1.12, rounded
 
     // Hard bounds for tile size in any geometry / tick combination
