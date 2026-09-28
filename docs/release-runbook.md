@@ -96,11 +96,51 @@ because a Debug-only bump looks right in Xcode and ships the old number.
 
 ## 4. Archive, export, upload
 
-    python3 tools/release.py --bump build --upload
+**Two commands, not one.** This is the recommended sequence:
+
+    python3 tools/release.py --bump build                    # archive + export, no upload
+    # read the entitlement lines it prints
+    python3 tools/release.py --no-bump --upload --skip-preflight
+
+### Why split it
+
+An upload spends a build number **permanently** — App Store Connect will not
+accept the same version+build pair twice, even for a build that was deleted. The
+entitlements are only observable *after* export, and the way they fail is the
+worst way this pipeline has: the build installs, launches, errors nothing, and
+CloudKit simply never receives a change. So the split buys the one thing worth
+buying — a look at the shipped entitlements before the number is spent.
+
+`--no-bump` keeps the number the first command set, so one build number covers
+both runs. `--skip-preflight` is safe *here specifically*, because preflight has
+just passed on this exact commit and it is the expensive part (Debug build,
+Release build, the full suite). Do not carry that flag anywhere else.
+
+The honest caveat: `--no-bump` re-archives, so the ipa you inspected is not
+literally the one sent. Same commit and same configuration, so it is the same
+build — but if you would rather ship exactly what you looked at, run the single
+combined command and accept that the entitlement lines arrive after the upload
+rather than before.
 
 Export options live in `tools/ExportOptions-appstore.plist`, checked in so two
 archives a year apart export the same way. Upload is `xcrun altool --upload-app`,
 confirmed present on Xcode 26.3.
+
+### Archives land where Xcode looks
+
+`release.py` writes to `~/Library/Developer/Xcode/Archives/<date>/`, so a
+scripted build appears in **Xcode → Window → Organizer** like any other. It used
+to archive into `build/`, where the Organizer never saw it and — the part that
+actually cost something — each run overwrote the last.
+
+**The dSYMs live in the archive.** A crash report from a TestFlight build whose
+archive had been clobbered can never be symbolicated, which is precisely when
+you need it: a tester reports something odd and the report is addresses.
+
+What the Organizer will *not* show is that the build was uploaded. That badge
+comes from Xcode writing its own record during its own distribution flow;
+`altool` from outside leaves no trace there. The archive is listed and
+distributable, it just does not know it has already been sent.
 
 ### What must exist outside this repo, first
 
@@ -190,13 +230,33 @@ environment — so if that value survives into the exported build rather than be
 by the distribution profile, sync would be quiet in exactly the way that is hardest to
 diagnose: everything installs, nothing errors, changes simply do not arrive.
 
-Xcode normally substitutes it during an App Store export. Confirm rather than assume, on
-the first archive:
+Xcode normally substitutes it during an App Store export. `release.py` prints both
+entitlements after exporting, so this is read rather than assumed on every build — it
+cannot go in `preflight_release.py`, because it is only observable after export.
 
-    codesign -d --entitlements - build/export/claudeBlast.ipa
+To check by hand:
 
-`aps-environment` must read `production`. This cannot go in `preflight_release.py` — it is
-only observable after export.
+    unzip -q build/export/claudeBlast.ipa -d /tmp/ipa
+    codesign -d --entitlements :- /tmp/ipa/Payload/claudeBlast.app
+
+**Not `codesign … claudeBlast.ipa`.** An ipa is a zip archive and `codesign`
+cannot read one, so that command finds nothing and says so — which is
+indistinguishable from the entitlement genuinely being absent. This runbook
+carried that command, `release.py` copied it, and on build 4 the script duly
+reported `aps-environment: NOT FOUND — check by hand` on an archive whose
+entitlements were perfectly correct. A check that cries wolf is worse than no
+check: the next person to see it assumes the checker is wrong again.
+
+Two values matter, and both fail the same silent way:
+
+| entitlement | must be |
+|---|---|
+| `aps-environment` | `production` |
+| `com.apple.developer.icloud-container-environment` | `Production` |
+
+The first is the silent push CloudKit syncs over. The second is the container it
+talks to — a development container against a promoted schema is simply empty,
+which looks exactly like sync being broken.
 
 **The App Store Connect API key is a secret.** The `.p8` goes in
 `~/.appstoreconnect/private_keys/`, never in the repo — same discipline as the

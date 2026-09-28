@@ -3,11 +3,20 @@
 # Copyright 2026 Mark Lucovsky
 """Bump, archive, export and upload a TestFlight build.
 
-    Usage:
-        python3 tools/release.py --bump build          # bump, archive, export
-        python3 tools/release.py --bump build --upload # …and send it
-        python3 tools/release.py --no-bump             # re-export without bumping
+    Usage, and the recommended sequence is two commands rather than one:
+
+        python3 tools/release.py --bump build      # archive + export, no upload
+        # read the entitlement lines it prints, then:
+        python3 tools/release.py --no-bump --upload --skip-preflight
+
+        python3 tools/release.py --bump build --upload   # both at once
         python3 tools/release.py --version 1.0.0 --bump build
+
+    Splitting buys a look at the shipped entitlements before a build number is
+    spent, and a number is spent permanently — App Store Connect will not accept
+    the same version+build pair twice, even for a build that was deleted.
+    `--no-bump` keeps the number the first command set. See
+    docs/release-runbook.md §4.
 
 The difference between "we shipped build 1" and "we can ship build 7". Every
 step is a command rather than a sequence of Xcode clicks, so the next one is a
@@ -39,13 +48,17 @@ BEFORE THE FIRST RUN
    with the `.p8` in `~/.appstoreconnect/private_keys/AuthKey_<KEY_ID>.p8`.
    Never in this repo: a key in git history is a key you cannot take back.
 
-AFTER EXPORT, CHECK ONE THING BY HAND
--------------------------------------
-`aps-environment` must read `production` in the exported ipa. CloudKit drives
-sync with silent pushes, and a TestFlight build runs against production APS —
-if `development` survives the export, sync fails in the way that is hardest to
-diagnose: installs fine, errors nothing, changes never arrive. The script prints
-the entitlement after exporting so it is read rather than assumed.
+WHAT IT PRINTS AFTER EXPORT
+---------------------------
+The two entitlements that decide whether CloudKit works: `aps-environment` must
+be `production`, and `com.apple.developer.icloud-container-environment` must be
+`Production`. Both fail the same way and it is the worst way — the build
+installs, launches, errors nothing, and never receives a change.
+
+They are read off the signed app *inside* the ipa. Handing `codesign` the ipa
+itself finds nothing, because an ipa is a zip archive — which this script did
+until build 4, where it reported "NOT FOUND — check by hand" on an archive
+whose entitlements were perfectly correct.
 """
 
 import argparse
@@ -54,6 +67,9 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
+import zipfile
+from datetime import datetime
 from pathlib import Path
 
 SCHEME = "claudeBlastRetail"
@@ -61,8 +77,30 @@ PROJECT = "claudeBlast.xcodeproj"
 PBXPROJ = Path(PROJECT) / "project.pbxproj"
 EXPORT_OPTIONS = Path("tools/ExportOptions-appstore.plist")
 BUILD = Path("build")
-ARCHIVE = BUILD / "claudeBlast.xcarchive"
 EXPORT_DIR = BUILD / "export"
+
+# Where Xcode's Organizer looks: it has no database, it scans this tree.
+#
+# Archiving into `build/` meant the Organizer never saw a scripted build, and —
+# the part that actually costs something — each run overwrote the last. **The
+# dSYMs live in the archive**, so a crash report from a TestFlight build whose
+# archive had been clobbered could never be symbolicated. One archive per build,
+# kept where Xcode already knows to look.
+#
+# What this does NOT do is mark the build as uploaded in the Organizer. That
+# badge comes from Xcode writing its own record during its own distribution
+# flow; `altool` from outside leaves no trace there. The archive is listed and
+# distributable; it just does not know it has already been sent.
+ARCHIVES_ROOT = Path.home() / "Library/Developer/Xcode/Archives"
+
+
+def archive_path(marketing: str, build: int) -> Path:
+    """A dated, named archive, the way Xcode names its own."""
+    now = datetime.now()
+    folder = ARCHIVES_ROOT / now.strftime("%Y-%m-%d")
+    folder.mkdir(parents=True, exist_ok=True)
+    stamp = now.strftime("%d-%m-%Y, %H.%M")
+    return folder / f"claudeBlast {marketing} ({build}) {stamp}.xcarchive"
 
 # The app target's two configurations, by identifier. The test target carries
 # its own MARKETING_VERSION and CURRENT_PROJECT_VERSION, and bumping those would
@@ -136,24 +174,26 @@ def preflight() -> None:
         sys.exit("\npreflight failed — nothing was archived.")
 
 
-def archive() -> None:
+def archive(marketing: str, build: int) -> Path:
     print("▸ archive")
-    if ARCHIVE.exists():
-        shutil.rmtree(ARCHIVE)
     BUILD.mkdir(exist_ok=True)
+    path = archive_path(marketing, build)
     result = run(["xcodebuild", "-scheme", SCHEME, "-configuration", "Release",
                   "-destination", "generic/platform=iOS",
-                  "-archivePath", str(ARCHIVE), "archive"])
+                  "-archivePath", str(path), "archive"])
     if "** ARCHIVE SUCCEEDED **" not in result.stdout:
         errors = [l for l in result.stdout.splitlines() if "error:" in l][:8]
         sys.exit("archive failed\n" + "\n".join(errors) or result.stderr[-2000:])
+    print(f"    {path}")
+    print("    (visible in Xcode → Window → Organizer)")
+    return path
 
 
-def export() -> Path:
+def export(archive: Path) -> Path:
     print("▸ export")
     if EXPORT_DIR.exists():
         shutil.rmtree(EXPORT_DIR)
-    result = run(["xcodebuild", "-exportArchive", "-archivePath", str(ARCHIVE),
+    result = run(["xcodebuild", "-exportArchive", "-archivePath", str(archive),
                   "-exportOptionsPlist", str(EXPORT_OPTIONS),
                   "-exportPath", str(EXPORT_DIR)])
     if "** EXPORT SUCCEEDED **" not in result.stdout:
@@ -178,7 +218,7 @@ def export() -> Path:
                 "       Xcode will not create an App Store profile for an app that\n"
                 "       App Store Connect has never heard of.\n\n"
                 "  Both are console work — see docs/release-runbook.md. The archive\n"
-                f"  is kept at {ARCHIVE}; re-run with --no-bump once they exist.")
+                f"  is kept at {archive}; re-run with --no-bump once they exist.")
         sys.exit("export failed\n" + blob[-2000:])
     ipas = list(EXPORT_DIR.glob("*.ipa"))
     if not ipas:
@@ -186,21 +226,64 @@ def export() -> Path:
     return ipas[0]
 
 
+# Entitlements that decide whether CloudKit works, and the value each must have.
+#
+# Both fail the same way and it is the worst way: the build installs, launches,
+# errors nothing, and simply never receives a change. Neither is visible from
+# the outside, so they are read off the signed binary rather than assumed.
+REQUIRED_ENTITLEMENTS = {
+    # CloudKit syncs over silent push, and a TestFlight build runs against
+    # production APS.
+    "aps-environment": "production",
+    # The container the build talks to. A development container against a
+    # promoted schema is empty, which looks exactly like sync being broken.
+    "com.apple.developer.icloud-container-environment": "Production",
+}
+
+
 def show_entitlements(ipa: Path) -> None:
-    """Print `aps-environment`, because a silent sync failure is the worst
-    outcome of this whole pipeline and it is one line to rule out."""
+    """Read the shipped entitlements off the signed app inside the ipa.
+
+    **It used to hand `codesign` the ipa itself**, which is a zip archive — so
+    it found nothing and printed "NOT FOUND — check by hand" on a build whose
+    entitlements were perfectly correct. That is worse than no check at all: it
+    cried wolf on the one build it was asked about, and the next person to see
+    it would reasonably assume the checker was wrong again.
+
+    The app has to come out of the archive first. It is the *exported* ipa
+    rather than the one in the .xcarchive because export re-signs for
+    distribution, and re-signing is exactly when these can change.
+    """
     print("▸ entitlements")
-    result = run(["codesign", "-d", "--entitlements", "-", "--xml", str(ipa)])
-    blob = result.stdout or result.stderr
-    m = re.search(r"<key>aps-environment</key>\s*<string>(\w+)</string>", blob)
-    if not m:
-        print("    aps-environment: NOT FOUND — check by hand before trusting sync")
-    elif m.group(1) != "production":
-        print(f"    aps-environment: {m.group(1)}  ⚠️  TestFlight needs production.")
-        print("    CloudKit syncs over silent push; this build would install,")
-        print("    error nothing, and never receive a change.")
-    else:
-        print("    aps-environment: production ✓")
+    with tempfile.TemporaryDirectory() as tmp:
+        try:
+            with zipfile.ZipFile(ipa) as z:
+                z.extractall(tmp)
+        except (zipfile.BadZipFile, OSError) as err:
+            print(f"    could not open {ipa.name}: {err}")
+            return
+        apps = list(Path(tmp).glob("Payload/*.app"))
+        if not apps:
+            print(f"    no Payload/*.app inside {ipa.name}")
+            return
+
+        result = run(["codesign", "-d", "--entitlements", ":-", str(apps[0])])
+        blob = result.stdout or result.stderr
+
+    ok = True
+    for key, want in REQUIRED_ENTITLEMENTS.items():
+        m = re.search(rf"<key>{re.escape(key)}</key>\s*<string>([^<]+)</string>", blob)
+        got = m.group(1) if m else None
+        if got == want:
+            print(f"    {key}: {got} ✓")
+            continue
+        ok = False
+        found = got or "not present"
+        print(f"    {key}: {found}  ⚠️  needs {want}")
+    if not ok:
+        print("    CloudKit syncs over silent push against the production")
+        print("    container; a build with these wrong installs, errors")
+        print("    nothing, and never receives a change.")
 
 
 def upload(ipa: Path, key_id: str, issuer: str) -> None:
@@ -237,8 +320,8 @@ def main() -> int:
         write_versions(marketing, build)
         print(f"▸ version   {marketing} ({build})")
 
-    archive()
-    ipa = export()
+    xcarchive = archive(marketing, build)
+    ipa = export(xcarchive)
     show_entitlements(ipa)
     print(f"    {ipa}")
 
