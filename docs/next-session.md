@@ -1,101 +1,89 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# Handoff — the App Store Connect Distribution tab
+# Handoff — iPad mini's extra column
 
-Written 2026-09-18 at the close of session 6. Read this first; it is the whole
-of what is outstanding.
+Written 2026-09-28 at the close of session 7, replacing the session 6 handoff
+(the App Store Connect Distribution tab, now done). Read this first.
 
 ## Where things stand
 
-`main` @ session 6 close. **Gate 1 is closed** — CloudKit is promoted and
-three-way Production sync is verified on real devices: a word added on one
-device arrived on two others, its art followed, and a device on a different
-image set fell back to the art that existed rather than showing a placeholder.
+`main` @ `08f5daf`, clean, no worktrees. **TestFlight build 0.9.0 (4) is
+uploaded** and running on internal testers; it has been added for external
+testers, so Brandi, Scoble and Cognixion should have it shortly.
 
-**TestFlight build 0.9.0 (3) is up**, uploaded with the App Store Connect method
-so it is eligible for external testing. Mark's wife is being added as an external
-tester deliberately, to start Beta App Review early — the first review is the
-slow one and its latency cannot be compressed later.
+Session 7 was the board rework and everything that fell out of it — PRs
+#97–#104, 916 tests. The board now answers to WordPower Basic 48, folders take
+the colour of the page they open (defaulting to uniform blue, because the SLP
+advising us preferred it), and Stage IV+ draws the tray as text with a
+backspace.
 
-Releases are scripted: `tools/preflight_release.py` (ten checks) then
-`tools/release.py` (bump, archive, export, upload). The next `--bump build` lands
-on 4.
+Releases are scripted and the sequence is two commands, in
+`docs/release-runbook.md` §4.
 
-## What this session is for
+## The task: iPad mini gets 13 columns where the others get 12
 
-The **Distribution tab**, and the App Store metadata that goes with it.
+At default density the mini lays out **13×5 · 65/pg · 79pt** where an 11" and a
+13" both give **12×5 · 60/pg**. The extra column shifts every tile one place, so
+a child who learns the board on one size does not know it on another — and tile
+position is motor planning, which is the whole reason the grid is pinned at all.
 
-### 1. Privacy — review before filling anything in
+### Why it happens
 
-`blasterai.app/privacy` exists and is live, and the URL can go in the TestFlight
-field immediately. **The content has not been re-read since the app gained AI
-features**, and that is the first job.
+`GridLayoutCalculator` chooses the column count that **maximises capacity**
+(`cols × rows`) among those whose tile width falls inside a ±12% band around the
+tier's base size (`tickMultiplier`). The mini's base is
+`iPadMiniBaseSize = 88`, so the band is **78.6 – 98.6pt**.
 
-The question to answer: does it say plainly that adding an OpenAI key sends the
-selected words to OpenAI, under the user's own account and OpenAI's terms?
+Thirteen columns lands at **79pt** — 0.4pt inside the bottom of that band — and
+13×5 = 65 beats 12×5 = 60. It wins by a hair, on a rule that was never asked
+whether the answer should match the other iPads.
 
-`docs/openai-tos-memo-2026-07-21.md` establishes the legal shape — under BYOK the
-*user* is OpenAI's Customer, owns the outputs, and no BlasterAI server is in the
-path. The privacy policy should say the same thing in a parent's words.
+### The one-line version, and why it may not be enough
 
-### 2. Privacy nutrition labels
+Raising the mini's base excludes 13 columns from the band:
 
-Answer them against `PrivacyInfo.xcprivacy` rather than from memory. The expected
-answer is **Data Not Collected**, and it should be checked rather than assumed —
-a mismatch between the manifest and the questionnaire is a rejection.
+    iPadMiniBaseSize: 88 -> 92        // band becomes 82.1 - 103
 
-### 3. App Review Information → Notes
+79pt then falls outside it, and 12 columns (~86pt) is the widest that qualifies.
 
-The same text as the beta review notes:
+**Check this before trusting it.** Twelve columns means ~86pt tiles rather than
+79pt, so each cell is taller — and the mini may no longer fit **five** rows. If
+it drops to four, capacity goes 65 → 48 and the 59-tile home page stops fitting
+on one screen. Today's overlay reads `59t/1p`; the fix could make it `59t/2p`.
 
-    python3 tools/make_tester_notes.py     # writes build/review-notes.txt
+That trade is the actual decision, and it is not obviously worth taking: a
+shifted grid is still one reach away, where a second page is not. **Answer
+"does 12×5 fit on the mini?" first** — the debug overlay prints everything
+needed, so it is one build and one look.
 
-Apple is asked nothing in either. An honest, superficial walk, and the facts that
-stop a keyless app reading as a broken one.
+If five rows do not survive, this is a layout question rather than a constant,
+and the options worth weighing are a shorter label band on the mini, tighter
+vertical spacing, or accepting 13 columns there and saying so.
 
-### 4. Licence
+### Where to look
 
-**Apple's standard EULA.** Settled 2026-09-18:
+- `claudeBlast/Services/GridLayoutCalculator.swift` — the tier constants are
+  lines 72–100, the column search is the `for cols in 1...30` loop.
+- The 13" tier (`iPadLargeBaseSize = 111`) was added the same way in session 7
+  and is the precedent for how a tier gets dialled in.
+- `tools/show_page_grid.py` renders the 12-column layout the mini should match.
 
-- Apache-2.0 does not conflict with it. Unlike GPL, Apache has no clause
-  forbidding further restrictions on redistribution — §4 permits distribution
-  under different terms provided attribution and `NOTICE` survive. Shipping the
-  binary under Apple's EULA takes nothing from anyone's rights to the source.
-- No custom terms are needed for the AI, because BlasterAI does not provide an
-  AI service. Under BYOK the user contracts with OpenAI directly.
+## Also open, smaller
 
-A custom EULA would add legal surface and a review step for no benefit on an app
-with no accounts, no backend and no data collection.
+- **`bus` is on no page** — the only vehicle in the vocabulary, so no category
+  wants it.
+- **Word order inside leaf pages.** Brandi asked; the tool and technique are
+  ready (`show_page_grid.py --page`, hand-placed prefix then class selector).
+- **`is` is typed as a function word**, so it sits grey rather than green.
+- **The Time folder is blue by accident** — its words are typed `adjective`
+  because `PartOfSpeech` has no adverb case.
+- **At Stage IV+ the interaction mode is invisible from the board.** The
+  caregiver menu is the only signal.
 
-### 5. Screenshots
+See `docs/board-rework-followups.md` for the full list and what was corrected.
 
-iPad, iPhone and Mac, via the existing TileScript `shots_*.yaml` capture path.
-Carried from S5.5 and never started.
+## Not this session
 
-### 6. Description, keywords, category
-
-Category is **Education**, never Kids — the Kids Category's parental-gate rule
-forbids leaving the app without a gate, which would break the in-flow "Get a
-key" link BYOK onboarding depends on.
-
-For the description, the order of the pitch in `docs/final-countdown-plan.md`
-applies: lead with what it does for a child. Do not lead with coverage, patterns,
-the usage report, OBF/OBZ, packs, Fitzgerald colours or Brown's Stages.
-
-## Also outstanding, smaller
-
-- **The keyless walk on a retail build.** The iPhone is genuinely keyless and
-  nobody has walked it. It is the configuration a reviewer lands in and the one
-  most families will run. `docs/beta-review-notes.md` §2 is the script.
-- **Patient mode.** Everyone is told to choose Caregiver, so the locked-down
-  state a child's device actually runs in is untested by anyone who was not
-  expecting it to hold. Kurt is to do this pass, standing in for Brandi.
-- **Kurt's App Store Connect account**, whenever internal testing widens.
-- **The SLP invite emails.** A skeleton is in `docs/beta-review-notes.md` §3 —
-  the placeholder-board framing and the attribution offer are the parts worth
-  keeping. Everything around them should be written per person, after approval.
-  A form letter to someone being asked to do design work undercuts the ask.
-
-## Carried from S5.5, still not started
-
-`docs/positioning-2026-09.md`, the claims refresh (`docs/claims-audit-2026-09.md`),
-and the onboarding copy. None of it blocks testing.
+**The keyboard.** Its open question is whether `AVSpeechSynthesizer` can voice a
+phonetic keyboard at all — long and short vowels, `ph`/`ch`/`sh`. Answer that
+before designing any keys. Brandi has offered input and should be asked before
+the layout is chosen.
