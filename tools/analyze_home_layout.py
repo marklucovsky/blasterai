@@ -7,7 +7,7 @@
 
 WHY BOTH AXES
 -------------
-`show_home_grid.py` prints what is where. This asks whether the arrangement
+`show_page_grid.py` prints what is where. This asks whether the arrangement
 *means* anything, which is a different question and needs both directions.
 
 The board is 12 wide, so cell n and cell n+12 are vertically adjacent — and a

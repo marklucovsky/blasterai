@@ -211,4 +211,42 @@ struct SceneMaterializerTests {
         let data = try JSONEncoder().encode(original)
         #expect(try JSONDecoder().decode(PageBuildCommand.self, from: data) == original)
     }
+
+    /// **A hand-placed prefix followed by a class selector.**
+    ///
+    /// This is the thing that makes per-page ordering cheap, so it is worth a
+    /// test rather than an assumption. Brandi, reviewing the board: *"we want to
+    /// think about the order of words in each part of speech: touch chat orders
+    /// them by alpha order. Do we want them organized in a certain way?"* Ours
+    /// are in vocabulary-file order, which is alphabetical only by accident —
+    /// so `actions` opens on `answer, ask, bathe, blow, blush` and a child
+    /// reaching for `want` has to page.
+    ///
+    /// The fix has to not need an exclude list, or every promotion becomes two
+    /// edits that can disagree. It does not: **every command skips a key already
+    /// on the page**, so naming the important words first puts them in the first
+    /// cells and the class fills in behind them, each word appearing once.
+    @Test func handPlacedPrefixThenClassFillsTheRest() throws {
+        let vocab = [
+            TileModelCodable(key: "apple", wordClass: "food"),
+            TileModelCodable(key: "banana", wordClass: "food"),
+            TileModelCodable(key: "cookie", wordClass: "food"),
+            TileModelCodable(key: "pizza", wordClass: "food"),
+        ]
+        let page = PageJSON(key: "food", tiles: [
+            .keys(["pizza", "cookie"]),          // what a child asks for first
+            .classSelector(classes: ["food"], exclude: [], limit: nil, orderBy: .vocab),
+        ])
+        let scene = SceneJSON(key: "s", name: "S", description: nil,
+                              homePageKey: "food", isDefault: false, pages: [page])
+        let result = try SceneMaterializer.materialize(scene: scene, vocabulary: vocab)
+        let keys = try #require(result.pages.first).tiles.map(\.key)
+
+        // The named words lead, in the order given — not in vocabulary order.
+        #expect(keys.prefix(2) == ["pizza", "cookie"])
+        // The rest follow, and nothing is doubled.
+        #expect(keys == ["pizza", "cookie", "apple", "banana"])
+        #expect(Set(keys).count == keys.count)
+    }
+
 }
