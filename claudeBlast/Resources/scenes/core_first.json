@@ -21,6 +21,30 @@
           "linkColor": "question"
         },
         {
+          "link": "eat",
+          "to": "food",
+          "audible": true,
+          "linkColor": "verb"
+        },
+        {
+          "link": "drink",
+          "to": "drinks",
+          "audible": true,
+          "linkColor": "verb"
+        },
+        {
+          "link": "play",
+          "to": "play_activities",
+          "audible": true,
+          "linkColor": "verb"
+        },
+        {
+          "link": "actions",
+          "to": "actions",
+          "audible": false,
+          "linkColor": "verb"
+        },
+        {
           "link": "places",
           "to": "places",
           "audible": false,
@@ -37,30 +61,6 @@
           "to": "time_when",
           "audible": false,
           "linkColor": "adjective"
-        },
-        {
-          "link": "eat",
-          "to": "food",
-          "audible": true,
-          "linkColor": "noun"
-        },
-        {
-          "link": "drink",
-          "to": "drinks",
-          "audible": true,
-          "linkColor": "noun"
-        },
-        {
-          "link": "play",
-          "to": "play_activities",
-          "audible": true,
-          "linkColor": "noun"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
         },
         {
           "link": "describe",
@@ -168,19 +168,19 @@
           "link": "drink",
           "to": "drinks",
           "audible": true,
-          "linkColor": "noun"
+          "linkColor": "verb"
         },
         {
           "link": "eat",
           "to": "food",
           "audible": true,
-          "linkColor": "noun"
+          "linkColor": "verb"
         },
         {
           "link": "play",
           "to": "play_activities",
           "audible": true,
-          "linkColor": "noun"
+          "linkColor": "verb"
         },
         {
           "class": "actions"

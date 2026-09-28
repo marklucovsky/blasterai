@@ -744,6 +744,12 @@ struct TilePickerView: View {
     /// and the picker has the same evidence `pageEntry(for:)` uses to decide —
     /// so it can show the truth rather than a gray square that turns blue the
     /// moment it lands.
+    ///
+    /// **Deliberately `navigation` and not `linkColor(slotRawValue:)`**, unlike
+    /// every other surface. A word in this grid has not been placed yet, so it
+    /// points at nothing and has no slot to resolve; wayfinding is the honest
+    /// answer until a caregiver chooses a destination, at which point the
+    /// editor resolves it. Do not "fix" this one to match the others.
     private func pickerAccent(_ tile: TileModel) -> Color {
         tile.wordClass == PageLink.wordClass
             ? TileColorResolver.navigation

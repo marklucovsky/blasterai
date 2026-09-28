@@ -1,0 +1,65 @@
+# WordPower Basic 48 — the COLORS, transcribed 2026-09-27.
+#
+# Companion to `aubrey_home.txt`, which is words only and says so. Taken from a
+# frame of PRC-Saltillo's own WordPower walkthrough video, which shows the home
+# page in color at a readable size.
+#
+# Transcription of color choices only — no art, no claim on the source system.
+#
+# WHY THIS FILE EXISTS
+# --------------------
+# `tools/resolve_link_colors.py` decides a folder's color from the part of
+# speech of the page it opens. That rule was reasoned from first principles and
+# from what the words on each page are, and it needed checking against a board a
+# real child uses. This is that check.
+#
+# WHAT IT CONFIRMS
+# ----------------
+# WordPower colors its folders by the DESTINATION, not by the folder's own word:
+#
+#   PEOPLE    yellow  — their pronoun color, and the People page is pronoun-led
+#   ACTIONS   green   — their verb color; the tile sits inside the verb block
+#                       and is a shade deeper than the verbs around it
+#   DESCRIBE  pink    — their descriptor color
+#
+# That is our rule, arrived at independently. Where we differ is the KEY, not
+# the rule: WordPower puts descriptors in pink, Modified Fitzgerald puts
+# adjectives in blue, and we follow Fitzgerald on purpose.
+#
+# THE ONE REAL DIVERGENCE
+# -----------------------
+# GROUPS is ORANGE — they color a folder of folders as a noun category. We
+# resolve it to `wayfinding`, on the grounds that a page with no words has no
+# part of speech and reads better as navigation. Open question, not a defect.
+#
+# THEIR KEY, INFERRED FROM THE BODY WORDS
+# ---------------------------------------
+# pronoun        yellow        I, me, my, he, she, you, your, it
+# verb           green         come, finish, drink, eat, help, go, like, play,
+#                              listen, want, stop, watch, work
+# auxiliary      pale mint     is, can, do, have, to
+#                              (a lighter green than the main verbs — a
+#                              distinction we do not make)
+# descriptor     pink          good, more
+# preposition /  light blue    for, and, with, on
+#   conjunction
+# determiner     pale cream    a, the, that
+# negation       salmon/pink   don't
+# utility        white         clear, period  (column 0 is chrome, not vocabulary)
+#
+# ROW 0, THE LINK ROW
+# -------------------
+# ABC123      pale yellow
+# PEOPLE      yellow
+# QUESTIONS   light blue
+# PLACES      pale cream
+# SOCIAL      white / very pale pink
+# TIME        pale blue
+# DESCRIBE    pink
+# GROUPS      orange
+#
+# Note the link row is generally LIGHTER than the same color used on a word
+# tile, and each link carries a small corner flag in the top-right. Between the
+# two, a folder is distinguishable from a word of the same color — which is the
+# same problem our own arrow badge solves, and they solve it with tint plus a
+# corner mark rather than with a badge that contrasts against the card.

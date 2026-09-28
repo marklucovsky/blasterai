@@ -117,6 +117,14 @@ struct PageLinkPlacementSheet: View {
             guard !pages[i].tiles.contains(where: { $0.key == linkKey }) else { continue }
             pages[i].tiles.append(TileEntry(key: linkKey, link: target.pageKey, isAudible: false))
         }
+        // A folder made here has no color yet, and an unresolved color draws as
+        // wayfinding blue — which looks exactly like a folder someone decided
+        // should be blue. This is the second way a link gets created (the first
+        // is the Link to Page picker in Tile Settings), and it was the one that
+        // still produced blue folders for a page full of nouns.
+        _ = SceneLinkColors.refresh(&pages,
+                                    vocabulary: allTiles.map(\.key),
+                                    partOfSpeech: { PartOfSpeechIndex.partOfSpeech(for: $0) })
         scene.pages = pages
         try? modelContext.save()
     }

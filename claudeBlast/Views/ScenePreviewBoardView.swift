@@ -80,9 +80,13 @@ struct ScenePreviewBoardView: View {
             // A preview whose colors are a 12% wash of the real ones cannot be
             // used to check the one thing a preview is for — whether the board
             // reads correctly before a child ever sees it.
-            let accent = isLink ? TileColorResolver.navigation : TileColorResolver.color(for: tile)
+            let accent = isLink
+                ? TileColorResolver.linkColor(slotRawValue: entry.linkColor)
+                : TileColorResolver.color(for: tile)
             VStack(spacing: 0) {
-                ZStack(alignment: .topTrailing) {
+                // Badge bottom-right, as on the board. A preview exists to be
+                // checked against what the child will see.
+                ZStack(alignment: .bottomTrailing) {
                     TileImageView(key: tile?.bundleImage ?? entry.key,
                                   wordClass: tile?.wordClass ?? "")
                         .padding(2)
@@ -91,10 +95,11 @@ struct ScenePreviewBoardView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 5))
                         .padding(5)
                     if isLink {
+                        let badge = TileColorResolver.marker(on: accent)
                         Image(systemName: "arrow.right.circle.fill")
                             .font(.caption)
                             .symbolRenderingMode(.palette)
-                            .foregroundStyle(.white, TileColorResolver.navigation)
+                            .foregroundStyle(TileColorResolver.label(on: badge), badge)
                             .padding(3)
                     }
                 }

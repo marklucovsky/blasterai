@@ -169,6 +169,7 @@ struct PageEditorView: View {
                                 SpacerCell()
                             } else if let tile = tileLookup[entry.key] {
                                 PageTileCell(tile: tile, link: entry.link,
+                                             linkColor: entry.linkColor,
                                              isConcealed: entry.isConcealed)
                                     .overlay(alignment: .bottomTrailing) {
                                         TileReviewBadge(tile: tile,
@@ -185,6 +186,19 @@ struct PageEditorView: View {
         }
         .navigationTitle(page?.title ?? pageKey)
         .navigationBarTitleDisplayMode(.inline)
+        // Editing a page can change what the folders pointing AT it should
+        // look like. Automatic folder colors are stored, not computed when
+        // drawn, so this is the one moment they are allowed to move — see
+        // `SceneLinkColors`. It writes only when something actually changed, so
+        // the write it performs does not retrigger itself.
+        //
+        // Watches the whole scene, not `page?.tiles`. A folder's color depends
+        // on a *different* page's contents than the one it sits on, so the
+        // narrower dependency was simply the wrong one.
+        .onAppear { SceneLinkColors.refresh(scene: scene, context: modelContext) }
+        .onChange(of: scene.pages) {
+            SceneLinkColors.refresh(scene: scene, context: modelContext)
+        }
         .toolbar { pageEditorToolbar }
         .sheet(isPresented: $isRenaming) {
             PageRenameSheet(
@@ -426,12 +440,24 @@ struct SpacerCell: View {
 struct PageTileCell: View {
     let tile: TileModel
     var link: String = ""
+    /// The slot this link is colored as. Nil on a word tile.
+    var linkColor: String? = nil
     /// Concealed on this page: still drawn, deliberately muted, and badged.
     var isConcealed: Bool = false
 
-    /// Same rule as the board: part of speech, or blue for a nav tile.
+    /// Same rule as the board: part of speech for a word, the link's own slot
+    /// for a folder.
+    ///
+    /// **This has to go through `TileColorResolver.linkColor` and not straight
+    /// to `navigation`.** It did the latter, which was correct while every
+    /// folder was blue and became a lie the moment they were not: the editor
+    /// drew twelve identical blue folders for a board that renders them in six
+    /// colors, so a caregiver arranging by color was arranging against a picture
+    /// that does not exist. Same reason the label joined the card here.
     private var accent: Color {
-        link.isEmpty ? TileColorResolver.color(for: tile) : TileColorResolver.navigation
+        link.isEmpty
+            ? TileColorResolver.color(for: tile)
+            : TileColorResolver.linkColor(slotRawValue: linkColor)
     }
 
     var body: some View {
@@ -446,7 +472,13 @@ struct PageTileCell: View {
         // arrangement being edited here has to look like the arrangement being
         // read there, or the editor is showing a different object.
         VStack(spacing: 0) {
-            ZStack(alignment: .topTrailing) {
+            // `.bottomTrailing` to match `TileView`, which is where the badge
+            // actually lives for a child. This drew it top-right, so the one
+            // mark that says "this opens something" sat in a different corner
+            // in the editor than on the board — a difference nobody chose, and
+            // one that survived because the badge used to be redundant with an
+            // unmistakable blue.
+            ZStack(alignment: .bottomTrailing) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 5)
                         .fill(Color.white)
@@ -457,9 +489,10 @@ struct PageTileCell: View {
                 .aspectRatio(1, contentMode: .fit)
 
                 if !link.isEmpty {
+                    let badge = TileColorResolver.marker(on: accent)
                     Image(systemName: "arrow.right.circle.fill")
                         .font(.caption2)
-                        .foregroundStyle(.white, TileColorResolver.navigation)
+                        .foregroundStyle(TileColorResolver.label(on: badge), badge)
                         .padding(4)
                 }
             }
@@ -587,6 +620,11 @@ struct TilePropertiesSheet: View {
         scene.pages.first { $0.key == pageKey }?.tiles.first { $0.key == tileKey }
     }
 
+    private var automaticLabel: String {
+        guard let automaticLinkSlot else { return "Automatic" }
+        return "Automatic (\(automaticLinkSlot.label))"
+    }
+
     private var entryBinding: (link: Binding<String>, audible: Binding<Bool>, concealed: Binding<Bool>) {
         let link = Binding<String>(
             get: { entry?.link ?? "" },
@@ -603,6 +641,24 @@ struct TilePropertiesSheet: View {
                     pages[p].tiles[t].isAudible = false
                 } else if !wasEmpty && newValue.isEmpty {
                     pages[p].tiles[t].isAudible = true
+                }
+                // Resolve the color the moment the link is made or repointed,
+                // rather than waiting for the next page edit — otherwise a
+                // brand-new folder sits in wayfinding blue until something
+                // unrelated happens, which reads as the feature not working.
+                // An explicitly chosen color is left alone.
+                if newValue.isEmpty {
+                    pages[p].tiles[t].linkColor = nil
+                    pages[p].tiles[t].linkColorIsAuto = true
+                } else if pages[p].tiles[t].linkColorIsAuto {
+                    pages[p].tiles[t].linkColor = SceneLinkColors.slot(
+                        forLinkTo: newValue,
+                        spokenAs: tileKey,
+                        isAudible: pages[p].tiles[t].isAudible,
+                        in: pages,
+                        vocabulary: allTiles.map(\.key),
+                        partOfSpeech: { PartOfSpeechIndex.partOfSpeech(for: $0) }
+                    ).rawValue
                 }
                 scene.pages = pages
             }
@@ -628,6 +684,54 @@ struct TilePropertiesSheet: View {
             }
         )
         return (link, audible, concealed)
+    }
+
+    /// The link's color slot, or nil for "work it out from the destination".
+    ///
+    /// Writing nil does not merely clear the stored value — it re-resolves and
+    /// stores the answer, and flips `linkColorIsAuto` back on. "Automatic" is a
+    /// standing instruction to follow the page, not an absence of one, which is
+    /// what lets a later edit to that page move this color.
+    private var linkColorBinding: Binding<TileColorSlot?> {
+        Binding(
+            get: {
+                guard let entry, entry.linkColorIsAuto == false,
+                      let raw = entry.linkColor else { return nil }
+                return TileColorSlot(rawValue: raw)
+            },
+            set: { newValue in
+                var pages = scene.pages
+                guard let p = pages.firstIndex(where: { $0.key == pageKey }),
+                      let t = pages[p].tiles.firstIndex(where: { $0.key == tileKey }) else { return }
+                if let newValue {
+                    pages[p].tiles[t].linkColor = newValue.rawValue
+                    pages[p].tiles[t].linkColorIsAuto = false
+                } else {
+                    pages[p].tiles[t].linkColorIsAuto = true
+                    pages[p].tiles[t].linkColor = SceneLinkColors.slot(
+                        forLinkTo: pages[p].tiles[t].link,
+                        spokenAs: tileKey,
+                        isAudible: pages[p].tiles[t].isAudible,
+                        in: pages,
+                        vocabulary: allTiles.map(\.key),
+                        partOfSpeech: { PartOfSpeechIndex.partOfSpeech(for: $0) }
+                    ).rawValue
+                }
+                scene.pages = pages
+            }
+        )
+    }
+
+    /// What "Automatic" would pick for this link right now.
+    private var automaticLinkSlot: TileColorSlot? {
+        guard let entry, !entry.link.isEmpty else { return nil }
+        return SceneLinkColors.slot(
+            forLinkTo: entry.link,
+            spokenAs: entry.key,
+            isAudible: entry.isAudible,
+            in: scene.pages,
+            vocabulary: allTiles.map(\.key),
+            partOfSpeech: { PartOfSpeechIndex.partOfSpeech(for: $0) })
     }
 
     var body: some View {
@@ -708,6 +812,28 @@ struct TilePropertiesSheet: View {
                         Text("Tapping this tile navigates to \"\(currentLink)\".")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+
+                        NavigationLink {
+                            LinkColorPickerList(selection: linkColorBinding,
+                                                automatic: automaticLinkSlot,
+                                                destination: currentLink)
+                        } label: {
+                            HStack(spacing: 8) {
+                                partOfSpeechSwatch(
+                                    TileColorResolver.linkColor(
+                                        slotRawValue: entry?.linkColor))
+                                Text("Folder color")
+                                if entry?.linkColorIsAuto == false {
+                                    Text("edited")
+                                        .font(.caption2)
+                                        .foregroundStyle(.purple)
+                                }
+                                Spacer(minLength: 8)
+                                Text(linkColorBinding.wrappedValue?.label
+                                     ?? automaticLabel)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                     }
                 }
 
@@ -879,5 +1005,76 @@ struct PageRenameSheet: View {
     private func save() {
         onSave(draft)
         dismiss()
+    }
+}
+
+// MARK: - Folder color picker
+
+/// Choose what color a page link draws in.
+///
+/// Mirrors `PartOfSpeechPickerList` deliberately — same shape, same "Automatic
+/// (X)" first row, same rule that clearing back to Automatic is how an override
+/// is undone. A caregiver meets both of these in the same sheet, and two
+/// pickers that answer similar questions differently is a worse cost than the
+/// duplication.
+///
+/// **It offers slots, not colors.** A swatch grid would let someone pick a green
+/// that means nothing, and the folder would then stop following the child's
+/// palette — the same reasoning that made `TileEntry.linkColor` store a slot
+/// rather than a hex. Every swatch here is drawn through the active palette, so
+/// what a caregiver sees is what that child will see.
+struct LinkColorPickerList: View {
+    @Binding var selection: TileColorSlot?
+    let automatic: TileColorSlot?
+    let destination: String
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        List {
+            Section {
+                row(nil, label: automaticLabel,
+                    color: TileColorResolver.color(for: automatic ?? .wayfinding))
+            } footer: {
+                Text("Automatic colors this folder like the words on \"\(destination)\", "
+                     + "and follows that page if it changes. Choose a color to pin it.")
+            }
+
+            Section("Navigation") {
+                row(.wayfinding, label: TileColorSlot.wayfinding.label,
+                    color: TileColorResolver.color(for: .wayfinding))
+            }
+
+            Section("Word type") {
+                ForEach(PartOfSpeech.display) { pos in
+                    row(.partOfSpeech(pos), label: pos.label,
+                        color: TileColorResolver.color(for: pos))
+                }
+            }
+        }
+        .navigationTitle("Folder Color")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var automaticLabel: String {
+        guard let automatic else { return "Automatic" }
+        return "Automatic (\(automatic.label))"
+    }
+
+    @ViewBuilder
+    private func row(_ value: TileColorSlot?, label: String, color: Color) -> some View {
+        Button {
+            selection = value
+            dismiss()
+        } label: {
+            HStack(spacing: 10) {
+                partOfSpeechSwatch(color, size: 14)
+                Text(label).foregroundStyle(.primary)
+                Spacer(minLength: 8)
+                if selection == value {
+                    Image(systemName: "checkmark").foregroundStyle(.tint)
+                }
+            }
+        }
     }
 }

@@ -414,6 +414,18 @@ struct SceneEditorView: View {
                 ShareBoardSheet(subject: .page(page, in: scene))
             }
         }
+        // Belt and braces over the resolution done at each link-creation
+        // site. Every new way to make a link is a new place to forget this, and
+        // two of them were forgotten already — an unresolved color is
+        // indistinguishable from a deliberate blue, so nothing reports it.
+        //
+        // Cheap and safe to repeat: `refresh` is a pure computation over the
+        // pages and writes only when something actually changed, so this cannot
+        // loop and costs nothing on a board that is already correct.
+        .onAppear { SceneLinkColors.refresh(scene: scene, context: modelContext) }
+        .onChange(of: scene.pages) {
+            SceneLinkColors.refresh(scene: scene, context: modelContext)
+        }
         .navigationTitle(scene.name.isEmpty ? "New Scene" : scene.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { sceneEditorToolbar }
