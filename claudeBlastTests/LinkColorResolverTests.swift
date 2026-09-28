@@ -173,6 +173,68 @@ struct LinkColorResolverTests {
         }
     }
 
+    // MARK: - An audible link is a word first
+
+    /// `eat`, `drink` and `play` navigate *and* speak. A tile that says "eat" is
+    /// a verb whatever is on the page behind it — and coloring it from the
+    /// destination made three verbs orange on the board while the same words
+    /// arrived in the tray as green chips. The board and the tray disagreeing
+    /// about one word is precisely what a color key exists to prevent.
+    @Test("An audible link takes its own word's color, not the destination's")
+    func audibleLinkUsesItsOwnWord() {
+        let nounPage = Self.words(["mom", "dad", "sister", "brother", "baby"])
+        let speaking = TileEntry(key: "eat", link: "food", isAudible: true)
+        #expect(LinkColorResolver.slot(for: speaking,
+                                       destination: nounPage,
+                                       partOfSpeech: Self.part,
+                                       background: Self.background)
+                == .partOfSpeech(.verb))
+    }
+
+    /// The other half: a silent link is never spoken, so it has no part of
+    /// speech of its own and borrows meaning from where it goes.
+    @Test("A silent link still takes the destination's color")
+    func silentLinkUsesTheDestination() {
+        let nounPage = Self.words(["mom", "dad", "sister", "brother", "baby"])
+        let silent = TileEntry(key: "eat", link: "food", isAudible: false)
+        #expect(LinkColorResolver.slot(for: silent,
+                                       destination: nounPage,
+                                       partOfSpeech: Self.part,
+                                       background: Self.background)
+                == .partOfSpeech(.noun))
+    }
+
+    /// Turning "Add to sentence tray" on changes what the tile *is*, so it
+    /// changes color. The editor writes through `scene.pages`, which re-resolves.
+    @Test("Making a link audible recolors it")
+    func togglingAudibleRecolors() {
+        var pages = [
+            Self.page("home", [TileEntry(key: "eat", link: "stuff", isAudible: false)]),
+            Self.page("stuff", Self.words(["mom", "dad", "sister", "brother", "baby"])),
+        ]
+        _ = SceneLinkColors.refresh(&pages, vocabulary: Self.vocabulary(),
+                                    partOfSpeech: Self.part)
+        #expect(pages[0].tiles[0].linkColor == "noun")
+
+        pages[0].tiles[0].isAudible = true
+        #expect(SceneLinkColors.refresh(&pages, vocabulary: Self.vocabulary(),
+                                        partOfSpeech: Self.part))
+        #expect(pages[0].tiles[0].linkColor == "verb")
+    }
+
+    /// An audible link whose word we cannot type has nothing of its own to fall
+    /// back on, so the destination answers after all.
+    @Test("An audible link with no known word type falls back to the destination")
+    func audibleWithUnknownWordFallsBack() {
+        let verbPage = Self.words(["run", "jump", "eat", "sleep"])
+        let odd = TileEntry(key: "zzz", link: "doing", isAudible: true)
+        #expect(LinkColorResolver.slot(for: odd,
+                                       destination: verbPage,
+                                       partOfSpeech: Self.part,
+                                       background: Self.background)
+                == .partOfSpeech(.verb))
+    }
+
     // MARK: - The two implementations agree
 
     /// **This is the load-bearing test of the whole feature.**
@@ -206,7 +268,12 @@ struct LinkColorResolverTests {
             for tile in page.tiles where !tile.link.isEmpty {
                 let destination = try #require(board.pages[tile.link],
                                                "\(tile.key) links to a missing page")
-                let computed = LinkColorResolver.slot(forDestination: destination.tiles,
+                // The audible-aware entry point, which is what the app and the
+                // tool both use. Calling `slot(forDestination:)` here would test
+                // a rule neither of them follows — it colored `eat` from the
+                // food page while the board colors it as the verb it speaks.
+                let computed = LinkColorResolver.slot(for: tile,
+                                                      destination: destination.tiles,
                                                       partOfSpeech: part,
                                                       background: background)
                 let committed = tile.linkColor ?? "nothing"
@@ -235,6 +302,153 @@ struct LinkColorResolverTests {
                         "\(raw) is not a slot")
             }
         }
+    }
+
+    // MARK: - Automatic vs pinned
+
+    private static func vocabulary() -> [String] { Array(parts.keys) }
+
+    private static func page(_ key: String, _ tiles: [TileEntry]) -> PageSpec {
+        PageSpec(key: key, tiles: tiles)
+    }
+
+    /// The point of `linkColorIsAuto`: editing a page moves the folders that
+    /// describe it, so the board does not start lying about itself.
+    @Test("An automatic folder follows the page behind it")
+    func automaticFolderFollowsItsPage() {
+        var pages = [
+            Self.page("home", [TileEntry(key: "menu", link: "stuff", isAudible: false,
+                                         linkColor: TileColorSlot.wayfinding.rawValue)]),
+            Self.page("stuff", Self.words(["run", "jump", "eat", "sleep"])),
+        ]
+        var changed = SceneLinkColors.refresh(&pages,
+                                              vocabulary: Self.vocabulary(),
+                                              partOfSpeech: Self.part)
+        #expect(changed)
+        #expect(pages[0].tiles[0].linkColor == "verb")
+
+        // Turn it into a page of describing words; the folder follows.
+        pages[1] = Self.page("stuff", Self.words(["big", "small", "hot", "cold"]))
+        changed = SceneLinkColors.refresh(&pages,
+                                          vocabulary: Self.vocabulary(),
+                                          partOfSpeech: Self.part)
+        #expect(changed)
+        #expect(pages[0].tiles[0].linkColor == "adjective")
+    }
+
+    /// A folder made by dropping a page link onto a page arrives with no color
+    /// at all, and no color draws as wayfinding blue — which is indistinguishable
+    /// from a folder somebody decided should be blue. Both link-creation paths
+    /// have to resolve, and the one in `PageLinkPlacementSheet` did not.
+    @Test("A freshly created link resolves rather than staying blue")
+    func newlyCreatedLinkResolves() {
+        var pages = [
+            Self.page("home", []),
+            Self.page("stuff", Self.words(["mom", "dad", "sister", "brother", "baby"])),
+        ]
+        // Exactly what the placement sheet appends: key, link, nothing else.
+        pages[0].tiles.append(TileEntry(key: "menu", link: "stuff", isAudible: false))
+        #expect(pages[0].tiles[0].linkColor == nil)
+
+        #expect(SceneLinkColors.refresh(&pages, vocabulary: Self.vocabulary(),
+                                        partOfSpeech: Self.part))
+        #expect(pages[0].tiles[0].linkColor == "noun")
+    }
+
+    /// A page with nothing on it yet cannot say what it is about, so its folder
+    /// stays wayfinding — and starts following as soon as it is filled.
+    @Test("An empty destination is wayfinding until it has words")
+    func emptyDestinationBecomesResolvedWhenFilled() {
+        var pages = [
+            Self.page("home", [TileEntry(key: "menu", link: "stuff", isAudible: false)]),
+            Self.page("stuff", []),
+        ]
+        _ = SceneLinkColors.refresh(&pages, vocabulary: Self.vocabulary(),
+                                    partOfSpeech: Self.part)
+        #expect(pages[0].tiles[0].linkColor == TileColorSlot.wayfinding.rawValue)
+
+        pages[1] = Self.page("stuff", Self.words(["run", "jump", "eat", "sleep"]))
+        #expect(SceneLinkColors.refresh(&pages, vocabulary: Self.vocabulary(),
+                                        partOfSpeech: Self.part))
+        #expect(pages[0].tiles[0].linkColor == "verb")
+    }
+
+    /// And the other half: a color someone chose is theirs, and no amount of
+    /// editing the destination may quietly take it back.
+    @Test("A pinned folder ignores the page behind it")
+    func pinnedFolderIgnoresItsPage() {
+        var pages = [
+            Self.page("home", [TileEntry(key: "menu", link: "stuff", isAudible: false,
+                                         linkColor: "negation", linkColorIsAuto: false)]),
+            Self.page("stuff", Self.words(["run", "jump", "eat", "sleep"])),
+        ]
+        let changed = SceneLinkColors.refresh(&pages,
+                                              vocabulary: Self.vocabulary(),
+                                              partOfSpeech: Self.part)
+        #expect(!changed)
+        #expect(pages[0].tiles[0].linkColor == "negation")
+    }
+
+    /// The editor calls `refresh` when a page changes, and `refresh` writes
+    /// `scene.pages`, which is itself a change. It has to settle rather than
+    /// loop, and it settles by reporting honestly that it did nothing.
+    @Test("Refreshing twice changes nothing the second time")
+    func refreshIsIdempotent() {
+        var pages = [
+            Self.page("home", [TileEntry(key: "menu", link: "stuff", isAudible: false)]),
+            Self.page("stuff", Self.words(["he", "she", "they", "we"])),
+        ]
+        #expect(SceneLinkColors.refresh(&pages, vocabulary: Self.vocabulary(),
+                                        partOfSpeech: Self.part))
+        let settled = pages
+        #expect(!SceneLinkColors.refresh(&pages, vocabulary: Self.vocabulary(),
+                                         partOfSpeech: Self.part))
+        #expect(pages == settled)
+    }
+
+    /// `<home>` names no page — it resolves at navigation time — and a Home
+    /// button is wayfinding by definition.
+    @Test("A link to a page that is not there is wayfinding")
+    func unknownDestinationIsWayfinding() {
+        var pages = [
+            Self.page("home", [TileEntry(key: "back", link: TileToken.home, isAudible: false)]),
+        ]
+        _ = SceneLinkColors.refresh(&pages, vocabulary: Self.vocabulary(),
+                                    partOfSpeech: Self.part)
+        #expect(pages[0].tiles[0].linkColor == TileColorSlot.wayfinding.rawValue)
+    }
+
+    /// The flag has to cross storage, or a pinned color silently becomes
+    /// automatic on the next launch and drifts. `TileEntry` decodes by hand, so
+    /// this is not free — see `PageSpec.swift`.
+    @Test("Pinned survives a storage round trip")
+    func pinnedSurvivesStorage() throws {
+        let pinned = TileEntry(key: "menu", link: "stuff", isAudible: false,
+                               linkColor: "negation", linkColorIsAuto: false)
+        let back = try JSONDecoder().decode(
+            TileEntry.self, from: try JSONEncoder().encode(pinned))
+        #expect(back.linkColor == "negation")
+        #expect(back.linkColorIsAuto == false)
+
+        // A tile written before the flag existed must read as automatic, or it
+        // would freeze at whatever color it happened to hold.
+        let legacy = #"{"key":"menu","link":"stuff","isAudible":false,"linkColor":"verb"}"#
+        let old = try JSONDecoder().decode(TileEntry.self,
+                                           from: Data(legacy.utf8))
+        #expect(old.linkColorIsAuto)
+        #expect(old.linkColor == "verb")
+    }
+
+    /// The bundled board is authored by the tool, which resolves every link —
+    /// so every one of its links is automatic and will track the vocabulary.
+    @Test("Refreshing the bundled board changes nothing")
+    func bundledBoardIsAlreadyResolved() throws {
+        let board = try bundledBoard()
+        var pages = board.all
+        let changed = SceneLinkColors.refresh(
+            &pages, vocabulary: board.vocabulary,
+            partOfSpeech: { PartOfSpeechIndex.bundledPartOfSpeech(for: $0) })
+        #expect(!changed, "the committed board disagrees with the in-app resolver")
     }
 
     // MARK: - Rendering

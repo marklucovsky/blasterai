@@ -159,13 +159,30 @@ struct TileEntry: Codable, Hashable, Identifiable {
     /// `--check` fails the build if any survives into a shipped scene.
     var linkColor: String?
 
+    /// Whether `linkColor` was worked out from the destination or chosen by a
+    /// person.
+    ///
+    /// **Why the bit is needed at all.** A folder's color is resolved once and
+    /// written down, never recomputed when drawn — see `linkColor`. But a page's
+    /// contents do change, and when a caregiver turns a folder of nouns into a
+    /// folder of verbs, a color that was *derived* should follow and a color
+    /// that was *chosen* must not. Without this flag the two are
+    /// indistinguishable after the fact, because a manual pick overwrites the
+    /// automatic answer and leaves nothing behind to compare against.
+    ///
+    /// Defaults to true, so a link that predates the flag re-resolves rather
+    /// than freezing at whatever it happens to hold.
+    var linkColorIsAuto: Bool
+
     init(key: String, link: String = "", isAudible: Bool = true,
-         isConcealed: Bool = false, linkColor: String? = nil) {
+         isConcealed: Bool = false, linkColor: String? = nil,
+         linkColorIsAuto: Bool = true) {
         self.key = key
         self.link = link
         self.isAudible = isAudible
         self.isConcealed = isConcealed
         self.linkColor = linkColor
+        self.linkColorIsAuto = linkColorIsAuto
     }
 
     /// A deliberate gap: real estate with no word behind it.
@@ -213,5 +230,6 @@ struct TileEntry: Codable, Hashable, Identifiable {
         isAudible = try container.decodeIfPresent(Bool.self, forKey: .isAudible) ?? true
         isConcealed = try container.decodeIfPresent(Bool.self, forKey: .isConcealed) ?? false
         linkColor = try container.decodeIfPresent(String.self, forKey: .linkColor)
+        linkColorIsAuto = try container.decodeIfPresent(Bool.self, forKey: .linkColorIsAuto) ?? true
     }
 }

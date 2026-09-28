@@ -32,6 +32,13 @@ under 15% of the page is noise (one `when` was painting Time purple), and a page
 with fewer than 4 words is not evidence of anything (the `keyboard` placeholder).
 A page that is mostly links is wayfinding.
 
+AN AUDIBLE LINK IS A WORD FIRST
+-------------------------------
+`eat`, `drink` and `play` both navigate and land in the sentence tray, so they
+take their OWN part of speech rather than the destination's — see
+`resolve_link`. On the bundled board that is exactly six tiles and every other
+link is navigate-only.
+
 TWO IMPLEMENTATIONS OF ONE RULE
 -------------------------------
 Swift needs it for in-app authoring; Python needs it because the bundled board
@@ -104,6 +111,28 @@ def page_tiles(page, vocab_by_class, vocab_order):
     return words, links
 
 
+def resolve_link(cmd, pages, parts, vocab_by_class, vocab_order, background):
+    """One link's slot.
+
+    AN AUDIBLE LINK IS A WORD FIRST
+    -------------------------------
+    `eat`, `drink` and `play` both navigate and land in the sentence tray. A
+    tile that speaks "eat" is a verb whatever is on the page behind it, and
+    coloring it from the destination made three verbs orange on the board while
+    the same words arrived in the tray as green chips. A silent link is never
+    spoken, so it has no part of speech of its own and takes the destination's.
+
+    Mirror of `LinkColorResolver.slot(for:destination:...)`.
+    """
+    if cmd.get("audible") and parts.get(cmd["link"]):
+        return parts[cmd["link"]]
+    target = pages.get(cmd["to"])
+    if target is None:
+        return WAYFINDING
+    words, links = page_tiles(target, vocab_by_class, vocab_order)
+    return resolve(words, links, parts, background)
+
+
 def resolve(words, links, parts, background):
     if len(links) > len(words):
         return WAYFINDING
@@ -147,11 +176,10 @@ def process(path, parts, vocab_by_class, vocab_order, background):
         for cmd in page["tiles"]:
             if "link" not in cmd:
                 continue
-            target = pages.get(cmd["to"])
-            if target is None:
+            if cmd["to"] not in pages and not cmd.get("audible"):
                 continue  # check_scene.py owns that error
-            words, links = page_tiles(target, vocab_by_class, vocab_order)
-            computed = resolve(words, links, parts, background)
+            computed = resolve_link(cmd, pages, parts, vocab_by_class,
+                                    vocab_order, background)
             current = cmd.get("linkColor")
             if current == computed:
                 continue

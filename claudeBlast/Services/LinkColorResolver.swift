@@ -81,7 +81,37 @@ enum LinkColorResolver {
     /// Fewer real words than this and the page is not evidence of anything.
     static let minimumWords = 4
 
-    /// Resolve one link.
+    /// Resolve one link, honouring whether it speaks.
+    ///
+    /// **An audible link is a word first.** `eat`, `drink` and `play` both
+    /// navigate *and* land in the tray, and a tile that speaks "eat" is a verb
+    /// no matter what is on the page behind it. Coloring them by their
+    /// destination made three verbs orange on the board while the very same
+    /// words arrived in the tray as green chips — the board and the tray
+    /// disagreeing about one word, which is the thing the color key exists to
+    /// prevent. Mark: *"the words themselves are verbs and since they are
+    /// audible, they land in the tray as verbs."*
+    ///
+    /// A silent link is not a word at all — nothing is ever spoken from it — so
+    /// it has no part of speech of its own and borrows meaning from where it
+    /// goes. That is the case `slot(forDestination:)` answers.
+    ///
+    /// On the bundled board this is exactly six tiles: `eat`, `drink` and `play`,
+    /// on `home` and on `actions`. Every other link is navigate-only.
+    static func slot(for entry: TileEntry,
+                     destination: [TileEntry]?,
+                     partOfSpeech: (String) -> PartOfSpeech?,
+                     background: [PartOfSpeech: Int]) -> TileColorSlot {
+        if entry.isAudible, let own = partOfSpeech(entry.key) {
+            return .partOfSpeech(own)
+        }
+        guard let destination else { return .wayfinding }
+        return slot(forDestination: destination,
+                    partOfSpeech: partOfSpeech,
+                    background: background)
+    }
+
+    /// Resolve a link from the page it opens.
     ///
     /// - Parameters:
     ///   - destination: the tiles on the page the link opens.
