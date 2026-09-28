@@ -103,7 +103,7 @@
             "and",
             "a",
             "the",
-            "all_done"
+            "stop"
           ]
         },
         {
@@ -125,7 +125,7 @@
         {
           "keys": [
             "yes",
-            "stop",
+            "all_done",
             "no",
             "open",
             "watch",
