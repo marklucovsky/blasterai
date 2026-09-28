@@ -149,8 +149,24 @@ struct GridLayoutCalculatorTests {
         #expect(thirteen / eleven < 1.20)
     }
 
-    /// The mini is deliberately outside this arrangement — 11" is the standard
-    /// the parity rule targets.
+    /// **The mini reaches the same way too.**
+    ///
+    /// At a base of 88 the mini fit 13 columns at 79pt — 0.4pt inside the
+    /// bottom of its acceptance band — and 13×5 out-counted 12×5, so every tile
+    /// after the first row sat one place off from the other iPads.
+    ///
+    /// Rows are pinned as well, because they are what the fix could have cost:
+    /// wider tiles are taller cells, and a mini that dropped to four rows would
+    /// push the 59-tile home page onto a second screen. Five is what the
+    /// simulator measured at 92.
+    @Test func miniMatchesTheOtherIPadsColumnCount() {
+        let mini = landscapeBoard(miniPortrait)
+        #expect(mini.cols == landscapeBoard(iPad11).cols)
+        #expect(mini.rows == 5)
+    }
+
+    /// The mini's base is still smaller than the 11"'s — parity comes from
+    /// tuning it, not from sharing one.
     ///
     /// Compared at *identical* geometry, so the only variable is the device
     /// class. An earlier version of this test handed each device its own
