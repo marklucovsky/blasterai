@@ -610,6 +610,7 @@ struct ChildProfileFormSheet: View {
             }
         case .edit(let profile):
             profile.displayName = trimmed
+            let wasStage = profile.brownsStage
             profile.brownsStage = stage
             profile.voiceIdentifier = voiceID
             profile.setTileCap(maxTiles)
@@ -618,6 +619,13 @@ struct ChildProfileFormSheet: View {
             profile.colorMapData = colorMap.encoded
             profile.linkColorMode = linkColorMode
             profile.modifiedAt = .now
+            // A promotion to Stage IV+ drops a stale single-word override —
+            // see `clearOverrideOnPromotion`. Only on an actual change, so
+            // re-saving the form does not quietly undo an override the
+            // caregiver set five minutes ago.
+            if stage != wasStage {
+                profileResolver.clearOverrideOnPromotion(to: stage)
+            }
             // `refresh()` re-reads the active profile AND its palette, so the
             // board picks up a color change on dismiss rather than at next
             // launch. See the defer in ChildProfileResolver.refresh().

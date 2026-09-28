@@ -49,6 +49,20 @@ struct SingleWordTrayView: View {
             stripCard
                 .frame(maxWidth: .infinity)
 
+            // Speak the whole line.
+            //
+            // The strip had no Play at all: every tap already spoke its own
+            // word, so there was never a collection to hear. At Stage IV+ the
+            // strip *is* the utterance being built, and a child who has put
+            // five words in a row should be able to say the row — whether or
+            // not it parses. Mark: *"in word mode, we TTS the collection of
+            // words which may or may not make sense."*
+            if !engine.trayShowsPictures {
+                StripPlayButton(isEnabled: !strip.isEmpty) {
+                    engine.speakStrip()
+                }
+            }
+
             ClearButton(isEnabled: !strip.isEmpty, action: onClear)
         }
         .padding(.horizontal, 12)
@@ -61,7 +75,8 @@ struct SingleWordTrayView: View {
     private var stripCard: some View {
         ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
+                // Tiles get tile spacing; words get word spacing.
+                HStack(spacing: engine.trayShowsPictures ? 6 : 5) {
                     if strip.isEmpty {
                         Text("Tap tiles to speak words")
                             .font(.system(size: promptSize))
@@ -70,7 +85,10 @@ struct SingleWordTrayView: View {
                             .padding(.horizontal, 8)
                     } else {
                         ForEach(Array(strip.enumerated()), id: \.offset) { idx, tile in
-                            WordChip(tile: tile) { onRemove(idx) }
+                            WordChip(tile: tile,
+                                     showsPicture: engine.trayShowsPictures) {
+                                onRemove(idx)
+                            }
                                 .overlay(alignment: .topTrailing) {
                                     if idx == strip.count - 1 && engine.repetitionCount > 0 {
                                         ReplayBadge(count: engine.repetitionCount, compact: true)
@@ -78,6 +96,15 @@ struct SingleWordTrayView: View {
                                     }
                                 }
                                 .id(idx)
+                        }
+
+                        // At the end of the words, where a caret would be.
+                        if !engine.trayShowsPictures {
+                            BackspaceButton(isEnabled: !strip.isEmpty, compact: true) {
+                                engine.removeStripWord(at: strip.count - 1)
+                            }
+                            .padding(.leading, 2)
+                            .id("backspace")
                         }
                     }
                 }
@@ -125,6 +152,16 @@ private struct WordChip: View {
     @ScaledMetric(relativeTo: .caption2) private var wordSize: CGFloat = 11
 
     let tile: TileSelection
+    /// False at Stage IV+, where the strip is a line of words rather than a row
+    /// of tiles — see `BrownsStage.showsPicturesInTray`.
+    ///
+    /// **This surface was missed the first time**, and the symptom was worth
+    /// recording: switching a Stage IV+ child to single-word mode in Admin sent
+    /// the tray back to pictures. The two trays are separate views over two
+    /// separate pieces of engine state — `activeGroup` here, `spokenStrip`
+    /// there — so honouring the stage in one of them honours it in neither
+    /// mode the child might actually be in.
+    var showsPicture: Bool = true
     let onTap: () -> Void
 
     /// The card's square picture area — unchanged, so the strip did not have to
@@ -138,6 +175,25 @@ private struct WordChip: View {
 
     var body: some View {
         Button(action: onTap) {
+            if showsPicture { card } else { word }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Remove \(tile.value)")
+    }
+
+    /// The word alone, sized to itself — the strip as a line of text. Matches
+    /// `ActiveTileCard.word`; see there for why the colour goes with the card.
+    private var word: some View {
+        Text(tile.value)
+            .font(.headline)
+            .foregroundStyle(.primary)
+            .lineLimit(1)
+            .fixedSize()
+            .frame(height: size)
+            .contentShape(Rectangle())
+    }
+
+    private var card: some View {
             VStack(spacing: 0) {
                 TileImageView(key: tile.key, wordClass: tile.wordClass)
                     .padding(2)
@@ -158,13 +214,47 @@ private struct WordChip: View {
             .frame(width: size)
             .background(accent)
             .clipShape(RoundedRectangle(cornerRadius: 10))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Remove \(tile.value)")
     }
 }
 
 // MARK: - End buttons
+
+/// Speak the whole strip.
+///
+/// Deliberately the twin of `ClearButton` rather than of the sentence tray's
+/// `PrimaryPlayButton`: it stands in the same band, beside Clear, and the two
+/// read as one pair of controls over the line of words.
+///
+/// Only shown where the strip is text. With pictures, every tap has already
+/// spoken its own word and there is no collection anyone asked to hear.
+private struct StripPlayButton: View {
+    @ScaledMetric(relativeTo: .caption) private var glyphSize: CGFloat = 15
+    @ScaledMetric(relativeTo: .caption2) private var labelSize: CGFloat = 10
+
+    var height: CGFloat = SingleWordTrayView.stripHeight
+    let isEnabled: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 3) {
+                Image(systemName: "play.fill")
+                    .font(.system(size: glyphSize, weight: .bold))
+                Text("Play")
+                    .font(.system(size: labelSize, weight: .semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+            }
+            .foregroundStyle(isEnabled ? Color.accentColor : .secondary)
+            .frame(width: 60, height: height)
+            .background(TrayCardBackground(cornerRadius: 12))
+            .opacity(isEnabled ? 1 : 0.5)
+        }
+        .buttonStyle(.plain)
+        .disabled(!isEnabled)
+        .accessibilityLabel("Speak all the words")
+    }
+}
 
 private struct ClearButton: View {
     @ScaledMetric(relativeTo: .caption) private var clearGlyphSize: CGFloat = 15

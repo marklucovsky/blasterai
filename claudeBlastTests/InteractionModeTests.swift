@@ -86,6 +86,144 @@ struct InteractionModeTests {
         #expect(p.interactionMode == .sentence)
     }
 
+    // MARK: - The tray follows the stage too
+
+    /// Brandi's review: at Stage IV+ the tray should carry the display name
+    /// without the tile image.
+    ///
+    /// Derived from the stage, never stored — the rule this whole axis exists
+    /// to enforce. A stored toggle would be a setting that can disagree with
+    /// the stage it was meant to follow.
+    @Test func trayPicturesAreDerivedFromStage() {
+        let p = ChildProfile(displayName: "A")
+        #expect(p.brownsStage == .one)
+        #expect(p.brownsStage.showsPicturesInTray)
+
+        p.brownsStage = .twoThree
+        #expect(p.brownsStage.showsPicturesInTray)
+
+        p.brownsStage = .fourPlus
+        #expect(!p.brownsStage.showsPicturesInTray)
+    }
+
+    /// The tray reads this through the engine, which is where it already looks
+    /// for everything else about the active child.
+    @Test func engineReportsTrayPicturesForTheActiveChild() throws {
+        // The harness seeds Stage IV+ for `.sentence` and Stage I for
+        // `.singleWord`, which is exactly the pair this is about.
+        try withEngine(mode: .sentence) { engine in
+            #expect(!engine.trayShowsPictures)
+        }
+        try withEngine(mode: .singleWord) { engine in
+            #expect(engine.trayShowsPictures)
+        }
+    }
+
+    /// With no child resolved at all the tray keeps its pictures. That is the
+    /// safe direction: a reader who did not need them is mildly over-served,
+    /// where a child who cannot read yet would be handed a row of words.
+    @Test func trayKeepsPicturesWithNoProfile() {
+        let engine = SentenceEngine(provider: MockSentenceProvider(minLatency: 0,
+                                                                  maxLatency: 0))
+        #expect(engine.trayShowsPictures)
+    }
+
+    /// The backspace control at Stage IV+. Tapping a bare word to delete it is
+    /// not obvious once the tray is trying to look like text, so there has to be
+    /// a control that is.
+    @Test func backspaceRemovesTheLastWord() throws {
+        try withEngine(mode: .sentence) { engine in
+            engine.addTile(TileModel(key: "i", wordClass: "core"))
+            engine.addTile(TileModel(key: "want", wordClass: "actions"))
+            engine.addTile(TileModel(key: "more", wordClass: "core"))
+            #expect(engine.activeGroup.tiles.map(\.key) == ["i", "want", "more"])
+
+            engine.removeLastSelectedTile()
+            #expect(engine.activeGroup.tiles.map(\.key) == ["i", "want"])
+
+            engine.removeLastSelectedTile()
+            engine.removeLastSelectedTile()
+            #expect(engine.activeGroup.tiles.isEmpty)
+
+            // And on an empty tray it is a no-op rather than a crash — the
+            // button is disabled, but nothing should depend on that.
+            engine.removeLastSelectedTile()
+            #expect(engine.activeGroup.tiles.isEmpty)
+        }
+    }
+
+    /// Word-mode Play at Stage IV+: say the line exactly as it was assembled.
+    ///
+    /// No grammar and no cleanup — a child arranging words and hearing what they
+    /// arranged is the point, and tidying would teach that the board says
+    /// something other than what was pressed.
+    @Test func speakStripSaysEveryWordInOrder() throws {
+        try withEngine(mode: .singleWord) { engine in
+            engine.addTile(TileModel(key: "me", wordClass: "core"))
+            engine.addTile(TileModel(key: "want", wordClass: "actions"))
+            engine.addTile(TileModel(key: "cookie", wordClass: "food"))
+            #expect(engine.spokenStrip.map(\.value) == ["me", "want", "cookie"])
+
+            // Nothing to assert about audio, so assert about the line it builds.
+            #expect(engine.spokenStrip.map(\.value).joined(separator: " ")
+                    == "me want cookie")
+            engine.speakStrip()   // must not trap on a populated strip
+
+            engine.clearStrip()
+            engine.speakStrip()   // nor on an empty one
+            #expect(engine.spokenStrip.isEmpty)
+        }
+    }
+
+    /// Promoting a child to Stage IV+ drops a device override that predates the
+    /// promotion.
+    ///
+    /// At IV+ the two modes no longer look different from across the room, so a
+    /// device still pinned to single-word would withhold sentence generation
+    /// from a child just assessed as ready for it, with nothing on screen saying
+    /// so.
+    @Test func promotionToStageFourClearsAStaleOverride() throws {
+        let container = TestStore.freshContainer()
+        let ctx = container.mainContext
+        let profile = ChildProfile(displayName: "Test", brownsStage: .twoThree,
+                                   isActive: true)
+        ctx.insert(profile)
+        try? ctx.save()
+
+        let resolver = ChildProfileResolver()
+        resolver.configure(modelContext: ctx)
+        resolver.setModeOverride(.singleWord)
+        #expect(resolver.interactionMode == .singleWord)
+
+        profile.brownsStage = .fourPlus
+        resolver.clearOverrideOnPromotion(to: .fourPlus)
+        resolver.refresh()
+        #expect(resolver.modeOverride == nil)
+        #expect(resolver.interactionMode == .sentence)
+        withExtendedLifetime(container) {}
+    }
+
+    /// Only on promotion to IV+. A caregiver who sets an override at any other
+    /// stage keeps it — the point is to drop one the promotion invalidated, not
+    /// to stop them having one.
+    @Test func overrideSurvivesAnyOtherStageChange() throws {
+        let container = TestStore.freshContainer()
+        let ctx = container.mainContext
+        let profile = ChildProfile(displayName: "Test", brownsStage: .fourPlus,
+                                   isActive: true)
+        ctx.insert(profile)
+        try? ctx.save()
+
+        let resolver = ChildProfileResolver()
+        resolver.configure(modelContext: ctx)
+        resolver.setModeOverride(.singleWord)
+
+        profile.brownsStage = .twoThree
+        resolver.clearOverrideOnPromotion(to: .twoThree)
+        #expect(resolver.modeOverride == .singleWord)
+        withExtendedLifetime(container) {}
+    }
+
     /// An unknown raw value falls back to Stage I rather than to sentences.
     /// That is the safe direction: a child shown one word at a time is
     /// under-served, whereas one handed sentences they cannot parse is being

@@ -53,6 +53,7 @@ private let kActiveImageSize: CGFloat = kActiveCardHeight - (kCardVerticalPaddin
 /// had, arriving by a different route. The label truncates instead; the child
 /// identifies a chip by its image, and the full word is one tap away.
 private let kActiveCardWidth: CGFloat = kActiveImageSize + 12
+
 private let kPlayButtonWidth: CGFloat = 82
 /// Compact (phone) width for the Play / Clear column.
 private let kCompactButtonWidth: CGFloat = 60
@@ -232,7 +233,9 @@ struct SentenceTrayView: View {
                 onTileTap: onTileTap,
                 onExpandSentence: onExpandSentence,
                 onBubbleLongPress: { showBubbleActions = true },
-                isSuppressed: engine.activeIsSuppressed
+                onBackspace: { engine.removeLastSelectedTile() },
+                isSuppressed: engine.activeIsSuppressed,
+                showsPictures: engine.trayShowsPictures
             )
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -245,6 +248,11 @@ struct SentenceTrayView: View {
     }
 
     /// Play button + Done (commit) button stacked vertically. Total height = kCardHeight.
+    ///
+    /// **Unchanged at Stage IV+.** Backspace briefly took this slot, which meant
+    /// the top stage lost Play and with it any way to hear the thing being
+    /// built. The controls are the same three at every stage — clear, backspace,
+    /// play — and only backspace moves, into the text area where the words are.
     private var playColumn: some View {
         VStack(spacing: kPlayDoneSpacing) {
             PrimaryPlayButton(
@@ -301,8 +309,15 @@ private struct ActiveTrayCard: View {
     /// Long-press the sentence / muted bubble to open the caregiver action sheet
     /// (refine · hand-type · suppress / un-suppress). Fired as the press completes.
     let onBubbleLongPress: () -> Void
+    /// Delete the last word. Only reachable where the tray is text.
+    var onBackspace: () -> Void = {}
     /// True when this combination is suppressed (shows a muted bubble instead).
     let isSuppressed: Bool
+    /// False at Stage IV+, where a chip is its word alone — see
+    /// `BrownsStage.showsPicturesInTray`. Passed in rather than read from the
+    /// environment here so the width arithmetic below and the chips themselves
+    /// cannot disagree about which shape is being drawn.
+    var showsPictures: Bool = true
 
     var body: some View {
         // Measured, because "is there room for the sentence" is a question
@@ -331,11 +346,29 @@ private struct ActiveTrayCard: View {
     @ScaledMetric(relativeTo: .title3) private var sentenceFloor: CGFloat = kMinimumSentenceWidth
 
     /// Width left for the sentence once the chips have taken theirs.
+    ///
+    /// Picture chips are a fixed size, so they can be counted. **Word chips are
+    /// the width of their word**, so they have to be measured — assuming a
+    /// constant here is exactly how the sentence gets handed room the chips have
+    /// already taken, which is the starvation the fixed chip width exists to
+    /// prevent.
     private func sentenceWidth(in width: CGFloat) -> CGFloat {
-        let chips = CGFloat(tiles.count) * kActiveCardWidth
-            + CGFloat(max(0, tiles.count - 1)) * 8
+        let spacing: CGFloat = showsPictures ? 8 : 5
+        let chips: CGFloat = showsPictures
+            ? CGFloat(tiles.count) * kActiveCardWidth
+            : tiles.reduce(0) { $0 + Self.wordWidth(of: $1.value) }
+        let total = chips
+            + CGFloat(max(0, tiles.count - 1)) * spacing
             + 8   // the chip group's own horizontal padding
-        return width - chips - 12 - 10   // card padding + HStack spacing
+        return width - total - 12 - 10   // card padding + HStack spacing
+    }
+
+    /// Measured in the font the chip actually draws in, so the reserve matches
+    /// what is rendered rather than approximating it.
+    private static func wordWidth(of value: String) -> CGFloat {
+        let font = UIFont.preferredFont(forTextStyle: .headline)
+        let measured = (value as NSString).size(withAttributes: [.font: font]).width
+        return ceil(measured)
     }
 
     @ViewBuilder
@@ -354,10 +387,23 @@ private struct ActiveTrayCard: View {
                 // fixedSize keeps the chips at their natural width so the
                 // sentence bubble (with maxWidth: .infinity) can only
                 // claim the remaining space, never push the chips out.
-                HStack(spacing: 8) {
+                // Tiles get tile spacing; words get word spacing. A space in
+                // this font is about 4pt, and 8 between bare words reads as a
+                // gappy list rather than a sentence.
+                HStack(spacing: showsPictures ? 8 : 5) {
                     ForEach(Array(tiles.enumerated()), id: \.offset) { index, tile in
-                        ActiveTileCard(tile: tile) { onTileTap(index) }
+                        ActiveTileCard(tile: tile, showsPicture: showsPictures) {
+                            onTileTap(index)
+                        }
                             .transition(.scale.combined(with: .opacity))
+                    }
+
+                    // Sits at the end of the words, where a caret would be.
+                    // Only where the tray is text: a picture chip is plainly a
+                    // button already, and tapping it to remove it is obvious.
+                    if !showsPictures {
+                        BackspaceButton(isEnabled: !tiles.isEmpty, action: onBackspace)
+                            .padding(.leading, 2)
                     }
                 }
                 .padding(.horizontal, 4)
@@ -648,6 +694,9 @@ private struct IPadThinkingBubble: View {
 
 private struct ActiveTileCard: View {
     let tile: TileSelection
+    /// False at Stage IV+, where the chip is the word alone — see
+    /// `BrownsStage.showsPicturesInTray`.
+    var showsPicture: Bool = true
     let onTap: () -> Void
 
     /// The selection carries the part of speech it was created with, so a chip
@@ -656,6 +705,45 @@ private struct ActiveTileCard: View {
 
     var body: some View {
         Button(action: onTap) {
+            if showsPicture { picture } else { word }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Remove \(tile.value)")
+    }
+
+    /// The word alone — no card, no colour behind it.
+    ///
+    /// **Not a chip with its picture removed.** A coloured card says *this is a
+    /// tile you pressed*, which is the right thing to say to a child reading the
+    /// tray as a row of pictures. A Stage IV+ child is reading it as a sentence
+    /// under construction, and a sentence is words on a page, not a row of
+    /// cards. The enclosure was the last thing making it look like a board.
+    ///
+    /// The word is drawn in the primary colour rather than its part-of-speech
+    /// one. Colour on this board is a *card* colour, read against white — as
+    /// text on the tray's own surface, pronoun yellow and the function-word grey
+    /// are barely legible, and a key that works for nine of eleven categories is
+    /// worse than none.
+    ///
+    /// **Sized to the word, not to a cell.** It first kept the chip's fixed
+    /// width, which spaced "I me my" like three tiles rather than three words
+    /// and undid the point of dropping the card. At this stage the tray is meant
+    /// to read as a sentence being typed — one whose words happen to be chosen
+    /// from coloured tiles — so the gaps between words have to be word gaps.
+    ///
+    /// Still a button: tapping a word removes it. That is now the *secondary*
+    /// way to do it, behind the backspace control.
+    private var word: some View {
+        Text(tile.value)
+            .font(.headline)
+            .foregroundStyle(.primary)
+            .lineLimit(1)
+            .fixedSize()
+            .frame(height: kActiveCardHeight)
+            .contentShape(Rectangle())
+    }
+
+    private var picture: some View {
             VStack(spacing: 0) {
                 TileImageView(key: tile.key, wordClass: tile.wordClass)
                     // maxHeight, not height. The label is laid out at whatever
@@ -691,13 +779,60 @@ private struct ActiveTileCard: View {
             .background(accent)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .shadow(color: .black.opacity(0.10), radius: 3, y: 1)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Remove \(tile.value)")
     }
 }
 
 // MARK: - Primary play button
+
+/// Delete the last word — a small control floating at the end of the words.
+///
+/// **Why it exists.** Once the tray is words rather than tiles, removing one by
+/// tapping it is not obvious: a word in a sentence does not look like a button,
+/// and the tray at this stage is deliberately trying to look like text. Mark:
+/// *"tapping the word will work but it's much less intuitive than a legit
+/// backspace type of control."*
+///
+/// **Why it floats in the text area rather than joining the buttons.** It
+/// belongs to the words, not to the tray — it is the caret's neighbour, the way
+/// it is on every keyboard the child will ever meet. Putting it in the control
+/// column made it a peer of Play and Clear, which cost Play its slot and made
+/// the top stage the only one missing a control the others have. Here it costs
+/// nothing and appears only when there is something to delete, so an empty tray
+/// looks exactly as it always did.
+///
+/// Small, quiet and round: it sits *over* the text rather than beside it, and a
+/// control that size reads as an affordance rather than as a fourth button.
+struct BackspaceButton: View {
+    let isEnabled: Bool
+    /// Tighter sizing for the compact (iPhone) tray. iPad uses the default.
+    var compact: Bool = false
+    let action: () -> Void
+
+    private var diameter: CGFloat { compact ? 26 : 32 }
+    private var iconSize: CGFloat { compact ? 12 : 15 }
+
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                Circle()
+                    .fill(Color(.systemBackground))
+                    .overlay(Circle().strokeBorder(Color.primary.opacity(0.14), lineWidth: 1))
+                    .shadow(color: .black.opacity(0.10), radius: 2, y: 1)
+
+                Image(systemName: "delete.left")
+                    .font(.system(size: iconSize, weight: .semibold))
+                    .foregroundStyle(Color.primary.opacity(0.7))
+            }
+            .frame(width: diameter, height: diameter)
+        }
+        .buttonStyle(.plain)
+        .allowsHitTesting(isEnabled)
+        .opacity(isEnabled ? 1 : 0)
+        .animation(.easeInOut(duration: 0.15), value: isEnabled)
+        .accessibilityLabel("Delete last word")
+        .accessibilityHidden(!isEnabled)
+    }
+}
 
 struct PrimaryPlayButton: View {
     let canFire: Bool

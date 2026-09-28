@@ -129,6 +129,16 @@ final class SentenceEngine {
         return scriptedModeOverride ?? (profileResolver?.interactionMode ?? .sentence)
     }
 
+    /// Whether tray chips show their pictures. Derived from the child's stage —
+    /// see `BrownsStage.showsPicturesInTray`.
+    ///
+    /// Read through the engine because that is where the tray already looks for
+    /// everything else about the active child, and one environment object in a
+    /// hot view body beats two.
+    var trayShowsPictures: Bool {
+        profileResolver?.brownsStage.showsPicturesInTray ?? true
+    }
+
     /// Set when OpenAI rejects the key outright — revoked, expired, or out of
     /// credit.
     ///
@@ -477,6 +487,17 @@ final class SentenceEngine {
         spokenStrip.removeAll()
         repetitionCount = 0
         lastTileKey = nil
+    }
+
+    /// Remove the most recently added tile — the backspace control at Stage IV+.
+    ///
+    /// Routed through `removeTile(at:)` rather than popping the array, so a
+    /// locked group still unlocks and a pending generation is still rescheduled.
+    /// A backspace that skipped that would leave the tray showing a sentence
+    /// built from a word that is no longer in it.
+    func removeLastSelectedTile() {
+        guard !activeGroup.tiles.isEmpty else { return }
+        removeTile(at: activeGroup.tiles.count - 1)
     }
 
     /// Remove a tile from the active group.
@@ -1182,6 +1203,21 @@ final class SentenceEngine {
         activeGroup.state = .locked
         cacheManager?.logEvent(subjectType: "promoted", subjectKey: entry.cacheKey, eventType: .hit)
         speak(entry.sentence)
+    }
+
+    /// Speak every word in the strip, in the order they were chosen.
+    ///
+    /// **No grammar, no generation, no cleanup.** This is the word-mode Play at
+    /// Stage IV+: the child assembled a line and wants to hear the line. Mark:
+    /// *"in word mode, we TTS the collection of words which may or may not make
+    /// sense."* Making sense is not this control's job — a child arranging
+    /// words and hearing exactly what they arranged is the point, and a tidy-up
+    /// pass would quietly teach that the board says something other than what
+    /// was pressed.
+    func speakStrip() {
+        let line = spokenStrip.map(\.value).joined(separator: " ")
+        guard !line.isEmpty else { return }
+        speak(line)
     }
 
     func speakTile(_ text: String) {

@@ -108,6 +108,25 @@ final class ChildProfileResolver {
         active?.interactionMode ?? Self.fallbackStage.interactionMode
     }
 
+    /// Clear a device override that a stage change has made stale.
+    ///
+    /// **Moving a child up to Stage IV+ puts the device back in sentence mode.**
+    /// Mark: *"when jumping into stage IV, we force ourselves into sentence
+    /// generation mode."* The reason is that at Stage IV+ the two modes no
+    /// longer look different from across the room — both draw the tray as a
+    /// line of words with the same three controls — so a device left pinned to
+    /// single-word by an override made weeks ago would be silently withholding
+    /// sentence generation from a child who has just been assessed as ready for
+    /// it, with nothing on screen saying so.
+    ///
+    /// The override is still available: it is a device-local, deliberate act
+    /// from the caregiver menu, and the menu shows which mode is current. What
+    /// this prevents is a stale one surviving the promotion that invalidated it.
+    func clearOverrideOnPromotion(to stage: BrownsStage) {
+        guard stage == .fourPlus, modeOverride != nil else { return }
+        setModeOverride(nil)
+    }
+
     /// Set (or clear, with `nil`) this device's temporary mode override.
     /// Deliberately does **not** touch the active child's Brown's Stage — see
     /// `DeviceProfile.modeOverrideRaw` for why those are different facts.

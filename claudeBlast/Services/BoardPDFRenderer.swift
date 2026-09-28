@@ -87,15 +87,26 @@ struct BoardPrintFilter: Equatable {
 
 struct BoardPrintOptions: Equatable {
     var paper: PaperSize = .usLetter
-    var orientation: PrintOrientation = .portrait
+    /// **Landscape, to match the board.**
+    ///
+    /// The app's grid is landscape and twelve columns wide, and a printed board
+    /// that is neither is a second layout for the same vocabulary. A child who
+    /// has learned where `want` sits has learned a position, not a word, and a
+    /// portrait sheet moves every position on it.
+    var orientation: PrintOrientation = .landscape
     /// The density knob. Rows are derived, never set: fixing columns and letting
     /// rows fall out of the paper height keeps tiles square on every paper size
     /// and orientation, without a second control that can contradict the first.
     ///
-    /// Zero means "whatever suits this sheet" — see `defaultColumns`. A caregiver
-    /// who has not touched the stepper gets a sensible grid whichever way the
-    /// paper turns.
-    var columns: Int = 0
+    /// Zero means "whatever suits this sheet" — see `defaultColumns`.
+    ///
+    /// **Defaults to 12, not to zero**, because the app draws twelve columns and
+    /// the printed board should be the same board. The content-aware default is
+    /// still there and still good arithmetic — it just answers a different
+    /// question (what fits this paper) from the one that matters most here (what
+    /// the child already knows). A caregiver who moves the stepper gets exactly
+    /// what they asked for, including the tile size that comes with it.
+    var columns: Int = 12
     /// Dashed guides around every cell, for scissors. The PECS case is this plus
     /// a low density — a setting, not a separate layout.
     var cutLines = false
@@ -169,6 +180,21 @@ struct BoardPrintOptions: Equatable {
     var resolvedColumns: Int {
         let requested = columns > 0 ? columns : defaultColumns
         return min(max(requested, minColumns), Self.maxColumns)
+    }
+
+    /// The columns the app itself draws at the default density on an 11" or 13"
+    /// iPad. See `GridLayoutCalculator`.
+    static let screenColumns = 12
+
+    /// True when this sheet is the same grid the app draws.
+    ///
+    /// Only then is the Home cell reserved — see `BoardPagination.paginate`.
+    /// Anyone who turns the paper or moves the density stepper has asked for a
+    /// different layout and gets it, gap and all removed: reserving a cell for a
+    /// button that is not where they put it would be superstition rather than
+    /// alignment.
+    var matchesScreenLayout: Bool {
+        orientation == .landscape && resolvedColumns == Self.screenColumns
     }
 }
 
@@ -328,21 +354,39 @@ enum BoardPagination {
     /// An empty board page still gets one sheet. The printed set is meant to
     /// mirror the board's structure, and silently dropping a page the caregiver
     /// can see in the editor would make the two disagree.
-    static func paginate(_ pages: [PageSpec], perSheet: Int) -> [BoardSheet] {
-        guard perSheet > 0 else { return [] }
+    ///
+    /// - Parameter reservingHomeCell: hold cell 0 of every sheet empty, the way
+    ///   the app holds it for the Home button.
+    ///
+    ///   **On screen, Home occupies cell 0 of every board page** — an invariant
+    ///   position, which is motor planning. The printed sheet had no such cell,
+    ///   so every tile on paper sat one place earlier than the same tile on the
+    ///   iPad and the two boards disagreed from the very first row. Reserving
+    ///   the cell costs one tile per sheet and buys a printed board a child can
+    ///   read with the positions they already know.
+    ///
+    ///   Home itself is not drawn, because paper does not navigate. What is
+    ///   printed is a gap, which `isEmptyCell` already knows how to draw and a
+    ///   caregiver cutting the sheet up already understands.
+    static func paginate(_ pages: [PageSpec], perSheet: Int,
+                         reservingHomeCell: Bool = false) -> [BoardSheet] {
+        let capacity = reservingHomeCell ? perSheet - 1 : perSheet
+        guard capacity > 0 else { return [] }
         var sheets: [BoardSheet] = []
 
         for page in pages {
             let chunks: [[TileEntry]] = page.tiles.isEmpty
                 ? [[]]
-                : stride(from: 0, to: page.tiles.count, by: perSheet).map {
-                    Array(page.tiles[$0 ..< min($0 + perSheet, page.tiles.count)])
+                : stride(from: 0, to: page.tiles.count, by: capacity).map {
+                    Array(page.tiles[$0 ..< min($0 + capacity, page.tiles.count)])
                 }
             for (offset, chunk) in chunks.enumerated() {
                 sheets.append(BoardSheet(pageKey: page.key,
                                          sheetIndex: offset + 1,
                                          sheetCount: chunks.count,
-                                         tiles: chunk,
+                                         tiles: reservingHomeCell
+                                             ? [TileEntry.spacer()] + chunk
+                                             : chunk,
                                          pageTitle: page.title))
             }
         }
@@ -496,7 +540,9 @@ enum BoardPDFRenderer {
                                          orientation: options.orientation,
                                          columns: options.resolvedColumns)
         let visible = BoardPagination.filtered(pages, filter: options.filter, tileLookup: tileLookup)
-        let sheets = BoardPagination.paginate(visible, perSheet: layout.perSheet)
+        let sheets = BoardPagination.paginate(
+            visible, perSheet: layout.perSheet,
+            reservingHomeCell: options.matchesScreenLayout)
 
         try await images.warm(keys: sheets.flatMap { sheet in
                                   sheet.tiles.map { entry in
