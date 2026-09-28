@@ -23,6 +23,105 @@ struct BoardPrintTests {
         PageSpec(key: key, tiles: (0..<count).map { TileEntry(key: "\(key)_\($0)") })
     }
 
+    // MARK: - The printed sheet is the same board
+
+    /// A printed board that is not the app's grid is a second layout for the
+    /// same vocabulary, and a child who has learned where `want` sits has
+    /// learned a position rather than a word.
+    @Test("The default sheet is landscape and twelve columns")
+    func defaultSheetMatchesTheScreen() {
+        let options = BoardPrintOptions()
+        #expect(options.orientation == .landscape)
+        #expect(options.columns == BoardPrintOptions.screenColumns)
+        #expect(options.resolvedColumns == 12)
+        #expect(options.matchesScreenLayout)
+    }
+
+    /// "For anyone deviating from our standard landscape 12 column layout they
+    /// get what they asked for" — including no reserved Home cell, because
+    /// holding a cell for a button that is not where they put it would be
+    /// superstition rather than alignment.
+    @Test("Turning the paper or moving the density opts out")
+    func deviatingFromTheStandardSheetOptsOut() {
+        var turned = BoardPrintOptions()
+        turned.orientation = .portrait
+        #expect(!turned.matchesScreenLayout)
+
+        var denser = BoardPrintOptions()
+        denser.columns = 9
+        #expect(!denser.matchesScreenLayout)
+
+        var sparser = BoardPrintOptions()
+        sparser.columns = 6
+        #expect(!sparser.matchesScreenLayout)
+    }
+
+    /// On screen Home occupies cell 0 of **every** board page, so the printed
+    /// sheet has to hold that cell too — otherwise every tile on paper sits one
+    /// place earlier than the same tile on the iPad.
+    @Test("The reserved Home cell holds cell 0 of every sheet")
+    func homeCellIsReservedOnEverySheet() {
+        let sheets = BoardPagination.paginate([page("describe", 40)], perSheet: 16,
+                                              reservingHomeCell: true)
+        // 15 words per sheet once Home has its cell, so 40 words need 3 sheets.
+        #expect(sheets.count == 3)
+        for sheet in sheets {
+            #expect(sheet.tiles.first?.isEmptyCell == true,
+                    "sheet \(sheet.sheetIndex) does not open with the Home gap")
+            #expect(sheet.tiles.count <= 16)
+        }
+        // Nothing is lost to the reservation — every word still prints.
+        let words = sheets.flatMap { $0.tiles }.filter { !$0.isEmptyCell }
+        #expect(words.count == 40)
+    }
+
+    /// Each spacer carries its own key, because a `TileEntry`'s identity *is*
+    /// its key and two sheets opening with the same one would collide in any
+    /// view that renders them together.
+    @Test("Each reserved cell is its own entry")
+    func reservedCellsAreDistinct() {
+        let sheets = BoardPagination.paginate([page("describe", 40)], perSheet: 16,
+                                              reservingHomeCell: true)
+        let keys = sheets.compactMap { $0.tiles.first?.key }
+        #expect(Set(keys).count == keys.count)
+    }
+
+    /// Off by default, so nothing that asked for the old behaviour gets a gap
+    /// it did not ask for.
+    @Test("Without the reservation a sheet is unchanged")
+    func reservationIsOptIn() {
+        let sheets = BoardPagination.paginate([page("describe", 40)], perSheet: 16)
+        #expect(sheets.count == 3)
+        #expect(sheets[0].tiles.count == 16)
+        #expect(sheets.allSatisfy { $0.tiles.allSatisfy { !$0.isEmptyCell } })
+    }
+
+    /// The case this exists for: the bundled home page is 59 tiles, and with the
+    /// Home cell reserved it lands on one sheet in the same columns the app
+    /// draws — row 0 the folders, row 1 the pronouns, and so on.
+    @Test("The bundled home page prints in the same columns it draws in")
+    func bundledHomePagePrintsInScreenColumns() throws {
+        let container = TestStore.freshContainer()
+        let result = BootstrapLoader.loadDefaultVocabulary(context: container.mainContext)
+        let home = try #require(result.pages.first { $0.key == "home" })
+
+        let options = BoardPrintOptions()
+        let layout = SheetLayout.compute(paper: options.paper,
+                                         orientation: options.orientation,
+                                         columns: options.resolvedColumns)
+        let sheets = BoardPagination.paginate([home], perSheet: layout.perSheet,
+                                              reservingHomeCell: options.matchesScreenLayout)
+
+        #expect(sheets.count == 1, "the home page should not spill onto a second sheet")
+        let printed = try #require(sheets.first).tiles
+        #expect(printed.first?.isEmptyCell == true)
+        // Cell 0 is the gap, so the first word prints at index 1 — exactly where
+        // it sits on the board.
+        #expect(printed.count == home.tiles.count + 1)
+        #expect(printed[1].key == home.tiles[0].key)
+        #expect(printed[12].key == home.tiles[11].key, "column 0 of row 1 has moved")
+    }
+
     // MARK: - Pagination
 
     /// The rule the whole renderer is built around.

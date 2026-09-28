@@ -48,6 +48,33 @@ enum BrownsStage: String, CaseIterable, Identifiable {
 
     var label: String { "Stage \(rawValue)" }
 
+    /// Whether a tray chip carries its picture, or just the word.
+    ///
+    /// **Brandi, reviewing the board:** in the more advanced mode the tray
+    /// should show the display name without the tile image.
+    ///
+    /// The reasoning is developmental rather than cosmetic. At Stages I-III the
+    /// tray is the child's own feedback loop — *these are the ones I pressed* —
+    /// and it has to be readable by someone who is not yet reading, so it echoes
+    /// the pictures back. A Stage IV+ child is building sentences with
+    /// embedding and coordination, and for them the tray is a sentence under
+    /// construction: the words matter, and a row of pictures is a slower way to
+    /// read the same thing. The picture has already done its job on the board.
+    ///
+    /// It also buys room. The same chip without its picture fits far more of a
+    /// long word, and Stage IV+ is exactly where the caregiver chooses how many
+    /// tiles a sentence may hold.
+    ///
+    /// **Derived, never stored** — the rule this whole axis exists to enforce.
+    /// Three separate knobs were removed to get here; a fourth would be a
+    /// setting that can disagree with the stage it was supposed to follow.
+    var showsPicturesInTray: Bool {
+        switch self {
+        case .one, .twoThree: return true
+        case .fourPlus: return false
+        }
+    }
+
     /// Plain-language description for a caregiver who has never heard of Roger
     /// Brown. Deliberately describes the *child*, not the app's behavior — the
     /// caregiver is picking where their child is, not picking a feature.

@@ -54,7 +54,8 @@ struct CompactTrayStrip: View {
                     onTileTap: onTileTap,
                     onExpandSentence: onShowSentence,
                     onBubbleLongPress: { showBubbleActions = true },
-                    isSuppressed: engine.activeIsSuppressed
+                    isSuppressed: engine.activeIsSuppressed,
+                    showsPictures: engine.trayShowsPictures
                 )
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -188,6 +189,8 @@ private struct ActiveCard: View {
     let onBubbleLongPress: () -> Void
     /// True when this combination is suppressed (shows a muted bubble instead).
     let isSuppressed: Bool
+    /// False at Stage IV+ — see `BrownsStage.showsPicturesInTray`.
+    var showsPictures: Bool = true
 
     /// Both floors below are `@ScaledMetric`, and that is not decoration.
     ///
@@ -283,7 +286,8 @@ private struct ActiveCard: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 8)
             } else {
-                ChipsRow(tiles: tiles, chipSize: chip, onTap: onTileTap)
+                ChipsRow(tiles: tiles, chipSize: chip,
+                         showsPictures: showsPictures, onTap: onTileTap)
                 if isSuppressed {
                     CompactMutedBubble()
                         .layoutPriority(1)
@@ -322,6 +326,14 @@ private struct ChipsRow: View {
     /// Measured by the card, which is the only view that knows how much width
     /// the sentence still needs.
     let chipSize: CGFloat
+    /// False at Stage IV+, where the chip carries the word instead of the
+    /// picture — see `BrownsStage.showsPicturesInTray`.
+    ///
+    /// The word replaces the picture rather than joining it, because this chip
+    /// has never had room for both and the square it occupies is measured
+    /// against whatever width the sentence still needs. Same size, different
+    /// content, so no layout arithmetic changes.
+    var showsPictures: Bool = true
     let onTap: (Int) -> Void
 
     private let cornerRadius: CGFloat = 8
@@ -343,15 +355,30 @@ private struct ChipsRow: View {
                     // picture with a hairline border, which on a phone sat
                     // directly under a board of solid cards and read as a
                     // different kind of object.
-                    TileImageView(key: tile.key, wordClass: tile.wordClass)
-                        .padding(2)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: cornerRadius - 3))
-                        .padding(plateInset(chipSize))
-                        .frame(width: chipSize, height: chipSize)
-                        .background(accent)
-                        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-                        .shadow(color: .black.opacity(0.08), radius: 1.5, y: 1)
+                    if showsPictures {
+                        TileImageView(key: tile.key, wordClass: tile.wordClass)
+                            .padding(2)
+                            .background(Color.white)
+                            .clipShape(RoundedRectangle(cornerRadius: cornerRadius - 3))
+                            .padding(plateInset(chipSize))
+                            .frame(width: chipSize, height: chipSize)
+                            .background(accent)
+                            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                            .shadow(color: .black.opacity(0.08), radius: 1.5, y: 1)
+                    } else {
+                        // Word only, unenclosed — see `ActiveTileCard.word` for
+                        // why the card and the colour both go rather than just
+                        // the picture.
+                        Text(tile.value)
+                            .font(.system(size: max(9, chipSize * 0.26),
+                                          weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.5)
+                            .frame(width: chipSize, height: chipSize)
+                            .contentShape(Rectangle())
+                    }
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Remove \(tile.value)")
