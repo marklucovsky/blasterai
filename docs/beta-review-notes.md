@@ -119,6 +119,7 @@ reviewer needs so a keyless app does not read as a broken one.
 > key step. Most of this needs no key, and that is the configuration most
 > families will run.
 >
+<!-- pdf-only -->
 > ### The child's side
 >
 > 1. **Tap tiles on the home board.** Each word should speak the instant you
@@ -152,6 +153,36 @@ reviewer needs so a keyless app does not read as a broken one.
 > - **blasterai.app/guides/pages-and-navigation**
 > - **blasterai.app/guides/adding-vocabulary**
 >
+<!-- /pdf-only -->
+> ### Folder colours — new in this build
+>
+> The top row of the home board is folders. They used to be one blue. Now each
+> takes the colour of the words behind it: **people** yellow for pronouns,
+> **actions** green for verbs, **describe** blue, **questions** purple.
+> **groups** and **keyboard** stay blue — a folder of folders is not a kind of
+> word.
+>
+> This is the part we are least sure about.
+>
+> A. **Does the top row tell you anything?** A green folder standing over a
+>    green block of verbs — help, or just more colour?
+> B. **Turn it off.** Admin → the child's profile → **Folder Color** → *Always
+>    the Link Color*. Which do you prefer, and **for whom** — the child, or you?
+> C. **Print it both ways** (Share → Printable PDF). We suspect the answer
+>    differs on paper, where nothing navigates and a folder is a landmark
+>    rather than a category. Tell us if that is nonsense.
+>
+<!-- pdf-only -->
+> D. **Change one by hand.** Page editor → a folder tile → **Folder color**:
+>    *Automatic* (it names what it worked out), *Page Links*, or a word type.
+>    Set one, then add words to the page behind it — a folder you chose stays
+>    put, one left on Automatic follows the page.
+>
+<!-- /pdf-only -->
+> If you use WordPower or TouchChat, we would especially like to know whether
+> this reads the way the board you already know does.
+>
+<!-- pdf-only -->
 > ### Taking a board off the device
 >
 > 7. **Scenes → touch and hold a board → Share.** Try **Printable PDF** — pick a
@@ -170,16 +201,23 @@ reviewer needs so a keyless app does not read as a broken one.
 > 10. **Activity.** The log of what was said, and **Coverage** — which of the
 >     board's words have and have not been used. Does that screen answer a
 >     question you would actually ask about a child?
+<!-- /pdf-only -->
 >
 > ### Now add a key
 >
 > Add an OpenAI key in **Admin → Device**, or open the key file if one was sent
 > to you.
 >
-> First, the tray. Tiles you tap collect along the top. **There is no back
-> button — tap a tile in the tray to take it back out.** Beside them are **Play**
-> and **Clear**.
+> The full half-hour walk — the child's side, building a board, printing and
+> sharing it — is in the PDF that came with your invitation. Below is what is
+> new in this build and what we would most like you to push on.
 >
+> First, the tray. Tiles you tap collect along the top.
+> **Tap a tile in the tray to take it back out.**
+> Beside them are **Play** and **Clear**. At Stage IV+ there is also a
+> backspace — see below.
+>
+<!-- pdf-only -->
 > 11. **Start deliberately.** Tap three tiles, then press **Play**. You decide
 >     when it speaks. Press **Clear** and do it again with different words.
 > 12. **Now let it decide.** Tap four and pause without pressing anything — it
@@ -194,11 +232,37 @@ reviewer needs so a keyless app does not read as a broken one.
 > 14. **Add a new word** to one of your boards and let it draw a picture for it.
 > 15. **Go back to Activity.** It should now show the sentences, and what they
 >     cost.
+<!-- /pdf-only -->
+>
+> ### Stage IV+ — the board as something you write with
+>
+> **Admin → the child's profile → Brown's Stage → IV+**, the most advanced
+> stage. The tray stops looking like a row of tiles and starts looking like a
+> line of text — words as words, no picture, no coloured card. The child is
+> writing a sentence and picking the words off a board instead of a keyboard.
+>
+> - **Type a sentence.** Tap four or five words. A small **backspace** appears
+>   at the end of them, only while there is something to delete. **Clear**
+>   still empties the tray; tapping a word still removes that word.
+> - **Build the same line in both modes** — long-press Home → caregiver menu.
+>   **Sentence mode**: Play turns the words into a sentence, as at other
+>   stages. **Word mode**: Play speaks them exactly as you arranged them,
+>   sentence or not. That is deliberate — better to say what the child
+>   assembled than to tidy it into something they did not.
+> - **Can you tell which mode you are in?** Probably not from the board, which
+>   is what we are least happy about. It is in the caregiver menu. Enough, or
+>   should the screen say so?
+>
+> Then put the stage back where it belongs and watch the pictures return.
 >
 > ### What we most want to hear
 >
 > - **The starting board is our first attempt, not a recommendation.** Where is
 >   it wrong?
+> - **Folder colours:** on or off, and does your answer change between the
+>   screen and the printed sheet?
+> - **Stage IV+:** is a tray of plain words right for a child who is building
+>   sentences, or does it take away something the pictures were doing?
 > - Did anything feel broken, slow or confusing **before** you added a key?
 > - Is the child-facing screen calm enough to hand to a child?
 > - Did anything in Admin look like it needs a manual?

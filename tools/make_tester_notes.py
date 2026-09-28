@@ -60,11 +60,33 @@ H1_SIZE, H2_SIZE = 20, 13
 BODY_COLS = 92
 
 
-def extract(doc: str, title: str, until: str) -> str:
+# Lines between these markers reach the PDF but not the App Store Connect text.
+#
+# The two have different jobs and only one of them has a 4,000-character wall.
+# The ASC field is what a tester reads inside TestFlight for THIS build, so it
+# carries what changed and why we care; the PDF is the half-hour walk that goes
+# out with the invitation and has no reason to be short. Before this split the
+# walk sat at 3,930 of 4,000 — 70 characters of headroom — and the next real
+# addition to it silently truncated in the field rather than failing here.
+PDF_ONLY_OPEN = "<!-- pdf-only -->"
+PDF_ONLY_CLOSE = "<!-- /pdf-only -->"
+
+
+def extract(doc: str, title: str, until: str, *, for_pdf: bool) -> str:
     """One blockquoted section, as the plain text the ASC field wants."""
     body = doc.split(title, 1)[1].split(until, 1)[0]
     out = []
+    skipping = False
     for line in body.splitlines():
+        marker = line.strip()
+        if marker == PDF_ONLY_OPEN:
+            skipping = not for_pdf
+            continue
+        if marker == PDF_ONLY_CLOSE:
+            skipping = False
+            continue
+        if skipping:
+            continue
         if line.startswith("> "):
             line = line[2:]
         elif line.strip() == ">":
@@ -225,10 +247,14 @@ def main() -> int:
     # distinction the form makes and it is easy to miss.
     sections = {
         "beta-app-description": extract(doc, "### Beta App Description",
-                                        "## 1. Review Notes"),
-        "review-notes": extract(doc, "## 1. Review Notes", "## 2. What to Test"),
-        "what-to-test": extract(doc, "## 2. What to Test", "## 3. Invite email"),
+                                        "## 1. Review Notes", for_pdf=False),
+        "review-notes": extract(doc, "## 1. Review Notes", "## 2. What to Test",
+                                for_pdf=False),
+        "what-to-test": extract(doc, "## 2. What to Test", "## 3. Invite email",
+                                for_pdf=False),
     }
+    # The PDF is the same section with nothing held back.
+    walk = extract(doc, "## 2. What to Test", "## 3. Invite email", for_pdf=True)
 
     over = False
     for name, text in sections.items():
@@ -254,7 +280,7 @@ def main() -> int:
         print(f"  wrote {OUT / f'{name}.txt'}")
 
     pdf = OUT / "BlasterAI-TestFlight.pdf"
-    write_pdf(layout(sections["what-to-test"]), pdf)
+    write_pdf(layout(walk), pdf)
     print(f"  wrote {pdf}")
     return 0
 
