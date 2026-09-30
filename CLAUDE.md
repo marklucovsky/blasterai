@@ -151,7 +151,7 @@ Provider abstraction: `SentenceProvider` protocol. Implementations:
 Audio: `SpeechSynthesizer.swift` wraps `AVSpeechSynthesizer` for all TTS (sentences + tile preview). Audio session configured with `.playback` + `.spokenAudio` at launch so speech plays regardless of the silent switch. Voice selected in AdminView, persisted in `speechVoiceIdentifier` UserDefaults key.
 
 API key stored in `@AppStorage("openai_api_key")` (UserDefaults). Dev-only acceptable.
-Override: set `OPENAI_API_KEY` env var in scheme → takes precedence, skips UI entry.
+Override: set `OPENAI_API_KEY` env var in scheme → takes precedence, skips UI entry. **DEBUG builds only** — Release compiles it out (`OpenAIKeyVault.environmentOverride`), and `preflight_release.py` checks the Release binary.
 
 ### Views
 - `ContentView` — root TabView with two tabs: child grid (TileGridView) and admin (AdminView)

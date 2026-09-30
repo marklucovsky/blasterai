@@ -10,8 +10,8 @@ import Foundation
 /// Typed accessor for the OpenAI API key.
 ///
 /// Resolution order at read time:
-/// 1. `OPENAI_API_KEY` environment variable (developer override; not surfaced
-///    in the consumer UI).
+/// 1. `OPENAI_API_KEY` environment variable — a developer override that exists
+///    only in DEBUG builds. See `environmentOverride`.
 /// 2. Keychain entry under `service = com.lucovsky.claudeBlast.api`,
 ///    `account = openai`.
 ///
@@ -28,14 +28,36 @@ enum OpenAIKeyVault {
         KeychainSecretStore(service: service, account: account)
     }
 
+    /// The developer key override, and the only place the app reads it.
+    ///
+    /// **DEBUG only.** A shipping build has no override and no copy that
+    /// mentions one: the variable name is compiled out, so a Release binary does
+    /// not contain it at all, and `preflight_release.py` checks exactly that.
+    /// Nothing a family can do sets a scheme environment variable, so in Release
+    /// the path could only ever be dead code — and dead code that describes a
+    /// way to inject a key is not something to ship to App Review.
+    ///
+    /// Blank and whitespace-only values count as absent, so an exported but
+    /// empty `OPENAI_API_KEY` cannot swallow a real stored key.
+    static func environmentOverride(
+        _ environment: [String: String] = ProcessInfo.processInfo.environment
+    ) -> String? {
+        #if DEBUG
+        guard let key = environment["OPENAI_API_KEY"]?.trimmingCharacters(in: .whitespaces),
+              !key.isEmpty else { return nil }
+        return key
+        #else
+        return nil
+        #endif
+    }
+
     /// The effective key right now. Returns `nil` (not an empty string) when
     /// no key is available, so callers can branch on `if let`.
     static func currentKey(
         env: ProcessInfo = .processInfo,
         store: SecretStore = defaultStore()
     ) -> String? {
-        if let envKey = env.environment["OPENAI_API_KEY"]?.trimmingCharacters(in: .whitespaces),
-           !envKey.isEmpty {
+        if let envKey = environmentOverride(env.environment) {
             return envKey
         }
         guard let stored = store.read(), !stored.isEmpty else { return nil }

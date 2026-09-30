@@ -234,6 +234,119 @@ def check_sibling_audits() -> str:
     return "tile-set drift and model list clean"
 
 
+ENV_KEY_ACCESSOR = Path("claudeBlast/Services/OpenAIKeyVault.swift")
+# Copy that exists only to describe the override. Each is longer than 15 bytes
+# on purpose — see `check_no_env_key_in_release` for why the name itself is not
+# on this list.
+ENV_KEY_COPY = [b"OpenAI (env override)", b"Set via environment",
+                b"`OPENAI_API_KEY` environment "]
+
+
+def built_app(config: str) -> Path:
+    """The .app bundle the last build of `config` produced, from its own settings."""
+    result = run(["xcodebuild", "-scheme", SCHEME, "-configuration", config,
+                  "-destination", DESTINATION, "-showBuildSettings"])
+    settings = dict(re.findall(r"^\s*(TARGET_BUILD_DIR|WRAPPER_NAME) = (.+)$",
+                               result.stdout, re.MULTILINE))
+    if "TARGET_BUILD_DIR" not in settings or "WRAPPER_NAME" not in settings:
+        raise Failure(f"could not read the {config} build location from "
+                      "xcodebuild -showBuildSettings — the bundle was not examined")
+    return Path(settings["TARGET_BUILD_DIR"]) / settings["WRAPPER_NAME"]
+
+
+def bundle_mentions(app: Path, needle: bytes) -> list[str]:
+    """Every file in the bundle containing `needle`. Fails if there is no bundle."""
+    if not app.is_dir():
+        raise Failure(f"{app} does not exist — the build it names has not run, "
+                      "so nothing was examined")
+    return [str(f.relative_to(app)) for f in app.rglob("*")
+            if f.is_file() and needle in f.read_bytes()]
+
+
+def debug_only_lines(path: Path) -> set[int]:
+    """Line numbers inside an `#if DEBUG` branch (before its #else / #endif)."""
+    inside, depth, lines = False, 0, set()
+    for n, line in enumerate(path.read_text().splitlines(), 1):
+        t = line.strip()
+        if t.startswith("#if"):
+            depth += 1
+            if t == "#if DEBUG" and depth == 1:
+                inside = True
+            continue
+        if t.startswith("#else") or t.startswith("#elseif"):
+            if depth == 1:
+                inside = False
+            continue
+        if t.startswith("#endif"):
+            depth -= 1
+            if depth == 0:
+                inside = False
+            continue
+        if inside:
+            lines.add(n)
+    return lines
+
+
+def check_no_env_key_in_release() -> str:
+    """The developer key override is DEBUG only, in the source and in the binary.
+
+    `OPENAI_API_KEY` lets a developer scheme inject a key. A family can never
+    set a scheme variable, so in a shipping build the path is dead code — and
+    dead code that describes a way to inject a key, with copy naming it, is not
+    something to hand App Review.
+
+    **The binary cannot be searched for the name itself.** Swift stores a string
+    of 15 bytes or fewer inline, in the instructions that build it, and
+    `OPENAI_API_KEY` is 14 — it never appears contiguously in any binary, Debug
+    or Release. A first version of this check scanned for it, passed, and went
+    on passing with the `#if DEBUG` removed. So the two halves check what each
+    can actually see:
+
+    - **Source:** the literal is read in exactly one file, and only inside an
+      `#if DEBUG` branch there.
+    - **Binary:** the copy that names the override is long enough to be stored
+      as bytes. The Debug bundle MUST contain it — the known-good input that
+      proves the scan works — and the Release bundle must not. A missing bundle
+      is "could not look", never "clean".
+
+    The source half is the load-bearing one. With the accessor guarded, Release
+    sees `environmentOverride()` return a constant nil, and the optimizer drops
+    every branch behind it — copy included — even if a view forgets its own
+    `#if DEBUG`. The binary half catches the copy that the optimizer *cannot*
+    drop: text on a path Release can actually reach. Both were confirmed by
+    removing the guards and watching each half fail.
+    """
+    stray = [str(p) for p in Path("claudeBlast").rglob("*.swift")
+             if p != ENV_KEY_ACCESSOR and b'"OPENAI_API_KEY"' in p.read_bytes()]
+    if stray:
+        raise Failure("the key override is read outside OpenAIKeyVault — route "
+                      "it through `environmentOverride`:\n" +
+                      "\n".join(f"       {s}" for s in stray))
+    guarded = debug_only_lines(ENV_KEY_ACCESSOR)
+    reads = [n for n, line in enumerate(ENV_KEY_ACCESSOR.read_text().splitlines(), 1)
+             if '"OPENAI_API_KEY"' in line]
+    if not reads:
+        raise Failure(f"{ENV_KEY_ACCESSOR} no longer reads OPENAI_API_KEY — this "
+                      "check is looking in the wrong place")
+    unguarded = [n for n in reads if n not in guarded]
+    if unguarded:
+        raise Failure("OPENAI_API_KEY is read outside `#if DEBUG` at "
+                      + ", ".join(f"{ENV_KEY_ACCESSOR}:{n}" for n in unguarded))
+
+    debug_app, release_app = built_app("Debug"), built_app("Release")
+    for marker in ENV_KEY_COPY:
+        if not bundle_mentions(debug_app, marker):
+            raise Failure(f"the Debug bundle does not contain {marker.decode()!r}, "
+                          "so this scan cannot see it — the check is broken, "
+                          "not passed")
+        hits = bundle_mentions(release_app, marker)
+        if hits:
+            raise Failure(f"the Release bundle contains {marker.decode()!r} — "
+                          "override copy outside `#if DEBUG`:\n" +
+                          "\n".join(f"       {h}" for h in hits))
+    return "override read only under #if DEBUG; its copy is absent from Release"
+
+
 # --- driver -----------------------------------------------------------------
 
 
@@ -256,6 +369,8 @@ def main() -> int:
         ("audits", check_sibling_audits),
         ("Debug build", lambda: check_builds("Debug")),
         ("Release build", lambda: check_builds("Release")),
+        # After both builds: it reads the bundles they produced.
+        ("no env key in Release", check_no_env_key_in_release),
     ]
     if not args.fast:
         checks.append(("test suite", check_tests))

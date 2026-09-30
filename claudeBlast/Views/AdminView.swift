@@ -168,8 +168,9 @@ struct AdminView: View {
     /// confirmation; on confirm we take an editable copy and open that instead.
     @State var sceneToClone: BlasterScene?
 
+    /// DEBUG only; always false in a shipping build.
     var envKeyOverride: Bool {
-        ProcessInfo.processInfo.environment["OPENAI_API_KEY"] != nil
+        OpenAIKeyVault.environmentOverride() != nil
     }
 
     func tileDensityLabel(_ step: Int) -> String {
