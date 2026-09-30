@@ -146,10 +146,16 @@ struct GiftedKeyImportSheet: View {
                          + "on this device is untouched. To use the new one instead, remove the "
                          + "current key first: **Admin → Device → Remove API Key**.")
                 case .environment:
+                    // Unreachable in a shipping build, which has no override —
+                    // and the copy names the variable, so it is compiled out.
+                    #if DEBUG
                     Text("This build is using a key from the `OPENAI_API_KEY` environment "
                          + "variable, which always wins over a stored one. The key for "
                          + "**\(payload.label)** was not installed. Clear the scheme's "
                          + "environment variable to use it.")
+                    #else
+                    EmptyView()
+                    #endif
                 }
             }
         }
@@ -219,7 +225,7 @@ struct GiftedKeyImportSheet: View {
 
         do {
             let payload = try GiftedKeyObfuscation.open(try Data(contentsOf: url))
-            if ProcessInfo.processInfo.environment["OPENAI_API_KEY"]?.isEmpty == false {
+            if OpenAIKeyVault.environmentOverride() != nil {
                 phase = .occupied(payload, existing: .environment)
             } else if let existing = OpenAIKeyVault.currentKey(), !existing.isEmpty {
                 phase = .occupied(payload, existing: .stored)

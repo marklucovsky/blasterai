@@ -47,6 +47,7 @@ per round trip — each of these checks takes minutes.
 | Privacy manifest, export compliance | Submission requires the first; without the second every upload asks |
 | Tile-set drift, model list | The existing audits, so preflight is one command and not four |
 | **Debug *and Release* build** | Release stopped compiling on 2026-09-17 and nothing noticed |
+| No key override in Release | `OPENAI_API_KEY` is read only under `#if DEBUG`, and no copy naming it survives into the Release binary |
 | Full test suite, with a count | A filter matching nothing still prints `TEST SUCCEEDED` |
 
 `--fast` skips the suite; everything else still runs.
@@ -68,7 +69,7 @@ Two, and the split matters.
   variable, which is why it is in `.gitignore` by name and must stay there.
 - **`claudeBlastRetail`** — shipping. Every action builds **Release**, so running
   it on a device exercises what ships: no provider picker, no Mock, no
-  DEBUG-only surfaces. Tracked in git. This is what the release builds.
+  `OPENAI_API_KEY` override, no DEBUG-only surfaces. Tracked in git. This is what the release builds.
 
 Running the retail scheme on a device is the only way to see the RELEASE-only
 behaviour before an archive exists.

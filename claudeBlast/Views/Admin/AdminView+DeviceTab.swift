@@ -213,42 +213,11 @@ extension AdminView {
     var sentenceProviderSection: some View {
         Section("Sentence Provider") {
             if envKeyOverride {
-                LabeledContent("Provider", value: "OpenAI (env override)")
-                LabeledContent("API Key") {
-                    Text("Set via environment")
-                        .foregroundStyle(.green)
-                }
-                // The env path stores a key as well as using one.
-                //
-                // `ProviderSelection` writes `OPENAI_API_KEY` into the Keychain
-                // on launch so a relaunch from the Home screen — outside the
-                // scheme — keeps working. That is deliberate, and it means this
-                // device holds a key that outlives the variable. With Remove
-                // only in the branch below, there was no way to clear it without
-                // first editing the scheme.
-                //
-                // Its own dialog rather than the one below: only one branch of
-                // this `if` is ever built, so there is no second presenter to
-                // race, and the copy has to say something different — this one
-                // cannot promise the AI will stop.
-                if !apiKey.isEmpty {
-                    Button("Remove Stored Key", role: .destructive) {
-                        isRemovingAPIKey = true
-                    }
-                    .confirmationDialog("Remove the key saved on this device?",
-                                        isPresented: $isRemovingAPIKey,
-                                        titleVisibility: .visible) {
-                        Button("Remove Key", role: .destructive) { apiKey = "" }
-                        Button("Cancel", role: .cancel) { }
-                    } message: {
-                        // Only an Xcode launch injects the variable. Tapping the
-                        // app icon does not, because iOS launches it — so the key
-                        // stays removed until you run from a scheme again. The
-                        // first version of this said the next launch would
-                        // restore it, which is wrong everywhere except Xcode.
-                        Text("The key is deleted from this device. If you relaunch from Xcode with an API Key environment variable set, that launch restores it.")
-                    }
-                }
+                // DEBUG only, rows and all: the copy names the override, and a
+                // shipping build has neither the override nor any word of it.
+                #if DEBUG
+                environmentOverrideRows
+                #endif
             } else {
                 // The picker is a development affordance and only appears in a
                 // development build.
@@ -693,6 +662,50 @@ extension AdminView {
                  + "means the types never exist. Run on an iCloud-enabled device before "
                  + "promotion: a record type nothing has written does not exist in "
                  + "Development, and Production is read-only afterwards.")
+        }
+    }
+    #endif
+
+    #if DEBUG
+    /// The Sentence Provider rows for a build launched with the developer key
+    /// override. See `OpenAIKeyVault.environmentOverride`.
+    @ViewBuilder
+    var environmentOverrideRows: some View {
+        LabeledContent("Provider", value: "OpenAI (env override)")
+        LabeledContent("API Key") {
+            Text("Set via environment")
+                .foregroundStyle(.green)
+        }
+        // The env path stores a key as well as using one.
+        //
+        // `ProviderSelection` writes `OPENAI_API_KEY` into the Keychain
+        // on launch so a relaunch from the Home screen — outside the
+        // scheme — keeps working. That is deliberate, and it means this
+        // device holds a key that outlives the variable. With Remove
+        // only in the branch below, there was no way to clear it without
+        // first editing the scheme.
+        //
+        // Its own dialog rather than the one below: only one branch of
+        // this `if` is ever built, so there is no second presenter to
+        // race, and the copy has to say something different — this one
+        // cannot promise the AI will stop.
+        if !apiKey.isEmpty {
+            Button("Remove Stored Key", role: .destructive) {
+                isRemovingAPIKey = true
+            }
+            .confirmationDialog("Remove the key saved on this device?",
+                                isPresented: $isRemovingAPIKey,
+                                titleVisibility: .visible) {
+                Button("Remove Key", role: .destructive) { apiKey = "" }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                // Only an Xcode launch injects the variable. Tapping the
+                // app icon does not, because iOS launches it — so the key
+                // stays removed until you run from a scheme again. The
+                // first version of this said the next launch would
+                // restore it, which is wrong everywhere except Xcode.
+                Text("The key is deleted from this device. If you relaunch from Xcode with an API Key environment variable set, that launch restores it.")
+            }
         }
     }
     #endif

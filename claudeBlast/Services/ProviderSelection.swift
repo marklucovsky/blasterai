@@ -56,8 +56,8 @@ enum ProviderSelection {
         // Env var first. It is how the eval harness and a developer scheme
         // supply a key, and it has to beat whatever is in the Keychain or you
         // cannot override a stored key without deleting it.
-        if let envKey = environment["OPENAI_API_KEY"]?.trimmingCharacters(in: .whitespaces),
-           !envKey.isEmpty {
+        // DEBUG only: `environmentOverride` is always nil in a shipping build.
+        if let envKey = OpenAIKeyVault.environmentOverride(environment) {
             return .environmentKey(envKey)
         }
         // An explicit choice of Mock is honoured even when a key exists. Someone

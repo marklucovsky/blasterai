@@ -41,11 +41,11 @@ The app launches with the full default vocabulary (473 tiles, 12 pages). No conf
 
 AI sentence generation requires an OpenAI API key. Two ways to set it:
 
-**Option 1: Xcode scheme environment variable (recommended for development)**
+**Option 1: Xcode scheme environment variable (recommended for development; DEBUG builds only)**
 
 1. Product → Scheme → Edit Scheme → Run → Arguments → Environment Variables
 2. Add `OPENAI_API_KEY` = your key
-3. Build and run — the key is persisted to UserDefaults automatically
+3. Build and run — a Debug build reads the variable at launch (a Release build ignores it)
 
 **Option 2: In-app Admin panel**
 

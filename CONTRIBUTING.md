@@ -31,5 +31,5 @@ By submitting a pull request you agree that your contribution will be licensed u
 
 ## Important Notes
 
-- **Do not commit API keys or secrets.** The OpenAI key belongs in the scheme environment variable (`OPENAI_API_KEY`) or the in-app settings UI, never in source code.
+- **Do not commit API keys or secrets.** The OpenAI key belongs in the scheme environment variable (`OPENAI_API_KEY`, read by DEBUG builds only) or the in-app settings UI, never in source code.
 - **ARASAAC images:** Do not add new ARASAAC pictograms to the repository without understanding the CC BY-NC-SA 4.0 non-commercial restriction. See [NOTICE](NOTICE) and [README.md](README.md) for details.

@@ -59,6 +59,23 @@ struct OpenAIKeyVaultTests {
         #expect(OpenAIKeyVault.currentKey(env: env, store: store) == "sk-real")
     }
 
+    // MARK: - the override accessor
+
+    /// Every reader of the override — onboarding, Admin, the gift importer,
+    /// provider selection — now asks this one function, so they cannot disagree.
+    /// Admin used to test `!= nil`, which counted an exported-but-empty variable
+    /// as an override while everything else ignored it.
+    ///
+    /// Tests run a DEBUG build, so this pins the development behaviour. That a
+    /// shipping build has no override at all is checked on the Release binary by
+    /// `tools/preflight_release.py`, which is the only place it can be seen.
+    @Test func environmentOverrideTrimsAndIgnoresBlank() {
+        #expect(OpenAIKeyVault.environmentOverride(["OPENAI_API_KEY": " sk-env "]) == "sk-env")
+        #expect(OpenAIKeyVault.environmentOverride(["OPENAI_API_KEY": ""]) == nil)
+        #expect(OpenAIKeyVault.environmentOverride(["OPENAI_API_KEY": "   "]) == nil)
+        #expect(OpenAIKeyVault.environmentOverride([:]) == nil)
+    }
+
     // MARK: - set + clear
 
     @Test func setKey_writesToStore() {

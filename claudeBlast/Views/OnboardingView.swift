@@ -79,13 +79,9 @@ struct OnboardingView: View {
     // Derived ----------------------------------------------------------------
 
     /// True when the env var path is consumed silently — the API key step is
-    /// auto-skipped (developer path, not surfaced in the consumer UI).
+    /// auto-skipped. DEBUG only; always false in a shipping build.
     private var hasEnvKey: Bool {
-        if let v = ProcessInfo.processInfo.environment["OPENAI_API_KEY"]?
-            .trimmingCharacters(in: .whitespaces), !v.isEmpty {
-            return true
-        }
-        return false
+        OpenAIKeyVault.environmentOverride() != nil
     }
 
     // MARK: - Body
