@@ -42,6 +42,15 @@ struct GiftedKeyRecord: Equatable {
         return date.formatted(.dateTime.month(.abbreviated).day())
     }
 
+    /// "expires Oct 3" — or nil when the key carries no expiry. The issuer can
+    /// end a key earlier from their OpenAI dashboard; this is the date they
+    /// stated, shown so a caregiver is not surprised when it stops.
+    var expiresDisplay: String? {
+        guard let expiresAt, !expiresAt.isEmpty else { return nil }
+        guard let date = GiftedKeyRecord.parseDate(expiresAt) else { return "expires \(expiresAt)" }
+        return "expires " + date.formatted(.dateTime.month(.abbreviated).day())
+    }
+
     /// ISO-8601 with or without fractional seconds.
     ///
     /// `ISO8601DateFormatter` does not treat `.withFractionalSeconds` as

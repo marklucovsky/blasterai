@@ -63,6 +63,7 @@ struct OnboardingView: View {
     /// Picking a `.blasterkey` file someone sent, rather than typing a key.
     @State private var isPickingKeyFile = false
     @State private var giftedKeyURL: ImportSheetURL?
+    @Environment(ImportCoordinator.self) private var importCoordinator
     /// Seeded from the registered default (RELEASE: ON, DEBUG: OFF — see
     /// claudeBlastApp.init) so onboarding reflects the build's sync posture
     /// rather than forcing ON. The iCloud step is hidden in release builds —
@@ -104,7 +105,7 @@ struct OnboardingView: View {
                     case .authorName:    authorNameStep
                     case .childProfile:  childProfileStep
                     case .tileStyle:     tileStyleStep
-                    case .aiConsent:    AIDisclosureContent()
+                    case .aiConsent:     aiConsentStep
                     case .apiKey:        apiKeyStep
                     case .icloud:        icloudStep
                     case .pinSetup:      pinSetupStep
@@ -123,6 +124,26 @@ struct OnboardingView: View {
                 .background(.bar)
         }
         .onAppear(perform: prefillFromExistingProfileIfAny)
+        // A key file tapped before setup is finished. It used to be dropped:
+        // the board, which handles opened files, does not exist until
+        // onboarding ends, and by then the change it watches for had already
+        // happened. On a fresh install onboarding is the first screen, so an
+        // evaluator tapping the key they were sent saw the app open and
+        // nothing else. Here it opens at once, on whatever step is showing.
+        // Other file types are left for the board, which takes them on appear.
+        .onAppear(perform: takePendingKeyFile)
+        .onChange(of: importCoordinator.pendingURL) { _, _ in takePendingKeyFile() }
+        // On the view, not the key step: a file can arrive on any step.
+        .sheet(item: $giftedKeyURL) { wrapper in
+            GiftedKeyImportSheet(url: wrapper.url) {
+                giftedKeyURL = nil
+                // The sheet writes the Keychain and, through its own
+                // disclosure, the permission. This view's copies catch up, or
+                // the key step would show an empty field over an installed key.
+                aiConsentAccepted = AIConsent.isGranted()
+                apiKey = OpenAIKeyVault.currentKey() ?? apiKey
+            }
+        }
         .onChange(of: step) { _, newStep in
             // Author name is optional/deferrable — no auto-fill; an empty field
             // is fine (Continue stays enabled).
@@ -406,6 +427,29 @@ struct OnboardingView: View {
         )
     }
 
+    /// The disclosure, or — when permission was already given during this
+    /// setup (installing a key file, or Enable and then Back) — the same text
+    /// with a note saying so.
+    ///
+    /// Asking "Enable?" of someone who enabled it four minutes ago reads as if
+    /// the first answer did not take. The buttons become Continue / Disable to
+    /// match; see `navBar`.
+    private var aiConsentStep: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            if aiConsentAccepted, let at = AIConsent.acceptedAt() {
+                Label {
+                    Text("You turned on AI features \(at.formatted(.relative(presentation: .named))). Continue to keep them on, or Disable to turn them off — the key stays on this device, unused.")
+                        .font(.subheadline)
+                } icon: {
+                    Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                }
+                .padding(12)
+                .background(.green.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
+            }
+            AIDisclosureContent()
+        }
+    }
+
     private var apiKeyStep: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("OpenAI API Key")
@@ -432,7 +476,7 @@ struct OnboardingView: View {
                 Label("Someone sent me a key file", systemImage: "gift")
             }
             .font(.callout)
-            Text("Skip to use Mock responses instead (no API calls). You can add a key later from Admin.")
+            Text("Skip to start without a key — each tile speaks its word. You can add one later in Admin → Device.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -441,15 +485,6 @@ struct OnboardingView: View {
                       allowsMultipleSelection: false) { result in
             if case .success(let urls) = result, let url = urls.first {
                 giftedKeyURL = ImportSheetURL(url: url)
-            }
-        }
-        .sheet(item: $giftedKeyURL) { wrapper in
-            GiftedKeyImportSheet(url: wrapper.url) {
-                giftedKeyURL = nil
-                // The sheet writes straight to the Keychain, so the field this
-                // step binds has to catch up or Next would commit an empty key
-                // over the one just installed.
-                apiKey = OpenAIKeyVault.currentKey() ?? apiKey
             }
         }
     }
@@ -577,7 +612,9 @@ struct OnboardingView: View {
             }
             Spacer()
             if canSkip {
-                Button(step == .aiConsent ? "Not now" : "Skip") { skipAndAdvance() }
+                Button(step == .aiConsent ? (aiConsentAccepted ? "Disable" : "Not now") : "Skip") {
+                    skipAndAdvance()
+                }
                     .buttonStyle(.borderless)
             }
             Button(primaryActionLabel) {
@@ -605,7 +642,7 @@ struct OnboardingView: View {
     private var primaryActionLabel: String {
         switch step {
         case .welcome: return "Get Started"
-        case .aiConsent: return "Enable"
+        case .aiConsent: return aiConsentAccepted ? "Continue" : "Enable"
         case .done:    return "Open Blaster"
         default:       return "Continue"
         }
@@ -647,6 +684,13 @@ struct OnboardingView: View {
     /// A key file can be opened on the key step, and installing it requires
     /// permission already on record. The commit writes the answer again, so
     /// whatever the caregiver settles on after going Back is what stands.
+    private func takePendingKeyFile() {
+        guard let url = importCoordinator.pendingURL,
+              ImportRouteSheet.route(for: url) == .giftedKey else { return }
+        importCoordinator.pendingURL = nil
+        giftedKeyURL = ImportSheetURL(url: url)
+    }
+
     private func answerAIConsent(_ accepted: Bool) {
         aiConsentAccepted = accepted
         if accepted {
@@ -809,7 +853,7 @@ struct OnboardingView: View {
             childStage: childStage,
             childVoiceID: childVoiceID,
             childMaxTiles: childMaxTiles,
-            apiKey: hasEnvKey ? nil : apiKey, // env-var path: read from the environment, never stored
+            apiKey: OnboardingInputs.keyToCommit(apiKey, hasEnvKey: hasEnvKey),
             aiConsent: aiConsentAccepted,
             icloudEnabled: icloudEnabled,
             adminPIN: role == .patient ? pinInput : nil

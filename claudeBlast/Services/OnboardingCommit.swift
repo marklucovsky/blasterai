@@ -34,6 +34,19 @@ struct OnboardingInputs {
     /// commit writes it again so the final state is whatever they settled on
     /// after any Back and forth. See `AIConsent`.
     var aiConsent: Bool = false
+
+    /// What the onboarding screen's key field means for the vault.
+    ///
+    /// An empty field means "leave the vault alone", not "delete". The field is
+    /// not the only way a key arrives during setup: a key file installs straight
+    /// into the Keychain, and Skip used to clear the field and commit that
+    /// emptiness — deleting the gifted key the caregiver had just installed.
+    /// Nothing typed is stored before the commit, so there is nothing an empty
+    /// field ever needs to delete. The DEBUG environment key is never stored.
+    static func keyToCommit(_ field: String, hasEnvKey: Bool) -> String? {
+        let trimmed = field.trimmingCharacters(in: .whitespacesAndNewlines)
+        return hasEnvKey || trimmed.isEmpty ? nil : trimmed
+    }
     var icloudEnabled: Bool
     /// 4–6 digit numeric PIN captured during patient onboarding. `nil` for
     /// therapist / personal flows. Commit hashes with a fresh salt and

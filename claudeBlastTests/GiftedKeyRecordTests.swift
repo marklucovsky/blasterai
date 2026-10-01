@@ -130,6 +130,22 @@ struct GiftedKeyRecordTests {
         #expect(record.issuedDisplay == "sometime")
     }
 
+    /// The Device tab shows when a gifted key stops, so a caregiver is not
+    /// surprised by it. No expiry, no clause.
+    @Test("Expiry is shown when the key carries one")
+    func expiryDisplay() {
+        func record(_ expires: String?) -> GiftedKeyRecord {
+            GiftedKeyRecord(label: "x", issuer: "y", issuedAt: "2026-09-20T00:00:00Z",
+                            expiresAt: expires, lastFour: "8toA")
+        }
+        #expect(record(nil).expiresDisplay == nil)
+        #expect(record("").expiresDisplay == nil)
+        let parsed = record("2026-10-03T12:00:00Z").expiresDisplay
+        #expect(parsed?.hasPrefix("expires ") == true)
+        #expect(parsed != "expires 2026-10-03T12:00:00Z")
+        #expect(record("whenever").expiresDisplay == "expires whenever")
+    }
+
     // MARK: - The refusal rule
     //
     // The sheet checks this before asking for confirmation, so nobody agrees to

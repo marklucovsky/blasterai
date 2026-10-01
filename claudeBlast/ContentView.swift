@@ -145,25 +145,32 @@ struct ContentView: View {
                     }
                 }
             }
-            .onChange(of: importCoordinator.pendingURL) { _, url in
-                guard let url else { return }
-                importCoordinator.pendingURL = nil
-                // Dismiss any active fullScreenCover first, then present import
-                if activeDestination != nil {
-                    activeDestination = nil
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        pendingImportSheet = ImportSheetURL(url: url)
-                    }
-                } else {
-                    pendingImportSheet = ImportSheetURL(url: url)
-                }
-            }
+            .onChange(of: importCoordinator.pendingURL) { _, _ in deliverPendingImport() }
+            // A file opened during onboarding (anything but a key, which
+            // onboarding takes itself) waits in the coordinator. `onChange` never
+            // fires for a value set before this view existed, so it is collected
+            // here — before, it was simply lost.
+            .onAppear { deliverPendingImport() }
             .sheet(item: $pendingImportSheet) { wrapper in
                 ImportRouteSheet(url: wrapper.url) {
                     pendingImportSheet = nil
                 }
                 .modifier(presentedEnvironment)
             }
+    }
+
+    private func deliverPendingImport() {
+        guard let url = importCoordinator.pendingURL else { return }
+        importCoordinator.pendingURL = nil
+        // Dismiss any active fullScreenCover first, then present import
+        if activeDestination != nil {
+            activeDestination = nil
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                pendingImportSheet = ImportSheetURL(url: url)
+            }
+        } else {
+            pendingImportSheet = ImportSheetURL(url: url)
+        }
     }
 
     @ViewBuilder

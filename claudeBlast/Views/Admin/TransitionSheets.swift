@@ -22,6 +22,8 @@ struct PatientTransitionSheet: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(ChildProfileResolver.self) private var profileResolver
+    /// Optional: sheets here do not rely on inheriting the environment.
+    @Environment(SentenceEngine.self) private var sentenceEngine: SentenceEngine?
     @Query(filter: #Predicate<ChildProfile> { !$0.isSystem },
            sort: \ChildProfile.displayName) private var realPatients: [ChildProfile]
 
@@ -60,6 +62,14 @@ struct PatientTransitionSheet: View {
         case clear
         case replace
         var id: String { rawValue }
+
+        func action(newKey: String) -> RoleSwitchKeyAction {
+            switch self {
+            case .keep:    return .keep
+            case .clear:   return .clear
+            case .replace: return .replace(newKey)
+            }
+        }
     }
 
     private var hasExistingKey: Bool {
@@ -76,7 +86,7 @@ struct PatientTransitionSheet: View {
     private func keyChoiceLabel(_ c: KeyChoice) -> String {
         switch c {
         case .keep:    return "Keep the key currently on this device"
-        case .clear:   return "No key — use Mock responses"
+        case .clear:   return "No key — tiles speak single words"
         case .replace: return "Use a different key for the patient"
         }
     }
@@ -364,14 +374,7 @@ struct PatientTransitionSheet: View {
         profileResolver.refresh()
 
         // API key
-        switch keyChoice {
-        case .keep:
-            break
-        case .clear:
-            OpenAIKeyVault.clearKey()
-        case .replace:
-            OpenAIKeyVault.setKey(newAPIKey)
-        }
+        applyKeyChoice(keyChoice.action(newKey: newAPIKey), engine: sentenceEngine)
 
         onConfirm()
     }
@@ -393,6 +396,8 @@ struct CaregiverTransitionSheet: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(ChildProfileResolver.self) private var profileResolver
+    /// Optional: sheets here do not rely on inheriting the environment.
+    @Environment(SentenceEngine.self) private var sentenceEngine: SentenceEngine?
 
     @State private var pinInput = ""
     @State private var pinError: String?
@@ -413,6 +418,14 @@ struct CaregiverTransitionSheet: View {
     enum KeyChoice: String, CaseIterable, Identifiable {
         case keep, clear, replace
         var id: String { rawValue }
+
+        func action(newKey: String) -> RoleSwitchKeyAction {
+            switch self {
+            case .keep:    return .keep
+            case .clear:   return .clear
+            case .replace: return .replace(newKey)
+            }
+        }
     }
 
     private var hasExistingKey: Bool {
@@ -429,7 +442,7 @@ struct CaregiverTransitionSheet: View {
     private func keyChoiceLabel(_ c: KeyChoice) -> String {
         switch c {
         case .keep:    return "Keep the API key already on this device"
-        case .clear:   return "Clear the API key (use Mock responses)"
+        case .clear:   return "Clear the API key (tiles speak single words)"
         case .replace: return "Replace with a different key"
         }
     }
@@ -613,13 +626,38 @@ struct CaregiverTransitionSheet: View {
         device.modifiedAt = now
 
         // API key.
-        switch keyChoice {
-        case .keep:    break
-        case .clear:   OpenAIKeyVault.clearKey()
-        case .replace: OpenAIKeyVault.setKey(newAPIKey)
-        }
+        applyKeyChoice(keyChoice.action(newKey: newAPIKey), engine: sentenceEngine)
 
         try? modelContext.save()
         onConfirm()
     }
+}
+
+/// The key half of a role switch, shared by both sheets.
+///
+/// Writing the vault is not the whole job, and both sheets used to stop there.
+/// The engine keeps using whatever key it adopted until told otherwise — so a
+/// cleared key kept generating until relaunch, and a replacement sat unused —
+/// and a gifted-key record outliving its key would put the evaluator's name on
+/// somebody else's key. `adoptKey` names the steps; this makes both sheets take
+/// all of them.
+@MainActor
+func applyKeyChoice(_ action: RoleSwitchKeyAction, engine: SentenceEngine?) {
+    switch action {
+    case .keep:
+        break
+    case .clear:
+        OpenAIKeyVault.clearKey()
+        GiftedKeyRecord.clear()
+        engine?.isMissingKey = true
+    case .replace(let newKey):
+        guard OpenAIKeyVault.setKey(newKey) else { return }
+        GiftedKeyRecord.clear()
+        engine?.adoptKey(newKey.trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+}
+
+/// What a role switch does to the key, independent of which sheet asked.
+enum RoleSwitchKeyAction: Equatable {
+    case keep, clear, replace(String)
 }
