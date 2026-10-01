@@ -769,8 +769,11 @@ final class TileScriptRunner {
         case "mock":
             engine?.switchProvider(MockSentenceProvider())
         case "openai":
+            // `adoptKey`, not `switchProvider`: a keyless launch marked the
+            // device missing a key, and only adopting clears that. Permission
+            // still applies — a script cannot turn AI on.
             if let key = OpenAIKeyVault.currentKey() {
-                engine?.switchProvider(OpenAISentenceProvider(apiKey: key))
+                engine?.adoptKey(key)
             }
         default:
             Self.logger.warning("TileScript: unknown provider '\(name)'")

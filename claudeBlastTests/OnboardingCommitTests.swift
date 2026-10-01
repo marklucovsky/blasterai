@@ -338,5 +338,24 @@ struct OnboardingCommitTests {
         #expect(kids.count == 1)
         #expect(kids[0].displayName == "Aubrey 2")
     }
+
+    // MARK: - The key field
+
+    /// Skip after installing a key file used to delete it: Skip cleared the
+    /// field, and the commit wrote that emptiness to the vault. An empty field
+    /// now leaves the vault alone.
+    @Test func emptyKeyFieldLeavesTheVaultAlone() {
+        #expect(OnboardingInputs.keyToCommit("", hasEnvKey: false) == nil)
+        #expect(OnboardingInputs.keyToCommit("   ", hasEnvKey: false) == nil)
+    }
+
+    @Test func typedKeyIsCommittedTrimmed() {
+        #expect(OnboardingInputs.keyToCommit("  sk-typed \n", hasEnvKey: false) == "sk-typed")
+    }
+
+    /// The DEBUG environment key is read fresh, never stored.
+    @Test func environmentKeyIsNeverCommitted() {
+        #expect(OnboardingInputs.keyToCommit("sk-typed", hasEnvKey: true) == nil)
+    }
 }
 }

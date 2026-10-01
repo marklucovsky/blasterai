@@ -161,6 +161,9 @@ struct AdminView: View {
     @State var isShowingAIDisclosure = false
     @State var isConfirmingAIRevoke = false
     @State var isRemovingDormantKey = false
+    /// Admin → Device → "Install key from file…".
+    @State var isPickingKeyFile = false
+    @State var keyFileToInstall: ImportSheetURL?
 
     /// Set when "Lock Admin" is switched on with no PIN stored, so the PIN is
     /// chosen there and then rather than at the next gate.

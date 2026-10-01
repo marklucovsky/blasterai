@@ -62,6 +62,23 @@ extension AdminView {
                     }
                 }
             }
+            .fileImporter(isPresented: $isPickingKeyFile,
+                          allowedContentTypes: [.blasterKey],
+                          allowsMultipleSelection: false) { result in
+                if case .success(let urls) = result, let url = urls.first {
+                    keyFileToInstall = ImportSheetURL(url: url)
+                }
+            }
+            .sheet(item: $keyFileToInstall) { wrapper in
+                GiftedKeyImportSheet(url: wrapper.url) {
+                    keyFileToInstall = nil
+                    // The sheet writes the Keychain and the gift record
+                    // directly; this tab's copies have to catch up.
+                    apiKey = OpenAIKeyVault.currentKey() ?? ""
+                    giftedKey = GiftedKeyRecord.load()
+                }
+                .environment(sentenceEngine)
+            }
             .confirmationDialog("Turn off AI features?",
                                 isPresented: $isConfirmingAIRevoke,
                                 titleVisibility: .visible) {
@@ -407,9 +424,10 @@ extension AdminView {
                         VStack(alignment: .leading, spacing: 4) {
                             Label("Gifted key — \(gift.label)", systemImage: "gift.fill")
                                 .font(.headline)
-                            Text(gift.issuer.isEmpty
-                                 ? "sk-…\(gift.lastFour) · added \(gift.issuedDisplay)"
-                                 : "From \(gift.issuer) · sk-…\(gift.lastFour) · added \(gift.issuedDisplay)")
+                            Text((gift.issuer.isEmpty
+                                  ? "sk-…\(gift.lastFour) · added \(gift.issuedDisplay)"
+                                  : "From \(gift.issuer) · sk-…\(gift.lastFour) · added \(gift.issuedDisplay)")
+                                 + (gift.expiresDisplay.map { " · \($0)" } ?? ""))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                             Text("Whoever sent this key pays for the AI features on this device.")
@@ -418,6 +436,16 @@ extension AdminView {
                         }
                     } else {
                         OpenAIKeyEntrySection(apiKey: $apiKey, showCostEstimate: false)
+                        // The other way a key arrives. The only picker in Admin
+                        // used to be Scenes → "Import Scene", which accepted a
+                        // key file but was no place anyone would look for one.
+                        if apiKey.isEmpty {
+                            Button {
+                                isPickingKeyFile = true
+                            } label: {
+                                Label("Install key from file…", systemImage: "gift")
+                            }
+                        }
                     }
                     if apiKey.isEmpty {
                         Text("Enter your OpenAI API key to enable AI sentence generation.")

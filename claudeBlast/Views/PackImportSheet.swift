@@ -45,7 +45,13 @@ struct ImportRouteSheet: View {
         switch Self.route(for: url) {
         case .pack:      PackImportSheet(url: url, onDismiss: onDismiss)
         case .colorway:  ColorwayImportSheet(url: url, onDismiss: onDismiss)
-        case .giftedKey: GiftedKeyImportSheet(url: url, onDismiss: onDismiss)
+        case .giftedKey:
+            // A key costs someone money. On a Patient device a child could tap
+            // the file as easily as an adult, so installing one takes the same
+            // proof as opening Admin. AdminGate passes straight through on a
+            // device with no gate — every Caregiver device, and any device
+            // still in onboarding.
+            AdminGate { GiftedKeyImportSheet(url: url, onDismiss: onDismiss) }
         case .scene:     SceneImportSheet(url: url, onDismiss: onDismiss)
         }
     }
