@@ -299,6 +299,7 @@ enum BootstrapLoader {
         scene.systemSceneKey = materialized.key
         scene.markFirstPartyIdentity()
         scene.pages = materialized.pages
+        scene.designedFor = materialized.designedFor
         scene.importedContentHash = scene.contentHash   // pristine baseline
         return scene
     }
@@ -381,6 +382,7 @@ enum BootstrapLoader {
             scene.descriptionText = materialized.description
             scene.homePageKey = materialized.homePageKey
             scene.pages = materialized.pages
+            scene.designedFor = materialized.designedFor
             // Re-baseline: the freshly-applied bundle content IS the new pristine
             // state. Without this the scene would compare against the OLD baseline
             // and start reporting isLocallyModified — labelling our own board

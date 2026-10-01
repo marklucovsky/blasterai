@@ -322,6 +322,22 @@ struct SceneEditorView: View {
                         }
                     }
                 }
+                // The grid this board is authored against. The preview and the
+                // page editor show it; a matching device's board uses it. See
+                // `DesignedLayout`.
+                Picker(selection: $scene.designedFor) {
+                    Text("Not set").tag("")
+                    ForEach(DesignedLayout.all) { designed in
+                        Text(designed.title).tag(designed.rawValue)
+                    }
+                } label: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Designed For")
+                        Text("Word positions hold on this grid. Devices of that kind show it unless they opt out.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
 
             Section {

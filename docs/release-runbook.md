@@ -28,6 +28,16 @@ is not yet done, stop here and run `docs/cloudkit-promotion-runbook.md` first.
 Promotion is irreversible in one direction: a Production schema is additive-only
 forever. After it, a field can be added but never removed.
 
+**A build that adds a synced field needs that field in Production first.**
+Production does not grow its schema from client writes; a record carrying a
+field Production lacks is rejected, and that record type stops syncing. Before
+uploading such a build: run the schema exerciser from a Development build
+(Admin → Device → Storage) so the field exists in Development, then CloudKit
+Console → **Deploy Schema Changes** to Production, and tick the field off in
+`docs/cloudkit-schema-checklist.md`. Fields added since promotion (2026-09-18):
+`ChildProfile.linkColorModeRaw` (2026-09-27) and `BlasterScene.designedFor`
+(session 8).
+
 ---
 
 ## 1. Preflight

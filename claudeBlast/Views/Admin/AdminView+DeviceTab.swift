@@ -518,6 +518,16 @@ extension AdminView {
                 }
             }
             .pickerStyle(.navigationLink)
+            Toggle(isOn: $honorSceneLayouts) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Use Each Scene's Designed Layout")
+                    if let note = sceneLayoutNote {
+                        Text(note)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
             Picker("Image Set", selection: $imageSetRaw) {
                 ForEach(ImageSetCatalog.selectable) { set in
                     Text(set.isShippable ? set.displayName : "\(set.displayName) (incomplete)")
@@ -824,6 +834,21 @@ extension AdminView {
         }
     }
     #endif
+
+    /// What the active scene's declared grid means on this device, when it
+    /// matters: it is in use (and overrides Board Layout), it is being ignored
+    /// by choice, or it is for the other kind of device and cannot apply.
+    var sceneLayoutNote: String? {
+        guard let scene = scenes.first(where: { $0.isActive }),
+              let designed = scene.designedLayout else { return nil }
+        let isPhone = GridLayoutCalculator.isPhone(screenSize: UIScreen.main.bounds.size)
+        if designed.phone != isPhone {
+            return "“\(scene.name)” is designed for \(designed.title), so this device uses Board Layout."
+        }
+        return honorSceneLayouts
+            ? "“\(scene.name)” is designed for \(designed.title), and uses it here."
+            : "“\(scene.name)” is designed for \(designed.title); this device uses Board Layout instead."
+    }
 
     func applyProvider() {
         guard !envKeyOverride else { return }

@@ -56,13 +56,30 @@ final class BlasterScene {
     /// for scenes not created via import (or imported before this field existed).
     var importedContentHash: String = ""
 
+    /// The grid this scene was designed for — `DesignedLayout.rawValue`, e.g.
+    /// `"ipad-12x5"`. Empty when undeclared.
+    ///
+    /// A non-optional String with an empty sentinel, per the schema rules in
+    /// `SchemaVersions.swift`: additive, defaulted, and written for every row so
+    /// the CloudKit field exists.
+    var designedFor: String = ""
+
+    /// The declared grid, typed. Nil when undeclared or unrecognised.
+    var designedLayout: DesignedLayout? { DesignedLayout(rawValue: designedFor) }
+
     /// Stable fingerprint of the scene's user-visible content (name + home page +
-    /// pages). Used only to detect local edits vs. the imported baseline.
+    /// pages, and the designed-for grid when one is declared). Used only to
+    /// detect local edits vs. the imported baseline.
+    ///
+    /// `designedFor` joins the hash only when set, so every scene that predates
+    /// it keeps the hash it had — otherwise each one would start reading as
+    /// "modified locally" against its stored baseline.
     var contentHash: String {
         var hasher = SHA256()
         hasher.update(data: Data(name.utf8))
         hasher.update(data: Data(homePageKey.utf8))
         hasher.update(data: pagesData)
+        if !designedFor.isEmpty { hasher.update(data: Data(designedFor.utf8)) }
         return hasher.finalize().map { String(format: "%02x", $0) }.joined()
     }
 
@@ -417,6 +434,7 @@ final class BlasterScene {
             isActive: false
         )
         copy.pages = source.pages           // deep copy via the Codable round-trip
+        copy.designedFor = source.designedFor
         copy.systemSceneKey = ""            // ← user-owned from here on
         copy.isImported = false
         copy.importedContentHash = ""
@@ -464,6 +482,7 @@ final class BlasterScene {
             isActive: false
         )
         copy.pages = source.pages  // deep copy via Codable round-trip in the setter
+        copy.designedFor = source.designedFor
         // A duplicate is a new, locally-owned scene: give it a fresh identity
         // under this device's author id (sceneID starts empty → ensureIdentity
         // mints a new one from the duplicate's name).

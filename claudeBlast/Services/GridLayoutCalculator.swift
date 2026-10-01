@@ -115,6 +115,50 @@ enum BoardLayout: String, CaseIterable, Identifiable {
     }
 }
 
+/// The grid a scene was designed for: a kind of device and a layout on it.
+///
+/// A board's word positions are only stable on the grid it was authored
+/// against, so a scene can say which one that is — `"ipad-12x5"`, `"phone-2x4"`.
+/// One device kind, not one per kind: a 12×5 board cannot keep its positions
+/// at 4×5, so "Standard everywhere" would promise something it cannot keep.
+///
+/// Stored on `BlasterScene.designedFor` as `rawValue`; empty means undeclared.
+struct DesignedLayout: Hashable, Identifiable {
+    let phone: Bool
+    let layout: BoardLayout
+
+    var id: String { rawValue }
+
+    var grid: (cols: Int, rows: Int) { layout.grid(phone: phone) }
+
+    /// `"ipad-12x5"`. Spelled with the grid rather than the layout name so the
+    /// file says what it means even if a layout is ever retuned.
+    var rawValue: String {
+        "\(phone ? "phone" : "ipad")-\(grid.cols)x\(grid.rows)"
+    }
+
+    /// `"iPad 12×5"`.
+    var title: String {
+        "\(phone ? "iPhone" : "iPad") \(grid.cols)×\(grid.rows)"
+    }
+
+    init(phone: Bool, layout: BoardLayout) {
+        self.phone = phone
+        self.layout = layout
+    }
+
+    /// Nil for empty or unrecognised — an unknown grid from a newer file is
+    /// treated as undeclared rather than guessed at.
+    init?(rawValue: String) {
+        guard let match = Self.all.first(where: { $0.rawValue == rawValue }) else { return nil }
+        self = match
+    }
+
+    /// Every declarable grid: the iPad ones, then the iPhone ones.
+    static let all: [DesignedLayout] =
+        [false, true].flatMap { phone in BoardLayout.allCases.map { DesignedLayout(phone: phone, layout: $0) } }
+}
+
 /// Pure-Swift calculator that picks a tile size + column count for the tile grid.
 ///
 /// In a device's designed orientation the grid comes from `BoardLayout` and only
@@ -331,7 +375,7 @@ enum GridLayoutCalculator {
     private static func finish(cols: Int, rows: Int, tileW: CGFloat,
                                availH: CGFloat, textScale: CGFloat,
                                screenSize: CGSize, geo: CGSize,
-                               layout: BoardLayout) -> GridLayoutSpec {
+                               layout: BoardLayout, log: Bool = true) -> GridLayoutSpec {
         let result = (cols: cols, rows: rows, tileW: tileW)
         let labelF = labelFontSize(forTile: result.tileW, scale: textScale)
         let cellH = result.tileW + labelHeight(forFont: labelF)
@@ -362,10 +406,55 @@ enum GridLayoutCalculator {
         )
 
         #if DEBUG
-        print("[GridLayout] screen=\(Int(screenSize.width))×\(Int(screenSize.height)) geo=\(Int(geo.width))×\(Int(geo.height)) layout=\(layout.rawValue) → tile=\(Int(spec.tileSize)) cols=\(spec.cols) rows=\(spec.rows) cap=\(spec.perPage) vGap=\(Int(spec.verticalSpacing))")
+        if log { print("[GridLayout] screen=\(Int(screenSize.width))×\(Int(screenSize.height)) geo=\(Int(geo.width))×\(Int(geo.height)) layout=\(layout.rawValue) → tile=\(Int(spec.tileSize)) cols=\(spec.cols) rows=\(spec.rows) cap=\(spec.perPage) vGap=\(Int(spec.verticalSpacing))") }
         #endif
 
         return spec
+    }
+
+    // MARK: - Which grid
+
+    /// Phone or iPad, by the screen's shorter side — the same test `compute`
+    /// uses, so the two cannot disagree.
+    static func isPhone(screenSize: CGSize) -> Bool {
+        min(screenSize.width, screenSize.height) < phoneMinDimMax
+    }
+
+    /// The layout the live board uses.
+    ///
+    /// A scene's declared grid wins on the kind of device it was designed for,
+    /// unless this device has opted out (`honorSceneLayouts`) — a caregiver may
+    /// want Large for a child with low vision whatever the author chose. On the
+    /// other kind of device the declaration cannot be honoured and the device's
+    /// own layout applies; Admin says so.
+    static func liveLayout(designed: DesignedLayout?, isPhone: Bool,
+                           deviceLayout: BoardLayout, honorSceneLayouts: Bool) -> BoardLayout {
+        if honorSceneLayouts, let designed, designed.phone == isPhone { return designed.layout }
+        return deviceLayout
+    }
+
+    /// The grid the scene preview and page editor show: the declared one,
+    /// whatever device they run on — a phone board can be designed on an iPad.
+    /// Undeclared, this device's own layout.
+    static func authoringGrid(designed: DesignedLayout?, isPhone: Bool,
+                              deviceLayout: BoardLayout) -> (cols: Int, rows: Int) {
+        designed?.grid ?? deviceLayout.grid(phone: isPhone)
+    }
+
+    /// A given grid fitted into the space a view has, for the scene preview and
+    /// page editor. `fitHeight: false` sizes by width only, for a view that
+    /// scrolls vertically.
+    static func compute(geo: CGSize, grid: (cols: Int, rows: Int),
+                        fitHeight: Bool = true, textScale: CGFloat = 1) -> GridLayoutSpec {
+        let availW = max(1, geo.width - hPad)
+        let availH = max(1, geo.height - vPad)
+        var tile = min(maxTileSize, renderTile(forCols: grid.cols, availW: availW))
+        if fitHeight {
+            tile = min(tile, largestTile(fittingRows: grid.rows, availH: availH, textScale: textScale))
+        }
+        return finish(cols: grid.cols, rows: grid.rows, tileW: max(1, tile),
+                      availH: fitHeight ? availH : .greatestFiniteMagnitude, textScale: textScale,
+                      screenSize: geo, geo: geo, layout: .standard, log: false)
     }
 
     // MARK: - Helpers

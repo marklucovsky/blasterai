@@ -92,6 +92,7 @@ enum SceneExporter {
             slug: scene.slug.isEmpty ? nil : scene.slug,
             sceneVersion: scene.sceneVersion.isEmpty ? nil : scene.sceneVersion,
             authorName: scene.authorName.isEmpty ? nil : scene.authorName,
+            designedFor: scene.designedFor.isEmpty ? nil : scene.designedFor,
             tiles: exportTiles.isEmpty ? nil : exportTiles,
             pages: exportPages
         )

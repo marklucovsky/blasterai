@@ -87,6 +87,8 @@ by name are the ones nothing writes in ordinary use:
 - [ ] `CD_TileModel.CD_partOfSpeechRaw` — schema insurance, ships empty
 - [ ] `CD_TileModel.CD_retiredReason` — only set on an automatic hide
 - [ ] `CD_ChildProfile.CD_brownsStageRaw`, `CD_languageRaw` — S3 3A insurance
+- [ ] `CD_BlasterScene.CD_designedFor` — added after promotion (session 8);
+      empty on any scene without a declared grid
 - [ ] `CD_BlasterScene.CD_pagesData` — the pages blob (so no page or tile field
       should appear here; sparse boards and conceal live inside it)
 

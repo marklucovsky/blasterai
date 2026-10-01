@@ -23,6 +23,8 @@ struct SceneJSON: Codable {
     let description: String?
     let homePageKey: String         // must match one of the pages' keys
     let isDefault: Bool
+    /// `DesignedLayout.rawValue`, e.g. `"ipad-12x5"`. Absent = undeclared.
+    var designedFor: String? = nil
     let pages: [PageJSON]
 }
 

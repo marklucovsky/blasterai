@@ -59,6 +59,7 @@ struct AdminView: View {
     @AppStorage(AppSettingsKey.speechVoiceIdentifier) var voiceIdentifier: String = ""
     @AppStorage(AppSettingsKey.boardLayout) var boardLayoutRaw: String =
         BoardLayout.current().rawValue
+    @AppStorage(AppSettingsKey.honorSceneLayouts) var honorSceneLayouts = true
     @AppStorage(AppSettingsKey.imageSet) var imageSetRaw: String = ImageSetID.defaultSet.rawValue
 
     // Sentence tray timeline settings
