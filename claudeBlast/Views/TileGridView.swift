@@ -45,7 +45,10 @@ struct TileGridView: View {
     @State private var lastTappedKey: String?
     @AppStorage(AppSettingsKey.demoMode) private var demoMode = false
 
-    @AppStorage(AppSettingsKey.tileSizeStep) private var tileSizeStep: Int = 0
+    /// Defaults to what the old density stepper implied, until a layout is
+    /// chosen. See `BoardLayout.current`.
+    @AppStorage(AppSettingsKey.boardLayout) private var boardLayoutRaw: String =
+        BoardLayout.current().rawValue
 
     @Environment(\.horizontalSizeClass) private var hSizeClass
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -371,7 +374,7 @@ struct TileGridView: View {
             let spec = GridLayoutCalculator.compute(
                 screenSize: UIScreen.main.bounds.size,
                 geo: geo.size,
-                userStep: tileSizeStep,
+                layout: BoardLayout(rawValue: boardLayoutRaw) ?? .standard,
                 textScale: textScale
             )
             // Retired (hidden) and unreviewed (moderation-flagged) tiles never
@@ -417,7 +420,7 @@ struct TileGridView: View {
             .overlay(alignment: .centerLastTextBaseline) {
                 // Hidden in demo mode so the geometry/density badge isn't recorded.
                 if !demoMode {
-                    gridDebugBadge(spec: spec, tileCount: page.tiles.count)
+                    gridDebugBadge(spec: spec, tileCount: visible.count)
                 }
             }
             #endif
@@ -470,7 +473,10 @@ struct TileGridView: View {
     #if DEBUG
     @ViewBuilder
     private func gridDebugBadge(spec: GridLayoutSpec, tileCount: Int) -> some View {
-        let pages = max(1, Int(ceil(Double(tileCount) / Double(max(1, spec.perPage)))))
+        // Home takes cell 0 of every page, so a page holds perPage - 1 words —
+        // the same chunking the board itself uses. Dividing by perPage said a
+        // 60-word page fit on one screen of 60 when it needs two.
+        let pages = max(1, Int(ceil(Double(tileCount) / Double(max(1, spec.perPage - 1)))))
         Text("\(spec.cols)×\(spec.rows) · \(spec.perPage)/pg · \(tileCount)t/\(pages)p · \(Int(spec.tileSize))pt")
             .font(.system(size: 9, weight: .medium, design: .monospaced))
             .foregroundStyle(.white)
@@ -484,7 +490,13 @@ struct TileGridView: View {
 
     @ViewBuilder
     private func landscapeTabView(chunks: [[TileEntry]], spec: GridLayoutSpec) -> some View {
-        let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: spec.cols)
+        // Fixed at the computed tile size, not flexible. At Auto the two are the
+        // same width; at a row-stepped density the tile is sized by the height,
+        // and flexible columns would stretch it back to fill the width — making
+        // it taller than the rows it was sized for. The width a whole column
+        // cannot use becomes a margin either side. See `GridLayoutCalculator`.
+        let columns = Array(repeating: GridItem(.fixed(spec.tileSize), spacing: spec.horizontalSpacing),
+                            count: spec.cols)
         TabView(selection: $currentDisplayPage) {
             ForEach(Array(chunks.enumerated()), id: \.offset) { index, tiles in
                 LazyVGrid(columns: columns, spacing: spec.verticalSpacing) {
@@ -493,7 +505,7 @@ struct TileGridView: View {
                         tileCellView(for: entry, labelFontSize: spec.labelFontSize)
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, spec.horizontalPadding)
                 .padding(.vertical, 4)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 .tag(index as Int?)
@@ -507,7 +519,13 @@ struct TileGridView: View {
 
     @ViewBuilder
     private func portraitScrollView(chunks: [[TileEntry]], pageHeight: CGFloat, spec: GridLayoutSpec) -> some View {
-        let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: spec.cols)
+        // Fixed at the computed tile size, not flexible. At Auto the two are the
+        // same width; at a row-stepped density the tile is sized by the height,
+        // and flexible columns would stretch it back to fill the width — making
+        // it taller than the rows it was sized for. The width a whole column
+        // cannot use becomes a margin either side. See `GridLayoutCalculator`.
+        let columns = Array(repeating: GridItem(.fixed(spec.tileSize), spacing: spec.horizontalSpacing),
+                            count: spec.cols)
         ScrollView {
             // VStack (not Lazy) ensures all page frames are committed upfront,
             // giving scrollTargetBehavior(.paging) correct snap offsets and
@@ -520,7 +538,7 @@ struct TileGridView: View {
                             tileCellView(for: entry, labelFontSize: spec.labelFontSize)
                         }
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, spec.horizontalPadding)
                     .padding(.vertical, 4)
                     .frame(height: pageHeight, alignment: .top)
                     .id(index)

@@ -57,7 +57,8 @@ struct AdminView: View {
     @AppStorage(AppSettingsKey.audioEnabled) var audioEnabled: Bool = true
     @AppStorage(AppSettingsKey.tileSpeechEnabled) var tileSpeechEnabled: Bool = true
     @AppStorage(AppSettingsKey.speechVoiceIdentifier) var voiceIdentifier: String = ""
-    @AppStorage(AppSettingsKey.tileSizeStep) var tileSizeStep: Int = 0
+    @AppStorage(AppSettingsKey.boardLayout) var boardLayoutRaw: String =
+        BoardLayout.current().rawValue
     @AppStorage(AppSettingsKey.imageSet) var imageSetRaw: String = ImageSetID.defaultSet.rawValue
 
     // Sentence tray timeline settings
@@ -181,18 +182,6 @@ struct AdminView: View {
         OpenAIKeyVault.environmentOverride() != nil
     }
 
-    func tileDensityLabel(_ step: Int) -> String {
-        switch step {
-        case -3: return "Tightest"
-        case -2: return "Tighter"
-        case -1: return "Tight"
-        case  0: return "Auto"
-        case  1: return "Roomy"
-        case  2: return "Roomier"
-        case  3: return "Roomiest"
-        default: return "Auto"
-        }
-    }
 
     var body: some View {
         // Tab segmentation:

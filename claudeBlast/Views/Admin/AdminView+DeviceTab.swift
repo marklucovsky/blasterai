@@ -504,12 +504,20 @@ extension AdminView {
             LabeledContent("Active Provider", value: sentenceEngine.provider.displayName)
             Toggle("Audio", isOn: $audioEnabled)
             Toggle("Tile Speech Preview", isOn: $tileSpeechEnabled)
-            Stepper(
-                "Tile Density: \(tileDensityLabel(tileSizeStep))",
-                value: $tileSizeStep,
-                in: -3...3,
-                step: 1
-            )
+            // A layout is a grid, the same on every device of a kind — so the
+            // choice shows the grids, not a size. See `BoardLayout`.
+            Picker("Board Layout", selection: $boardLayoutRaw) {
+                ForEach(BoardLayout.allCases) { layout in
+                    VStack(alignment: .leading) {
+                        Text(layout.title)
+                        Text(layout.gridsDescription)
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                    }
+                    .tag(layout.rawValue)
+                }
+            }
+            .pickerStyle(.navigationLink)
             Picker("Image Set", selection: $imageSetRaw) {
                 ForEach(ImageSetCatalog.selectable) { set in
                     Text(set.isShippable ? set.displayName : "\(set.displayName) (incomplete)")
