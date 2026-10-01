@@ -87,7 +87,12 @@ enum AppSettingsKey {
     // Deprecated: superseded by `tileSizeStep`. Left declared so the
     // UserDefaults key isn't accidentally reused for an unrelated setting.
     static let tileMinSize           = "tile_min_size"
+    // Deprecated: the -3…3 density stepper, superseded by `boardLayout`. Still
+    // read once, as the fallback for a device that has not chosen a layout —
+    // see `BoardLayout.current`.
     static let tileSizeStep          = "tile_size_step"
+    /// `BoardLayout.rawValue`: standard, large or largest.
+    static let boardLayout           = "board_layout"
     static let compareProviders      = "compare_providers"
     static let imageSet              = "image_set"
     // Deprecated: the "Generate all styles" toggle. Left declared, like

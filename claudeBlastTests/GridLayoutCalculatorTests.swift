@@ -7,6 +7,7 @@
 
 import Testing
 import CoreGraphics
+import Foundation
 @testable import claudeBlast
 
 extension SerialTests {
@@ -19,12 +20,12 @@ struct GridLayoutCalculatorTests {
     private let phonePortrait = CGSize(width: 393, height: 852)
 
     private func spec(_ screen: CGSize,
-                      step: Int = 0,
+                      layout: BoardLayout = .standard,
                       scale: CGFloat = 1) -> GridLayoutSpec {
         GridLayoutCalculator.compute(screenSize: screen,
                                      geo: CGSize(width: screen.width,
                                                  height: screen.height - 200),
-                                     userStep: step,
+                                     layout: layout,
                                      textScale: scale)
     }
 
@@ -102,8 +103,7 @@ struct GridLayoutCalculatorTests {
     @Test func defaultScaleMatchesExplicitOne() {
         let implicit = GridLayoutCalculator.compute(
             screenSize: miniPortrait,
-            geo: CGSize(width: 744, height: 933),
-            userStep: 0)
+            geo: CGSize(width: 744, height: 933))
         let explicit = spec(miniPortrait, scale: 1)
         #expect(implicit == explicit)
     }
@@ -112,12 +112,20 @@ struct GridLayoutCalculatorTests {
 
     /// An 11" Pro and a 13" Pro, landscape, with the sentence tray taken off
     /// the top — the geometry the board actually gets.
-    private func landscapeBoard(_ screen: CGSize, step: Int = 0) -> GridLayoutSpec {
+    private func landscapeBoard(_ screen: CGSize,
+                                layout: BoardLayout = .standard) -> GridLayoutSpec {
         GridLayoutCalculator.compute(
             screenSize: screen,
             geo: CGSize(width: max(screen.width, screen.height),
                         height: min(screen.width, screen.height) - 134),
-            userStep: step)
+            layout: layout)
+    }
+
+    /// An iPhone 17 board, portrait, as measured on the simulator.
+    private func iPhone17Board(_ layout: BoardLayout = .standard) -> GridLayoutSpec {
+        GridLayoutCalculator.compute(screenSize: CGSize(width: 402, height: 874),
+                                     geo: CGSize(width: 402, height: 674),
+                                     layout: layout)
     }
 
     private let iPad11 = CGSize(width: 834, height: 1210)
@@ -130,23 +138,20 @@ struct GridLayoutCalculatorTests {
     /// first held different words on the two devices, and a home page whose
     /// links fill the top row exactly on one wrapped on the other.
     ///
-    /// Column parity is the property worth pinning. Row count legitimately
-    /// differs — the 13" is taller and shows more of the same board, which is
-    /// what a bigger screen should do.
+    /// Rows are pinned too. The 13" could fit a sixth row, and used to show
+    /// one — which moved every page break, so word 61 was on page 1 of one iPad
+    /// and page 2 of the other. Its extra height is now spacing.
     @Test func bothIPadSizesAgreeOnColumnCount() {
         #expect(landscapeBoard(iPad11).cols == landscapeBoard(iPad13).cols)
+        #expect(landscapeBoard(iPad11).rows == landscapeBoard(iPad13).rows)
     }
 
-    /// The 13" gets there by starting one density tick roomier, not by being
-    /// special-cased into a column count. If either base is retuned, the
-    /// relationship survives; a hard-coded 12 would not.
-    @Test func largeIPadStartsOneTickRoomier() {
+    /// The bigger screen's room goes into bigger tiles, not more of them.
+    @Test func largeIPadGetsBiggerTilesNotMoreOfThem() {
         let eleven = landscapeBoard(iPad11).tileSize
         let thirteen = landscapeBoard(iPad13).tileSize
         #expect(thirteen > eleven)
-        // 1.12 per tick, with slack for the width-fitting that follows.
-        #expect(thirteen / eleven > 1.05)
-        #expect(thirteen / eleven < 1.20)
+        #expect(thirteen / eleven < 1.25)
     }
 
     /// **The mini reaches the same way too.**
@@ -165,38 +170,99 @@ struct GridLayoutCalculatorTests {
         #expect(mini.rows == 5)
     }
 
-    /// The mini's base is still smaller than the 11"'s — parity comes from
-    /// tuning it, not from sharing one.
+    /// The per-device base sizes still matter off the designed orientation,
+    /// where the board sizes tiles rather than pinning a grid.
     ///
     /// Compared at *identical* geometry, so the only variable is the device
-    /// class. An earlier version of this test handed each device its own
-    /// screen and asserted the mini got fewer columns; that failed, and
-    /// correctly — given a 1133pt-wide canvas the mini's smaller base fits
-    /// *more* columns, not fewer. Column count is a property of the canvas,
-    /// and the thing the device class actually decides is tile size.
+    /// class. A portrait canvas, because in landscape every iPad now pins the
+    /// same 12 columns and the base no longer enters into it.
     @Test func miniKeepsItsOwnSmallerBase() {
-        let geo = CGSize(width: 1133, height: 610)
+        let geo = CGSize(width: 744, height: 1000)
         func tile(_ screen: CGSize) -> CGFloat {
-            GridLayoutCalculator.compute(screenSize: screen, geo: geo, userStep: 0).tileSize
+            GridLayoutCalculator.compute(screenSize: screen, geo: geo).tileSize
         }
         #expect(tile(miniPortrait) < tile(iPad11))
         #expect(tile(iPad11) < tile(iPad13))
     }
 
+    // MARK: - Board layouts
+
+    /// The whole point: a layout is the same grid on every device of a kind.
+    @Test func everyLayoutIsExactOnEveryDevice() {
+        for layout in BoardLayout.allCases {
+            let pad = layout.grid(phone: false), phone = layout.grid(phone: true)
+            for board in [landscapeBoard(miniPortrait, layout: layout),
+                          landscapeBoard(iPad11, layout: layout),
+                          landscapeBoard(iPad13, layout: layout)] {
+                #expect(board.cols == pad.cols && board.rows == pad.rows,
+                        "\(layout): \(board.cols)×\(board.rows)")
+            }
+            for board in [spec(phonePortrait, layout: layout), iPhone17Board(layout)] {
+                #expect(board.cols == phone.cols && board.rows == phone.rows,
+                        "\(layout): \(board.cols)×\(board.rows)")
+            }
+        }
+    }
+
+    /// Mark's choice of grids, pinned so a retune is deliberate.
+    @Test func theGridsAreTheChosenOnes() {
+        #expect(BoardLayout.allCases.map { $0.gridsDescription } == [
+            "iPad 12×5 · iPhone 4×5",
+            "iPad 10×4 · iPhone 3×4",
+            "iPad 9×4 · iPhone 2×4",
+        ])
+    }
+
+    @Test func largerLayoutsMakeBiggerTiles() {
+        for board in [{ (l: BoardLayout) in self.landscapeBoard(self.iPad11, layout: l) },
+                      { (l: BoardLayout) in self.iPhone17Board(l) }] {
+            let sizes = BoardLayout.allCases.map { board($0).tileSize }
+            #expect(sizes == sizes.sorted() && Set(sizes).count == sizes.count, "\(sizes)")
+        }
+    }
+
+    /// Off the designed orientation the board sizes tiles, and a larger layout
+    /// still means larger tiles.
+    @Test func otherOrientationStillScalesWithLayout() {
+        let sizes = BoardLayout.allCases.map { spec(miniPortrait, layout: $0).tileSize }
+        #expect(sizes == sizes.sorted() && Set(sizes).count == sizes.count, "\(sizes)")
+    }
+
+    /// The stepper this replaced: Auto and everything denser become Standard,
+    /// Roomy and Roomier Large, Roomiest Largest.
+    @Test func legacyDensityStepsMapOnce() {
+        #expect((-3...0).map(BoardLayout.fromLegacyStep) == [.standard, .standard, .standard, .standard])
+        #expect(BoardLayout.fromLegacyStep(1) == .large)
+        #expect(BoardLayout.fromLegacyStep(2) == .large)
+        #expect(BoardLayout.fromLegacyStep(3) == .largest)
+    }
+
+    @Test func aChosenLayoutWinsOverTheLegacyStep() {
+        let suite = "GridLayoutCalculatorTests-\(UUID().uuidString)"
+        let d = UserDefaults(suiteName: suite)!
+        d.removePersistentDomain(forName: suite)
+        #expect(BoardLayout.current(d) == .standard)
+        d.set(3, forKey: AppSettingsKey.tileSizeStep)
+        #expect(BoardLayout.current(d) == .largest)
+        d.set(BoardLayout.large.rawValue, forKey: AppSettingsKey.boardLayout)
+        #expect(BoardLayout.current(d) == .large)
+    }
+
     // MARK: - Home over Back
 
     /// When Back shares Home's cell, each half must still be a reasonable
-    /// target. 44pt is Apple's minimum; at the default density every form
-    /// factor clears it. (The tightest density steps on a phone do not — a
-    /// 64pt tile makes ~37pt halves — which is a density question, not a
-    /// layout one, and belongs to the density rework.)
-    @Test func splitHomeCellHalvesClearTheTouchMinimumAtDefaultDensity() {
-        let layouts = [landscapeBoard(miniPortrait), landscapeBoard(iPad11),
-                       landscapeBoard(iPad13), spec(phonePortrait)]
-        for layout in layouts {
-            let cell = layout.tileSize + layout.labelHeight
-            #expect(HomeGridCell.halfHeight(cellHeight: cell) >= 44,
-                    "\(layout.cols)×\(layout.rows) at \(Int(layout.tileSize))pt")
+    /// target. 44pt is Apple's minimum, and every layout on every device
+    /// clears it — Standard is the densest there is.
+    @Test func splitHomeCellHalvesClearTheTouchMinimum() {
+        for l in BoardLayout.allCases {
+            let boards = [landscapeBoard(miniPortrait, layout: l), landscapeBoard(iPad11, layout: l),
+                          landscapeBoard(iPad13, layout: l), spec(phonePortrait, layout: l),
+                          iPhone17Board(l)]
+            for board in boards {
+                let cell = board.tileSize + board.labelHeight
+                #expect(HomeGridCell.halfHeight(cellHeight: cell) >= 44,
+                        "\(l): \(board.cols)×\(board.rows) at \(Int(board.tileSize))pt")
+            }
         }
     }
 
@@ -207,7 +273,6 @@ struct GridLayoutCalculatorTests {
     @Test func degenerateGeometryStillScalesItsLabel() {
         let s = GridLayoutCalculator.compute(screenSize: miniPortrait,
                                              geo: .zero,
-                                             userStep: 0,
                                              textScale: 2)
         #expect(s.labelFontSize > GridLayoutCalculator.labelFontSize(forTile: 88))
         #expect(s.labelHeight == GridLayoutCalculator.labelHeight(forFont: s.labelFontSize))

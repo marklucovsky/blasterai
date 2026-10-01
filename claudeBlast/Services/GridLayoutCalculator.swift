@@ -7,12 +7,13 @@
 
 import CoreGraphics
 import Foundation
+import UIKit
 
 /// Result of computing a tile-grid layout for a given page in a given geometry.
 struct GridLayoutSpec: Equatable {
     /// Rendered width (and height) of one tile's image area, in points.
-    /// LazyVGrid will produce tiles at this size when used with the
-    /// `cols`-count `.flexible()` columns array.
+    /// The grid uses `cols` columns `.fixed()` at this width — not flexible,
+    /// which would stretch a height-limited tile back to the full width.
     let tileSize: CGFloat
     /// Font size for the label below each tile, in points.
     let labelFontSize: CGFloat
@@ -25,13 +26,102 @@ struct GridLayoutSpec: Equatable {
     /// Inter-row spacing for LazyVGrid — boosted above the base 6pt to
     /// consume vertical dead space so the grid fills the page.
     let verticalSpacing: CGFloat
+    /// Space between columns, and the margin at each side of the grid.
+    ///
+    /// Normally 6 between and 16 at the edges. When the grid is narrower than
+    /// the screen — a height-limited layout like the phone's 2×4 — the spare
+    /// width is shared equally between the edges and the gaps, so two columns
+    /// sit evenly across the screen rather than bunched in the middle with
+    /// wide empty margins.
+    var horizontalSpacing: CGFloat = 6
+    var horizontalPadding: CGFloat = 16
 
     var perPage: Int { cols * rows }
 }
 
+/// The three board layouts a device can show, as fixed grids.
+///
+/// ## Why fixed grids rather than a density slider
+///
+/// The motor-planning claim — a child learns where a word *is* — only holds if
+/// the grid is something a board is designed against. A density computed from
+/// tile size gave a different grid on each device and each step: "Roomy" was 11
+/// columns on one iPad and 12 on another, and the phone's steps jumped about
+/// (4×5 to 2×4 in one tap). A board author could not design for any of it.
+///
+/// So a layout is a grid, pinned in both directions: Standard is 12×5 on every
+/// iPad and 4×5 on every iPhone, with the same positions and the same page
+/// breaks. Tile size follows from the screen; spare space becomes margin and
+/// row spacing, never an extra column or row.
+///
+/// Nothing is denser than Standard. Denser boards were possible and were
+/// dropped on purpose: more, smaller pictures over-stimulate, and the grids
+/// they produced did not look good on a phone either.
+///
+/// The grids are defined for the orientation each device is designed around —
+/// iPad landscape, iPhone portrait. Turned the other way, the board falls back
+/// to sizing tiles to match (see `GridLayoutCalculator.compute`), and makes no
+/// motor-planning promise there.
+enum BoardLayout: String, CaseIterable, Identifiable {
+    case standard, large, largest
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .standard: return "Standard"
+        case .large:    return "Large"
+        case .largest:  return "Largest"
+        }
+    }
+
+    /// The grid on a device of this kind, in its designed orientation.
+    func grid(phone: Bool) -> (cols: Int, rows: Int) {
+        switch (self, phone) {
+        case (.standard, false): return (12, 5)
+        case (.large, false):    return (10, 4)
+        case (.largest, false):  return (9, 4)
+        case (.standard, true):  return (4, 5)
+        case (.large, true):     return (3, 4)
+        case (.largest, true):   return (2, 4)
+        }
+    }
+
+    /// "iPad 10×4 · iPhone 3×4" — what this layout is on each kind of device.
+    var gridsDescription: String {
+        let pad = grid(phone: false), phone = grid(phone: true)
+        return "iPad \(pad.cols)×\(pad.rows) · iPhone \(phone.cols)×\(phone.rows)"
+    }
+
+    /// The setting as stored, falling back to the density stepper it replaced.
+    ///
+    /// The stepper ran -3…3 around Auto. Everything at or below Auto is
+    /// Standard (the denser steps no longer exist), Roomy and Roomier are
+    /// Large, Roomiest is Largest.
+    static func current(_ defaults: UserDefaults = .standard) -> BoardLayout {
+        if let raw = defaults.string(forKey: AppSettingsKey.boardLayout),
+           let layout = BoardLayout(rawValue: raw) {
+            return layout
+        }
+        return fromLegacyStep(defaults.integer(forKey: AppSettingsKey.tileSizeStep))
+    }
+
+    static func fromLegacyStep(_ step: Int) -> BoardLayout {
+        switch step {
+        case ...0:  return .standard
+        case 1, 2:  return .large
+        default:    return .largest
+        }
+    }
+}
+
 /// Pure-Swift calculator that picks a tile size + column count for the tile grid.
 ///
-/// Algorithm:
+/// In a device's designed orientation the grid comes from `BoardLayout` and only
+/// the tile size is computed: the largest tile that gives every column and
+/// every row. Turned the other way, the board sizes tiles instead:
+///
+/// Algorithm (other orientation):
 /// 1. Compute the user's preferred tile size from form factor × stepper tick.
 /// 2. Sweep candidate column counts. For each, the rendered tile width is
 ///    `(availW - (cols-1)*spacing) / cols` and the row count that fits is
@@ -63,8 +153,17 @@ enum GridLayoutCalculator {
     /// same number. They were the same literal `2` in five places before.
     static let labelBandPadding: CGFloat = 3
 
-    /// Total height of the label band for a given font size.
-    static func labelHeight(forFont font: CGFloat) -> CGFloat { font + labelBandPadding * 2 }
+    /// Total height of the label band for a given font size: the height the
+    /// label's line actually draws, plus its padding.
+    ///
+    /// It used to be the point size, which is not the height of a line of text
+    /// — a 16pt semibold line is about 19pt tall. Every cell drew ~3pt taller
+    /// than this said it would. Auto always had slack to hide it; a fixed grid
+    /// that fills the height did not, and the phone's 2×4 clipped its bottom row.
+    static func labelHeight(forFont font: CGFloat) -> CGFloat {
+        UIFont.systemFont(ofSize: font, weight: .semibold).lineHeight.rounded(.up)
+            + labelBandPadding * 2
+    }
 
     // Form-factor base sizes (the "auto" tile size at userStep=0).
     // Device class is detected from the screen's shorter dimension so
@@ -134,7 +233,7 @@ enum GridLayoutCalculator {
     ///   is preserved, because that is the setting they chose deliberately.
     static func compute(screenSize: CGSize,
                         geo: CGSize,
-                        userStep: Int,
+                        layout: BoardLayout = .standard,
                         textScale: CGFloat = 1) -> GridLayoutSpec {
         let screenMin = min(screenSize.width, screenSize.height)
         let base: CGFloat = {
@@ -143,7 +242,12 @@ enum GridLayoutCalculator {
             if screenMin >= iPadLargeMinDim { return iPadLargeBaseSize }
             return iPadBaseSize
         }()
-        let scaled = CGFloat(Double(base) * pow(tickMultiplier, Double(userStep)))
+        let isPhone = screenMin < phoneMinDimMax
+        let grid = layout.grid(phone: isPhone)
+        // Off the designed orientation, a larger layout means larger tiles in
+        // proportion: Large on an iPad is 10 columns where Standard is 12.
+        let standardCols = BoardLayout.standard.grid(phone: isPhone).cols
+        let scaled = base * CGFloat(standardCols) / CGFloat(grid.cols)
         let pref = max(minTileSize, min(maxTileSize, scaled))
 
         let availW = max(0, geo.width - hPad)
@@ -156,6 +260,18 @@ enum GridLayoutCalculator {
                 labelHeight: labelHeight(forFont: labelFontSize(forTile: pref, scale: textScale)),
                 cols: 1, rows: 1, verticalSpacing: spacing
             )
+        }
+
+        // The designed orientation: the grid is the layout's, exactly.
+        let isDesignedOrientation = isPhone ? availH > availW : availW >= availH
+        if isDesignedOrientation {
+            return finish(cols: grid.cols, rows: grid.rows,
+                          tileW: min(maxTileSize,
+                                     renderTile(forCols: grid.cols, availW: availW),
+                                     largestTile(fittingRows: grid.rows, availH: availH,
+                                                 textScale: textScale)),
+                          availH: availH, textScale: textScale,
+                          screenSize: screenSize, geo: geo, layout: layout)
         }
 
         // Accept any tile width within one tick of the user's preference —
@@ -195,6 +311,28 @@ enum GridLayoutCalculator {
             return (cols, rows, tileW, cols * rows)
         }()
 
+        // A larger layout takes the column count that keeps tiles at least
+        // its size. The capacity rule above is Auto's, and at large sizes it
+        // folds Large and Largest onto the same grid.
+        if layout != .standard {
+            let cols = colsForTile(pref, availW: availW)
+            let tileW = renderTile(forCols: cols, availW: availW)
+            let cellH = tileW + labelHeight(forFont: labelFontSize(forTile: tileW, scale: textScale))
+            let rows = max(1, Int((availH + spacing) / (cellH + spacing)))
+            return finish(cols: cols, rows: rows, tileW: tileW,
+                          availH: availH, textScale: textScale,
+                          screenSize: screenSize, geo: geo, layout: layout)
+        }
+        return finish(cols: result.cols, rows: result.rows, tileW: result.tileW,
+                      availH: availH, textScale: textScale,
+                      screenSize: screenSize, geo: geo, layout: layout)
+    }
+
+    private static func finish(cols: Int, rows: Int, tileW: CGFloat,
+                               availH: CGFloat, textScale: CGFloat,
+                               screenSize: CGSize, geo: CGSize,
+                               layout: BoardLayout) -> GridLayoutSpec {
+        let result = (cols: cols, rows: rows, tileW: tileW)
         let labelF = labelFontSize(forTile: result.tileW, scale: textScale)
         let cellH = result.tileW + labelHeight(forFont: labelF)
 
@@ -206,23 +344,49 @@ enum GridLayoutCalculator {
         let extraPerGap = result.rows > 1 ? slack / CGFloat(result.rows - 1) : 0
         let vSpacing = spacing + min(maxRowSpacingBoost, extraPerGap)
 
+        // Spare width, shared equally between the edges and the gaps between
+        // columns — but only once every gap would be at least the usual edge
+        // margin. A grid that fills the width keeps 16 at the edges, 6 between.
+        let even = (geo.width - CGFloat(result.cols) * result.tileW) / CGFloat(result.cols + 1)
+        let isEven = even >= hPad / 2
+
         let spec = GridLayoutSpec(
             tileSize: result.tileW,
             labelFontSize: labelF,
             labelHeight: labelHeight(forFont: labelF),
             cols: result.cols,
             rows: result.rows,
-            verticalSpacing: vSpacing
+            verticalSpacing: vSpacing,
+            horizontalSpacing: isEven ? even : spacing,
+            horizontalPadding: isEven ? even : hPad / 2
         )
 
         #if DEBUG
-        print("[GridLayout] screen=\(Int(screenSize.width))×\(Int(screenSize.height)) geo=\(Int(geo.width))×\(Int(geo.height)) step=\(userStep) pref=\(Int(pref)) → tile=\(Int(spec.tileSize)) cols=\(spec.cols) rows=\(spec.rows) cap=\(spec.perPage) vGap=\(Int(spec.verticalSpacing))")
+        print("[GridLayout] screen=\(Int(screenSize.width))×\(Int(screenSize.height)) geo=\(Int(geo.width))×\(Int(geo.height)) layout=\(layout.rawValue) → tile=\(Int(spec.tileSize)) cols=\(spec.cols) rows=\(spec.rows) cap=\(spec.perPage) vGap=\(Int(spec.verticalSpacing))")
         #endif
 
         return spec
     }
 
     // MARK: - Helpers
+
+    /// The largest tile whose cells stack `rows` deep in `availH`. Cell height
+    /// is not linear in tile size (the label tracks the tile, within bounds),
+    /// so this searches rather than solves.
+    private static func largestTile(fittingRows rows: Int, availH: CGFloat,
+                                    textScale: CGFloat) -> CGFloat {
+        func fits(_ t: CGFloat) -> Bool {
+            let cell = t + labelHeight(forFont: labelFontSize(forTile: t, scale: textScale))
+            return CGFloat(rows) * cell + CGFloat(rows - 1) * spacing <= availH
+        }
+        var lo: CGFloat = 1, hi: CGFloat = max(1, availH)
+        guard fits(lo) else { return lo }
+        for _ in 0..<40 {
+            let mid = (lo + hi) / 2
+            if fits(mid) { lo = mid } else { hi = mid }
+        }
+        return lo
+    }
 
     private static func colsForTile(_ tile: CGFloat, availW: CGFloat) -> Int {
         max(1, Int((availW + spacing) / (tile + spacing)))
