@@ -24,11 +24,16 @@ struct OnboardingInputs {
     var childStage: BrownsStage
     var childVoiceID: String
     var childMaxTiles: Int
-    /// `nil` = don't touch the vault (env-var path is in play — the launch
-    /// code already persisted the env key to the Keychain). `""` = explicit
+    /// `nil` = don't touch the vault (the DEBUG env-var path is in play, and
+    /// that key is read from the environment, never stored). `""` = explicit
     /// clear (user pressed Skip after a prior key was stored). Non-empty
-    /// string = set to that value.
+    /// string = set to that value — stored only if `aiConsent` is true.
     var apiKey: String?
+    /// The caregiver's answer to the AI disclosure. Onboarding records it the
+    /// moment they answer, so a key file opened mid-setup can install; the
+    /// commit writes it again so the final state is whatever they settled on
+    /// after any Back and forth. See `AIConsent`.
+    var aiConsent: Bool = false
     var icloudEnabled: Bool
     /// 4–6 digit numeric PIN captured during patient onboarding. `nil` for
     /// therapist / personal flows. Commit hashes with a fresh salt and
@@ -113,11 +118,19 @@ enum OnboardingCommit {
             }
         }
 
-        // 3. API key — Vault handles trim + empty-as-delete. Skip entirely
-        // when inputs.apiKey is nil (env-var path) to avoid clobbering the
-        // launch-persisted key.
+        // 3. AI permission, then the key it permits. Accepting again is not a
+        // no-op — it would move the accepted date — so an answer already on
+        // record is left alone.
+        if inputs.aiConsent {
+            if !AIConsent.isGranted(defaults) { AIConsent.accept(defaults) }
+        } else {
+            AIConsent.revoke(defaults)
+        }
+        // Vault handles trim + empty-as-delete, and refuses a key without
+        // permission. Skip entirely when inputs.apiKey is nil (env-var path).
         if let apiKey = inputs.apiKey {
-            OpenAIKeyVault.setKey(apiKey, store: secretStore)
+            OpenAIKeyVault.setKey(apiKey, store: secretStore,
+                                  consentGranted: AIConsent.isGranted(defaults))
         }
 
         // 4. iCloud preference — UserDefaults. Container rebuilds at next launch.

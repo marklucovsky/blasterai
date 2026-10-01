@@ -66,12 +66,20 @@ enum OpenAIKeyVault {
 
     /// Persist a new key. Empty/whitespace-only input deletes the entry —
     /// matches the "clear it from Admin" affordance.
+    ///
+    /// **A key is only installed with permission** (`AIConsent`). Every screen
+    /// that takes a key shows the disclosure first, so a refusal here means a
+    /// path forgot to — and returns false rather than storing a key the
+    /// caregiver never agreed to use. Deleting is always allowed.
     @discardableResult
-    static func setKey(_ key: String, store: SecretStore = defaultStore()) -> Bool {
+    static func setKey(_ key: String,
+                       store: SecretStore = defaultStore(),
+                       consentGranted: Bool = AIConsent.isGranted()) -> Bool {
         let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty {
             return store.delete()
         }
+        guard consentGranted else { return false }
         return store.write(trimmed)
     }
 

@@ -24,7 +24,7 @@ struct OnboardingView: View {
     // Step machine -----------------------------------------------------------
 
     private enum Step: Int, CaseIterable {
-        case welcome, role, authorName, childProfile, tileStyle, apiKey, icloud, pinSetup, done
+        case welcome, role, authorName, childProfile, tileStyle, aiConsent, apiKey, icloud, pinSetup, done
     }
 
     @State private var step: Step = .welcome
@@ -56,6 +56,10 @@ struct OnboardingView: View {
         ImageSetID.resolved(UserDefaults.standard.string(forKey: AppSettingsKey.imageSet))
 
     @State private var apiKey: String = ""
+    /// The answer to the AI disclosure. Recorded the moment it is given (see
+    /// `answerAIConsent`), and seeded from the stored answer so Back and forth
+    /// shows what is actually on record.
+    @State private var aiConsentAccepted: Bool = AIConsent.isGranted()
     /// Picking a `.blasterkey` file someone sent, rather than typing a key.
     @State private var isPickingKeyFile = false
     @State private var giftedKeyURL: ImportSheetURL?
@@ -100,6 +104,7 @@ struct OnboardingView: View {
                     case .authorName:    authorNameStep
                     case .childProfile:  childProfileStep
                     case .tileStyle:     tileStyleStep
+                    case .aiConsent:    AIDisclosureContent()
                     case .apiKey:        apiKeyStep
                     case .icloud:        icloudStep
                     case .pinSetup:      pinSetupStep
@@ -158,7 +163,15 @@ struct OnboardingView: View {
             // being asked. A patient device took the default silently and
             // nobody was told it was a choice.
             return true
-        case .apiKey:       return !hasEnvKey
+        case .aiConsent:
+            // Shown even when a DEBUG environment key is present: that key is
+            // gated by the same permission as any other, and development builds
+            // have to be able to walk the disclosure.
+            return true
+        case .apiKey:
+            // Nothing to enter without permission to use it, and nothing to
+            // enter when the environment already supplies one.
+            return aiConsentAccepted && !hasEnvKey
         case .icloud:
             // iCloud is on by default; we don't ask in release. DEBUG
             // builds keep the step so we can flip the toggle off during
@@ -191,7 +204,7 @@ struct OnboardingView: View {
             Label {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Private by default").font(.headline)
-                    Text("Your child's data lives on this device. AI calls send the selected words and nothing else.")
+                    Text("Your child's data lives on this device. AI features are optional, and you'll be asked before any are turned on.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -564,7 +577,7 @@ struct OnboardingView: View {
             }
             Spacer()
             if canSkip {
-                Button("Skip") { skipAndAdvance() }
+                Button(step == .aiConsent ? "Not now" : "Skip") { skipAndAdvance() }
                     .buttonStyle(.borderless)
             }
             Button(primaryActionLabel) {
@@ -583,6 +596,7 @@ struct OnboardingView: View {
         switch step {
         // Patient mode requires a child profile, and Caregiver mode hides
         // the step entirely — so there's nothing to skip from this card now.
+        case .aiConsent:    return true   // "Not now"
         case .apiKey:       return true
         default:            return false
         }
@@ -591,6 +605,7 @@ struct OnboardingView: View {
     private var primaryActionLabel: String {
         switch step {
         case .welcome: return "Get Started"
+        case .aiConsent: return "Enable"
         case .done:    return "Open Blaster"
         default:       return "Continue"
         }
@@ -603,6 +618,7 @@ struct OnboardingView: View {
         case .authorName:   return true   // optional / deferrable
         case .childProfile: return !childName.trimmingCharacters(in: .whitespaces).isEmpty
         case .tileStyle:    return true   // always has a valid selection
+        case .aiConsent:    return true
         case .apiKey:       return true
         case .icloud:       return true
         case .pinSetup:     return canAdvancePINSetup
@@ -622,12 +638,32 @@ struct OnboardingView: View {
 
     private func advance() {
         skipChildProfile = false
+        if step == .aiConsent { answerAIConsent(true) }
         moveStep(forward: true)
+    }
+
+    /// Record the disclosure answer now rather than at the final commit.
+    ///
+    /// A key file can be opened on the key step, and installing it requires
+    /// permission already on record. The commit writes the answer again, so
+    /// whatever the caregiver settles on after going Back is what stands.
+    private func answerAIConsent(_ accepted: Bool) {
+        aiConsentAccepted = accepted
+        if accepted {
+            if !AIConsent.isGranted() { AIConsent.accept() }
+        } else {
+            AIConsent.revoke()
+        }
     }
 
     private func skipAndAdvance() {
         if step == .childProfile { skipChildProfile = true }
         if step == .apiKey { apiKey = "" }
+        if step == .aiConsent {
+            // "Not now" permits nothing, so nothing typed earlier survives it.
+            answerAIConsent(false)
+            apiKey = ""
+        }
         moveStep(forward: true)
     }
 
@@ -773,7 +809,8 @@ struct OnboardingView: View {
             childStage: childStage,
             childVoiceID: childVoiceID,
             childMaxTiles: childMaxTiles,
-            apiKey: hasEnvKey ? nil : apiKey, // env-var path keeps its launch-persisted key
+            apiKey: hasEnvKey ? nil : apiKey, // env-var path: read from the environment, never stored
+            aiConsent: aiConsentAccepted,
             icloudEnabled: icloudEnabled,
             adminPIN: role == .patient ? pinInput : nil
         )
@@ -790,9 +827,13 @@ struct OnboardingView: View {
         // and the choice appeared to do nothing until the next cold start.
         resolver.activeSet = tileStyle
         profileResolver.refresh()
-        // Switch the running engine to OpenAI when the user just supplied a key.
-        if let key = OpenAIKeyVault.currentKey() {
-            sentenceEngine.switchProvider(OpenAISentenceProvider(apiKey: key))
+        // Start using the key now, not at the next launch. `adoptKey` rather
+        // than `switchProvider`: the launch marked this device keyless, and
+        // only adopting clears that — switching alone left a freshly set-up
+        // device in single-word mode until it was relaunched.
+        sentenceEngine.loadAIConsent()
+        if aiConsentAccepted, let key = OpenAIKeyVault.currentKey() {
+            sentenceEngine.adoptKey(key)
         }
     }
 }

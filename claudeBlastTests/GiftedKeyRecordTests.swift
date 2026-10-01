@@ -148,7 +148,7 @@ struct GiftedKeyRecordTests {
         #expect(OpenAIKeyVault.currentKey(env: NoEnvProcessInfo(), store: store) == nil)
 
         let gift = payload()
-        #expect(OpenAIKeyVault.setKey(gift.key, store: store))
+        #expect(OpenAIKeyVault.setKey(gift.key, store: store, consentGranted: true))
         #expect(OpenAIKeyVault.currentKey(env: NoEnvProcessInfo(), store: store) == gift.key)
     }
 

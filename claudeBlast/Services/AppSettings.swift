@@ -70,6 +70,11 @@ enum AppSettingsKey {
     static let giftedKeyIssued   = "gifted_key_issued"
     static let giftedKeyExpires  = "gifted_key_expires"
     static let giftedKeyLastFour = "gifted_key_last_four"
+    // Permission to send anything to OpenAI. See `AIConsent`. Device-local for
+    // the same reason as the gifted-key provenance above.
+    static let aiConsentVersion         = "ai_consent_version"
+    static let aiConsentAcceptedAt      = "ai_consent_accepted_at"
+    static let aiConsentPromptedVersion = "ai_consent_prompted_version"
 
     /// Whether the CloudKit schema probe has written its rows and not yet
     /// cleaned them up. DEBUG only. Persisted rather than held in view state

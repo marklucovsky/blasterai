@@ -77,6 +77,7 @@ struct OnboardingCommitTests {
             childVoiceID: "com.apple.voice.Samantha",
             childMaxTiles: 6,
             apiKey: "sk-onboarding",
+            aiConsent: true,
             icloudEnabled: false,
             adminPIN: pin
         )
@@ -278,6 +279,35 @@ struct OnboardingCommitTests {
         OnboardingCommit.apply(inputs, context: ctx, defaults: defaults, secretStore: secret)
 
         #expect(secret.read() == nil)
+    }
+
+    /// "Not now" on the disclosure: nothing is permitted, so a key typed
+    /// earlier in the walk (then backed out of) is not stored.
+    @Test func declinedConsent_storesNoKey() throws {
+        let container = try makeContainer()
+        let ctx = container.mainContext
+        let secret = InMemorySecretStore()
+        let defaults = isolatedDefaults()
+
+        var inputs = patientInputs()
+        inputs.aiConsent = false
+
+        OnboardingCommit.apply(inputs, context: ctx, defaults: defaults, secretStore: secret)
+
+        #expect(secret.read() == nil)
+        #expect(!AIConsent.isGranted(defaults))
+    }
+
+    @Test func acceptedConsent_isRecorded() throws {
+        let container = try makeContainer()
+        let ctx = container.mainContext
+        let defaults = isolatedDefaults()
+
+        OnboardingCommit.apply(patientInputs(), context: ctx, defaults: defaults,
+                               secretStore: InMemorySecretStore())
+
+        #expect(AIConsent.acceptedVersion(defaults) == AIConsent.currentVersion)
+        #expect(AIConsent.acceptedAt(defaults) != nil)
     }
 
     @Test func icloudFlag_isPersistedToDefaults() throws {

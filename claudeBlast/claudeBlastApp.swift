@@ -184,9 +184,8 @@ struct claudeBlastApp: App {
             GiftedKeyRecord.clear()
         }
 
-        // Env var wins (consumed silently — env users get their key persisted to
-        // the Keychain so standalone re-launches keep working), then Keychain,
-        // then Mock. The rule lives in `ProviderSelection` rather than here
+        // Env var wins (DEBUG only, read fresh and never stored), then
+        // Keychain, then Mock. The rule lives in `ProviderSelection` rather than here
         // because nothing in an App initializer can be tested, and the keyless
         // branch is the one our own devices never take.
         let selection = ProviderSelection.choose()
@@ -194,6 +193,9 @@ struct claudeBlastApp: App {
         // A keyless launch is a single-word device, not a device quietly running
         // on the mock. See `ProviderSelection.Choice`.
         engine.isMissingKey = (selection == .noKey)
+        // Permission to use whichever key that was. Without it the key is
+        // dormant and the board speaks single words. See `AIConsent`.
+        engine.loadAIConsent()
         let storedAudio = UserDefaults.standard.object(forKey: AppSettingsKey.audioEnabled)
         engine.audioEnabled = (storedAudio as? Bool) ?? true
         engine.voiceIdentifier = UserDefaults.standard.string(forKey: AppSettingsKey.speechVoiceIdentifier) ?? ""

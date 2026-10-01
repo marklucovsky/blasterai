@@ -75,6 +75,11 @@ struct ContentView: View {
 
     private var mainContent: some View {
         TileGridView()
+            // A key with no permission behind it: ask once, on a caregiver's
+            // device, and never over a script or a demo being captured.
+            .modifier(AIConsentPrompt(
+                isEnabled: deviceProfiles.first?.role == .caregiver
+                    && scriptRunner.state == .idle && !demoMode))
             .fullScreenCover(item: $activeDestination) { dest in
                 destinationContent(dest)
                     // The playback pill lives on the child surface, so a

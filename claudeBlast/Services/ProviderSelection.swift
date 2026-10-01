@@ -31,8 +31,8 @@ enum ProviderSelection {
     /// provider — live in `makeProvider`, so the *rule* can be tested without a
     /// Keychain, a network stack or an app.
     enum Choice: Equatable {
-        /// `OPENAI_API_KEY` was set. Wins outright, and the key is persisted so a
-        /// later launch outside the scheme keeps working.
+        /// `OPENAI_API_KEY` was set (DEBUG only). Wins outright. Used, never
+        /// stored: see `makeProvider`.
         case environmentKey(String)
         /// A key the caregiver entered, from the Keychain.
         case storedKey(String)
@@ -91,18 +91,20 @@ enum ProviderSelection {
         return .storedKey(stored)
     }
 
-    /// Apply the decision. The only side effect is persisting an env key, which
-    /// is deliberate: a developer who ran once with the variable set should not
-    /// lose the key by launching from the Home screen afterwards.
+    /// Apply the decision. No side effects.
+    ///
+    /// An environment key used to be written into the Keychain here, so a
+    /// launch from the Home screen after one from Xcode kept working. It is not
+    /// any more: storing a key is installing one, and a key is only installed
+    /// with permission (`AIConsent`) — which a launch has not asked for. The
+    /// variable is a *source* of a key, read fresh every time, and gated where
+    /// the key is used like any other.
     static func makeProvider(environment: [String: String] = ProcessInfo.processInfo.environment,
                              defaults: UserDefaults = .standard,
                              store: SecretStore = OpenAIKeyVault.defaultStore())
         -> any SentenceProvider {
         switch choose(environment: environment, defaults: defaults, store: store) {
-        case .environmentKey(let key):
-            _ = OpenAIKeyVault.setKey(key, store: store)
-            return OpenAISentenceProvider(apiKey: key)
-        case .storedKey(let key):
+        case .environmentKey(let key), .storedKey(let key):
             return OpenAISentenceProvider(apiKey: key)
         case .mockByChoice, .noKey:
             // Both build the mock — it is the only thing that can stand in for a

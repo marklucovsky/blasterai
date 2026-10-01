@@ -52,6 +52,10 @@ struct GiftedKeyImportSheet: View {
     }
 
     @State private var phase: Phase = .loading
+    /// A key waiting on the AI disclosure. Installing a key requires permission
+    /// to use it (`AIConsent`), and a file tap may be the first this device has
+    /// heard of either.
+    @State private var awaitingConsent: GiftedKeyPayload?
 
     var body: some View {
         NavigationStack {
@@ -83,12 +87,37 @@ struct GiftedKeyImportSheet: View {
                 }
                 if case .ready(let payload) = phase {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("Install") { Task { await verifyThenInstall(payload) } }
+                        Button("Install") { requestInstall(payload) }
                     }
                 }
             }
         }
         .task { load() }
+        .sheet(item: $awaitingConsent) { payload in
+            AIDisclosureSheet { accepted in
+                guard accepted else {
+                    AIConsent.markPrompted()
+                    return
+                }
+                if let sentenceEngine {
+                    sentenceEngine.grantAIConsent()
+                } else {
+                    AIConsent.accept()
+                }
+                Task { await verifyThenInstall(payload) }
+            }
+        }
+    }
+
+    /// Install, asking permission first if this device has not given it. Even
+    /// checking the key is a request to OpenAI, so the disclosure comes before
+    /// that too.
+    private func requestInstall(_ payload: GiftedKeyPayload) {
+        if AIConsent.isGranted() {
+            Task { await verifyThenInstall(payload) }
+        } else {
+            awaitingConsent = payload
+        }
     }
 
     private var isFinished: Bool {
@@ -283,4 +312,10 @@ struct GiftedKeyImportSheet: View {
 
         phase = .installed(record, outcome)
     }
+}
+
+/// So a payload can wait on the disclosure as a sheet item. A key identifies its
+/// own file.
+extension GiftedKeyPayload: Identifiable {
+    var id: String { key }
 }

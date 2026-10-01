@@ -176,6 +176,39 @@ final class SentenceEngine {
     /// a relaunch would keep a topped-up key in the doghouse.
     private(set) var isQuotaExhausted = false
 
+    /// Whether this device has permission to send words to OpenAI. See
+    /// `AIConsent`.
+    ///
+    /// False until launch sets it from `AIConsent`, so an engine nobody
+    /// configured never generates. The Mock provider makes no network call and
+    /// is exempt — see `canGenerateSentences`. Changed only through
+    /// `grantAIConsent` and `revokeAIConsent`, which keep it and the stored
+    /// answer together.
+    private(set) var hasAIConsent = false
+
+    /// Set once at launch from the stored answer.
+    func loadAIConsent(defaults: UserDefaults = .standard) {
+        hasAIConsent = AIConsent.isGranted(defaults)
+    }
+
+    /// The caregiver accepted the disclosure: record it, and start using
+    /// whatever key the device already holds — a dormant one, or the DEBUG
+    /// environment key — without a relaunch.
+    func grantAIConsent(defaults: UserDefaults = .standard,
+                        key: String? = OpenAIKeyVault.currentKey()) {
+        AIConsent.accept(defaults)
+        hasAIConsent = true
+        if let key { adoptKey(key) }
+    }
+
+    /// Permission withdrawn. The key stays where it is, unused; the board
+    /// drops to single words at once.
+    func revokeAIConsent(defaults: UserDefaults = .standard) {
+        AIConsent.revoke(defaults)
+        hasAIConsent = false
+        resetAll()
+    }
+
     /// The key cannot currently generate, for any reason.
     ///
     /// Both states force single-word mode and both are cleared by a new key, so
@@ -195,7 +228,14 @@ final class SentenceEngine {
     /// Note it says nothing about the child's stage. A Stage I child on a device
     /// with a perfect key still speaks single words — that is a clinical fact,
     /// not a capability. This is only about whether the machinery works.
-    var canGenerateSentences: Bool { !isKeyUnusable && !isMissingKey }
+    ///
+    /// Permission is part of "works": without it every OpenAI request is refused,
+    /// so offering sentence mode would mean silence on every tap. Mock is exempt
+    /// because it sends nothing anywhere — and is only reachable by choice, in
+    /// a development build.
+    var canGenerateSentences: Bool {
+        !isKeyUnusable && !isMissingKey && (hasAIConsent || provider is MockSentenceProvider)
+    }
 
     /// Clear both refusal states — the caregiver has entered a different key.
     func clearKeyRejection() {
