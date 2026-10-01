@@ -170,6 +170,7 @@ enum CloudKitSchemaExerciser {
             scene.receivedLabel = marker
             scene.sourceURL = marker
             scene.importedContentHash = marker
+            scene.designedFor = marker
         }
 
         step("RecordedScript") {

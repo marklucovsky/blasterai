@@ -175,14 +175,21 @@ struct ExportableScene: Codable {
     var sceneVersion: String? = nil
     /// The author's self-asserted display name ("by Greta"). May be absent.
     var authorName: String? = nil
+    /// The grid the scene was designed for, e.g. `"ipad-12x5"`. Optional and
+    /// ignored by older builds, so the format version does not change.
+    var designedFor: String? = nil
     var tiles: [ExportableTile]?
     let pages: [ExportablePage]
 
+    /// Explicit, so a property missing here is silently dropped on both encode
+    /// and decode — add every new key. `designedFor` is pinned by a round-trip
+    /// test for exactly that reason.
     enum CodingKeys: String, CodingKey {
         case type = "@type"
         case comment = "_comment"
         case version, name, description, homePageKey
         case id, slug, sceneVersion, authorName
+        case designedFor
         case tiles, pages
     }
 }

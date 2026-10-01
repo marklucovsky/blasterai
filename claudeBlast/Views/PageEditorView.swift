@@ -33,6 +33,18 @@ struct PageEditorView: View {
     /// bar can no longer hold four controls beside the title.
     private var isCompactWidth: Bool { hSizeClass == .compact }
 
+    @AppStorage(AppSettingsKey.boardLayout) private var boardLayoutRaw: String =
+        BoardLayout.current().rawValue
+
+    /// The scene's designed grid, else this device's layout — so the page is
+    /// arranged as it will appear. See `GridLayoutCalculator.authoringGrid`.
+    private var boardGrid: (cols: Int, rows: Int) {
+        GridLayoutCalculator.authoringGrid(
+            designed: scene.designedLayout,
+            isPhone: GridLayoutCalculator.isPhone(screenSize: UIScreen.main.bounds.size),
+            deviceLayout: BoardLayout(rawValue: boardLayoutRaw) ?? .standard)
+    }
+
     @State private var undoStack: [[TileEntry]] = []
     @State private var redoStack: [[TileEntry]] = []
     @State private var prePickerSnapshot: [TileEntry]? = nil
@@ -156,6 +168,7 @@ struct PageEditorView: View {
                         onAdd: { openPicker() },
                         onAddSpace: { addSpacer() },
                         onTapTile: { editingTileKey = $0 },
+                        boardGrid: boardGrid,
                         cell: { entry in
                             // The editor shows what the child cannot.
                             //
@@ -185,6 +198,10 @@ struct PageEditorView: View {
             }
         }
         .navigationTitle(page?.title ?? pageKey)
+        // The grid this page is laid out on, so a caregiver arranging words
+        // knows which board's positions they are setting.
+        .navigationSubtitle(scene.designedLayout.map { "Designed for \($0.title)" }
+                            ?? "\(boardGrid.cols)×\(boardGrid.rows) · this device's layout")
         .navigationBarTitleDisplayMode(.inline)
         // Editing a page can change what the folders pointing AT it should
         // look like. Automatic folder colors are stored, not computed when

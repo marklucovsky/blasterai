@@ -49,6 +49,7 @@ enum SceneMaterializer {
         let homePageKey: String
         let isDefault: Bool
         let pages: [PageSpec]
+        var designedFor: String = ""
     }
 
     /// Materialize a SceneJSON into concrete pages.
@@ -87,7 +88,8 @@ enum SceneMaterializer {
             description: scene.description ?? "",
             homePageKey: scene.homePageKey,
             isDefault: scene.isDefault,
-            pages: materializedPages
+            pages: materializedPages,
+            designedFor: scene.designedFor ?? ""
         )
     }
 

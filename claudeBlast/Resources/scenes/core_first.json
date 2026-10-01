@@ -4,6 +4,7 @@
   "description": "Sentence-first home: pronouns, verbs and function words, with categories behind links",
   "homePageKey": "home",
   "isDefault": true,
+  "designedFor": "ipad-12x5",
   "pages": [
     {
       "key": "home",

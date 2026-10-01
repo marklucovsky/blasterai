@@ -328,6 +328,10 @@ enum SceneImporter {
             $0.importedContentHash.isEmpty || $0.contentHash != $0.importedContentHash
         } ?? false
 
+        // Only a grid this build knows; an unknown one is treated as undeclared.
+        let incomingDesignedFor = exportable.designedFor
+            .flatMap(DesignedLayout.init(rawValue:))?.rawValue ?? ""
+
         // Apply `pages` + file metadata to a scene in place.
         func refresh(_ s: BlasterScene) {
             s.name = exportable.name
@@ -339,6 +343,7 @@ enum SceneImporter {
             s.isImported = true
             s.sourceURL = sourceURL
             s.pages = pages
+            s.designedFor = incomingDesignedFor
         }
 
         let scene: BlasterScene
@@ -369,6 +374,7 @@ enum SceneImporter {
                 fork.sourceURL = sourceURL
                 fork.authorName = incomingAuthor
                 fork.pages = pages
+                fork.designedFor = incomingDesignedFor
                 fork.ensureIdentity(authorID: DeviceProfileStore.ensureAuthorID(context: context),
                                     authorName: incomingAuthor)
                 fork.importedContentHash = fork.contentHash
@@ -394,6 +400,7 @@ enum SceneImporter {
             newScene.sceneVersion = incomingVersion
             newScene.authorName = incomingAuthor
             newScene.pages = pages
+            newScene.designedFor = incomingDesignedFor
             newScene.importedContentHash = newScene.contentHash
             try context.transaction { context.insert(newScene) }
             scene = newScene; wasUpdate = false

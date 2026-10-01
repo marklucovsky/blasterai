@@ -93,6 +93,9 @@ enum AppSettingsKey {
     static let tileSizeStep          = "tile_size_step"
     /// `BoardLayout.rawValue`: standard, large or largest.
     static let boardLayout           = "board_layout"
+    /// Whether a scene's declared grid (`BlasterScene.designedFor`) overrides
+    /// `boardLayout` on a matching device. On unless a caregiver opts out.
+    static let honorSceneLayouts     = "honor_scene_layouts"
     static let compareProviders      = "compare_providers"
     static let imageSet              = "image_set"
     // Deprecated: the "Generate all styles" toggle. Left declared, like

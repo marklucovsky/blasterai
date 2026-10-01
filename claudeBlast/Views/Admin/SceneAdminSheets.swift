@@ -70,6 +70,11 @@ struct SceneRow: View {
 
     private var isSystemScene: Bool { scene.isSystemOwned }
 
+    /// " · designed for iPad 12×5", or nothing when undeclared.
+    private func designedSuffix(_ scene: BlasterScene) -> String {
+        scene.designedLayout.map { " · designed for \($0.title)" } ?? ""
+    }
+
     /// Provenance dot color: BlasterAI = purple, local = green, imported = orange.
     private var provenanceColor: Color {
         switch scene.provenance {
@@ -89,7 +94,7 @@ struct SceneRow: View {
                         badge("Default", .blue)
                     }
                 }
-                Text("\(scene.pages.count) pages · \(scene.lastModified, style: .date)")
+                Text("\(scene.pages.count) pages · \(scene.lastModified, style: .date)\(designedSuffix(scene))")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 // Provenance dot (purple=BlasterAI, green=mine, orange=others) +

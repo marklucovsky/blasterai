@@ -49,6 +49,7 @@ struct TileGridView: View {
     /// chosen. See `BoardLayout.current`.
     @AppStorage(AppSettingsKey.boardLayout) private var boardLayoutRaw: String =
         BoardLayout.current().rawValue
+    @AppStorage(AppSettingsKey.honorSceneLayouts) private var honorSceneLayouts = true
 
     @Environment(\.horizontalSizeClass) private var hSizeClass
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -374,7 +375,13 @@ struct TileGridView: View {
             let spec = GridLayoutCalculator.compute(
                 screenSize: UIScreen.main.bounds.size,
                 geo: geo.size,
-                layout: BoardLayout(rawValue: boardLayoutRaw) ?? .standard,
+                // The scene's declared grid on a matching device, else this
+                // device's own. See `GridLayoutCalculator.liveLayout`.
+                layout: GridLayoutCalculator.liveLayout(
+                    designed: activeScene?.designedLayout,
+                    isPhone: GridLayoutCalculator.isPhone(screenSize: UIScreen.main.bounds.size),
+                    deviceLayout: BoardLayout(rawValue: boardLayoutRaw) ?? .standard,
+                    honorSceneLayouts: honorSceneLayouts),
                 textScale: textScale
             )
             // Retired (hidden) and unreviewed (moderation-flagged) tiles never
@@ -807,7 +814,9 @@ struct TileGridView: View {
     }
 }
 
-private extension Array {
+extension Array {
+    /// Consecutive runs of `size`. The board pages with it, and so do the scene
+    /// preview and the page editor, which have to break pages where it does.
     func chunked(into size: Int) -> [[Element]] {
         stride(from: 0, to: count, by: size).map { Array(self[$0..<Swift.min($0 + size, count)]) }
     }

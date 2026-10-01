@@ -46,6 +46,13 @@ struct TileGridEditor<Cell: View>: View {
     /// Non-select tap on a tile (e.g. open its properties). No-op if nil.
     var onTapTile: ((String) -> Void)? = nil
 
+    /// Lay the page out on this board grid instead of adaptively: fixed
+    /// columns, cell 0 of every page reserved where the board puts Home, and a
+    /// break wherever the board's pages break. Every word then sits where the
+    /// child will find it. The Add cell takes the first page's cell 0, which is
+    /// Home's place on the board. Nil keeps the adaptive layout.
+    var boardGrid: (cols: Int, rows: Int)? = nil
+
     @ViewBuilder var cell: (TileEntry) -> Cell
 
     @State private var selectedKeys: Set<String> = []
@@ -62,16 +69,22 @@ struct TileGridEditor<Cell: View>: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ScrollView {
-                LazyVGrid(columns: columns, spacing: 10) {
-                    // Add cell in slot-0 (camera-in-photo-picker pattern) so it's
-                    // discoverable without scrolling to the end of a long page.
-                    if showAddCell, !isSelecting, let onAdd { addCell(onAdd) }
-                    ForEach(tiles, id: \.key) { entry in
-                        cellView(entry)
-                    }
+            if let boardGrid {
+                GeometryReader { geo in
+                    ScrollView { boardPages(boardGrid, width: geo.size.width) }
                 }
-                .padding(16)
+            } else {
+                ScrollView {
+                    LazyVGrid(columns: columns, spacing: 10) {
+                        // Add cell in slot-0 (camera-in-photo-picker pattern) so it's
+                        // discoverable without scrolling to the end of a long page.
+                        if showAddCell, !isSelecting, let onAdd { addCell(onAdd) }
+                        ForEach(tiles, id: \.key) { entry in
+                            cellView(entry)
+                        }
+                    }
+                    .padding(16)
+                }
             }
             if isSelecting {
                 if let mode = anchorMode { anchorHintBar(mode) } else { selectionBar }
@@ -80,6 +93,50 @@ struct TileGridEditor<Cell: View>: View {
         .onChange(of: isSelecting) { _, selecting in
             if !selecting { selectedKeys.removeAll(); anchorMode = nil }
         }
+    }
+
+    // MARK: - Board grid
+
+    @ViewBuilder
+    private func boardPages(_ grid: (cols: Int, rows: Int), width: CGFloat) -> some View {
+        let spec = GridLayoutCalculator.compute(geo: CGSize(width: width, height: 1),
+                                                grid: grid, fitHeight: false)
+        let chunks = tiles.chunked(into: max(1, spec.perPage - 1))
+        let pages = chunks.isEmpty ? [[]] : chunks
+        let columns = Array(repeating: GridItem(.fixed(spec.tileSize), spacing: spec.horizontalSpacing),
+                            count: spec.cols)
+        VStack(alignment: .leading, spacing: 14) {
+            ForEach(Array(pages.enumerated()), id: \.offset) { index, chunk in
+                if pages.count > 1 {
+                    Text("Page \(index + 1) of \(pages.count)")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, spec.horizontalPadding)
+                }
+                LazyVGrid(columns: columns, spacing: 10) {
+                    if index == 0, showAddCell, !isSelecting, let onAdd {
+                        addCell(onAdd)
+                    } else {
+                        homePlaceholder
+                    }
+                    ForEach(chunk, id: \.key) { entry in
+                        cellView(entry)
+                    }
+                }
+                .padding(.horizontal, spec.horizontalPadding)
+            }
+        }
+        .padding(.vertical, 16)
+    }
+
+    /// Where the board puts Home. Drawn, not interactive: it holds the cell so
+    /// every word after it is in its board position.
+    private var homePlaceholder: some View {
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .fill(Color(.systemGray5))
+            .aspectRatio(1, contentMode: .fit)
+            .overlay(Image(systemName: "house.fill").foregroundStyle(.tertiary))
+            .accessibilityLabel("Home's place on the board")
     }
 
     // MARK: - Cell
