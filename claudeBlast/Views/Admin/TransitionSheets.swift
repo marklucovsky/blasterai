@@ -66,8 +66,11 @@ struct PatientTransitionSheet: View {
         OpenAIKeyVault.currentKey() != nil
     }
 
+    /// No "different key" without permission to use one — a key is only
+    /// installed with it (`AIConsent`). Turning AI on is Admin → Device.
     private var availableChoices: [KeyChoice] {
-        hasExistingKey ? [.keep, .clear, .replace] : [.clear, .replace]
+        let base: [KeyChoice] = hasExistingKey ? [.keep, .clear] : [.clear]
+        return AIConsent.isGranted() ? base + [.replace] : base
     }
 
     private func keyChoiceLabel(_ c: KeyChoice) -> String {
@@ -416,8 +419,11 @@ struct CaregiverTransitionSheet: View {
         OpenAIKeyVault.currentKey() != nil
     }
 
+    /// No "different key" without permission to use one — a key is only
+    /// installed with it (`AIConsent`). Turning AI on is Admin → Device.
     private var availableChoices: [KeyChoice] {
-        hasExistingKey ? [.keep, .clear, .replace] : [.clear, .replace]
+        let base: [KeyChoice] = hasExistingKey ? [.keep, .clear] : [.clear]
+        return AIConsent.isGranted() ? base + [.replace] : base
     }
 
     private func keyChoiceLabel(_ c: KeyChoice) -> String {

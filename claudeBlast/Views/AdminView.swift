@@ -156,6 +156,11 @@ struct AdminView: View {
     @State var deviceDetail: AdminRoute.Detail?
     /// Confirmation before the API key is deleted from the Keychain.
     @State var isRemovingAPIKey = false
+    /// AI permission: the disclosure sheet, the turn-off confirmation, and
+    /// removing a key that is installed but unused. See `aiFeaturesSection`.
+    @State var isShowingAIDisclosure = false
+    @State var isConfirmingAIRevoke = false
+    @State var isRemovingDormantKey = false
 
     /// Set when "Lock Admin" is switched on with no PIN stored, so the PIN is
     /// chosen there and then rather than at the next gate.
@@ -219,6 +224,10 @@ struct AdminView: View {
                   message: Text(notice.message),
                   dismissButton: .default(Text("OK")))
         }
+        // Where a Patient device's caregiver meets the one-time ask — the
+        // child's board never shows it. Not while a demo is being captured.
+        .modifier(AIConsentPrompt(
+            isEnabled: !UserDefaults.standard.bool(forKey: AppSettingsKey.demoMode)))
     }
 
     // MARK: - Tile Lookup

@@ -85,18 +85,19 @@ struct ProviderSelectionTests {
         #expect(choice == .environmentKey("sk-env"))
     }
 
-    /// So a launch under the scheme does not have to be repeated to keep working
-    /// from the Home screen afterwards.
-    @Test("An environment key is persisted for later launches")
-    func environmentKeyIsPersisted() {
+    /// The reverse of what this test used to pin. Writing the variable into the
+    /// Keychain was installing a key at launch, before anyone had given
+    /// permission for it to be used — and it outlived the variable. An
+    /// environment key is now a source, read fresh and gated like any other.
+    @Test("An environment key is used, never stored")
+    func environmentKeyIsNotStored() {
         let store = InMemorySecretStore()
         _ = ProviderSelection.makeProvider(environment: ["OPENAI_API_KEY": "sk-env"],
                                            defaults: isolatedDefaults(),
                                            store: store)
         // `store.read()` rather than `OpenAIKeyVault.currentKey`, which would
-        // consult the real process environment and pass whether or not anything
-        // was written.
-        #expect(store.read() == "sk-env")
+        // consult the real process environment.
+        #expect(store.read() == nil)
     }
 
     /// Someone who picked Mock while holding a key means it — usually to stop

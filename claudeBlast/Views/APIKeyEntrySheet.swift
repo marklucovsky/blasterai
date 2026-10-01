@@ -10,9 +10,31 @@ import SwiftUI
 /// generate-art action.
 struct APIKeyEntrySheet: View {
     @Environment(\.dismiss) private var dismiss
+    /// Optional for the same reason as `GiftedKeyImportSheet`'s: sheets here do
+    /// not rely on inheriting the environment.
+    @Environment(SentenceEngine.self) private var sentenceEngine: SentenceEngine?
     @State private var apiKey: String = OpenAIKeyVault.currentKey() ?? ""
+    /// A key is only entered with permission to use it (`AIConsent`), so the
+    /// disclosure comes first on a device that has not given it.
+    @State private var hasConsent = AIConsent.isGranted()
 
     var body: some View {
+        if hasConsent {
+            keyEntry
+        } else {
+            AIDisclosureSheet(dismissesOnAnswer: false) { accepted in
+                if accepted {
+                    if let sentenceEngine { sentenceEngine.grantAIConsent() } else { AIConsent.accept() }
+                    hasConsent = true
+                } else {
+                    AIConsent.markPrompted()
+                    dismiss()
+                }
+            }
+        }
+    }
+
+    private var keyEntry: some View {
         NavigationStack {
             Form {
                 Section {

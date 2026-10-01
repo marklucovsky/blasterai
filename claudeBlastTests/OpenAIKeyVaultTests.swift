@@ -78,15 +78,30 @@ struct OpenAIKeyVaultTests {
 
     // MARK: - set + clear
 
+    /// A key is only installed with permission. The refusal is the backstop for
+    /// a screen that forgot to show the disclosure — it must store nothing.
+    @Test func setKey_refusesWithoutConsent() {
+        let store = InMemorySecretStore()
+        #expect(!OpenAIKeyVault.setKey("sk-123", store: store, consentGranted: false))
+        #expect(store.read() == nil)
+    }
+
+    /// Removing a key is never gated: withdrawing is always allowed.
+    @Test func setKey_deletesWithoutConsent() {
+        let store = InMemorySecretStore(initial: "sk-old")
+        #expect(OpenAIKeyVault.setKey("", store: store, consentGranted: false))
+        #expect(store.read() == nil)
+    }
+
     @Test func setKey_writesToStore() {
         let store = InMemorySecretStore()
-        #expect(OpenAIKeyVault.setKey("sk-123", store: store))
+        #expect(OpenAIKeyVault.setKey("sk-123", store: store, consentGranted: true))
         #expect(store.read() == "sk-123")
     }
 
     @Test func setKey_trimsWhitespace() {
         let store = InMemorySecretStore()
-        OpenAIKeyVault.setKey("  sk-trimmed  ", store: store)
+        OpenAIKeyVault.setKey("  sk-trimmed  ", store: store, consentGranted: true)
         #expect(store.read() == "sk-trimmed")
     }
 

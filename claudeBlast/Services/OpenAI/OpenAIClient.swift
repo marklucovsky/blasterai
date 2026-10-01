@@ -129,7 +129,11 @@ enum OpenAIClient {
     static func send(_ request: URLRequest,
                      cause: UsageCause,
                      endpoint: String,
-                     session: URLSession = .shared) async throws -> (Data, URLResponse) {
+                     session: URLSession = .shared,
+                     consentGranted: Bool = AIConsent.isGranted()) async throws -> (Data, URLResponse) {
+        // Nothing reaches OpenAI without permission. Checked here because every
+        // request in the app passes through this line; see `AIConsent`.
+        guard consentGranted else { throw AIConsentError.notGranted }
         let (data, response) = try await session.data(for: request)
         recordUsage(from: data, response: response, fallbackCause: cause, endpoint: endpoint)
         return (data, response)

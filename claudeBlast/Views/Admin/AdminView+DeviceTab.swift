@@ -33,6 +33,7 @@ extension AdminView {
         NavigationStack {
             List {
                 deviceSection
+                aiFeaturesSection
                 sentenceProviderSection
                 sentenceTraySection
                 aboutSection
@@ -41,6 +42,34 @@ extension AdminView {
                 #endif
             }
             .navigationTitle("Device")
+            // The AI disclosure and the turn-off confirmation live here, on the
+            // List, not on `aiFeaturesSection`. A sheet hosted by a Section is
+            // torn down when the Section redraws — and the toggle springs back
+            // to off the moment it presents (it only turns on after Enable), so
+            // the disclosure closed itself as soon as it opened.
+            .sheet(isPresented: $isShowingAIDisclosure) {
+                AIDisclosureSheet { accepted in
+                    // Also reached from "What is sent to OpenAI" while already
+                    // on; accepting again would only move the accepted date.
+                    if accepted, !sentenceEngine.hasAIConsent {
+                        sentenceEngine.grantAIConsent()
+                        apiKey = OpenAIKeyVault.currentKey() ?? ""
+                        // Respect the DEBUG provider picker; a no-op for the
+                        // environment key, which `grantAIConsent` already adopted.
+                        applyProvider()
+                    } else if !accepted {
+                        AIConsent.markPrompted()
+                    }
+                }
+            }
+            .confirmationDialog("Turn off AI features?",
+                                isPresented: $isConfirmingAIRevoke,
+                                titleVisibility: .visible) {
+                Button("Turn Off", role: .destructive) { sentenceEngine.revokeAIConsent() }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("Nothing will be sent to OpenAI and the board will speak single words. Your key stays on this device, unused, until you turn AI features back on.")
+            }
             .navigationDestination(item: $deviceDetail) { detail in
                 switch detail {
                 case .about:      AboutStatsView()
@@ -209,10 +238,60 @@ extension AdminView {
         }
     }
 
+    /// Permission to use OpenAI, on or off. See `AIConsent`.
+    ///
+    /// Turning it on goes through the disclosure, and only an Enable there turns
+    /// it on — the toggle never flips by itself. Turning it off leaves the key
+    /// installed and unused, so turning it back on is one tap.
+    @ViewBuilder
+    var aiFeaturesSection: some View {
+        Section {
+            Toggle("AI Features", isOn: Binding(
+                get: { sentenceEngine.hasAIConsent },
+                set: { on in
+                    if on { isShowingAIDisclosure = true } else { isConfirmingAIRevoke = true }
+                }))
+            Button("What is sent to OpenAI") { isShowingAIDisclosure = true }
+                .font(.callout)
+            #if DEBUG
+            Button("Reset AI permission (DEBUG)", role: .destructive) {
+                AIConsent.resetForTesting()
+                sentenceEngine.revokeAIConsent()
+            }
+            .font(.callout)
+            #endif
+        } footer: {
+            if sentenceEngine.hasAIConsent, let at = AIConsent.acceptedAt() {
+                Text("On since \(at.formatted(date: .abbreviated, time: .omitted)). Selected words, word descriptions and scene descriptions are sent to OpenAI when you use those features — never your name or anything that identifies you.")
+            } else {
+                Text("Off. Nothing is sent to OpenAI, and each tile speaks its word.")
+            }
+        }
+    }
+
     @ViewBuilder
     var sentenceProviderSection: some View {
         Section("Sentence Provider") {
-            if envKeyOverride {
+            if !sentenceEngine.hasAIConsent && !envKeyOverride {
+                // No key entry without permission to use one. A key already here
+                // is dormant, and says so — and can still be removed without
+                // first turning AI back on.
+                if apiKey.isEmpty {
+                    Text("Turn on AI Features to add an OpenAI key.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    LabeledContent("API Key", value: "Installed, unused")
+                    Button("Remove API Key", role: .destructive) {
+                        isRemovingDormantKey = true
+                    }
+                    .confirmationDialog("Remove the key from this device?",
+                                        isPresented: $isRemovingDormantKey,
+                                        titleVisibility: .visible) {
+                        Button("Remove Key", role: .destructive) { apiKey = "" }
+                        Button("Cancel", role: .cancel) { }
+                    }
+                }
+            } else if envKeyOverride {
                 // DEBUG only, rows and all: the copy names the override, and a
                 // shipping build has neither the override nor any word of it.
                 #if DEBUG
