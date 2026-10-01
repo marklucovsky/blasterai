@@ -690,6 +690,8 @@ final class TileScriptRunner {
         if loggingEnabled { runLog.event("navigate", ["page": pageKey]) }
         if pageKey == "home" {
             coordinator.navigateToRoot()
+        } else if pageKey == NavigationCoordinator.backPageKey {
+            coordinator.goBack()
         } else {
             coordinator.navigate(to: pageKey)
         }

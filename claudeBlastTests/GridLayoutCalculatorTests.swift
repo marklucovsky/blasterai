@@ -183,6 +183,23 @@ struct GridLayoutCalculatorTests {
         #expect(tile(iPad11) < tile(iPad13))
     }
 
+    // MARK: - Home over Back
+
+    /// When Back shares Home's cell, each half must still be a reasonable
+    /// target. 44pt is Apple's minimum; at the default density every form
+    /// factor clears it. (The tightest density steps on a phone do not — a
+    /// 64pt tile makes ~37pt halves — which is a density question, not a
+    /// layout one, and belongs to the density rework.)
+    @Test func splitHomeCellHalvesClearTheTouchMinimumAtDefaultDensity() {
+        let layouts = [landscapeBoard(miniPortrait), landscapeBoard(iPad11),
+                       landscapeBoard(iPad13), spec(phonePortrait)]
+        for layout in layouts {
+            let cell = layout.tileSize + layout.labelHeight
+            #expect(HomeGridCell.halfHeight(cellHeight: cell) >= 44,
+                    "\(layout.cols)×\(layout.rows) at \(Int(layout.tileSize))pt")
+        }
+    }
+
     // MARK: - Degenerate geometry
 
     /// A zero-height proposal happens during transitions. It must not return a

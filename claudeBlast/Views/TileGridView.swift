@@ -550,7 +550,17 @@ struct TileGridView: View {
                 currentDisplayPage = 0
             },
             onOpenMenu: { showCaregiverMenu = true },
-            labelFontSize: spec.labelFontSize
+            labelFontSize: spec.labelFontSize,
+            backAction: coordinator.canGoBack ? {
+                withAnimation(.easeOut(duration: 0.30)) {
+                    coordinator.goBack()
+                }
+                currentDisplayPage = 0
+                // Recorded as `<back>`, which the runner replays as a Back.
+                if recorder.state == .recording {
+                    recorder.recordNavigate(pageKey: NavigationCoordinator.backPageKey)
+                }
+            } : nil
         )
     }
 
