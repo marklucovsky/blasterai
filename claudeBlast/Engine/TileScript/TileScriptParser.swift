@@ -101,7 +101,7 @@ struct TileScriptParser {
         // The list missed the em-dash, so a display name copied out of the UI
         // ("Classic — Medium-Dark") normalised to `classic—mediumdark` and matched
         // nothing — and any separator added later would have failed the same way.
-        guard let raw = (value as? String).map(squashSeparators), !raw.isEmpty
+        guard let raw = (value as? String).map({ squashSeparators($0) }), !raw.isEmpty
         else { return nil }
         // Friendly aliases first, then the catalog — matched on the same
         // separator-stripped form, so `classic_medium`, `classic-medium` and

@@ -40,7 +40,7 @@ import Foundation
 /// Device-local UserDefaults, never synced. Each device's caregiver answers for
 /// that device, and a Patient device is often not the one where the key was
 /// first entered.
-enum AIConsent {
+nonisolated enum AIConsent {
 
     /// The disclosure every device must have accepted.
     ///

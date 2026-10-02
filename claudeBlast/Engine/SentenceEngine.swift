@@ -194,8 +194,13 @@ final class SentenceEngine {
     /// The caregiver accepted the disclosure: record it, and start using
     /// whatever key the device already holds — a dormant one, or the DEBUG
     /// environment key — without a relaunch.
-    func grantAIConsent(defaults: UserDefaults = .standard,
-                        key: String? = OpenAIKeyVault.currentKey()) {
+    func grantAIConsent(defaults: UserDefaults = .standard) {
+        grantAIConsent(defaults: defaults, key: OpenAIKeyVault.currentKey())
+    }
+
+    /// `key` is explicit here, not a defaulted parameter: a default-argument
+    /// expression is nonisolated, and `currentKey()` is main-actor.
+    func grantAIConsent(defaults: UserDefaults = .standard, key: String?) {
         AIConsent.accept(defaults)
         hasAIConsent = true
         if let key { adoptKey(key) }
@@ -1074,6 +1079,8 @@ final class SentenceEngine {
             age-appropriate. Return only the sentence.
             """))
         }
+        // Frozen: the `async let`s below run concurrently and can't capture a var.
+        let prompt = systemPrompt
         let userPrompt = promptBuilder.formatUserPrompt(tiles: tiles)
 
         // Fire comparison provider in parallel when enabled
@@ -1118,15 +1125,15 @@ final class SentenceEngine {
                 // Run both providers concurrently
                 (result, comparisonText) = try await UsageContext.$current.withValue(usage) {
                     async let primaryTask = provider.generateSentence(
-                        tiles: tiles, systemPrompt: systemPrompt, conversationContext: context)
+                        tiles: tiles, systemPrompt: prompt, conversationContext: context)
                     async let compTask = Self.safeGenerate(
-                        provider: compProvider, tiles: tiles, systemPrompt: systemPrompt, context: context)
+                        provider: compProvider, tiles: tiles, systemPrompt: prompt, context: context)
                     return try await (primaryTask, compTask)
                 }
             } else {
                 result = try await UsageContext.$current.withValue(usage) {
                     try await provider.generateSentence(
-                        tiles: tiles, systemPrompt: systemPrompt, conversationContext: context)
+                        tiles: tiles, systemPrompt: prompt, conversationContext: context)
                 }
                 comparisonText = nil
             }
@@ -1213,8 +1220,6 @@ final class SentenceEngine {
             startIdleTimers()   // recover auto-advance after the failure
             return
         }
-
-        isThinking = false
     }
 
     /// Play a promoted (cached) phrase directly — no API call, instant feedback.

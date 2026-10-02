@@ -749,7 +749,6 @@ enum BoardPDFRenderer {
         // `TileView.tileCard` so the laminated sheet and the iPad agree.
         let radius = max(3, card.width * 0.09)
         let border = max(1.0, card.width * 0.028)
-        let padding = SheetLayout.cardPadding(cellWidth: card.width)
         let accent = navigates
             ? UIColor(TileColorResolver.linkColor(slotRawValue: entry.linkColor))
             : UIColor(TileColorResolver.color(for: tile))
