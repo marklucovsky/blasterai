@@ -306,7 +306,7 @@ struct TileGridView: View {
             // the Home cell, the one control whose whole value is being in the
             // same place every time. A caregiver reads the tray; the popover is
             // for the sentence too long to fit there, and stays available on tap.
-            if isReady, engine.activeGroup.sentence.map(Self.isTooLongForTray) == true {
+            if isReady, engine.activeGroup.sentence.map({ Self.isTooLongForTray($0) }) == true {
                 showCompactOverlay(.sentence)
             } else if !isReady, compactOverlay == .sentence {
                 dismissCompactOverlay()
@@ -373,13 +373,13 @@ struct TileGridView: View {
         GeometryReader { geo in
             let isLandscape = geo.size.width > geo.size.height
             let spec = GridLayoutCalculator.compute(
-                screenSize: UIScreen.main.bounds.size,
+                screenSize: GridLayoutCalculator.deviceScreenSize,
                 geo: geo.size,
                 // The scene's declared grid on a matching device, else this
                 // device's own. See `GridLayoutCalculator.liveLayout`.
                 layout: GridLayoutCalculator.liveLayout(
                     designed: activeScene?.designedLayout,
-                    isPhone: GridLayoutCalculator.isPhone(screenSize: UIScreen.main.bounds.size),
+                    isPhone: GridLayoutCalculator.isPhone(screenSize: GridLayoutCalculator.deviceScreenSize),
                     deviceLayout: BoardLayout(rawValue: boardLayoutRaw) ?? .standard,
                     honorSceneLayouts: honorSceneLayouts),
                 textScale: textScale

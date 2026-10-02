@@ -153,7 +153,7 @@ extension AdminView {
     var recentUtterances: [LoggedUtterance] { Array(loggedUtterances.prefix(5)) }
 
     func tileSelections(forKeys keys: [String]) -> [TileSelection] {
-        keys.compactMap { tileLookup[$0].map(TileSelection.init(from:)) }
+        keys.compactMap { tileLookup[$0].map { TileSelection(from: $0) } }
     }
 
     @ViewBuilder
