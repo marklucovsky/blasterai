@@ -56,6 +56,80 @@ struct BoardPrintTests {
         #expect(!sparser.matchesScreenLayout)
     }
 
+    /// The printed board starts from the grid the scene was designed for, so
+    /// paper and screen agree: its columns, and portrait for a phone grid.
+    /// Undeclared is the iPad's 12 in landscape, as before.
+    @Test("A scene's designed grid seeds the sheet")
+    func designedGridSeedsTheSheet() {
+        #expect(BoardPrintOptions.forScene(nil) == BoardPrintOptions())
+
+        let pad = BoardPrintOptions.forScene(DesignedLayout(rawValue: "ipad-10x4"))
+        #expect(pad.orientation == .landscape)
+        #expect(pad.resolvedColumns == 10)
+        #expect(pad.matchesScreenLayout)
+
+        let phone = BoardPrintOptions.forScene(DesignedLayout(rawValue: "phone-3x4"))
+        #expect(phone.orientation == .portrait)
+        #expect(phone.resolvedColumns == 3)
+        #expect(phone.matchesScreenLayout)
+    }
+
+    /// Paper breaks pages where the screen does.
+    ///
+    /// The sheet used to hold as many rows as the paper allowed, so a 9×4 board
+    /// printed 45 to a sheet against the screen's 36 and every page break after
+    /// the first fell on a different word. On the board's own grid the sheet is
+    /// now exactly one board page: Home, then `cols × rows − 1` words.
+    @Test("A sheet on the board's grid is exactly one board page", arguments: [
+        "ipad-12x5", "ipad-10x4", "ipad-9x4", "phone-4x5", "phone-3x4",
+    ])
+    func sheetIsOneBoardPage(_ raw: String) {
+        let designed = DesignedLayout(rawValue: raw)!
+        var options = BoardPrintOptions.forScene(designed)
+        options.matchPageBreaks = true
+        let layout = SheetLayout.compute(paper: options.paper, orientation: options.orientation,
+                                         columns: options.resolvedColumns,
+                                         pinnedRows: options.pinnedRows)
+        #expect(layout.columns == designed.grid.cols && layout.rows == designed.grid.rows)
+
+        let page = PageSpec(key: "big", tiles: (0..<100).map { TileEntry(key: "w\($0)") })
+        let sheets = BoardPagination.paginate([page], perSheet: layout.perSheet,
+                                              reservingHomeCell: options.matchesScreenLayout)
+        let wordsPerBoardPage = designed.grid.cols * designed.grid.rows - 1
+        #expect(sheets.first?.tiles.dropFirst().map(\.key)
+                == (0..<wordsPerBoardPage).map { "w\($0)" })
+        #expect(sheets.count == Int((100.0 / Double(wordsPerBoardPage)).rounded(.up)))
+        // Every card still fits the sheet.
+        let gridH = CGFloat(layout.rows) * layout.cellSize.height + CGFloat(layout.rows - 1) * SheetLayout.gutter
+        #expect(gridH <= layout.contentSize.height + 0.5)
+    }
+
+    /// Off by default: the columns are the scene's, the rows are the paper's,
+    /// so a long page prints the most words per sheet. Home is still held in
+    /// cell 0, because the columns — and so the first row — still match.
+    @Test("By default only columns follow the scene")
+    func rowsFollowThePaperByDefault() {
+        let options = BoardPrintOptions.forScene(DesignedLayout(rawValue: "ipad-9x4"))
+        #expect(!options.matchPageBreaks)
+        #expect(options.pinnedRows == nil)
+        #expect(options.matchesScreenLayout)
+        let layout = SheetLayout.compute(paper: options.paper, orientation: options.orientation,
+                                         columns: options.resolvedColumns,
+                                         pinnedRows: options.pinnedRows)
+        #expect(layout.columns == 9)
+        #expect(layout.rows > 4, "the paper holds more than the board's four rows")
+    }
+
+    /// Two columns on portrait paper would be 3.75-inch tiles, past what the
+    /// 512 px art holds. The paper's limit wins, and since the sheet is then not
+    /// the screen's grid, no Home cell is held for it.
+    @Test("A grid the paper cannot hold clamps and opts out")
+    func aGridThePaperCannotHoldClamps() {
+        let phone = BoardPrintOptions.forScene(DesignedLayout(rawValue: "phone-2x4"))
+        #expect(phone.resolvedColumns > 2)
+        #expect(!phone.matchesScreenLayout)
+    }
+
     /// On screen Home occupies cell 0 of **every** board page, so the printed
     /// sheet has to hold that cell too — otherwise every tile on paper sits one
     /// place earlier than the same tile on the iPad.

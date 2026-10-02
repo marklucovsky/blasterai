@@ -182,9 +182,31 @@ struct BoardPrintOptions: Equatable {
         return min(max(requested, minColumns), Self.maxColumns)
     }
 
-    /// The columns the app itself draws at the default density on an 11" or 13"
-    /// iPad. See `GridLayoutCalculator`.
+    /// The columns the app draws on every iPad at the Standard layout (12×5).
+    /// See `BoardLayout`.
     static let screenColumns = 12
+
+    /// The grid the board itself is drawn on, which the printed board should
+    /// match: iPad 12×5 in landscape unless the scene declares otherwise. See
+    /// `forScene`.
+    var screenGridColumns: Int = BoardPrintOptions.screenColumns
+    var screenGridRows: Int = 5
+    var screenGridOrientation: PrintOrientation = .landscape
+
+    /// Break sheets where the screen breaks pages: each sheet exactly one board
+    /// page, rows and all.
+    ///
+    /// **Off by default.** Columns are what keep a word in its place across a
+    /// row; rows only decide where a long page is cut. A home page fits one
+    /// sheet either way. A 100-word `describe` page does not, and a therapist
+    /// printing it usually wants the most words per sheet rather than the
+    /// screen's cut points. Those who do want the cuts turn this on.
+    var matchPageBreaks = false
+
+    /// The sheet's rows: the screen grid's, when this sheet is that grid and
+    /// `matchPageBreaks` is on, so the paper breaks pages where the screen does.
+    /// Otherwise nil — rows then fall out of the paper height.
+    var pinnedRows: Int? { matchesScreenLayout && matchPageBreaks ? screenGridRows : nil }
 
     /// True when this sheet is the same grid the app draws.
     ///
@@ -194,7 +216,25 @@ struct BoardPrintOptions: Equatable {
     /// button that is not where they put it would be superstition rather than
     /// alignment.
     var matchesScreenLayout: Bool {
-        orientation == .landscape && resolvedColumns == Self.screenColumns
+        orientation == screenGridOrientation && resolvedColumns == screenGridColumns
+    }
+
+    /// Options that start from the grid a scene was designed for, so the paper
+    /// board matches the screen one: its columns, and portrait for a phone grid.
+    /// Undeclared, the iPad's 12×5 in landscape.
+    ///
+    /// The paper's tile-size limits still apply. A phone's 2×4 would print
+    /// 3.75-inch tiles in portrait, past `maxTileInches`, so it clamps to the
+    /// fewest columns the paper allows and the Home cell is not reserved.
+    static func forScene(_ designed: DesignedLayout?) -> BoardPrintOptions {
+        var options = BoardPrintOptions()
+        guard let designed else { return options }
+        options.orientation = designed.phone ? .portrait : .landscape
+        options.columns = designed.grid.cols
+        options.screenGridColumns = designed.grid.cols
+        options.screenGridRows = designed.grid.rows
+        options.screenGridOrientation = options.orientation
+        return options
     }
 }
 
@@ -266,20 +306,37 @@ struct SheetLayout: Equatable {
         return BoardPrintOptions.maxColumns
     }
 
+    /// - Parameter pinnedRows: lay the sheet out as exactly this many rows,
+    ///   rather than as many as the paper holds. Used when the sheet is the
+    ///   board's own grid: the board's page holds `columns × rows` cells, and a
+    ///   sheet holding more or fewer breaks its pages at different words — every
+    ///   break drifting further from the screen's. The tile shrinks if it must
+    ///   so that every row fits, and the grid is centred across the sheet.
     static func compute(paper: PaperSize,
                         orientation: PrintOrientation = .portrait,
-                        columns rawColumns: Int) -> SheetLayout {
+                        columns rawColumns: Int,
+                        pinnedRows: Int? = nil) -> SheetLayout {
         let paperSize = paper.size(in: orientation)
         let floor = fewestColumns(fitting: BoardPrintOptions.maxTileInches,
                                   paper: paper, orientation: orientation)
         let columns = min(max(rawColumns, floor), BoardPrintOptions.maxColumns)
 
-        let contentX = margin
+        var contentX = margin
         let contentY = margin + headerHeight
         let contentW = paperSize.width - margin * 2
         let contentH = paperSize.height - margin * 2 - headerHeight - footerHeight
 
-        let cellW = (contentW - gutter * CGFloat(columns - 1)) / CGFloat(columns)
+        var cellW = (contentW - gutter * CGFloat(columns - 1)) / CGFloat(columns)
+        if let pinnedRows, pinnedRows > 0 {
+            // The tallest card each pinned row can have; a card may compress to
+            // `minCardAspect` of its width, so the width follows if it must.
+            let rowHeight = (contentH - gutter * CGFloat(pinnedRows - 1)) / CGFloat(pinnedRows)
+            if rowHeight < cellW * Self.minCardAspect {
+                cellW = rowHeight / Self.minCardAspect
+                let gridW = cellW * CGFloat(columns) + gutter * CGFloat(columns - 1)
+                contentX = margin + (contentW - gridW) / 2
+            }
+        }
         let padding = cardPadding(cellWidth: cellW)
         let band = labelBand(cellWidth: cellW)
 
@@ -297,7 +354,8 @@ struct SheetLayout: Equatable {
         let minCardHeight = cellW * Self.minCardAspect
         // At least one row even on paper too short to hold one — the sheet then
         // overflows rather than dividing by zero or producing an empty document.
-        let rows = max(1, Int((contentH + gutter) / (minCardHeight + gutter)))
+        let rows = pinnedRows.map { max(1, $0) }
+            ?? max(1, Int((contentH + gutter) / (minCardHeight + gutter)))
         let evenHeight = (contentH - gutter * CGFloat(rows - 1)) / CGFloat(rows)
         // Never *taller* than square: past that the card is mostly empty padding.
         let cellH = min(cellW, evenHeight)
@@ -538,7 +596,8 @@ enum BoardPDFRenderer {
         let images = PrintImageCache(resolver: resolver)
         let layout = SheetLayout.compute(paper: options.paper,
                                          orientation: options.orientation,
-                                         columns: options.resolvedColumns)
+                                         columns: options.resolvedColumns,
+                                         pinnedRows: options.pinnedRows)
         let visible = BoardPagination.filtered(pages, filter: options.filter, tileLookup: tileLookup)
         let sheets = BoardPagination.paginate(
             visible, perSheet: layout.perSheet,
