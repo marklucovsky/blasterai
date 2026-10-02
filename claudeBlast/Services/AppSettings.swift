@@ -96,6 +96,10 @@ enum AppSettingsKey {
     /// Whether a scene's declared grid (`BlasterScene.designedFor`) overrides
     /// `boardLayout` on a matching device. On unless a caregiver opts out.
     static let honorSceneLayouts     = "honor_scene_layouts"
+    /// PDF export: break sheets where the screen breaks pages. See
+    /// `BoardPrintOptions.matchPageBreaks`. Kept between exports — it is a
+    /// therapist's standing preference, not a per-board choice.
+    static let printMatchPageBreaks  = "print_match_page_breaks"
     static let compareProviders      = "compare_providers"
     static let imageSet              = "image_set"
     // Deprecated: the "Generate all styles" toggle. Left declared, like

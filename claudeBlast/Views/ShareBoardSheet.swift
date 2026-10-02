@@ -79,13 +79,21 @@ private enum ShareDestination: String, Identifiable, CaseIterable {
 struct ShareBoardSheet: View {
     let subject: ShareSubject
 
+    init(subject: ShareSubject) {
+        self.subject = subject
+        var options = BoardPrintOptions.forScene(subject.scene.designedLayout)
+        options.matchPageBreaks = UserDefaults.standard.bool(forKey: AppSettingsKey.printMatchPageBreaks)
+        _printOptions = State(initialValue: options)
+    }
+
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(TileImageResolver.self) private var imageResolver
     @Query private var allTiles: [TileModel]
 
     @State private var setScope: ExportSetScope = .activeSet
-    @State private var printOptions = BoardPrintOptions()
+    /// Seeded from the scene's designed grid. See `BoardPrintOptions.forScene`.
+    @State private var printOptions: BoardPrintOptions
     @State private var exported: ExportedFile?
     @State private var errorMessage: String?
     @State private var work: Work?
@@ -285,7 +293,8 @@ struct ShareBoardSheet: View {
     private var pdfOptionRows: some View {
         let layout = SheetLayout.compute(paper: printOptions.paper,
                                          orientation: printOptions.orientation,
-                                         columns: resolvedColumns)
+                                         columns: resolvedColumns,
+                                         pinnedRows: printOptions.pinnedRows)
         Picker("Paper", selection: $printOptions.paper) {
             ForEach(PaperSize.all) { paper in
                 Text(paper.displayName).tag(paper)
@@ -305,6 +314,23 @@ struct ShareBoardSheet: View {
             LabeledContent("Tiles across", value: "\(resolvedColumns)")
         }
         Toggle("Cut lines", isOn: $printOptions.cutLines)
+        // Only meaningful when the sheet is the screen's grid; otherwise there
+        // are no screen page breaks to match.
+        if printOptions.matchesScreenLayout {
+            Toggle(isOn: Binding(
+                get: { printOptions.matchPageBreaks },
+                set: {
+                    printOptions.matchPageBreaks = $0
+                    UserDefaults.standard.set($0, forKey: AppSettingsKey.printMatchPageBreaks)
+                })) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Match Screen Page Breaks")
+                    Text("\(printOptions.screenGridColumns)×\(printOptions.screenGridRows) per sheet, so long pages split where the board does. Off fits more words per sheet.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
         Text("\(measurement(layout)). Each page of the board starts on a new sheet.")
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -334,7 +360,8 @@ struct ShareBoardSheet: View {
         case .printablePDF:
             let layout = SheetLayout.compute(paper: printOptions.paper,
                                              orientation: printOptions.orientation,
-                                             columns: resolvedColumns)
+                                             columns: resolvedColumns,
+                                             pinnedRows: printOptions.pinnedRows)
             return "\(sheetSummary(layout)) · \(printOptions.paper.displayName) \(printOptions.orientation.label.lowercased())"
         case .tileImages:
             let sets = setScope == .allSets ? ExportArtResolver.allInstalledSets.count : 1
