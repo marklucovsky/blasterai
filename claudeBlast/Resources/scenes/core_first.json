@@ -158,7 +158,28 @@
       "key": "social",
       "tiles": [
         {
-          "class": "social"
+          "class": "social",
+          "exclude": [
+            "yes",
+            "i_dont_know",
+            "no"
+          ],
+          "limit": 23
+        },
+        {
+          "keys": [
+            "yes",
+            "i_dont_know",
+            "no"
+          ]
+        },
+        {
+          "class": "social",
+          "exclude": [
+            "yes",
+            "i_dont_know",
+            "no"
+          ]
         }
       ]
     },
@@ -166,14 +187,20 @@
       "key": "actions",
       "tiles": [
         {
-          "link": "drink",
-          "to": "drinks",
-          "audible": true,
-          "linkColor": "verb"
+          "keys": [
+            "need",
+            "have"
+          ]
         },
         {
           "link": "eat",
           "to": "food",
+          "audible": true,
+          "linkColor": "verb"
+        },
+        {
+          "link": "drink",
+          "to": "drinks",
           "audible": true,
           "linkColor": "verb"
         },
@@ -184,6 +211,113 @@
           "linkColor": "verb"
         },
         {
+          "keys": [
+            "give",
+            "take",
+            "find",
+            "lose",
+            "buy",
+            "shop",
+            "walk",
+            "run",
+            "swim",
+            "come",
+            "go",
+            "tell",
+            "listen",
+            "talk",
+            "say",
+            "ask",
+            "answer",
+            "speak",
+            "sit",
+            "stand",
+            "move",
+            "get",
+            "want",
+            "do",
+            "make",
+            "use",
+            "try",
+            "wait",
+            "finish",
+            "stop",
+            "catch",
+            "throw",
+            "kick",
+            "help",
+            "like",
+            "read",
+            "put",
+            "write",
+            "draw",
+            "color",
+            "paint",
+            "sing",
+            "look",
+            "see",
+            "close",
+            "open",
+            "watch",
+            "work",
+            "learn",
+            "know",
+            "think",
+            "remember",
+            "forget",
+            "understand",
+            "jump",
+            "dance",
+            "ride",
+            "drive",
+            "fly",
+            "fall",
+            "push",
+            "pull",
+            "turn",
+            "blow",
+            "bowl",
+            "wash",
+            "wash_hands",
+            "wash_hair",
+            "bathe",
+            "shower",
+            "brush",
+            "brush_teeth",
+            "dry",
+            "dress_up",
+            "wear",
+            "polish_nails",
+            "clean",
+            "sleep",
+            "nap",
+            "hear",
+            "smell",
+            "chew",
+            "cook",
+            "feel",
+            "hurt",
+            "cry",
+            "blush",
+            "kiss",
+            "clap",
+            "love",
+            "hate",
+            "hope",
+            "wish",
+            "guess",
+            "pray",
+            "call",
+            "email",
+            "meet",
+            "show",
+            "leave",
+            "live",
+            "line_up",
+            "actions"
+          ]
+        },
+        {
           "class": "actions"
         }
       ]
@@ -192,12 +326,127 @@
       "key": "describe",
       "tiles": [
         {
-          "class": "describe"
+          "keys": [
+            "big",
+            "little",
+            "good",
+            "bad",
+            "hot_",
+            "cold__",
+            "loud",
+            "quiet",
+            "fast",
+            "slow",
+            "quick",
+            "new",
+            "clean_",
+            "dirty",
+            "wet",
+            "dry_",
+            "full",
+            "empty",
+            "easy",
+            "hard",
+            "heavy",
+            "light",
+            "soft",
+            "true",
+            "maybe",
+            "false",
+            "yummy",
+            "yucky",
+            "fun",
+            "boring",
+            "nice",
+            "mean",
+            "pretty",
+            "ugly",
+            "funny_",
+            "always",
+            "sometimes",
+            "never",
+            "young",
+            "old",
+            "fat",
+            "thin",
+            "long",
+            "short",
+            "high",
+            "low",
+            "dark",
+            "right",
+            "okay_",
+            "wrong",
+            "same",
+            "different",
+            "broken",
+            "fixed",
+            "cheap",
+            "expensive",
+            "smart",
+            "dumb",
+            "messy",
+            "top",
+            "bottom",
+            "front",
+            "behind",
+            "over",
+            "under",
+            "near",
+            "far",
+            "left",
+            "right_",
+            "middle",
+            "between",
+            "around",
+            "through",
+            "away",
+            "back_",
+            "there",
+            "together",
+            "apart",
+            "alone",
+            "this",
+            "or",
+            "at",
+            "now",
+            "later",
+            "soon",
+            "first",
+            "next",
+            "last",
+            "today",
+            "tomorrow",
+            "yesterday",
+            "tonight",
+            "again",
+            "not",
+            "better",
+            "best",
+            "worse",
+            "worst",
+            "more",
+            "many",
+            "few",
+            "excellent",
+            "terrific",
+            "fine",
+            "terrible",
+            "exciting",
+            "cute",
+            "smelly",
+            "stinky",
+            "asleep",
+            "busy",
+            "crazy",
+            "lonely",
+            "surprised",
+            "uncomfortable",
+            "describe"
+          ]
         },
         {
-          "keys": [
-            "at"
-          ]
+          "class": "describe"
         }
       ]
     },
@@ -205,14 +454,33 @@
       "key": "food",
       "tiles": [
         {
-          "link": "drinks",
-          "to": "drinks",
-          "audible": false,
-          "linkColor": "noun"
+          "keys": [
+            "hungry",
+            "more"
+          ]
         },
         {
           "class": [
             "food"
+          ],
+          "exclude": [
+            "meals"
+          ],
+          "limit": 45
+        },
+        {
+          "keys": [
+            "yummy",
+            "all_done",
+            "yucky"
+          ]
+        },
+        {
+          "class": [
+            "food"
+          ],
+          "exclude": [
+            "meals"
           ]
         }
       ]
@@ -221,13 +489,23 @@
       "key": "drinks",
       "tiles": [
         {
-          "link": "food",
-          "to": "food",
-          "audible": false,
-          "linkColor": "noun"
+          "keys": [
+            "thirsty",
+            "more"
+          ]
         },
         {
           "class": "drinks"
+        },
+        {
+          "space": 11
+        },
+        {
+          "keys": [
+            "yummy",
+            "all_done",
+            "yucky"
+          ]
         }
       ]
     },
@@ -241,7 +519,9 @@
           "keys": [
             "school",
             "slide",
-            "swing"
+            "swing",
+            "bus",
+            "bathroom"
           ]
         }
       ]
@@ -267,6 +547,18 @@
           "class": [
             "body",
             "health"
+          ]
+        },
+        {
+          "keys": [
+            "sick",
+            "hurt",
+            "tired",
+            "feel",
+            "uncomfortable",
+            "doctor",
+            "bathroom",
+            "toilet"
           ]
         }
       ]
@@ -331,15 +623,18 @@
         },
         {
           "keys": [
-            "always",
-            "never",
-            "sometimes"
+            "wait",
+            "again"
           ]
         },
         {
+          "space": 1
+        },
+        {
           "keys": [
-            "wait",
-            "again"
+            "always",
+            "sometimes",
+            "never"
           ]
         }
       ]
@@ -367,6 +662,15 @@
       "tiles": [
         {
           "class": "feeling"
+        },
+        {
+          "keys": [
+            "lonely",
+            "surprised",
+            "okay_",
+            "hurt",
+            "feel"
+          ]
         }
       ]
     },

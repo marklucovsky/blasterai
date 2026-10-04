@@ -1824,11 +1824,6 @@
     "comment": "",
     "stamp": "4814641aefff"
   },
-  "hard_": {
-    "status": "approved",
-    "comment": "",
-    "stamp": "0995301f537f"
-  },
   "soft": {
     "status": "approved",
     "comment": "",
@@ -1902,7 +1897,7 @@
   "old": {
     "status": "approved",
     "comment": "",
-    "stamp": "a9648c42b08f"
+    "stamp": "1d7c1ea83ecf"
   },
   "right": {
     "status": "approved",
@@ -2017,7 +2012,7 @@
   "light": {
     "status": "approved",
     "comment": "",
-    "stamp": "3dcf6f620b2d"
+    "stamp": "fc736fe13b19"
   },
   "together": {
     "status": "approved",
@@ -2109,11 +2104,6 @@
     "comment": "",
     "stamp": "fcdf5509613d"
   },
-  "light_": {
-    "status": "approved",
-    "comment": "",
-    "stamp": "fc736fe13b19"
-  },
   "dark": {
     "status": "approved",
     "comment": "",
@@ -2123,11 +2113,6 @@
     "status": "approved",
     "comment": "",
     "stamp": "b65442214e2e"
-  },
-  "old_": {
-    "status": "approved",
-    "comment": "",
-    "stamp": "1d7c1ea83ecf"
   },
   "surprised": {
     "status": "approved",

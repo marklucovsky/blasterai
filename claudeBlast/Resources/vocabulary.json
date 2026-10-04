@@ -820,10 +820,6 @@
     "wordClass": "describe"
   },
   {
-    "key": "hard_",
-    "wordClass": "describe"
-  },
-  {
     "key": "hate",
     "wordClass": "actions"
   },
@@ -1026,6 +1022,10 @@
     "wordClass": "describe"
   },
   {
+    "key": "right_",
+    "wordClass": "describe"
+  },
+  {
     "key": "leg",
     "wordClass": "body"
   },
@@ -1047,10 +1047,6 @@
   },
   {
     "key": "light",
-    "wordClass": "describe"
-  },
-  {
-    "key": "light_",
     "wordClass": "describe"
   },
   {
@@ -1298,10 +1294,6 @@
     "wordClass": "describe"
   },
   {
-    "key": "old_",
-    "wordClass": "describe"
-  },
-  {
     "key": "on",
     "wordClass": "core"
   },
@@ -1518,14 +1510,6 @@
   {
     "key": "ride",
     "wordClass": "actions"
-  },
-  {
-    "key": "right",
-    "wordClass": "describe"
-  },
-  {
-    "key": "right_",
-    "wordClass": "describe"
   },
   {
     "key": "run",
@@ -2120,6 +2104,10 @@
   },
   {
     "key": "wrong",
+    "wordClass": "describe"
+  },
+  {
+    "key": "right",
     "wordClass": "describe"
   },
   {
