@@ -8,7 +8,7 @@
 import SwiftData
 import Foundation
 
-enum AppSettingsKey {
+nonisolated enum AppSettingsKey {
     /// Legacy: integer version stamp. Pre-Step M bootstrap used this; new code
     /// uses bootstrapContentHash + bootstrapInstalled. Kept declared so the
     /// UserDefaults key isn't accidentally reused.

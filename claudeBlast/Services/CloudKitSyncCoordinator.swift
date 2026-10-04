@@ -50,7 +50,7 @@ final class CloudKitSyncCoordinator {
             observer = NotificationCenter.default.addObserver(
                 forName: .NSPersistentStoreRemoteChange, object: nil, queue: .main
             ) { [weak self] _ in
-                Task { @MainActor in self?.reconcileSoon() }
+                Task { @MainActor [weak self] in self?.reconcileSoon() }
             }
         }
         reconcileSoon()

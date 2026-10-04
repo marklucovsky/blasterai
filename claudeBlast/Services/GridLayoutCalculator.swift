@@ -420,6 +420,21 @@ enum GridLayoutCalculator {
         min(screenSize.width, screenSize.height) < phoneMinDimMax
     }
 
+    /// The physical screen's size — deliberately not the window's. A Split
+    /// View or Slide Over window on an iPad is narrow, but the device is still
+    /// an iPad and its board keeps the iPad grid and tile tiers.
+    ///
+    /// Read through the app's window scene; `UIScreen.main` is deprecated as
+    /// of iOS 26. Prefers the foreground scene, so an external display (a
+    /// different scene role) never answers for the device itself.
+    static var deviceScreenSize: CGSize {
+        let scenes = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .filter { $0.session.role == .windowApplication }
+        let scene = scenes.first { $0.activationState == .foregroundActive } ?? scenes.first
+        return scene?.screen.bounds.size ?? .zero
+    }
+
     /// The layout the live board uses.
     ///
     /// A scene's declared grid wins on the kind of device it was designed for,

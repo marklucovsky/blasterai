@@ -219,7 +219,6 @@ enum BootstrapLoader {
                 tile.isSystem = true
                 return tile
             }
-            let tileLookup = Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
 
             // ----- Core-First scene from Resources/scenes/core_first.json -----
             // The hardcoded Swift scene specs (coreFirstHomeSpecs / foodDrinksSpecs)

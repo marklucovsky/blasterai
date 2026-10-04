@@ -56,7 +56,7 @@ struct TileColorMap: Codable, Hashable {
     var isEmpty: Bool { overrides.isEmpty }
 
     func color(for slot: TileColorSlot) -> Color? {
-        overrides[slot.rawValue].flatMap(Color.init(hex:))
+        overrides[slot.rawValue].flatMap { Color(hex: $0) }
     }
 
     mutating func set(_ color: Color?, for slot: TileColorSlot) {

@@ -167,8 +167,6 @@ extension AdminView {
                     case (.patient, .caregiver):
                         // Patient → Caregiver: confirm gate retention + key.
                         pendingCaregiverTransition = true
-                    default:
-                        device.role = newRole
                     }
                 }
                 Toggle("Lock Admin\(biometry.hasHardware ? " (\(biometry.displayName) or PIN)" : " with a PIN")",
@@ -841,7 +839,7 @@ extension AdminView {
     var sceneLayoutNote: String? {
         guard let scene = scenes.first(where: { $0.isActive }),
               let designed = scene.designedLayout else { return nil }
-        let isPhone = GridLayoutCalculator.isPhone(screenSize: UIScreen.main.bounds.size)
+        let isPhone = GridLayoutCalculator.isPhone(screenSize: GridLayoutCalculator.deviceScreenSize)
         if designed.phone != isPhone {
             return "“\(scene.name)” is designed for \(designed.title), so this device uses Board Layout."
         }

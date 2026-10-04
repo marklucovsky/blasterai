@@ -172,7 +172,7 @@ struct TilePickerView: View {
             }
             return true
         }
-        .sorted(by: Self.naturalOrder)
+        .sorted { Self.naturalOrder($0, $1) }
     }
 
     /// Finder-style ordering, so 2 comes before 10.

@@ -300,7 +300,7 @@ struct SceneStructureBoardPreview: View {
     private let columns = [GridItem(.adaptive(minimum: 52, maximum: 64), spacing: 8)]
 
     private var addedWords: [BoardTile] {
-        outline.homeWords.compactMap { tileLookup[$0].map(BoardTile.init) }
+        outline.homeWords.compactMap { tileLookup[$0].map { BoardTile($0) } }
     }
 
     private var summary: String {

@@ -41,7 +41,7 @@ struct PageEditorView: View {
     private var boardGrid: (cols: Int, rows: Int) {
         GridLayoutCalculator.authoringGrid(
             designed: scene.designedLayout,
-            isPhone: GridLayoutCalculator.isPhone(screenSize: UIScreen.main.bounds.size),
+            isPhone: GridLayoutCalculator.isPhone(screenSize: GridLayoutCalculator.deviceScreenSize),
             deviceLayout: BoardLayout(rawValue: boardLayoutRaw) ?? .standard)
     }
 

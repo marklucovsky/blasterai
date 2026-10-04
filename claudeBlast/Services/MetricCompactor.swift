@@ -72,7 +72,7 @@ import os
 enum MetricCompactor {
     private static let log = Logger(subsystem: "app.blasterai", category: "compaction")
 
-    struct Policy: Sendable {
+    nonisolated struct Policy: Sendable {
         /// Hard ceiling for the device-local store.
         var budgetBytes: Int64 = 256 * 1024 * 1024
         /// Start folding at this size.
