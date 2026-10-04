@@ -314,6 +314,10 @@ enum BootstrapLoader {
         return stored != bundledContentHash
     }
 
+    /// The recorded reason on a word retired because a bundle update removed
+    /// it from the built-in vocabulary.
+    static let removedFromBundleReason = "Removed from the built-in vocabulary"
+
     /// Bring an existing install up to the current bundle: insert any new
     /// bundled vocabulary, then re-materialize `core_first.json` and overwrite
     /// the system scene's content IN PLACE — same BlasterScene id, isActive, and
@@ -325,6 +329,9 @@ enum BootstrapLoader {
     /// are immutable (`BlasterScene.isSystemOwned`) — caregiver edits live in a
     /// clone, so there is nothing of theirs here to overwrite. After applying,
     /// the stored content hash is advanced so it runs once per bundle change.
+    ///
+    /// Also retires any bundled word the bundle no longer has, tagged with
+    /// `removedFromBundleReason` so the Vocab manager can say why it is hidden.
     @discardableResult
     static func updateSystemScene(context: ModelContext) -> Bool {
         guard let url = Bundle.main.url(forResource: "core_first", withExtension: "json"),
@@ -367,6 +374,26 @@ enum BootstrapLoader {
             }
             if addedTiles > 0 {
                 print("updateSystemScene: inserted \(addedTiles) new bundled tile(s)")
+            }
+
+            // Retire bundled words the bundle no longer has.
+            //
+            // The other half of the step above. A word dropped from the
+            // vocabulary — `hard_`, the chalkboard sense of "hard", in session 8 —
+            // stays in an existing store, and with its art gone from the bundle it
+            // would sit in the tile picker as a blank. Retiring hides it the
+            // ordinary, reversible way; nothing is deleted, so a caregiver who had
+            // used it can restore it.
+            let bundledKeys = Set(vocab.map(\.key))
+            let live = (try? context.fetch(FetchDescriptor<TileModel>(
+                predicate: #Predicate { $0.isSystem && !$0.isRetired }))) ?? []
+            var retiredTiles = 0
+            for tile in live where !bundledKeys.contains(tile.key) {
+                tile.retire(reason: Self.removedFromBundleReason)
+                retiredTiles += 1
+            }
+            if retiredTiles > 0 {
+                print("updateSystemScene: retired \(retiredTiles) word(s) no longer bundled")
             }
 
             let key = materialized.key

@@ -38,9 +38,10 @@ deletes its own mistakes teaches nothing.
 
 ## Still open
 
-- **`bus` is on no page.** The only vehicle in the vocabulary — no car, train or
-  bike — so there is no category for it to join and no page that obviously wants
-  one bus.
+- ~~**`bus` is on no page.**~~ Placed on Places in session 8, with the other
+  second homes from `tools/audit_page_placement.py` (sick/hurt/tired/feel/…
+  on Body & Health, feelings typed `describe` on Feelings, the mealtime words on
+  Food and Drinks). The audit reports anything left on no page.
 - **Word order inside leaf pages.** Brandi: *"touch chat orders them by alpha
   order. Do we want them organized in a certain way?"* Ours are in
   vocabulary-file order, which is alphabetical only by accident — so `actions`

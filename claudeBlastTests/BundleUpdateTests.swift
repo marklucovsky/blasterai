@@ -123,7 +123,10 @@ struct BundleUpdateTests {
             // the exact failure this guards.
             let scenesBefore = try ctx.fetch(FetchDescriptor<BlasterScene>())
             let system = try #require(scenesBefore.first { $0.systemSceneKey == "core_first" })
-            let boardKeys = Set(system.pages.flatMap { $0.tiles.map(\.key) })
+            // Words only: a spacer's key is minted, not a vocabulary word, and
+            // sorts first — the bundled board has had spacers since Drinks put
+            // its mealtime answers on the bottom row.
+            let boardKeys = Set(system.pages.flatMap { $0.tiles.filter { !$0.isEmptyCell }.map(\.key) })
             let victimKey = try #require(boardKeys.sorted().first)
 
             let tiles = try ctx.fetch(FetchDescriptor<TileModel>())
@@ -170,6 +173,31 @@ struct BundleUpdateTests {
             #expect(still.isRetired)                     // caregiver state intact
 
             withExtendedLifetime(result) {}
+        }
+    }
+
+    /// A word the bundle dropped is retired on update, not left as a blank in
+    /// the tile picker — and not deleted, so a caregiver can restore it.
+    @Test func updateRetiresWordsNoLongerBundled() throws {
+        try withCleanDefaults {
+            let ctx = TestStore.freshContainer().mainContext
+            _ = BootstrapLoader.loadDefaultVocabulary(context: ctx)
+            // As an install from before session 8 has it.
+            let dropped = TileModel(key: "hard_", wordClass: "describe")
+            dropped.isSystem = true
+            ctx.insert(dropped)
+            let mine = TileModel(key: "zz_caregiver_word", wordClass: "describe")
+            ctx.insert(mine)   // not a bundled word: never touched
+
+            UserDefaults.standard.set("a-stale-hash-from-an-older-bundle",
+                                      forKey: AppSettingsKey.bootstrapContentHash)
+            #expect(BootstrapLoader.updateSystemScene(context: ctx))
+
+            #expect(dropped.isRetired)
+            #expect(dropped.retiredReason == BootstrapLoader.removedFromBundleReason)
+            #expect(!mine.isRetired)
+            let hard = try ctx.fetch(FetchDescriptor<TileModel>(predicate: #Predicate { $0.key == "hard" }))
+            #expect(hard.first?.isRetired == false, "the kept sense stays live")
         }
     }
 }
