@@ -210,6 +210,22 @@ def chain_prompt(prev_key: str | None, tone_key: str) -> str:
     )
 
 
+def flatten_onto_white(path: Path) -> None:
+    """Give an edit result an opaque white background.
+
+    The edits endpoint sometimes returns RGBA with the background left
+    transparent. That is invisible in a viewer that draws transparency as white
+    — and fatal one step down the chain, where the next edit fills the
+    transparent area with black. Session 8's `knee` came back black twice
+    before this was found.
+    """
+    im = Image.open(path)
+    if im.mode == "RGBA" and im.getextrema()[3][0] < 255:
+        flat = Image.new("RGBA", im.size, "white")
+        flat.alpha_composite(im)
+        flat.convert("RGB").save(path)
+
+
 def build_chain(keys: list[str], chain: list[str], api_key_value: str,
                 quality: str = "medium") -> None:
     """Walk the scale, each tone generated from the previous tone's output."""
@@ -246,6 +262,7 @@ def build_chain(keys: list[str], chain: list[str], api_key_value: str,
                 else:
                     with urlrequest.urlopen(item["url"], timeout=120, context=SSL_CTX) as u:
                         dst.write_bytes(u.read())
+                flatten_onto_white(dst)
             prev_dir, prev_tone = out, tone
         done[0] += 1
         if done[0] % 10 == 0:

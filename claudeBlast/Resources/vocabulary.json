@@ -24,6 +24,10 @@
     "wordClass": "describe"
   },
   {
+    "key": "airplane",
+    "wordClass": "object"
+  },
+  {
     "key": "airport",
     "wordClass": "places"
   },
@@ -44,12 +48,20 @@
     "wordClass": "describe"
   },
   {
+    "key": "ambulance",
+    "wordClass": "object"
+  },
+  {
     "key": "and",
     "wordClass": "core"
   },
   {
     "key": "angry",
     "wordClass": "feeling"
+  },
+  {
+    "key": "animals",
+    "wordClass": "object"
   },
   {
     "key": "answer",
@@ -128,6 +140,10 @@
     "wordClass": "food"
   },
   {
+    "key": "bandaid",
+    "wordClass": "health"
+  },
+  {
     "key": "baseball",
     "wordClass": "sports"
   },
@@ -151,6 +167,14 @@
   {
     "key": "beach",
     "wordClass": "places"
+  },
+  {
+    "key": "because",
+    "wordClass": "core"
+  },
+  {
+    "key": "bed",
+    "wordClass": "object"
   },
   {
     "key": "bedroom",
@@ -177,6 +201,10 @@
     "wordClass": "describe"
   },
   {
+    "key": "bicycle",
+    "wordClass": "object"
+  },
+  {
     "key": "big",
     "wordClass": "describe"
   },
@@ -185,8 +213,20 @@
     "wordClass": "games"
   },
   {
+    "key": "bird",
+    "wordClass": "animal"
+  },
+  {
+    "key": "bite",
+    "wordClass": "actions"
+  },
+  {
     "key": "black",
     "wordClass": "colors"
+  },
+  {
+    "key": "blanket",
+    "wordClass": "object"
   },
   {
     "key": "blocks",
@@ -209,12 +249,20 @@
     "wordClass": "actions"
   },
   {
+    "key": "boat",
+    "wordClass": "object"
+  },
+  {
     "key": "body",
     "wordClass": "body"
   },
   {
     "key": "body_health",
     "wordClass": "navigation"
+  },
+  {
+    "key": "book",
+    "wordClass": "object"
   },
   {
     "key": "bored",
@@ -239,6 +287,10 @@
   {
     "key": "boy",
     "wordClass": "people"
+  },
+  {
+    "key": "break",
+    "wordClass": "social"
   },
   {
     "key": "broccoli",
@@ -269,6 +321,10 @@
     "wordClass": "toy"
   },
   {
+    "key": "build",
+    "wordClass": "actions"
+  },
+  {
     "key": "building",
     "wordClass": "places"
   },
@@ -281,12 +337,24 @@
     "wordClass": "describe"
   },
   {
+    "key": "but",
+    "wordClass": "core"
+  },
+  {
     "key": "buy",
     "wordClass": "actions"
   },
   {
+    "key": "bye",
+    "wordClass": "social"
+  },
+  {
     "key": "call",
     "wordClass": "actions"
+  },
+  {
+    "key": "calm",
+    "wordClass": "feeling"
   },
   {
     "key": "camp",
@@ -295,6 +363,10 @@
   {
     "key": "can",
     "wordClass": "core"
+  },
+  {
+    "key": "car",
+    "wordClass": "object"
   },
   {
     "key": "cards",
@@ -307,6 +379,10 @@
   {
     "key": "cars",
     "wordClass": "toy"
+  },
+  {
+    "key": "cat",
+    "wordClass": "animal"
   },
   {
     "key": "catch",
@@ -331,6 +407,10 @@
   {
     "key": "chew",
     "wordClass": "actions"
+  },
+  {
+    "key": "chicken",
+    "wordClass": "animal"
   },
   {
     "key": "chips",
@@ -369,16 +449,32 @@
     "wordClass": "describe"
   },
   {
+    "key": "climb",
+    "wordClass": "actions"
+  },
+  {
     "key": "close",
     "wordClass": "actions"
+  },
+  {
+    "key": "closed",
+    "wordClass": "describe"
   },
   {
     "key": "closet",
     "wordClass": "places"
   },
   {
+    "key": "clothes",
+    "wordClass": "object"
+  },
+  {
     "key": "cloud",
     "wordClass": "weather"
+  },
+  {
+    "key": "coat",
+    "wordClass": "object"
   },
   {
     "key": "cold",
@@ -425,6 +521,14 @@
     "wordClass": "food"
   },
   {
+    "key": "cough",
+    "wordClass": "health"
+  },
+  {
+    "key": "cow",
+    "wordClass": "animal"
+  },
+  {
     "key": "crackers",
     "wordClass": "food"
   },
@@ -443,6 +547,14 @@
   {
     "key": "cucumber",
     "wordClass": "food"
+  },
+  {
+    "key": "cup",
+    "wordClass": "object"
+  },
+  {
+    "key": "cut",
+    "wordClass": "actions"
   },
   {
     "key": "cute",
@@ -493,6 +605,10 @@
     "wordClass": "places"
   },
   {
+    "key": "dog",
+    "wordClass": "animal"
+  },
+  {
     "key": "doll",
     "wordClass": "toy"
   },
@@ -535,6 +651,10 @@
   {
     "key": "dry_",
     "wordClass": "describe"
+  },
+  {
+    "key": "duck",
+    "wordClass": "animal"
   },
   {
     "key": "dumb",
@@ -586,6 +706,10 @@
   },
   {
     "key": "eye",
+    "wordClass": "body"
+  },
+  {
+    "key": "face",
     "wordClass": "body"
   },
   {
@@ -641,12 +765,24 @@
     "wordClass": "describe"
   },
   {
+    "key": "finger",
+    "wordClass": "body"
+  },
+  {
     "key": "finish",
     "wordClass": "actions"
   },
   {
+    "key": "fire_truck",
+    "wordClass": "object"
+  },
+  {
     "key": "first",
     "wordClass": "describe"
+  },
+  {
+    "key": "fish",
+    "wordClass": "animal"
   },
   {
     "key": "fixed",
@@ -665,6 +801,10 @@
     "wordClass": "navigation"
   },
   {
+    "key": "foot",
+    "wordClass": "body"
+  },
+  {
     "key": "football",
     "wordClass": "sports"
   },
@@ -675,6 +815,10 @@
   {
     "key": "forget",
     "wordClass": "actions"
+  },
+  {
+    "key": "fork",
+    "wordClass": "object"
   },
   {
     "key": "friend",
@@ -807,8 +951,16 @@
     "wordClass": "actions"
   },
   {
+    "key": "hair",
+    "wordClass": "body"
+  },
+  {
     "key": "hamburger",
     "wordClass": "food"
+  },
+  {
+    "key": "hand",
+    "wordClass": "body"
   },
   {
     "key": "happy",
@@ -818,6 +970,10 @@
   {
     "key": "hard",
     "wordClass": "describe"
+  },
+  {
+    "key": "hat",
+    "wordClass": "object"
   },
   {
     "key": "hate",
@@ -856,6 +1012,10 @@
     "wordClass": "describe"
   },
   {
+    "key": "helicopter",
+    "wordClass": "object"
+  },
+  {
     "key": "hello",
     "wordClass": "social"
   },
@@ -873,6 +1033,10 @@
     "wordClass": "core"
   },
   {
+    "key": "hide",
+    "wordClass": "actions"
+  },
+  {
     "key": "high",
     "wordClass": "describe"
   },
@@ -882,12 +1046,28 @@
     "bundleImage": "he"
   },
   {
+    "key": "his",
+    "wordClass": "people"
+  },
+  {
+    "key": "hit",
+    "wordClass": "actions"
+  },
+  {
     "key": "home",
     "wordClass": "navigation"
   },
   {
+    "key": "home_",
+    "wordClass": "places"
+  },
+  {
     "key": "hope",
     "wordClass": "actions"
+  },
+  {
+    "key": "horse",
+    "wordClass": "animal"
   },
   {
     "key": "hot",
@@ -912,6 +1092,10 @@
   {
     "key": "how_are_you",
     "wordClass": "social"
+  },
+  {
+    "key": "hug",
+    "wordClass": "actions"
   },
   {
     "key": "hungry",
@@ -962,6 +1146,10 @@
     "wordClass": "core"
   },
   {
+    "key": "itchy",
+    "wordClass": "health"
+  },
+  {
     "key": "jelly",
     "wordClass": "food"
   },
@@ -988,6 +1176,10 @@
   {
     "key": "kitchen",
     "wordClass": "places"
+  },
+  {
+    "key": "knee",
+    "wordClass": "body"
   },
   {
     "key": "know",
@@ -1020,6 +1212,70 @@
   {
     "key": "left",
     "wordClass": "describe"
+  },
+  {
+    "key": "lets",
+    "wordClass": "core"
+  },
+  {
+    "key": "medicine",
+    "wordClass": "health"
+  },
+  {
+    "key": "music",
+    "wordClass": "object"
+  },
+  {
+    "key": "nurse",
+    "wordClass": "people"
+  },
+  {
+    "key": "one",
+    "wordClass": "core"
+  },
+  {
+    "key": "our",
+    "wordClass": "people"
+  },
+  {
+    "key": "pajamas",
+    "wordClass": "object"
+  },
+  {
+    "key": "pants",
+    "wordClass": "object"
+  },
+  {
+    "key": "pee",
+    "wordClass": "health"
+  },
+  {
+    "key": "phone",
+    "wordClass": "object"
+  },
+  {
+    "key": "pig",
+    "wordClass": "animal"
+  },
+  {
+    "key": "plate",
+    "wordClass": "object"
+  },
+  {
+    "key": "police_car",
+    "wordClass": "object"
+  },
+  {
+    "key": "poop",
+    "wordClass": "health"
+  },
+  {
+    "key": "potty",
+    "wordClass": "health"
+  },
+  {
+    "key": "pour",
+    "wordClass": "actions"
   },
   {
     "key": "right_",
@@ -1564,8 +1820,28 @@
     "wordClass": "shape"
   },
   {
+    "key": "share",
+    "wordClass": "actions"
+  },
+  {
+    "key": "sharp",
+    "wordClass": "describe"
+  },
+  {
     "key": "she",
     "wordClass": "people"
+  },
+  {
+    "key": "sheep",
+    "wordClass": "animal"
+  },
+  {
+    "key": "shirt",
+    "wordClass": "object"
+  },
+  {
+    "key": "shoes",
+    "wordClass": "object"
   },
   {
     "key": "shop",
@@ -1655,6 +1931,10 @@
     "wordClass": "social"
   },
   {
+    "key": "socks",
+    "wordClass": "object"
+  },
+  {
     "key": "soda",
     "wordClass": "drinks"
   },
@@ -1695,6 +1975,10 @@
     "wordClass": "places"
   },
   {
+    "key": "spoon",
+    "wordClass": "object"
+  },
+  {
     "key": "sports",
     "wordClass": "sports"
   },
@@ -1709,6 +1993,10 @@
   {
     "key": "star",
     "wordClass": "shape"
+  },
+  {
+    "key": "sticky",
+    "wordClass": "describe"
   },
   {
     "key": "stinky",
@@ -1811,6 +2099,10 @@
     "wordClass": "core"
   },
   {
+    "key": "their",
+    "wordClass": "people"
+  },
+  {
     "key": "them",
     "wordClass": "people",
     "bundleImage": "they"
@@ -1830,6 +2122,10 @@
   {
     "key": "thin",
     "wordClass": "describe"
+  },
+  {
+    "key": "things",
+    "wordClass": "object"
   },
   {
     "key": "think",
@@ -1897,8 +2193,16 @@
     "wordClass": "describe"
   },
   {
+    "key": "tooth",
+    "wordClass": "body"
+  },
+  {
     "key": "toothache",
     "wordClass": "health"
+  },
+  {
+    "key": "toothbrush",
+    "wordClass": "object"
   },
   {
     "key": "top",
@@ -1911,6 +2215,10 @@
   {
     "key": "toy",
     "wordClass": "toy"
+  },
+  {
+    "key": "train",
+    "wordClass": "object"
   },
   {
     "key": "trampoline",
@@ -1926,6 +2234,10 @@
     "bundleImage": "tricycle"
   },
   {
+    "key": "truck",
+    "wordClass": "object"
+  },
+  {
     "key": "true",
     "wordClass": "describe"
   },
@@ -1934,8 +2246,16 @@
     "wordClass": "actions"
   },
   {
+    "key": "tummy",
+    "wordClass": "body"
+  },
+  {
     "key": "turn",
     "wordClass": "actions"
+  },
+  {
+    "key": "tv",
+    "wordClass": "object"
   },
   {
     "key": "ugly",
@@ -1962,6 +2282,10 @@
     "wordClass": "core"
   },
   {
+    "key": "upset",
+    "wordClass": "feeling"
+  },
+  {
     "key": "us",
     "wordClass": "people",
     "bundleImage": "we"
@@ -1973,6 +2297,10 @@
   {
     "key": "veggie",
     "wordClass": "food"
+  },
+  {
+    "key": "vehicles",
+    "wordClass": "object"
   },
   {
     "key": "video_game",
@@ -2071,6 +2399,10 @@
     "wordClass": "question"
   },
   {
+    "key": "will",
+    "wordClass": "core"
+  },
+  {
     "key": "wind",
     "wordClass": "weather"
   },
@@ -2089,6 +2421,10 @@
   {
     "key": "work",
     "wordClass": "actions"
+  },
+  {
+    "key": "worried",
+    "wordClass": "feeling"
   },
   {
     "key": "worse",

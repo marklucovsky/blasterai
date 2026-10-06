@@ -52,7 +52,7 @@ enum GlyphTile {
            !number.isEmpty, number.allSatisfy(\.isNumber) {
             return number
         }
-        return covers[key]
+        return covers[key] ?? wordGlyphs[key]
     }
 
     static func isGlyphKey(_ key: String) -> Bool { character(for: key) != nil }
@@ -65,6 +65,16 @@ enum GlyphTile {
     private static let covers: [String: String] = [
         "packcover_letters": "ABC",
         "packcover_numbers": "123",
+    ]
+
+    /// Words whose clearest picture is a glyph.
+    ///
+    /// `one` is the numeral 1 — what ARASAAC and every counting board draw, and
+    /// already exactly what `number_1` renders. A generated "one apple" would
+    /// say *apple* as loudly as *one*. The key stays `one` (the word, core
+    /// vocabulary, a determiner); only its picture is the glyph.
+    private static let wordGlyphs: [String: String] = [
+        "one": "1",
     ]
 
     /// Every letter key, a–z.

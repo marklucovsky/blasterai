@@ -177,7 +177,8 @@ struct claudeBlastTests {
         // so both are one tap from home, and `groups` collects the category
         // folders that came off the home page to pay for them.
         #expect(result.scene.pages.count == result.pages.count)
-        #expect(result.scene.pages.count == 17)
+        // 17 -> 21: Animals, Clothes, Things and Vehicles, on Groups (session 8).
+        #expect(result.scene.pages.count == 21)
         // The bundled scene is tagged as system-defined, which now also means
         // immutable — caregivers edit a clone instead.
         #expect(result.scene.systemSceneKey == "core_first")
