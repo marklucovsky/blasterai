@@ -93,8 +93,6 @@ final class BlasterScene {
 
     /// Marker appended to the name of a bundle-backed scene we own.
     static let systemSuppliedSuffix = " - System Supplied"
-    /// Marker appended when a caregiver takes an editable copy of one.
-    static let myCopySuffix = " - My Copy"
 
     /// **System-owned scenes are immutable.** They are bundle-backed, we ship
     /// them, and the caregiver edits a *copy* instead (`cloneForEditing`).
@@ -121,8 +119,8 @@ final class BlasterScene {
     var isSystemOwned: Bool { !systemSceneKey.isEmpty }
 
     /// The name without the system-supplied marker, so a copy of
-    /// "Core-First - System Supplied" is named "Core-First - My Copy" rather than
-    /// stacking both suffixes.
+    /// "BlasterAI 60 - System Supplied" is named "BlasterAI 60 (1)" rather than
+    /// carrying the marker along.
     var baseName: String {
         name.hasSuffix(Self.systemSuppliedSuffix)
             ? String(name.dropLast(Self.systemSuppliedSuffix.count))
@@ -398,14 +396,54 @@ final class BlasterScene {
 
     // MARK: - Naming
 
-    /// `base`, or `base-2` / `base-3` / … if that name is already taken.
-    static func availableName(basedOn base: String, in context: ModelContext) -> String {
-        let taken: Set<String> = (try? context.fetch(FetchDescriptor<BlasterScene>()))
-            .map { Set($0.map(\.name)) } ?? []
-        guard taken.contains(base) else { return base }
-        var n = 2
-        while taken.contains("\(base)-\(n)") { n += 1 }
-        return "\(base)-\(n)"
+    // MARK: - Copy names
+
+    /// The name a copy is numbered under: `name` with any copy number and any
+    /// earlier copy marker removed. "BlasterAI 60 (3)" → "BlasterAI 60".
+    ///
+    /// Also reads the names copies used to get — "X - My Copy" from Make My
+    /// Copy, "duplicate-of:X-2" from Duplicate — so copying a scene made by an
+    /// earlier build joins the same numbering instead of stacking markers.
+    static func copyRoot(of name: String) -> String {
+        var root = name
+        if root.hasSuffix(systemSuppliedSuffix) { root = String(root.dropLast(systemSuppliedSuffix.count)) }
+        if let range = root.range(of: #" \(\d+\)$"#, options: .regularExpression) {
+            root.removeSubrange(range)
+        }
+        if root.hasPrefix(legacyDuplicatePrefix) {
+            root = String(root.dropFirst(legacyDuplicatePrefix.count))
+            // Its collision suffix, "-2", only ever followed this prefix.
+            if let range = root.range(of: #"-\d+$"#, options: .regularExpression) { root.removeSubrange(range) }
+        }
+        if root.hasSuffix(legacyMyCopySuffix) { root = String(root.dropLast(legacyMyCopySuffix.count)) }
+        return root
+    }
+
+    private static let legacyMyCopySuffix = " - My Copy"
+    private static let legacyDuplicatePrefix = "duplicate-of:"
+
+    /// "BlasterAI 60 (n)", one past the highest number in use under the same
+    /// root — so a copy of "(1)", with "(2)" already taken, is "(3)". Gaps are
+    /// never filled, but deleting the highest copy frees its number; no
+    /// counter is stored, because a new synced field is a CloudKit deploy.
+    ///
+    /// The name says which board it is, not where it came from: the lineage
+    /// is the "Copied from" line (`copyProvenance`), which stays true when
+    /// someone renames a copy, where a lineage spelled into the name would not.
+    static func copyName(of source: BlasterScene, in context: ModelContext) -> String {
+        let root = copyRoot(of: source.name)
+        let names = (try? context.fetch(FetchDescriptor<BlasterScene>()))?.map(\.name) ?? []
+        let prefix = root + " ("
+        let used = names.compactMap { name -> Int? in
+            guard name.hasPrefix(prefix), name.hasSuffix(")") else { return nil }
+            return Int(name.dropFirst(prefix.count).dropLast())
+        }
+        return "\(root) (\((used.max() ?? 0) + 1))"
+    }
+
+    /// What a copy's row says about where it came from.
+    static func copyProvenance(of source: BlasterScene) -> String {
+        "Copied from \(source.name)"
     }
 
     // MARK: - Clone-on-write
@@ -427,8 +465,8 @@ final class BlasterScene {
     static func cloneForEditing(_ source: BlasterScene, in context: ModelContext,
                                 authorID: String, authorName: String) -> BlasterScene {
         let copy = BlasterScene(
-            name: availableName(basedOn: source.baseName + myCopySuffix, in: context),
-            descriptionText: source.descriptionText,
+            name: copyName(of: source, in: context),
+            descriptionText: copyProvenance(of: source),
             homePageKey: source.homePageKey,
             isDefault: false,
             isActive: false
@@ -449,10 +487,9 @@ final class BlasterScene {
     /// and returned.
     ///
     /// Conventions:
-    /// - name: "duplicate-of:{source.name}" with a "-2", "-3", … suffix if
-    ///   that name is already taken (collision avoidance).
-    /// - description: "duplicated from {source.name}::{ISO8601 source.created}"
-    ///   so provenance survives even if the source is later renamed or deleted.
+    /// - name: the next copy number under the source's root, `copyName`.
+    /// - description: "Copied from {source.name}", `copyProvenance` — so the
+    ///   lineage survives the source being renamed or deleted later.
     /// - created: now.
     /// - isDefault / isActive / isImported: false (a fresh duplicate is never
     ///   the active scene and is never marked as the default).
@@ -468,15 +505,9 @@ final class BlasterScene {
     @discardableResult
     static func duplicate(of source: BlasterScene, in context: ModelContext,
                           authorID: String, authorName: String) -> BlasterScene {
-        let candidate = availableName(basedOn: "duplicate-of:\(source.name)", in: context)
-
-        let iso = ISO8601DateFormatter()
-        iso.formatOptions = [.withInternetDateTime]
-        let originStamp = iso.string(from: source.created)
-
         let copy = BlasterScene(
-            name: candidate,
-            descriptionText: "duplicated from \(source.name)::\(originStamp)",
+            name: copyName(of: source, in: context),
+            descriptionText: copyProvenance(of: source),
             homePageKey: source.homePageKey,
             isDefault: false,
             isActive: false

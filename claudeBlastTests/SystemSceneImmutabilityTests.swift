@@ -71,7 +71,8 @@ struct SystemSceneImmutabilityTests {
         #expect(!copy.isSystemOwned)
         #expect(!copy.isDefault)
         #expect(!copy.isImported)
-        #expect(copy.name == "Core-First" + BlasterScene.myCopySuffix)
+        #expect(copy.name == "Core-First (1)")
+        #expect(copy.descriptionText == "Copied from Core-First" + BlasterScene.systemSuppliedSuffix)
         // Content carried over...
         #expect(copy.pages.count == system.pages.count)
         #expect(copy.homePageKey == system.homePageKey)
@@ -103,8 +104,19 @@ struct SystemSceneImmutabilityTests {
         try ctx.save()
         let second = BlasterScene.cloneForEditing(system, in: ctx, authorID: "a", authorName: "")
 
-        #expect(first.name != second.name)
-        #expect(second.name.hasPrefix("Core-First" + BlasterScene.myCopySuffix))
+        #expect(first.name == "Core-First (1)")
+        #expect(second.name == "Core-First (2)")
+    }
+
+    /// Names from earlier builds join the numbering instead of stacking markers.
+    @Test func legacyCopyNamesShareTheRoot() {
+        #expect(BlasterScene.copyRoot(of: "Core-First - My Copy") == "Core-First")
+        #expect(BlasterScene.copyRoot(of: "duplicate-of:Core-First-2") == "Core-First")
+        #expect(BlasterScene.copyRoot(of: "BlasterAI 60 (12)") == "BlasterAI 60")
+        #expect(BlasterScene.copyRoot(of: "BlasterAI 60" + BlasterScene.systemSuppliedSuffix) == "BlasterAI 60")
+        // A name that merely ends in a number is left alone.
+        #expect(BlasterScene.copyRoot(of: "Room-2") == "Room-2")
+        #expect(BlasterScene.copyRoot(of: "Grade 2") == "Grade 2")
     }
 
     /// Editing the clone must leave the system scene byte-identical to its

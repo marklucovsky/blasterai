@@ -21,7 +21,7 @@ are for when you want something genuinely different.
 
 You'll get to the same place if you simply try to edit BlasterAI 60: it is
 supplied by us and read-only, so the app offers to make you an editable copy —
-"BlasterAI 60 - My Copy" — and switches the child to it. Either path is fine; the
+"BlasterAI 60 (1)" — and switches the child to it. Either path is fine; the
 swipe is just the deliberate version.
 
 ---

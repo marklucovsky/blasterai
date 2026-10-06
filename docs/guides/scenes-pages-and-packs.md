@@ -144,7 +144,7 @@ starting from scratch, most people start from BlasterAI 60 and trim it.
 
 **You can't edit it, and you don't have to think about that.** BlasterAI 60 is
 supplied by us and is read-only. The first time you try to change something,
-the app offers to make you an editable copy — "BlasterAI 60 - My Copy" — and
+the app offers to make you an editable copy — "BlasterAI 60 (1)" — and
 switches the child to it. From then on it is yours, and app updates never touch
 it.
 
