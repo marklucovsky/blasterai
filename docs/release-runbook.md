@@ -36,7 +36,10 @@ uploading such a build: run the schema exerciser from a Development build
 Console → **Deploy Schema Changes** to Production, and tick the field off in
 `docs/cloudkit-schema-checklist.md`. Fields added since promotion (2026-09-18):
 `ChildProfile.linkColorModeRaw` (2026-09-27) and `BlasterScene.designedFor`
-(session 8).
+(session 8), both deployed 2026-10-06. The first shipped in build 4 a week
+before its deploy, because nothing in the release loop asked. Before every
+upload, compare `tools/expected_cloudkit_schema.py` against Production's
+record types: a field it lists that Production lacks means deploy first.
 
 ---
 

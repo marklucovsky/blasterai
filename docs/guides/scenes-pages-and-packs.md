@@ -75,7 +75,7 @@ scene, and nothing has been switched.
 say "I made him a board" about the whole thing, and "core board" about a single
 screen of high-frequency words. In the tools and standards it's the narrower
 one: an Open Board Format board, or a CoughDrop board, is *one screen*. So when
-you say board, we'll usually mean **page** — and the Core-First scene we ship is
+you say board, we'll usually mean **page** — and the BlasterAI 60 scene we ship is
 built around exactly the kind of core board you're picturing.
 
 ---
@@ -135,16 +135,16 @@ duplicate it first.
 
 ## A note on the built-in scene
 
-BlasterAI ships with **Core-First** — a scene built around high-frequency core
+BlasterAI ships with **BlasterAI 60** — a scene built around high-frequency core
 words (`i`, `you`, `want`, `go`, `stop`, `more`, `help`, `like`, `not`…) with
 category links out to people, food, places, and the rest.
 
 It's the default for a reason: core words are what generalise. Rather than
-starting from scratch, most people start from Core-First and trim it.
+starting from scratch, most people start from BlasterAI 60 and trim it.
 
-**You can't edit it, and you don't have to think about that.** Core-First is
+**You can't edit it, and you don't have to think about that.** BlasterAI 60 is
 supplied by us and is read-only. The first time you try to change something,
-the app offers to make you an editable copy — "Core-First - My Copy" — and
+the app offers to make you an editable copy — "BlasterAI 60 - My Copy" — and
 switches the child to it. From then on it is yours, and app updates never touch
 it.
 

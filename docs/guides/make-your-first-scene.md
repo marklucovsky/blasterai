@@ -9,19 +9,19 @@ Get to them all the same way: **long-press Home** → **Admin** → **Scenes** �
 
 ## Before you choose
 
-The fastest good scene is usually **not** built from nothing. Core-First
+The fastest good scene is usually **not** built from nothing. BlasterAI 60
 already has the high-frequency vocabulary and the category structure. If you
 want a scene for a specific session, consider:
 
-1. Admin → Scenes → swipe left on **Core-First** → **Duplicate**
+1. Admin → Scenes → swipe left on **BlasterAI 60** → **Duplicate**
 2. Rename the copy, trim what you don't need, add what you do
 
 That takes about two minutes and inherits a sane core. The four routes below
 are for when you want something genuinely different.
 
-You'll get to the same place if you simply try to edit Core-First: it is
+You'll get to the same place if you simply try to edit BlasterAI 60: it is
 supplied by us and read-only, so the app offers to make you an editable copy —
-"Core-First - My Copy" — and switches the child to it. Either path is fine; the
+"BlasterAI 60 - My Copy" — and switches the child to it. Either path is fine; the
 swipe is just the deliberate version.
 
 ---
@@ -128,7 +128,7 @@ You land in the scene editor.
 - **Scene Info** — name, description, and the **Home Page** picker
 - **Structure → Add pages and core words** — the same step the new-scene walk
   ends on, available again at any time. Everything it does is additive. Not
-  available on Core-First.
+  available on BlasterAI 60.
 - **Pages (N)** — every page, with a **HOME** badge on the home page and tile
   counts. Orange and red chips flag pages with words needing review.
 - **Add Page** — see [Pages and navigation](pages-and-navigation.md)
@@ -170,7 +170,7 @@ Three kinds of thing, and you can take any combination:
 
 - **Core words on the home page** — *Nothing*, *Min-core* (a short needs strip:
   i, you, want, help, feelings, yes/no, and a body & health page) or *Full core
-  board* (the familiar Core-First home, plus people, food, drinks and body &
+  board* (the familiar BlasterAI 60 home, plus people, food, drinks and body &
   health). The summary under the picker tells you what each one brings. A word
   the scene already carries is skipped rather than added twice — so a scene
   built around *more* and *all done* can take a core strip on top without

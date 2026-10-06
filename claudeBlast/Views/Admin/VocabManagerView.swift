@@ -9,6 +9,7 @@
 //  moderation-flagged word, Restore a hidden one, or Hide any active word.
 //  Hiding retires the word (reversible, preserves history) and purges its cached
 //  sentences so a later restore can't resurrect a stale line (see TileModel.isRetired).
+//  Each row also says where the word is on the boards (`WordPlaces`).
 //
 
 import SwiftUI
@@ -18,6 +19,7 @@ struct VocabManagerView: View {
     @Environment(\.modelContext) private var context
     // Recency default: newest first (created desc). Alpha re-sorts in `filtered`.
     @Query(sort: \TileModel.created, order: .reverse) private var allTiles: [TileModel]
+    @Query private var scenes: [BlasterScene]
 
     enum Scope: String, CaseIterable, Identifiable {
         case all = "All", review = "Needs review", hidden = "Hidden", added = "Added by you"
@@ -35,6 +37,11 @@ struct VocabManagerView: View {
     @State private var scope: Scope = .all
     @State private var classFilter: String? = nil
     @State private var order: Order = .recent
+    /// Where each word is on the boards, rebuilt when a scene or a hide changes.
+    @State private var places: [String: [WordPlace]] = [:]
+    /// Rows showing all their places rather than the first few.
+    @State private var expanded: Set<String> = []
+    private static let placesShown = 3
 
     /// Structural / auto-minted classes (page links, navigation, core, question)
     /// aren't caregiver vocabulary — never list them for management (hiding a
@@ -45,6 +52,11 @@ struct VocabManagerView: View {
     private func isManageable(_ tile: TileModel) -> Bool {
         !Self.structuralClasses.contains(tile.wordClass)
     }
+
+    /// Structural words that still sit on the board as buttons. Not managed —
+    /// no Hide — but a search finds them, because "where is `because`?" is
+    /// exactly the question the places line answers.
+    private static let findableClasses: Set<String> = ["core", "question"]
 
     private func matches(_ tile: TileModel, _ s: Scope) -> Bool {
         switch s {
@@ -65,7 +77,8 @@ struct VocabManagerView: View {
     private var filtered: [TileModel] {
         let q = search.trimmingCharacters(in: .whitespaces)
         var list = allTiles.filter { tile in
-            guard isManageable(tile) else { return false }
+            guard isManageable(tile) || (!q.isEmpty && Self.findableClasses.contains(tile.wordClass))
+            else { return false }
             guard matches(tile, scope) else { return false }
             if let classFilter, tile.wordClass != classFilter { return false }
             if !q.isEmpty,
@@ -98,6 +111,28 @@ struct VocabManagerView: View {
         .searchable(text: $search, prompt: "Search words")
         .navigationTitle("Vocabulary")
         .navigationBarTitleDisplayMode(.inline)
+        .task(id: placesStamp) { rebuildPlaces() }
+    }
+
+    /// Changes whenever a place could: a scene edited, activated, added or
+    /// removed, or a word hidden (the board reflows around it, moving later
+    /// words to another screen).
+    private var placesStamp: String {
+        let sceneStamp = scenes.map { "\($0.id)\($0.lastModified.timeIntervalSince1970)\($0.isActive)" }.sorted()
+        let hidden = allTiles.filter(\.isHiddenFromChild).map(\.key).sorted()
+        return (sceneStamp + hidden).joined(separator: ",")
+    }
+
+    private func rebuildPlaces() {
+        let isPhone = GridLayoutCalculator.isPhone(screenSize: GridLayoutCalculator.deviceScreenSize)
+        let deviceLayout = BoardLayout.current()
+        places = WordPlaces.index(
+            scenes: scenes,
+            hidden: Set(allTiles.filter(\.isHiddenFromChild).map(\.key)),
+            grid: { scene in
+                GridLayoutCalculator.authoringGrid(designed: scene.designedLayout,
+                                                   isPhone: isPhone, deviceLayout: deviceLayout)
+            })
     }
 
     // MARK: - Filters
@@ -203,6 +238,7 @@ struct VocabManagerView: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(tile.displayName)
                 subtitle(for: tile)
+                placesList(for: tile)
             }
             Spacer()
             actions(for: tile)
@@ -240,9 +276,37 @@ struct VocabManagerView: View {
         }
     }
 
+    /// Where the word is: every place, the active scene's first, a few at a
+    /// time. A word on no page says so — that is how an orphan gets noticed.
+    @ViewBuilder
+    private func placesList(for tile: TileModel) -> some View {
+        let all = places[tile.key] ?? []
+        if all.isEmpty {
+            Text("Not on any board").font(.caption2).foregroundStyle(.secondary)
+        } else {
+            let open = expanded.contains(tile.key)
+            let shown = open ? all : Array(all.prefix(Self.placesShown))
+            ForEach(shown, id: \.self) { place in
+                Label(place.label, systemImage: "arrow.turn.down.right")
+                    .labelStyle(.titleAndIcon)
+                    .font(.caption2)
+                    .foregroundStyle(place.isReachable ? AnyShapeStyle(.secondary) : AnyShapeStyle(.orange))
+            }
+            if all.count > Self.placesShown {
+                Button(open ? "Show fewer" : "+\(all.count - Self.placesShown) more") {
+                    if open { expanded.remove(tile.key) } else { expanded.insert(tile.key) }
+                }
+                .font(.caption2)
+                .buttonStyle(.borderless)
+            }
+        }
+    }
+
     @ViewBuilder
     private func actions(for tile: TileModel) -> some View {
-        if tile.isRetired {
+        if !isManageable(tile) {
+            EmptyView()
+        } else if tile.isRetired {
             Button("Restore") { restore(tile) }
                 .buttonStyle(.bordered).controlSize(.small).tint(.blue)
         } else if tile.needsReview {

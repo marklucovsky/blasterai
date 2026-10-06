@@ -158,8 +158,8 @@ struct claudeBlastTests {
         #expect(result.scene.isActive)
         // The name carries the system-supplied marker so the caregiver can see
         // at a glance which board is ours; `baseName` is what a copy is named after.
-        #expect(result.scene.name == "Core-First" + BlasterScene.systemSuppliedSuffix)
-        #expect(result.scene.baseName == "Core-First")
+        #expect(result.scene.name == "BlasterAI 60" + BlasterScene.systemSuppliedSuffix)
+        #expect(result.scene.baseName == "BlasterAI 60")
         #expect(result.scene.homePageKey == "home")
         // Core-First is sourced from scenes/core_first.json — 14 pages:
         // home + 16 topic pages (people/social/actions/describe/food/drinks/
