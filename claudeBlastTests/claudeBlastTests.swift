@@ -244,8 +244,8 @@ struct claudeBlastTests {
         context.insert(source)
 
         let copy = BlasterScene.duplicate(of: source, in: context, authorID: "test-author", authorName: "Tester")
-        #expect(copy.name == "duplicate-of:Core-First")
-        #expect(copy.descriptionText.hasPrefix("duplicated from Core-First::"))
+        #expect(copy.name == "Core-First (1)")
+        #expect(copy.descriptionText == "Copied from Core-First")
         #expect(copy.homePageKey == "home")
         // Duplicates are never the active or default scene, and they shed the
         // systemSceneKey so they're not protected by the force-refresh path.
@@ -257,6 +257,9 @@ struct claudeBlastTests {
         #expect(copy.pages.first?.tiles.first?.key == "eat")
     }
 
+    /// Copies are numbered under the source's root name, and a copy of a copy
+    /// takes the next number rather than nesting: "(1)" copied, with "(2)"
+    /// taken, is "(3)". Its lineage is the "Copied from" line, not the name.
     @Test func duplicateCollisionUsesSuffix() throws {
         let container = try makeTestContainer()
         let context = container.mainContext
@@ -267,15 +270,22 @@ struct claudeBlastTests {
 
         let first = BlasterScene.duplicate(of: source, in: context, authorID: "test-author", authorName: "Tester")
         try context.save()
-        #expect(first.name == "duplicate-of:Core-First")
+        #expect(first.name == "Core-First (1)")
 
         let second = BlasterScene.duplicate(of: source, in: context, authorID: "test-author", authorName: "Tester")
         try context.save()
-        #expect(second.name == "duplicate-of:Core-First-2")
+        #expect(second.name == "Core-First (2)")
 
-        let third = BlasterScene.duplicate(of: source, in: context, authorID: "test-author", authorName: "Tester")
+        let third = BlasterScene.duplicate(of: first, in: context, authorID: "test-author", authorName: "Tester")
         try context.save()
-        #expect(third.name == "duplicate-of:Core-First-3")
+        #expect(third.name == "Core-First (3)")
+        #expect(third.descriptionText == "Copied from Core-First (1)")
+
+        // Gaps are not filled: with (2) deleted, the next copy is (4).
+        context.delete(second)
+        try context.save()
+        let fourth = BlasterScene.duplicate(of: source, in: context, authorID: "test-author", authorName: "Tester")
+        #expect(fourth.name == "Core-First (4)")
     }
 
     @Test func sceneActivationDeactivatesOthers() throws {
