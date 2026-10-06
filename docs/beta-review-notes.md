@@ -113,13 +113,74 @@ reviewer needs so a keyless app does not read as a broken one.
 
 ## 2. What to Test — for testers, per build
 
-> Thanks for looking at this. About half an hour, and you can stop anywhere.
+**How this section is organised.** The top of it is per build: *What's new in
+build N* and *What to test in build N*, newest build first. Those two go to both
+places — the App Store Connect **What to Test** box for that build, and the PDF.
+Below them, inside `pdf-only`, is the standing walk everyone does once and the
+sections from earlier builds, which only the PDF carries. Each new build adds
+its two sections at the top and moves the previous build's down under
+*Earlier builds* — and the same two lists are the habit App Review's "What's
+New in This Version" will need.
+
+> Thanks for looking at this. Start with what is new in this build. The full
+> walk is in the TestFlight PDF that came with your invitation.
 >
-> At onboarding, choose **Caregiver** as the device role, and **Skip** the API
-> key step. Most of this needs no key, and that is the configuration most
-> families will run.
+> At onboarding, choose **Caregiver** as the device role, and **Not now** at
+> **Enable AI Features**. Most of this needs no key, and that is the
+> configuration most families will run.
+>
+> ### What's new in build 5
+>
+> - **84 new words**, among them potty, pee, poop, medicine, bandaid, hand, foot,
+>   tummy, calm, worried, upset, hug, climb, share, hide, because, but and will —
+>   and four new folders on **Groups**: Animals, Clothes, Things and Vehicles.
+>   Every word is drawn in every picture style.
+> - **Actions, Describe and Body & Health are laid out by hand**, so related words
+>   sit together: opposites side by side, the toileting words in a row.
+> - **because** and **but** are drawn as a pair of symbols rather than pictures.
+> - **The default board is called BlasterAI 60** — its home page holds 60 cells.
+> - **Back.** Two folders deep, the Home cell splits into Home and Back.
+> - **Board Layout** (Admin → Device) replaces Tile Density: Standard, Large and
+>   Largest are fixed grids, so a word stays where the child learned it. The
+>   iPad mini now matches the other iPads.
+> - **AI features ask first.** Enable AI Features says what is sent to OpenAI
+>   and needs a yes before any key is used. If you added a key in an earlier
+>   build you will be asked once; until you say yes, the board works one word
+>   at a time.
+> - **Key files work from anywhere** — opened before setup is finished, or from
+>   Admin → Device → Install key from file…
+> - **Manage Vocabulary shows where each word is**: every route from Home, on
+>   every board.
+> - **Copies are numbered** — BlasterAI 60 (1), (2) — and each says what it was
+>   copied from.
+> - **Printing** starts from the board's own grid and can break pages where the
+>   screen does.
+>
+> ### What to test in build 5
+>
+> - **Look for the new words** under Groups, on Body & Health and on the second
+>   page of Actions. What is still missing? What sits next to the wrong
+>   neighbour?
+> - **because and but:** could a child learn those two marks? Better or worse
+>   than a picture, or than the written word?
+> - **Admin → Scenes → Manage Vocabulary.** Search for **hurt**, then
+>   **because**. Do the routes match where you would look?
+> - **Go two folders deep** (Groups → Animals) and use Back. Is half a cell
+>   enough for a child's finger?
+> - **Try Large and Largest** under Board Layout. Which would you choose for a
+>   child, and why?
+> - **If you had a key:** read the Enable AI Features screen before you answer.
+>   Did it tell you what you would want to know?
+> - **Make a copy of BlasterAI 60, then a copy of the copy.** Do the names and
+>   the "Copied from" lines make sense?
 >
 <!-- pdf-only -->
+> ---
+>
+> ### The walk
+>
+> About half an hour, done once, and you can stop anywhere.
+>
 > ### The child's side
 >
 > 1. **Tap tiles on the home board.** Each word should speak the instant you
@@ -153,37 +214,6 @@ reviewer needs so a keyless app does not read as a broken one.
 > - **blasterai.app/guides/pages-and-navigation**
 > - **blasterai.app/guides/adding-vocabulary**
 >
-<!-- /pdf-only -->
-> ### Folder colours — new in this build
->
-> The top row of the home board is folders, and they arrive all one blue. The
-> app can also colour each one by the words behind it — **people** yellow for
-> pronouns, **actions** green for verbs, **describe** blue, **questions**
-> purple — and we would like you to decide which is right.
->
-> Blue is the default only because the SLP advising us preferred it. We are
-> genuinely unsure, and this is the part we most want argued with.
->
-> A. **Turn the colours on.** Admin → the child's profile → **Folder Color** →
->    *As Each Link Is Set*. Look at the top row before and after.
-> B. **Which do you prefer, and for whom** — the child, or you? Does a green
->    folder standing over a green block of verbs help, or is it just more
->    colour?
-> C. **Print it both ways** (Share → Printable PDF). We suspect the answer
->    differs on paper, where nothing navigates and a folder is a landmark
->    rather than a category. Tell us if that is nonsense.
->
-<!-- pdf-only -->
-> D. **Change one by hand.** Page editor → a folder tile → **Folder color**:
->    *Automatic* (it names what it worked out), *Page Links*, or a word type.
->    Set one, then add words to the page behind it — a folder you chose stays
->    put, one left on Automatic follows the page.
->
-<!-- /pdf-only -->
-> If you use WordPower or TouchChat, we would especially like to know whether
-> this reads the way the board you already know does.
->
-<!-- pdf-only -->
 > ### Taking a board off the device
 >
 > 7. **Scenes → touch and hold a board → Share.** Try **Printable PDF** — pick a
@@ -202,23 +232,16 @@ reviewer needs so a keyless app does not read as a broken one.
 > 10. **Activity.** The log of what was said, and **Coverage** — which of the
 >     board's words have and have not been used. Does that screen answer a
 >     question you would actually ask about a child?
-<!-- /pdf-only -->
->
 > ### Now add a key
 >
-> Add an OpenAI key in **Admin → Device**, or open the key file if one was sent
-> to you.
->
-> The full half-hour walk — the child's side, building a board, printing and
-> sharing it — is in the PDF that came with your invitation. Below is what is
-> new in this build and what we would most like you to push on.
+> **Admin → Device → AI Features**: read the screen, choose **Enable**, then
+> add an OpenAI key — or open the key file if one was sent to you.
 >
 > First, the tray. Tiles you tap collect along the top.
 > **Tap a tile in the tray to take it back out.**
 > Beside them are **Play** and **Clear**. At Stage IV+ there is also a
 > backspace — see below.
 >
-<!-- pdf-only -->
 > 11. **Start deliberately.** Tap three tiles, then press **Play**. You decide
 >     when it speaks. Press **Clear** and do it again with different words.
 > 12. **Now let it decide.** Tap four and pause without pressing anything — it
@@ -233,9 +256,36 @@ reviewer needs so a keyless app does not read as a broken one.
 > 14. **Add a new word** to one of your boards and let it draw a picture for it.
 > 15. **Go back to Activity.** It should now show the sentences, and what they
 >     cost.
-<!-- /pdf-only -->
+> ### Earlier builds
 >
-> ### Stage IV+ — the board as something you write with
+> ### Build 4 — folder colours
+>
+> The top row of the home board is folders, and they arrive all one blue. The
+> app can also colour each one by the words behind it — **people** yellow for
+> pronouns, **actions** green for verbs, **describe** blue, **questions**
+> purple — and we would like you to decide which is right.
+>
+> Blue is the default only because the SLP advising us preferred it. We are
+> genuinely unsure, and this is the part we most want argued with.
+>
+> A. **Turn the colours on.** Admin → the child's profile → **Folder Color** →
+>    *As Each Link Is Set*. Look at the top row before and after.
+> B. **Which do you prefer, and for whom** — the child, or you? Does a green
+>    folder standing over a green block of verbs help, or is it just more
+>    colour?
+> C. **Print it both ways** (Share → Printable PDF). We suspect the answer
+>    differs on paper, where nothing navigates and a folder is a landmark
+>    rather than a category. Tell us if that is nonsense.
+>
+> D. **Change one by hand.** Page editor → a folder tile → **Folder color**:
+>    *Automatic* (it names what it worked out), *Page Links*, or a word type.
+>    Set one, then add words to the page behind it — a folder you chose stays
+>    put, one left on Automatic follows the page.
+>
+> If you use WordPower or TouchChat, we would especially like to know whether
+> this reads the way the board you already know does.
+>
+> ### Build 4 — Stage IV+, the board as something you write with
 >
 > **Admin → the child's profile → Brown's Stage → IV+**, the most advanced
 > stage. The tray stops looking like a row of tiles and starts looking like a
@@ -256,14 +306,11 @@ reviewer needs so a keyless app does not read as a broken one.
 >
 > Then put the stage back where it belongs and watch the pictures return.
 >
+<!-- /pdf-only -->
 > ### What we most want to hear
 >
 > - **The starting board is our first attempt, not a recommendation.** Where is
 >   it wrong?
-> - **Folder colours:** on or off, and does your answer change between the
->   screen and the printed sheet?
-> - **Stage IV+:** is a tray of plain words right for a child who is building
->   sentences, or does it take away something the pictures were doing?
 > - Did anything feel broken, slow or confusing **before** you added a key?
 > - Is the child-facing screen calm enough to hand to a child?
 > - Did anything in Admin look like it needs a manual?

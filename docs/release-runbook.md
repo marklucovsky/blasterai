@@ -284,7 +284,12 @@ take back.
 These are in App Store Connect, in a browser, and they are part of the loop:
 
 - **What to Test** — the tester-facing notes for this build. Tell people what
-  changed and what to look at, not what was refactored.
+  changed and what to look at, not what was refactored. Every build adds two
+  sections to the top of `docs/beta-review-notes.md` §2 — *What's new in build
+  N* and *What to test in build N* — and moves the previous build's under
+  *Earlier builds*. `make_tester_notes.py` then gives the box just this build's
+  lists, and the PDF the lot. Keep the habit: App Review's "What's New in This
+  Version" wants the same list.
 - **Tester group** — internal testers need App Store Connect accounts, which is
   why round 1 is Mark and Kurt and needs no Beta App Review. External testers
   do need review; see the external-invite prerequisites in

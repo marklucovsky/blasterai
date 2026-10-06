@@ -93,6 +93,10 @@ def extract(doc: str, title: str, until: str, *, for_pdf: bool) -> str:
             line = ""
         else:
             continue
+        # A heading is markup to the PDF, but in the ASC box "### " is just
+        # three hashes in front of a line.
+        if not for_pdf and line.startswith("### "):
+            line = line[4:]
         line = re.sub(r"\*\*(.+?)\*\*", r"\1", line)
         line = re.sub(r"\*(.+?)\*", r"\1", line)
         out.append(line)
@@ -145,6 +149,9 @@ def layout(markdown_body: str) -> list[list[tuple]]:
         if not stripped:
             blocks.append(("gap", "", 0))
             continue
+        if stripped == "---":
+            blocks.append(("rule", "", 0))
+            continue
         if raw.startswith("### "):
             blocks.append(("h2", stripped[4:], 0))
             continue
@@ -152,7 +159,8 @@ def layout(markdown_body: str) -> list[list[tuple]]:
             # Indented in the source means nested under the step above it.
             blocks.append(("bullet", stripped, 18 if raw[:1].isspace() else 0))
             continue
-        if re.match(r"^\d+\.\s", stripped):
+        # Numbered steps, and the lettered ones a sub-walk uses (A. B. C.).
+        if re.match(r"^(\d+|[A-Z])\.\s", stripped):
             blocks.append(("step", stripped, 0))
             continue
         if blocks and blocks[-1][0] in ("step", "bullet", "para"):
@@ -164,6 +172,11 @@ def layout(markdown_body: str) -> list[list[tuple]]:
     for kind, text, lead in blocks:
         if kind == "gap":
             y -= BODY_LEAD * 0.45
+            continue
+        if kind == "rule":
+            # A divider between the per-build lists and the standing walk.
+            y -= BODY_LEAD * 0.5
+            emit("R", 0, 0, "", BODY_LEAD)
             continue
         if kind == "h2":
             y -= BODY_LEAD * 0.55
@@ -196,10 +209,16 @@ def write_pdf(pages: list, path: Path) -> None:
     for lines in pages:
         parts = ["BT"]
         for font, size, indent, text, y in lines:
+            if font == "R":
+                continue
             parts.append(f"/F{'H' if font == 'H' else 'B'} {size} Tf")
             parts.append(f"1 0 0 1 {MARGIN_X + indent} {y:.1f} Tm")
             parts.append(f"({esc(text)}) Tj")
         parts.append("ET")
+        for font, _, _, _, y in lines:
+            if font == "R":
+                parts.append(f"0.7 G 0.75 w {MARGIN_X} {y + BODY_LEAD * 0.4:.1f} m "
+                             f"{PAGE_W - MARGIN_X} {y + BODY_LEAD * 0.4:.1f} l S")
         stream = "\n".join(parts).encode("latin-1", "replace")
         content = add(b"<< /Length %d >>\nstream\n" % len(stream) + stream +
                       b"\nendstream")

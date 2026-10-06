@@ -1,89 +1,69 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# Handoff — iPad mini's extra column
+# Handoff — App Store dry run
 
-Written 2026-09-28 at the close of session 7, replacing the session 6 handoff
-(the App Store Connect Distribution tab, now done). Read this first.
+Written 2026-10-06 at the close of session 8, replacing the session 7 handoff
+(the iPad mini's extra column, now fixed in #105). Read this first.
 
 ## Where things stand
 
-`main` @ `08f5daf`, clean, no worktrees. **TestFlight build 0.9.0 (4) is
-uploaded** and running on internal testers; it has been added for external
-testers, so Brandi, Scoble and Cognixion should have it shortly.
+Session 8 set out to make the app ready for an App Store **dry run** — submit
+with *Manually release this version*, so an approval ships nothing — and grew
+into the work the reviewer and the testers would hit first. PRs #105–#118:
 
-Session 7 was the board rework and everything that fell out of it — PRs
-#97–#104, 916 tests. The board now answers to WordPower Basic 48, folders take
-the colour of the page they open (defaulting to uniform blue, because the SLP
-advising us preferred it), and Stage IV+ draws the tray as text with a
-backspace.
+- **Trust and keys.** The `OPENAI_API_KEY` override exists only in DEBUG (#106).
+  *Enable AI Features* is explicit, versioned consent before anything reaches
+  OpenAI; revoking leaves the key dormant (#107). A gifted key file installs
+  from every path, including before onboarding finishes (#108).
+- **The board.** Back shares Home's cell (#109). Tile Density became three
+  fixed Board Layouts per device kind (#110); scenes declare the grid they were
+  designed for (#111) and print from it (#112). Placement pass (#114), then 84
+  new words, four noun folders on Groups and art in all five sets (#115).
+- **Caregiver side.** Manage Vocabulary shows every route to a word; the
+  default board is **BlasterAI 60** (#116). Copies are numbered
+  `BlasterAI 60 (1)` with a "Copied from" line (#117).
+- **Tester notes** are per build now: *What's new* and *What to test* at the top
+  of `docs/beta-review-notes.md` §2, earlier builds below (#118).
 
-Releases are scripted and the sequence is two commands, in
-`docs/release-runbook.md` §4.
+**CloudKit Production** has both post-promotion fields
+(`BlasterScene.designedFor`, `ChildProfile.linkColorModeRaw`), deployed
+2026-10-06. The second had shipped in build 4 a week before its deploy — the
+runbook §0 now says to compare `tools/expected_cloudkit_schema.py` with
+Production before every upload.
 
-## The task: iPad mini gets 13 columns where the others get 12
+## First: build 0.9.0 (5)
 
-At default density the mini lays out **13×5 · 65/pg · 79pt** where an 11" and a
-13" both give **12×5 · 60/pg**. The extra column shifts every tile one place, so
-a child who learns the board on one size does not know it on another — and tile
-position is motor planning, which is the whole reason the grid is pinned at all.
+From the **main checkout**, clean, on `main` (preflight refuses otherwise):
 
-### Why it happens
+    python3 tools/preflight_release.py
+    python3 tools/release.py
+    python3 tools/make_tester_notes.py
 
-`GridLayoutCalculator` chooses the column count that **maximises capacity**
-(`cols × rows`) among those whose tile width falls inside a ±12% band around the
-tier's base size (`tickMultiplier`). The mini's base is
-`iPadMiniBaseSize = 88`, so the band is **78.6 – 98.6pt**.
+Paste `build/what-to-test.txt` into the build's **What to Test**, and send
+`build/BlasterAI-TestFlight.pdf` to anyone new. Testers who had a key will see
+Enable AI Features once; until they accept, the board runs one word at a time.
+The notes say so.
 
-Thirteen columns lands at **79pt** — 0.4pt inside the bottom of that band — and
-13×5 = 65 beats 12×5 = 60. It wins by a hair, on a rule that was never asked
-whether the answer should match the other iPads.
+## Then: the dry-run submission
 
-### The one-line version, and why it may not be enough
+1. **Screenshots** with `tools/screenshot_sweep.sh` — 13" iPad and 6.9" iPhone;
+   the Mac listing reuses the iPad set.
+2. **`docs/app-store-listing.md`** (direct to main): name, subtitle,
+   description in the pitch order of `docs/final-countdown-plan.md` §"The order
+   of the pitch", keywords, support and privacy URLs, category Education, price
+   Free, availability US / Canada / Australia / UK, age-rating answers, and the
+   privacy-label answers with their reasoning ("Data Not Collected").
+3. **Review Notes**, from `beta-review-notes.md` §1: the gifted key attached as
+   a file and how to install it, why Education and not Kids, what keyless does.
+4. **Mint the reviewer's key** with `tools/make_gifted_key.py` on its own OpenAI
+   project with a low cap; add it to the ledger.
+5. **What's New in This Version** — the same list as build 5's *What's new*.
+6. **Submit**, Version Release set to manual.
 
-Raising the mini's base excludes 13 columns from the band:
+## Also queued
 
-    iPadMiniBaseSize: 88 -> 92        // band becomes 82.1 - 103
-
-79pt then falls outside it, and 12 columns (~86pt) is the widest that qualifies.
-
-**Check this before trusting it.** Twelve columns means ~86pt tiles rather than
-79pt, so each cell is taller — and the mini may no longer fit **five** rows. If
-it drops to four, capacity goes 65 → 48 and the 59-tile home page stops fitting
-on one screen. Today's overlay reads `59t/1p`; the fix could make it `59t/2p`.
-
-That trade is the actual decision, and it is not obviously worth taking: a
-shifted grid is still one reach away, where a second page is not. **Answer
-"does 12×5 fit on the mini?" first** — the debug overlay prints everything
-needed, so it is one build and one look.
-
-If five rows do not survive, this is a layout question rather than a constant,
-and the options worth weighing are a shorter label band on the mini, tighter
-vertical spacing, or accepting 13 columns there and saying so.
-
-### Where to look
-
-- `claudeBlast/Services/GridLayoutCalculator.swift` — the tier constants are
-  lines 72–100, the column search is the `for cols in 1...30` loop.
-- The 13" tier (`iPadLargeBaseSize = 111`) was added the same way in session 7
-  and is the precedent for how a tier gets dialled in.
-- `tools/show_page_grid.py` renders the 12-column layout the mini should match.
-
-## Also open, smaller
-
-- **`bus` is on no page** — the only vehicle in the vocabulary, so no category
-  wants it.
-- **Word order inside leaf pages.** Brandi asked; the tool and technique are
-  ready (`show_page_grid.py --page`, hand-placed prefix then class selector).
-- **`is` is typed as a function word**, so it sits grey rather than green.
-- **The Time folder is blue by accident** — its words are typed `adjective`
-  because `PartOfSpeech` has no adverb case.
-- **At Stage IV+ the interaction mode is invisible from the board.** The
-  caregiver menu is the only signal.
-
-See `docs/board-rework-followups.md` for the full list and what was corrected.
-
-## Not this session
-
-**The keyboard.** Its open question is whether `AVSpeechSynthesizer` can voice a
-phonetic keyboard at all — long and short vowels, `ph`/`ch`/`sh`. Answer that
-before designing any keys. Brandi has offered input and should be asked before
-the layout is chosen.
+- **Site cleanup pass** (`~/src/blasterai-site`, direct to main): main pages,
+  guides, and the "how we built it" guide. `docs/guides/make-your-first-scene.md`
+  and `scenes-pages-and-packs.md` were updated here for **BlasterAI 60** and the
+  `(1)` copy names; the site copies were not.
+- **Brandi** has the abstract-word cut sheet; we went with the symbol approach
+  for because/but so she can judge them in context.
