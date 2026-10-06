@@ -267,6 +267,7 @@
             "forget",
             "understand",
             "jump",
+            "climb",
             "dance",
             "ride",
             "drive",
@@ -277,6 +278,17 @@
             "turn",
             "blow",
             "bowl",
+            "build",
+            "hide",
+            "share",
+            "hug",
+            "hit",
+            "cut",
+            "pour",
+            "cook",
+            "line_up",
+            "lets",
+            "actions",
             "wash",
             "wash_hands",
             "wash_hair",
@@ -294,7 +306,7 @@
             "hear",
             "smell",
             "chew",
-            "cook",
+            "bite",
             "feel",
             "hurt",
             "cry",
@@ -312,9 +324,7 @@
             "meet",
             "show",
             "leave",
-            "live",
-            "line_up",
-            "actions"
+            "live"
           ]
         },
         {
@@ -406,12 +416,13 @@
             "together",
             "apart",
             "alone",
-            "this",
             "or",
-            "at",
+            "because",
+            "but",
             "now",
             "later",
             "soon",
+            "will",
             "first",
             "next",
             "last",
@@ -420,7 +431,6 @@
             "yesterday",
             "tonight",
             "again",
-            "not",
             "better",
             "best",
             "worse",
@@ -428,6 +438,7 @@
             "more",
             "many",
             "few",
+            "one",
             "excellent",
             "terrific",
             "fine",
@@ -436,17 +447,25 @@
             "cute",
             "smelly",
             "stinky",
+            "sticky",
+            "sharp",
+            "closed",
             "asleep",
             "busy",
             "crazy",
             "lonely",
             "surprised",
             "uncomfortable",
+            "this",
+            "at",
             "describe"
           ]
         },
         {
-          "class": "describe"
+          "class": "describe",
+          "exclude": [
+            "not"
+          ]
         }
       ]
     },
@@ -498,7 +517,12 @@
           "class": "drinks"
         },
         {
-          "space": 11
+          "keys": [
+            "cup"
+          ]
+        },
+        {
+          "space": 10
         },
         {
           "keys": [
@@ -521,7 +545,13 @@
             "slide",
             "swing",
             "bus",
-            "bathroom"
+            "bathroom",
+            "home_",
+            "car",
+            "train",
+            "bicycle",
+            "airplane",
+            "boat"
           ]
         }
       ]
@@ -544,21 +574,53 @@
       "key": "body_health",
       "tiles": [
         {
-          "class": [
-            "body",
-            "health"
-          ]
-        },
-        {
           "keys": [
+            "head",
+            "hair",
+            "face",
+            "eye",
+            "ear",
+            "nose",
+            "mouth",
+            "tooth",
+            "arm",
+            "hand",
+            "finger",
+            "body",
+            "back",
+            "tummy",
+            "stomach",
+            "leg",
+            "knee",
+            "foot",
+            "potty",
+            "pee",
+            "poop",
+            "bathroom",
+            "toilet",
             "sick",
             "hurt",
             "tired",
             "feel",
             "uncomfortable",
+            "itchy",
+            "cough",
+            "fever",
+            "cold",
+            "headache",
+            "sore_throat",
+            "stomachache",
+            "toothache",
+            "medicine",
+            "bandaid",
             "doctor",
-            "bathroom",
-            "toilet"
+            "health"
+          ]
+        },
+        {
+          "class": [
+            "body",
+            "health"
           ]
         }
       ]
@@ -700,6 +762,105 @@
           "to": "feelings",
           "audible": false,
           "linkColor": "adjective"
+        },
+        {
+          "link": "animals",
+          "to": "animals",
+          "audible": false,
+          "linkColor": "noun"
+        },
+        {
+          "link": "clothes",
+          "to": "clothes",
+          "audible": false,
+          "linkColor": "noun"
+        },
+        {
+          "link": "things",
+          "to": "things",
+          "audible": false,
+          "linkColor": "noun"
+        },
+        {
+          "link": "vehicles",
+          "to": "vehicles",
+          "audible": false,
+          "linkColor": "noun"
+        }
+      ]
+    },
+    {
+      "key": "animals",
+      "tiles": [
+        {
+          "keys": [
+            "dog",
+            "cat",
+            "bird",
+            "fish",
+            "horse",
+            "cow",
+            "pig",
+            "duck",
+            "chicken",
+            "sheep"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "clothes",
+      "tiles": [
+        {
+          "keys": [
+            "shoes",
+            "socks",
+            "shirt",
+            "pants",
+            "coat",
+            "hat",
+            "pajamas"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "things",
+      "tiles": [
+        {
+          "keys": [
+            "bed",
+            "blanket",
+            "book",
+            "phone",
+            "tv",
+            "music",
+            "toothbrush",
+            "cup",
+            "plate",
+            "spoon",
+            "fork"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "vehicles",
+      "tiles": [
+        {
+          "keys": [
+            "car",
+            "bus",
+            "truck",
+            "train",
+            "bicycle",
+            "airplane",
+            "boat",
+            "helicopter",
+            "fire_truck",
+            "ambulance",
+            "police_car"
+          ]
         }
       ]
     }

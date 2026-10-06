@@ -99,6 +99,11 @@ struct BoardPlacementTests {
         #expect(pos("right") == pos("wrong"))
         #expect(pos("back") == .noun)
         #expect(pos("back_") != .noun)
+        // `hurt` sits with sick / tired on Feelings and Body & Health, where it
+        // means "I'm hurt", not "to hurt someone". `feel` stays the carrier verb.
+        #expect(pos("hurt") == pos("sick"))
+        #expect(pos("hurt") == .adjective)
+        #expect(pos("feel") == .verb)
     }
 
     /// The duplicate senses are gone from the vocabulary; the kept ones remain.
@@ -151,6 +156,60 @@ struct BoardPlacementTests {
             let start = index(run[0])
             #expect(run.indices.allSatisfy { index(run[$0]) == start + $0 }, "\(run)")
         }
+    }
+
+    /// Groups opens four noun folders added in session 8, each page holding its
+    /// words, and the everyday vehicles also sit on Places with `home_`.
+    @Test func groupsOpensTheNounFolders() {
+        let b = board()
+        let links = (b["groups"] ?? []).map(\.link)
+        for (page, words) in [
+            ("animals", ["dog", "cat", "bird", "fish", "horse", "cow", "pig", "duck", "chicken", "sheep"]),
+            ("clothes", ["shoes", "socks", "shirt", "pants", "coat", "hat", "pajamas"]),
+            ("things", ["bed", "blanket", "book", "phone", "tv", "music", "toothbrush", "cup", "plate", "spoon", "fork"]),
+            ("vehicles", ["car", "bus", "truck", "train", "bicycle", "airplane", "boat", "helicopter",
+                          "fire_truck", "ambulance", "police_car"]),
+        ] {
+            #expect(links.contains(page), "groups → \(page)")
+            #expect(keys(b[page]) == words, "\(page)")
+        }
+        for word in ["home_", "car", "train", "bicycle", "airplane", "boat"] {
+            #expect(keys(b["places"]).contains(word), "\(word) on places")
+        }
+    }
+
+    /// Body & Health is laid out by hand: head to toe on row 1, then the
+    /// toileting words together, then how it feels, then who helps.
+    @Test func bodyHealthKeepsItsClusters() {
+        let body = keys(board()["body_health"])
+        let index = { (k: String) in body.firstIndex(of: k) ?? -100 }
+        #expect(Array(body.prefix(11)) == ["head", "hair", "face", "eye", "ear", "nose",
+                                           "mouth", "tooth", "arm", "hand", "finger"])
+        for run in [["leg", "knee", "foot"], ["potty", "pee", "poop", "bathroom", "toilet"],
+                    ["sick", "hurt", "tired"], ["medicine", "bandaid", "doctor"]] {
+            let start = index(run[0])
+            #expect(run.indices.allSatisfy { index(run[$0]) == start + $0 }, "\(run)")
+        }
+    }
+
+    /// Session 8's new verbs join the Actions clusters on page 2, and the core
+    /// connecting words (`or because but`, `will`, `one`) sit on Describe — not
+    /// on a page of their own.
+    @Test func newWordsJoinTheirClusters() {
+        let b = board()
+        let actions = keys(b["actions"]), describe = keys(b["describe"])
+        func isRun(_ words: [String], _ run: [String]) -> Bool {
+            guard let start = words.firstIndex(of: run[0]) else { return false }
+            return run.indices.allSatisfy { start + $0 < words.count && words[start + $0] == run[$0] }
+        }
+        for run in [["jump", "climb"], ["build", "hide", "share", "hug"], ["chew", "bite"], ["cook", "line_up", "lets"]] {
+            #expect(isRun(actions, run), "actions \(run)")
+            #expect(actions.firstIndex(of: run[0]).map { $0 >= 59 } == true, "\(run) on page 2")
+        }
+        for run in [["or", "because", "but"], ["soon", "will"], ["few", "one"], ["sticky", "sharp", "closed"]] {
+            #expect(isRun(describe, run), "describe \(run)")
+        }
+        #expect(!describe.contains("not"))
     }
 
     /// The two "right"s sit with their opposites on Describe: the direction

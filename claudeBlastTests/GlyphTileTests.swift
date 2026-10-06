@@ -27,6 +27,14 @@ struct GlyphTileTests {
         #expect(GlyphTile.character(for: "number_10") == "10")
     }
 
+    /// `one` is a describe word ("one more"), not `number_1`, but it is drawn
+    /// as the same numeral — a picture of one thing reads as "a", not "one".
+    @Test("The word one is drawn as its numeral")
+    func oneIsDrawnAsANumeral() {
+        #expect(GlyphTile.character(for: "one") == "1")
+        #expect(GlyphTile.isGlyphKey("one"))
+    }
+
     /// The reason the keys are namespaced. A bare `a` or `i` would collide with
     /// real vocabulary — `i` is the pronoun — and "the letter A" and "the word a"
     /// are different concepts behind a language-neutral key.

@@ -70,6 +70,20 @@ SET_STYLES: dict[str, str] = {
 # abstract concepts where DALL-E improvises with secondary icons, or cases
 # where the shared subject says "clay" / "pastel". Looked up by lowercase key.
 HC_SUBJECT_OVERRIDES: dict[str, str] = {
+    # Session 8: the shared subject came back with black faces (lost on the
+    # black ground) or, for pee, a visible stream. Spelled out for HC only.
+    "pee": (
+        "A child standing at a child-height toilet seen from behind and slightly to the side, fully clothed, modest, nothing explicit, no liquid or stream anywhere, a small droplet icon floating above. Every figure is a WHITE shape with black line details; faces are white"
+    ),
+    "itchy": (
+        "A child scratching their arm with the other hand, a few small red dots on the arm, wavy lines showing the itch. The child is a WHITE figure with black line details; the face is white, never black"
+    ),
+    "share": (
+        "Two children, one handing a toy block to the other, both hands on the block, both smiling. Both children are WHITE figures with black line details; both faces are white, never black"
+    ),
+    "upset": (
+        "A child with arms crossed, a frowning face and furrowed brows, a small scribble cloud above the head. The child is a WHITE figure with black line details; the face is white, never black"
+    ),
     # Directional arrows. The shared subjects specify "bright blue color" —
     # chosen for playful_3d — and a named colour in the subject beats the
     # style's "white dominates" rule every time. strip_clay_words() removes the
@@ -432,9 +446,10 @@ def generate_image(prompt: str, api_key: str, session: requests.Session) -> byte
 
 def run_set(style_name: str, keys: list[str], prompts: dict[str, str],
             api_key: str, skip_existing: bool, dry_run: bool,
-            sleep_seconds: float = SLEEP_SECONDS) -> tuple[int, int, list[str]]:
+            sleep_seconds: float = SLEEP_SECONDS,
+            out_root: Path | None = None) -> tuple[int, int, list[str]]:
     """Generate one full set. Returns (ok_count, skipped, failed_keys)."""
-    out_dir = OUTPUT_BASE / style_name
+    out_dir = (out_root or OUTPUT_BASE) / style_name
     out_dir.mkdir(parents=True, exist_ok=True)
     style_key = SET_STYLES.get(style_name, style_name)
 
@@ -512,6 +527,14 @@ def main() -> None:
                         help=f"Seconds between requests (default {SLEEP_SECONDS}). The default "
                              "dates from DALL-E 3 Tier 1 (5 images/min); on a higher tier it is "
                              "the single biggest speedup available on a full-set run.")
+    parser.add_argument("--out-dir", type=Path, default=None,
+                        help="Write to <out-dir>/<set>/<key>.png instead of the master "
+                             "folder — for candidates that must not overwrite an approved "
+                             "tile until they are compared against it "
+                             "(tools/compare_tiles.py) and chosen.")
+    parser.add_argument("--prompts-file", type=Path, default=None,
+                        help="JSON of key → prompt laid over tools/prompts.json for this "
+                             "run only, to try a new prompt without committing to it.")
     args = parser.parse_args()
 
     api_key = os.environ.get("OPENAI_API_KEY", "")
@@ -532,6 +555,9 @@ def main() -> None:
                      f"lowercased — one silently shadows the other. Keys must be "
                      f"unique and lowercase.")
         folded[k.lower()] = k
+
+    if args.prompts_file:
+        raw_prompts.update(json.loads(args.prompts_file.read_text()))
 
     # Build case-insensitive lookup: lowercase key → original prompt text
     prompts: dict[str, str] = {}
@@ -565,7 +591,7 @@ def main() -> None:
         ok, skip, failed = run_set(
             style_name, keys, prompts, api_key,
             skip_existing=args.skip_existing, dry_run=args.dry_run,
-            sleep_seconds=args.sleep,
+            sleep_seconds=args.sleep, out_root=args.out_dir,
         )
 
         print(f"\n{style_name}: ✓ {ok} generated  → {skip} skipped  ✗ {len(failed)} failed")

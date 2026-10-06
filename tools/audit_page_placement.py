@@ -48,6 +48,103 @@ VOCAB = Path("claudeBlast/Resources/vocabulary.json")
 
 NAVIGATION = {"home", "next_page", "previous_page"}
 
+# Words a child's board is expected to have: (word, class, page, priority, why).
+#
+# Priority A — needs, safety, and the words children reach for most; B — round
+# out a category; C — grammar the sentence engine normally supplies, worth having
+# for Stage IV+ text. Written by hand, like PROPOSALS: the judgement is the
+# list's; the tool only checks it against the vocabulary. `page` may name a page
+# that does not exist yet — a whole missing category is a finding too.
+#
+# Sources: the session-8 gap pass (Mark's review of every class list), and the
+# PRC-Saltillo 100 for the function words (`tools/audit_core_sets.py`).
+EXPECTED = [
+    # A — needs and safety
+    ("break", "social", "social", "A", "“I need a break” — the request that prevents a meltdown"),
+    ("potty", "health", "body_health", "A", "toileting; `bathroom`/`toilet` are places, not the need"),
+    ("pee", "health", "body_health", "A", "toileting, said plainly"),
+    ("poop", "health", "body_health", "A", "toileting, said plainly"),
+    ("medicine", "health", "body_health", "A", "asked for, refused, reported"),
+    ("bandaid", "health", "body_health", "A", "the first fix for every small hurt"),
+    ("home_", "places", "places", "A", "“go home” — `home` is taken by the Home button's key"),
+    ("hug", "actions", "actions", "A", "a request and a comfort; more frequent than kiss"),
+    ("bye", "social", "social", "A", "core (PRC-Saltillo); quicker than goodbye"),
+    ("calm", "feeling", "feelings", "A", "the middle the feelings list jumps over"),
+    ("worried", "feeling", "feelings", "A", "the middle the feelings list jumps over"),
+    ("upset", "feeling", "feelings", "A", "the word children use for most bad feelings"),
+    # A — body parts children report
+    ("hand", "body", "body_health", "A", "the most-reported body part"),
+    ("foot", "body", "body_health", "A", "reported for every fall and shoe"),
+    ("finger", "body", "body_health", "A", "cuts, pinches, splinters"),
+    ("tooth", "body", "body_health", "A", "toothache is there; the tooth is not"),
+    ("tummy", "body", "body_health", "A", "the child's word; `stomach` is the adult one"),
+    # A — whole categories with nothing in them
+    ("dog", "animals", "animals", "A", "no animals exist; the most-named animal"),
+    ("cat", "animals", "animals", "A", "no animals exist"),
+    ("car", "vehicles", "places", "A", "only `bus` exists; `cars` is a toy"),
+    ("book", "object", "play_activities", "A", "`read` exists with nothing to read"),
+    ("bed", "object", "things", "A", "bedtime, naps, “I want bed”"),
+    ("cup", "object", "drinks", "A", "asked for at every drink"),
+    ("shoes", "clothes", "clothes", "A", "no clothes exist; shoes are the daily fight"),
+    ("because", "core", "home", "A", "the first word of an explanation; Stage IV+"),
+    # B — round out categories
+    ("climb", "actions", "actions", "B", "missing beside jump and ride"),
+    ("share", "actions", "actions", "B", "a classroom word, and a request"),
+    ("build", "actions", "actions", "B", "blocks and playdoh exist with no verb"),
+    ("hide", "actions", "actions", "B", "hide-and-seek, and “where is it hiding?”"),
+    ("hit", "actions", "actions", "B", "reporting what happened — `kick` exists"),
+    ("bite", "actions", "actions", "B", "reporting what happened"),
+    ("cut", "actions", "actions", "B", "scissors exist with no verb"),
+    ("pour", "actions", "actions", "B", "mealtime independence"),
+    ("train", "vehicles", "places", "B", "vehicles"),
+    ("bike", "vehicles", "places", "B", "vehicles; `tricycle` is a play item"),
+    ("airplane", "vehicles", "places", "B", "`airport` exists"),
+    ("boat", "vehicles", "places", "B", "vehicles"),
+    ("bird", "animals", "animals", "B", "animals"),
+    ("fish", "animals", "animals", "B", "animals"),
+    ("horse", "animals", "animals", "B", "animals"),
+    ("cow", "animals", "animals", "B", "animals; `farm` exists"),
+    ("pig", "animals", "animals", "B", "animals; `farm` exists"),
+    ("duck", "animals", "animals", "B", "animals"),
+    ("socks", "clothes", "clothes", "B", "clothes"),
+    ("shirt", "clothes", "clothes", "B", "clothes"),
+    ("pants", "clothes", "clothes", "B", "clothes"),
+    ("coat", "clothes", "clothes", "B", "clothes"),
+    ("hat", "clothes", "clothes", "B", "clothes"),
+    ("pajamas", "clothes", "clothes", "B", "bedtime"),
+    ("blanket", "object", "things", "B", "comfort object"),
+    ("phone", "object", "things", "B", "“call mom”"),
+    ("tv", "object", "things", "B", "requested daily; `watch` exists"),
+    ("music", "object", "play_activities", "B", "requested daily; `sing`/`dance` exist"),
+    ("toothbrush", "object", "things", "B", "`brush_teeth` exists"),
+    ("spoon", "object", "food", "B", "mealtime"),
+    ("fork", "object", "food", "B", "mealtime"),
+    ("plate", "object", "food", "B", "mealtime"),
+    ("knee", "body", "body_health", "B", "falls"),
+    ("hair", "body", "body_health", "B", "`wash_hair` exists"),
+    ("face", "body", "body_health", "B", "body"),
+    ("nurse", "people", "people", "B", "school nurse; `doctor` exists"),
+    ("itchy", "health", "body_health", "B", "a symptom children have words for"),
+    ("cough", "health", "body_health", "B", "a symptom"),
+    ("closed", "describe", "describe", "B", "the state beside `open`"),
+    ("sticky", "describe", "describe", "B", "sensory"),
+    ("sharp", "describe", "describe", "B", "safety"),
+    ("his", "people", "people", "B", "pronouns: her / him exist"),
+    ("our", "people", "people", "B", "pronouns: we / us exist"),
+    ("their", "people", "people", "B", "pronouns: they / them exist"),
+    ("but", "core", "home", "B", "core (PRC-Saltillo)"),
+    ("one", "core", "home", "B", "core (PRC-Saltillo); counting"),
+    ("will", "core", "home", "B", "core (PRC-Saltillo); future"),
+    ("lets", "core", "home", "B", "core (PRC-Saltillo); “let's go”"),
+    # C — grammar the sentence engine supplies
+    ("am", "core", "home", "C", "core (PRC-Saltillo); the AI conjugates for sentence mode"),
+    ("are", "core", "home", "C", "core (PRC-Saltillo)"),
+    ("be", "core", "home", "C", "core (PRC-Saltillo)"),
+    ("did", "core", "home", "C", "core (PRC-Saltillo)"),
+    ("was", "core", "home", "C", "core (PRC-Saltillo)"),
+    ("were", "core", "home", "C", "core (PRC-Saltillo)"),
+]
+
 # Off every page on purpose, with the reason — reported as such rather than as
 # a word somebody forgot.
 UNPLACED_ON_PURPOSE = {
@@ -194,6 +291,31 @@ def main():
     if not found:
         print("None, today or with the proposals applied.")
     print()
+
+    print("## 5. Expected but missing\n")
+    have = set(vocab_by_class)
+    classes = set(vocab_by_class.values())
+    missing = [e for e in EXPECTED if e[0] not in have]
+    present = [e for e in EXPECTED if e[0] in have]
+    print(f"{len(missing)} of {len(EXPECTED)} expected words are not in the vocabulary.\n")
+    new_classes = sorted({c for _, c, _, _, _ in missing if c not in classes})
+    new_pages = sorted({pg for _, _, pg, _, _ in missing if pg not in pages})
+    if new_classes:
+        print("New word classes needed: " + ", ".join(f"`{c}`" for c in new_classes) + "\n")
+    if new_pages:
+        print("New pages needed: " + ", ".join(f"`{pg}`" for pg in new_pages) + "\n")
+    for tier in "ABC":
+        rows = [e for e in missing if e[3] == tier]
+        if not rows:
+            continue
+        print(f"### Priority {tier} ({len(rows)})\n")
+        print("| Word | Class | Page | Why |\n|---|---|---|---|")
+        for word, cls, page, _, why in rows:
+            flag = "" if page in pages else " (new)"
+            print(f"| `{word}` | {cls} | {page}{flag} | {why} |")
+        print()
+    if present:
+        print("Already in the vocabulary: " + ", ".join(f"`{e[0]}`" for e in present) + "\n")
 
     print("## Proposed additions by page\n")
     for page in pages:

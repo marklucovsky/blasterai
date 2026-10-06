@@ -30,8 +30,10 @@ struct SceneExportPackWordsTests {
     /// Four pages arrived empty, and an empty board has no Home cell, so the
     /// receiving device had no way back into Admin.
     @Test func packWordsAreCarriedEvenThoughTheyAreSystem() {
-        let pack = try! #require(PackCatalog.all.first { !$0.words.isEmpty })
-        let word = try! #require(pack.words.first)
+        // A pack word the built-in vocabulary does not also have — since session
+        // 8 some pack words (the Vehicles pack, cow and pig) are built in too.
+        let word = try! #require(PackCatalog.all.lazy
+            .flatMap(\.words).first { !BundledVocabulary.contains($0.key) })
 
         // Exactly as `PackInstaller` mints it.
         let tile = TileModel(key: word.key, value: word.displayName, wordClass: word.wordClass)
@@ -80,12 +82,26 @@ struct SceneExportPackWordsTests {
         #expect(BundledVocabulary.keys.count > 400)
     }
 
-    /// Pack words are not in `vocabulary.json`. If they ever were, the whole
-    /// distinction this rests on would be moot and this test says so.
-    @Test func packWordsAreNotInTheCoreVocabulary() {
-        let pack = try! #require(PackCatalog.all.first { !$0.words.isEmpty })
-        let overlap = pack.words.map(\.key).filter { BundledVocabulary.contains($0) }
-        #expect(overlap.isEmpty)
+    /// A word can be in a pack *and* built in. Session 8 brought the Vehicles
+    /// pack and a few Farm, Mealtime and Tide Pools words into the vocabulary;
+    /// the packs keep them, because the "Things that go" AI example builds its
+    /// page from the Vehicles pack's word list.
+    ///
+    /// That is safe because both paths already treat a built-in word as present:
+    /// installing a pack skips any key the store has, and an exported scene does
+    /// not carry a word the recipient's vocabulary already holds. This pins the
+    /// second half for exactly the overlapping words.
+    @Test func aPackWordThatIsAlsoBuiltInIsNotCarried() {
+        let shared = PackCatalog.all.flatMap(\.words).filter { BundledVocabulary.contains($0.key) }
+        #expect(!shared.isEmpty, "the overlap this test is about exists")
+        let word = try! #require(shared.first)
+        let tile = TileModel(key: word.key, value: word.displayName, wordClass: word.wordClass)
+        tile.isSystem = true
+        let scene = BlasterScene(name: "Shared", homePageKey: "home")
+        scene.pages = [PageSpec(key: "home", tiles: [TileEntry(key: word.key, link: "", isAudible: true)])]
+        let exported = SceneExporter.export(scene, defaultTileKeys: BundledVocabulary.keys,
+                                            tileLookup: [tile.key: tile])
+        #expect(exported.tiles?.contains { $0.key == word.key } != true)
     }
 }
 }
