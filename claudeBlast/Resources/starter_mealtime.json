@@ -12,27 +12,27 @@
     {
       "key": "spaghetti",
       "wordClass": "food",
-      "displayName": "Spaghetti"
+      "displayName": "spaghetti"
     },
     {
       "key": "plate",
       "wordClass": "object",
-      "displayName": "Plate"
+      "displayName": "plate"
     },
     {
       "key": "fork",
       "wordClass": "object",
-      "displayName": "Fork"
+      "displayName": "fork"
     },
     {
       "key": "cup",
       "wordClass": "object",
-      "displayName": "Cup"
+      "displayName": "cup"
     },
     {
       "key": "napkin",
       "wordClass": "object",
-      "displayName": "Napkin"
+      "displayName": "napkin"
     }
   ],
   "pages": [

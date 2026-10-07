@@ -12,37 +12,37 @@
     {
       "key": "crab",
       "wordClass": "animal",
-      "displayName": "Crab"
+      "displayName": "crab"
     },
     {
       "key": "starfish",
       "wordClass": "animal",
-      "displayName": "Starfish"
+      "displayName": "starfish"
     },
     {
       "key": "shell",
       "wordClass": "object",
-      "displayName": "Shell"
+      "displayName": "shell"
     },
     {
       "key": "seaweed",
       "wordClass": "plant",
-      "displayName": "Seaweed"
+      "displayName": "seaweed"
     },
     {
       "key": "fish",
       "wordClass": "animal",
-      "displayName": "Fish"
+      "displayName": "fish"
     },
     {
       "key": "snail",
       "wordClass": "animal",
-      "displayName": "Snail"
+      "displayName": "snail"
     },
     {
       "key": "anemone",
       "wordClass": "animal",
-      "displayName": "Anemone"
+      "displayName": "anemone"
     }
   ],
   "pages": [

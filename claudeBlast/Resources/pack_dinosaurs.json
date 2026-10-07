@@ -8,52 +8,52 @@
     {
       "key": "dinosaur",
       "wordClass": "animal",
-      "displayName": "Dinosaur"
+      "displayName": "dinosaur"
     },
     {
       "key": "trex",
       "wordClass": "animal",
-      "displayName": "T-Rex"
+      "displayName": "t-rex"
     },
     {
       "key": "triceratops",
       "wordClass": "animal",
-      "displayName": "Triceratops"
+      "displayName": "triceratops"
     },
     {
       "key": "stegosaurus",
       "wordClass": "animal",
-      "displayName": "Stegosaurus"
+      "displayName": "stegosaurus"
     },
     {
       "key": "pterodactyl",
       "wordClass": "animal",
-      "displayName": "Pterodactyl"
+      "displayName": "pterodactyl"
     },
     {
       "key": "brontosaurus",
       "wordClass": "animal",
-      "displayName": "Brontosaurus"
+      "displayName": "brontosaurus"
     },
     {
       "key": "raptor",
       "wordClass": "animal",
-      "displayName": "Raptor"
+      "displayName": "raptor"
     },
     {
       "key": "fossil",
       "wordClass": "object",
-      "displayName": "Fossil"
+      "displayName": "fossil"
     },
     {
       "key": "volcano",
       "wordClass": "object",
-      "displayName": "Volcano"
+      "displayName": "volcano"
     },
     {
       "key": "dino_egg",
       "wordClass": "object",
-      "displayName": "Dino Egg"
+      "displayName": "dino egg"
     }
   ]
 }

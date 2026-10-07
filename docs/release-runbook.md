@@ -346,6 +346,43 @@ These are in App Store Connect, in a browser, and they are part of the loop:
 - **Gifted evaluator keys** — before the first external invite, not before
   round 1. See `docs/gifted-keys.md`.
 
+### App Store screenshots
+
+Shot 2026-10-07 for 1.0: five per device, iPad 13" landscape and iPhone 6.9"
+portrait, dark mode, Classic Light except the art shot (Playful 3D). Framed by
+`tools/frame_screenshots.py` from `tools/appstore/shots.json`, which holds the
+order, captions and source paths; output lands in `build/shots/framed/`.
+
+**Real captures only.** Never frame an old site image or a mock-up — the first
+round did, in Playful 3D on a stale layout, and every decision about the frame
+was poisoned by the content inside it.
+
+1. **Scripted** — board and sentence: `BLASTER_APPEARANCE=dark
+   tools/screenshot_sweep.sh shots_appstore build/shots/raw`. Rotate the iPad
+   simulator to landscape by hand first (⌘←). The sentence is real, so the
+   simulator needs the scheme's key and AI permission accepted once.
+2. **Seeded** — coverage: run `load_coverage` on a fresh install, then
+   capture Coverage → By page by hand.
+3. **By hand** — art, coverage, AI consent, and the iPhone sentence (tap the
+   collapsed bubble open). Use Device → Trigger Screenshot; it saves to the
+   simulator's own library at
+   `~/Library/Developer/CoreSimulator/Devices/<UDID>/data/Media/DCIM/100APPLE/`.
+   Mark those `"status_bar": "strip"` in the spec.
+
+Traps met on the way:
+
+- **The AI consent sheet over the board** appears once, on a caregiver device
+  with a key and no permission — and never while demo mode is on. To shoot it:
+  clear permission, turn demo mode off in the app, return to the board.
+- **`-TileScriptAutorun` fires again** every time TileScript opens for the rest
+  of that launch. Relaunch without it before touching Admin.
+- **`simctl spawn … defaults write`** reached the app on one simulator and not
+  another, where the preferences cache reverted every edit. Prefer the app's
+  own settings; check the container's plist if something doesn't take.
+- **`load_coverage` needs `tileWait: .fast`, not `.instant`** — the engine
+  learns the page one UI update after navigation, so instant taps all count
+  against Home.
+
 ---
 
 ## 6. After the build is up
