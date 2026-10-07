@@ -7,7 +7,7 @@ the built-in styles are right.
 
 ## Switching style
 
-**Admin → Device → Tile Style.** It changes every tile everywhere,
+**Admin → Device → Image Set.** It changes every tile everywhere,
 immediately. It's a per-device setting, not per-child or per-scene.
 
 Five sets ship:
@@ -24,8 +24,9 @@ cosmetic detail. Classic — Light is the default.
 below.
 
 All five cover the entire vocabulary — every word that ships with the app. At
-launch that is **507 core vocabulary words plus the words in the bundled packs,
-drawn five times over: 2,792 pieces of tile art.** All five sets were generated
+launch that is **619 core vocabulary words plus the words in the bundled packs,
+five sets over: 3,252 pieces of tile art.** Three were drawn in full; Classic
+Medium and Dark are Classic retoned, where a tile shows skin. All five sets were generated
 by us, so none of them carries licensing baggage. None is more
 "correct" than another: some children track photographic-ish 3D better, some
 track flat symbols better, and the only way to know is to try them with the
@@ -55,11 +56,12 @@ prompting.
 
 ## Tile size
 
-**Admin → Device → Tile Density**, roughly 64pt to 160pt. Fewer, bigger tiles
-per screen, or more, smaller ones. Per-device.
+**Admin → Device → Board Layout** — Standard, Large or Largest. Fewer, bigger
+tiles per screen, or more, smaller ones. Per-device.
 
-The grid recomputes column count automatically and pages any overflow, so you
-can move this freely without breaking a scene's layout.
+The grid is fixed for each layout, so a word stays in the same place on every
+iPad, and overflow pages rather than reflowing. See
+[Board layout](board-layout.md).
 
 ---
 
@@ -70,7 +72,7 @@ only where color carries meaning. It covers the whole vocabulary rather than a
 subset — gaps in an accessibility style land on exactly the words a child uses
 most.
 
-Switch to it like any other style: **Admin → Device → Tile Style**.
+Switch to it like any other style: **Admin → Device → Image Set**.
 
 **Color is adjustable per child.** The Fitzgerald part-of-speech palette can be
 changed — any part of speech, or a single word whose grammar you disagree with —
@@ -94,7 +96,7 @@ generating art for every word that ships with the app, measuring it against
 that spec, and reviewing
 it tile by tile — is in the open-source repo and documented end to end in
 **[Commissioning an image set](commissioning-an-image-set.md)**. It costs about
-$20 of compute and an afternoon, and it needs someone comfortable with a
+$25 of compute and an afternoon, and it needs someone comfortable with a
 terminal, not an artist.
 
 That means a set can be built for **one child's actual vision** — their

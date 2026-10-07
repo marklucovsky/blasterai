@@ -11,7 +11,7 @@ guess our way to those sets from here, and shipping one compromise for everybody
 is how AAC art usually goes wrong.
 
 So the tooling is the deliverable. Everything used to build the shipped sets is
-in this repo, and this guide walks it end to end. A set is roughly **$20 of
+in this repo, and this guide walks it end to end. A set is roughly **$25 of
 compute and an afternoon**, most of which is waiting.
 
 **Who this is for.** Someone comfortable with a terminal and a git clone,
@@ -65,7 +65,7 @@ export OPENAI_API_KEY=sk-...             # a funded Platform account
 
 Every tool assumes the **repo root** as the working directory, not `tools/`.
 
-Budget roughly **$20–25** for a full set at gpt-image-1 `quality: medium`,
+Budget roughly **$25** for a full set at gpt-image-1 `quality: medium`,
 plus a few dollars of iteration. Wall-clock depends on sharding — see step 6.
 
 ---

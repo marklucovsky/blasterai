@@ -117,27 +117,29 @@ The editor grid is what the child sees, in the same order.
 
 ## How much should go on a page?
 
-The app fits as many tiles as the tile size allows and pages the overflow
+The board is a fixed grid, and anything past the end of it pages
 automatically — there are no "next page" tiles to manage.
 
-How many actually fit depends on the device and the tile size you've chosen —
-around **60 on an 11-inch iPad** and **65 on an iPad mini** at the default
-density. **Home takes one of those slots**, since it sits in the grid as cell
-zero on every page rather than floating above it, so a "60-tile page" holds 59
-words.
+How many fit depends on the device's **Board Layout**: **60 cells on any iPad**
+at Standard (12 × 5), 40 at Large, 36 at Largest; on an iPhone, 20, 12 or 8.
+**Home takes one of those cells**, since it sits in the grid as cell zero on
+every page rather than floating above it, so a 60-cell page holds 59 words.
 
-That means a page with sixty tiles isn't an error, it just becomes a page the
+That means a page with eighty tiles isn't an error, it just becomes a page the
 child has to scroll. Whether that's right depends on the child, and you know
 better than the app does. A new scene starts with only the words it is about,
 and you decide how much more it gets — see **Add pages and core words** in
 [Make your first scene](make-your-first-scene.md).
 
-**Tile size** is Admin → Device → **Tile Density**, roughly 64pt to 160pt.
-It's a per-device setting, not per-child or per-scene.
+**Tile size** is Admin → Device → **Board Layout** — Standard, Large or
+Largest. It's a per-device setting, and a scene can declare the grid it was
+designed for so its words keep their places. See
+[Board layout](board-layout.md).
 
 ---
 
 ## Next
 
+- **[Board layout](board-layout.md)**
 - **[Adding vocabulary](adding-vocabulary.md)**
 - **[Sharing a scene](sharing-scenes.md)**
