@@ -48,6 +48,23 @@ BEFORE THE FIRST RUN
    with the `.p8` in `~/.appstoreconnect/private_keys/AuthKey_<KEY_ID>.p8`.
    Never in this repo: a key in git history is a key you cannot take back.
 
+EVERY UPLOAD IS TAGGED
+----------------------
+A bug report names a build — "0.9.0 (5)" — and the question is what source
+that was. Until build 6 the only answer was the bump commit's message, which is
+a convention rather than a record: build 3's bump was a hand-written commit the
+convention misses, and nothing proved the archived tree *was* that commit.
+
+So an upload is refused unless the archive is exactly one commit: on main, and
+differing from HEAD by nothing but the version bump. Once the upload is
+accepted, the script commits that bump (`chore(release): 0.9.0 (6)`) and puts
+an annotated tag on it — `v0.9.0-6` — so `git checkout v0.9.0-6` is the source
+of build 6. The tag is checked for *before* the archive, because a collision
+found after the upload would leave a spent build number with no name.
+
+It does not push. Main and the tag are published by hand, with the command it
+prints, because that is the outward step.
+
 WHAT IT PRINTS AFTER EXPORT
 ---------------------------
 The two entitlements that decide whether CloudKit works: `aps-environment` must
@@ -111,6 +128,67 @@ APP_CONFIGS = ["56B216612F357AED00A89419 /* Debug */",
 
 def run(cmd: list[str], **kw) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, capture_output=True, text=True, **kw)
+
+
+def git(*args: str) -> str:
+    result = run(["git", *args])
+    if result.returncode != 0:
+        sys.exit(f"git {' '.join(args)} failed\n{result.stderr.strip()}")
+    return result.stdout.strip()
+
+
+def release_tag(marketing: str, build: int) -> str:
+    """`v0.9.0-6`. One per uploaded build — never per archive."""
+    return f"v{marketing}-{build}"
+
+
+def dirty_paths() -> list[str]:
+    """Every path `git status` reports: staged, unstaged or untracked."""
+    out = run(["git", "status", "--porcelain"]).stdout
+    return [line[3:].strip() for line in out.splitlines() if line.strip()]
+
+
+def check_traceable(tag: str) -> None:
+    """Refuse an upload that no commit could name afterwards.
+
+    Runs before the archive, for the same reason preflight does: an upload
+    spends a build number, so whatever would leave it untraceable has to stop
+    the run while stopping is still free. The second command of the split runs
+    with `--skip-preflight`, which skips preflight's clean-tree check — so this
+    repeats the part of it the tag depends on.
+    """
+    branch = git("rev-parse", "--abbrev-ref", "HEAD")
+    if branch != "main":
+        sys.exit(f"on branch '{branch}', not main — uploads are tagged on main")
+    stray = [p for p in dirty_paths() if p != str(PBXPROJ)]
+    if stray:
+        sys.exit("refusing to upload: the archive would include uncommitted changes,\n"
+                 "so no commit could name it afterwards. Only the version bump may be\n"
+                 "uncommitted:\n    " + "\n    ".join(stray[:10]))
+    if run(["git", "rev-parse", "-q", "--verify", f"refs/tags/{tag}"]).returncode == 0:
+        sys.exit(f"tag {tag} already exists — that build was already uploaded.\n"
+                 "Bump instead; App Store Connect will not take the number twice.")
+
+
+def record_release(marketing: str, build: int, tag: str) -> None:
+    """Commit the bump if it is not committed yet, then tag the commit.
+
+    The archive was HEAD plus the bump (`check_traceable` saw to that), so
+    committing the bump produces exactly the tree that shipped. If the bump was
+    already committed, the tree was clean and HEAD is the tree that shipped.
+    """
+    print("▸ tag")
+    if str(PBXPROJ) in dirty_paths():
+        git("add", str(PBXPROJ))
+        git("commit", "-q", "-m", f"chore(release): {marketing} ({build})")
+    if read_versions() != (marketing, build):
+        sys.exit(f"HEAD carries {read_versions()}, not {marketing} ({build}). Tag the\n"
+                 f"right commit by hand:  git tag -a {tag} -m 'BlasterAI {marketing} ({build})' <sha>")
+    stamp = datetime.now().strftime("%Y-%m-%d")
+    git("tag", "-a", tag, "-m",
+        f"BlasterAI {marketing} ({build}), uploaded to App Store Connect {stamp}")
+    print(f"    {tag} → {git('rev-parse', '--short', 'HEAD')}")
+    print(f"\nPublish both:  git push origin main {tag}")
 
 
 def config_span(lines: list[str], marker: str) -> tuple[int, int]:
@@ -320,23 +398,29 @@ def main() -> int:
         write_versions(marketing, build)
         print(f"▸ version   {marketing} ({build})")
 
+    tag = release_tag(marketing, build)
+    if args.upload:
+        # Before the archive rather than after the upload: both can only be
+        # answered cheaply while no build number has been spent.
+        key_id = os.environ.get("ASC_KEY_ID", "").strip()
+        issuer = os.environ.get("ASC_ISSUER_ID", "").strip()
+        if not key_id or not issuer:
+            sys.exit("--upload needs ASC_KEY_ID and ASC_ISSUER_ID set, with the "
+                     ".p8 in ~/.appstoreconnect/private_keys/")
+        check_traceable(tag)
+
     xcarchive = archive(marketing, build)
     ipa = export(xcarchive)
     show_entitlements(ipa)
     print(f"    {ipa}")
 
     if args.upload:
-        key_id = os.environ.get("ASC_KEY_ID", "").strip()
-        issuer = os.environ.get("ASC_ISSUER_ID", "").strip()
-        if not key_id or not issuer:
-            sys.exit("--upload needs ASC_KEY_ID and ASC_ISSUER_ID set, with the "
-                     ".p8 in ~/.appstoreconnect/private_keys/")
         upload(ipa, key_id, issuer)
+        record_release(marketing, build, tag)
     else:
-        print("\nNot uploaded. Re-run with --upload when the build looks right.")
-
-    if not args.no_bump:
-        print(f"\nCommit the bump:  git commit -am 'chore(release): {marketing} ({build})'")
+        print("\nNot uploaded. When the build looks right:")
+        print("    python3 tools/release.py --no-bump --upload --skip-preflight")
+        print(f"That run commits the bump and tags it {tag}.")
     return 0
 
 

@@ -115,6 +115,10 @@ because a Debug-only bump looks right in Xcode and ships the old number.
     python3 tools/release.py --bump build                    # archive + export, no upload
     # read the entitlement lines it prints
     python3 tools/release.py --no-bump --upload --skip-preflight
+    git push origin main v0.9.0-6                            # the command it prints
+
+Leave the bump uncommitted between the two runs. The upload run commits it and
+tags the commit — see [Every upload is tagged](#every-upload-is-tagged).
 
 ### Why split it
 
@@ -135,6 +139,48 @@ literally the one sent. Same commit and same configuration, so it is the same
 build — but if you would rather ship exactly what you looked at, run the single
 combined command and accept that the entitlement lines arrive after the upload
 rather than before.
+
+### Every upload is tagged
+
+A bug report names a build, and the question that follows is what source that
+was. The answer is a tag: **`v<version>-<build>`**, e.g. `v0.9.0-5`.
+
+    git checkout v0.9.0-5              # the source of build 5
+    git log v0.9.0-5..v0.9.0-7         # what changed between two builds
+
+`--upload` refuses to start unless the archive will be exactly one commit: on
+`main`, with nothing uncommitted except the version bump (untracked files
+count, because `TileImageSets/` is a synchronized folder and an untracked file
+in it ships). It also refuses if the tag already exists. Both are checked
+before the archive, while stopping is still free. Once App Store Connect
+accepts the upload, it commits the bump as `chore(release): 0.9.0 (6)` and
+puts an annotated tag on that commit. It does not push; it prints
+`git push origin main <tag>`.
+
+Builds 3–5 predate this and were tagged after the fact, from their bump
+commits:
+
+| Tag | Commit | Note |
+|---|---|---|
+| `v0.9.0-3` | `4d24db5` | Same code, not the same tree — see below |
+| `v0.9.0-4` | `08f5daf` | |
+| `v0.9.0-5` | `23665b0` | |
+
+Build 3 is build 2's archive, re-uploaded as App Store Connect after the
+internal-only dead end above; Xcode set the number on the way out. `4d24db5` is
+the hand-correction that followed, and it changes nothing but
+`CURRENT_PROJECT_VERSION` 1 → 3. So its parent is the code of builds 2 and 3,
+and the tag sits on the first commit whose project file says 3.
+
+Builds 1 and 2 are untagged. Both went up through Xcode's own Distribute flow,
+not from a recorded commit, and a tag that guesses is worse than none.
+
+**Fixing an old build.** Branch from its tag only when a fix cannot ship from
+`main`: `git switch -c release/0.9.x v0.9.0-5`, fix, release from that branch,
+cherry-pick the fix to `main`. With one live version on the App Store this is
+rare — users update forward, so the usual fix is the next build from `main`, and
+the tag is what lets you reproduce the bug against the old code. `release.py`
+tags only on `main`, so a release from such a branch is tagged by hand.
 
 Export options live in `tools/ExportOptions-appstore.plist`, checked in so two
 archives a year apart export the same way. Upload is `xcrun altool --upload-app`,
