@@ -1,0 +1,65 @@
+name: Screenshots — App Store
+description: The raw captures for the App Store listing, in pitch order.
+scene: "<default>"
+mode: sentence
+audio: off
+provider: openai
+tileWait: .human
+sentenceWait: .human
+
+# Raw captures only — framing and captions are `tools/frame_screenshots.py`.
+# Run through the sweep so the appearance is set every time:
+#
+#   BLASTER_APPEARANCE=dark tools/screenshot_sweep.sh shots_appstore build/shots/raw
+#
+# Rotate the iPad simulator to landscape before it launches; the board's grid is
+# defined for landscape and the store set is shot that way.
+#
+# THE SENTENCE IS REAL. `provider: openai` uses the key in the scheme, and a
+# script cannot grant AI permission — so on a fresh simulator, accept Enable AI
+# Features once (Admin → Device) before running this, or the sentence shot
+# falls back to single words. Mock sentences are hand-written and do not go in
+# a store listing.
+#
+# Every row that builds a sentence ENDS ON <home>. A tiles row presses Play as
+# its last step, so whatever page the row finishes on is the board behind the
+# sentence in the capture — and that should be home, not the food page.
+
+script:
+  - demo: on
+
+  # ---- 1. The board ----
+  - comment: Home board at rest
+  - screen: board
+  - screenshot: as-01-board-home
+
+  # ---- 2. A folder page ----
+  - comment: Groups — the noun folders, Home still in cell 0
+  - tiles:
+    - <groups>
+  - screenshot: as-02-folder-groups
+  - clear
+
+  # ---- 3. A sentence, generated, on the home board ----
+  - comment: mom + want + eat + pizza, back to home, then Play
+  - tiles:
+    # `eat` is the home folder that opens `food`, so it is tapped as a word and
+    # the page is opened by its own key — `<eat isAudible=t/>` would look for a
+    # page called `eat`.
+    - <people>, mom, <home>, want, eat, <food>, pizza, <home>
+  # Paced like the sentence-mode demos (`.human` waits, a 2s settle). At
+  # `.fast` Play fired twice — two requests, the first cancelled, an escalation
+  # badge on Play, and a capture taken before the second one landed.
+  - wait: 2s
+  - screenshot: as-03-sentence-home
+  - clear
+
+  # ---- 4. Caregiver data ----
+  - comment: Activity (seed history first with load_activity for a real-looking week)
+  - screen: admin/activity
+  - wait: 1s
+  - screenshot: as-04-activity
+
+  - screen: board
+  - demo: off
+  - comment: App Store capture complete

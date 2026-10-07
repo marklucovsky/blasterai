@@ -8,57 +8,57 @@
     {
       "key": "cow",
       "wordClass": "animal",
-      "displayName": "Cow"
+      "displayName": "cow"
     },
     {
       "key": "pig",
       "wordClass": "animal",
-      "displayName": "Pig"
+      "displayName": "pig"
     },
     {
       "key": "horse",
       "wordClass": "animal",
-      "displayName": "Horse"
+      "displayName": "horse"
     },
     {
       "key": "chicken",
       "wordClass": "animal",
-      "displayName": "Chicken"
+      "displayName": "chicken"
     },
     {
       "key": "sheep",
       "wordClass": "animal",
-      "displayName": "Sheep"
+      "displayName": "sheep"
     },
     {
       "key": "rooster",
       "wordClass": "animal",
-      "displayName": "Rooster"
+      "displayName": "rooster"
     },
     {
       "key": "tractor",
       "wordClass": "object",
-      "displayName": "Tractor"
+      "displayName": "tractor"
     },
     {
       "key": "barn",
       "wordClass": "object",
-      "displayName": "Barn"
+      "displayName": "barn"
     },
     {
       "key": "farmer",
       "wordClass": "people",
-      "displayName": "Farmer"
+      "displayName": "farmer"
     },
     {
       "key": "egg",
       "wordClass": "food",
-      "displayName": "Egg"
+      "displayName": "egg"
     },
     {
       "key": "hay",
       "wordClass": "plant",
-      "displayName": "Hay"
+      "displayName": "hay"
     }
   ]
 }

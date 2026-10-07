@@ -89,11 +89,22 @@ enum PackInstaller {
     @discardableResult
     static func install(_ pack: VocabPack, context: ModelContext, existing: [String: TileModel]) -> Int {
         var added = 0
-        for w in pack.words where existing[w.key] == nil {
-            let tile = TileModel(key: w.key, value: w.displayName, wordClass: w.wordClass)
-            tile.isSystem = true
-            context.insert(tile)
-            added += 1
+        for w in pack.words {
+            guard let tile = existing[w.key] else {
+                let tile = TileModel(key: w.key, value: w.displayName, wordClass: w.wordClass)
+                tile.isSystem = true
+                context.insert(tile)
+                added += 1
+                continue
+            }
+            // Pack words shipped in Title Case ("Alien", "T-Rex") until build 6,
+            // beside a lowercase core board. A system tile that differs from the
+            // pack only in case takes the pack's spelling; anything that differs
+            // by more than case was renamed on purpose and is left alone.
+            if tile.isSystem, tile.value != w.displayName,
+               tile.value.lowercased() == w.displayName.lowercased() {
+                tile.value = w.displayName
+            }
         }
         return added
     }

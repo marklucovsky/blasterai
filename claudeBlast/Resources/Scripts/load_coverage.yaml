@@ -1,0 +1,67 @@
+name: Load — coverage
+description: Word-mode taps that cover about 60% of the BlasterAI 60 home page, for the Coverage screenshot
+scene: "<default>"
+mode: singleword
+audio: off
+provider: mock
+tileWait: .fast
+# Not .instant: the engine learns the page from the board view one UI update
+# after navigation, so an instant tap after <food> is recorded against home.
+# The first run did exactly that — every press on every page counted as Home.
+sentenceWait: .instant
+
+# Data for COVERAGE → By page, the caregiver-data shot in the App Store set.
+#
+# Why not load_activity: its pool is `most-common` across the whole board and it
+# writes mock *sentences*, so Activity fills with lines like "I want many and
+# sharp." — fine for exercising the views, not something to put in a listing.
+# Coverage is about which words were pressed, so single-word mode says it
+# plainly and writes no sentences at all.
+#
+# The shape is an early communicator's: 30 of the home page's 50 words. Core
+# requests in every round (want, more, help, stop, yes/no, all done), a middle
+# band of verbs and pronouns in half of them, a few function words twice. The
+# 20 never pressed are mostly function words — the, a, for, with — which is the
+# gap Coverage exists to show. People, Food, Drinks and Play get a little use
+# each, so By page reads like a real board rather than a home page and nothing.
+#
+# Rows are shuffled with a fixed seed, so a re-run produces the same counts.
+# Run it on a fresh install: coverage is "ever pressed", so anything earlier in
+# the store stays counted.
+
+script:
+  - comment: Home page — 8 rounds, weighted
+  - tiles:
+    - yes, do, don't, go, you, my, me, on, down, that, more, like, drink, want, come, up, get, open, help, all_done, stop, out, in, it, eat, i, play, read, not, no
+    - stop, play, go, eat, it, like, down, help, open, come, you, on, me, my, don't, i, not, get, that, yes, more, do, up, in, all_done, drink, out, want, no, read
+    - no, drink, play, help, eat, me, want, go, more, my, it, like, all_done, stop, i, up, out, you, open, yes
+    - i, you, it, eat, go, want, like, drink, all_done, more, up, yes, help, stop, open, my, no, out, play, me
+    - stop, go, yes, i, more, all_done, help, want, no
+    - no, yes, stop, go, more, want, i, help, all_done
+    - more, want, help, all_done, no, stop, yes, go, i
+    - more, yes, no, go, want, all_done, stop, i, help
+  - comment: Four more pages, a little use on each
+  # Two words or more per row. In single-word mode a strip of ONE word is
+  # ephemeral — never logged — and Coverage reads the log, so a row like
+  # `<food>, pizza` counts for nothing. The first version of this script did
+  # exactly that and Food read 0%.
+  - tiles:
+    - <people>, mom, dad, <home>
+    - <food>, pizza, apple, <home>
+    - <drinks>, water, juice, <home>
+    - <play_activities>, ball, bubbles, <home>
+    - <people>, mom, sister, <home>
+    - <food>, cookie, crackers, banana, <home>
+    - <drinks>, milk, water, <home>
+    - <play_activities>, swing, slide, <home>
+    - <people>, grandma, teacher, <home>
+    - <food>, cheese, chips, pizza, <home>
+    - <play_activities>, blocks, ipad, <home>
+    - <people>, friend, mom, <home>
+    - <food>, macaroni, nuggets, <home>
+    - <drinks>, chocolate_milk, juice, <home>
+    - <play_activities>, puzzle, ball, <home>
+    - <food>, pizza, cookie, <home>
+    - <people>, dad, mom, <home>
+  - screen: board
+  - comment: Coverage load complete — Admin → Activity → Coverage → By page

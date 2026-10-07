@@ -8,52 +8,52 @@
     {
       "key": "car",
       "wordClass": "object",
-      "displayName": "Car"
+      "displayName": "car"
     },
     {
       "key": "truck",
       "wordClass": "object",
-      "displayName": "Truck"
+      "displayName": "truck"
     },
     {
       "key": "train",
       "wordClass": "object",
-      "displayName": "Train"
+      "displayName": "train"
     },
     {
       "key": "airplane",
       "wordClass": "object",
-      "displayName": "Airplane"
+      "displayName": "airplane"
     },
     {
       "key": "boat",
       "wordClass": "object",
-      "displayName": "Boat"
+      "displayName": "boat"
     },
     {
       "key": "bicycle",
       "wordClass": "object",
-      "displayName": "Bicycle"
+      "displayName": "bicycle"
     },
     {
       "key": "helicopter",
       "wordClass": "object",
-      "displayName": "Helicopter"
+      "displayName": "helicopter"
     },
     {
       "key": "fire_truck",
       "wordClass": "object",
-      "displayName": "Fire Truck"
+      "displayName": "fire truck"
     },
     {
       "key": "ambulance",
       "wordClass": "object",
-      "displayName": "Ambulance"
+      "displayName": "ambulance"
     },
     {
       "key": "police_car",
       "wordClass": "object",
-      "displayName": "Police Car"
+      "displayName": "police car"
     }
   ]
 }

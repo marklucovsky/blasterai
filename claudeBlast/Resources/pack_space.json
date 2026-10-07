@@ -8,52 +8,52 @@
     {
       "key": "rocket",
       "wordClass": "object",
-      "displayName": "Rocket"
+      "displayName": "rocket"
     },
     {
       "key": "astronaut",
       "wordClass": "people",
-      "displayName": "Astronaut"
+      "displayName": "astronaut"
     },
     {
       "key": "planet",
       "wordClass": "object",
-      "displayName": "Planet"
+      "displayName": "planet"
     },
     {
       "key": "moon",
       "wordClass": "object",
-      "displayName": "Moon"
+      "displayName": "moon"
     },
     {
       "key": "comet",
       "wordClass": "object",
-      "displayName": "Comet"
+      "displayName": "comet"
     },
     {
       "key": "alien",
       "wordClass": "object",
-      "displayName": "Alien"
+      "displayName": "alien"
     },
     {
       "key": "spaceship",
       "wordClass": "object",
-      "displayName": "Spaceship"
+      "displayName": "spaceship"
     },
     {
       "key": "telescope",
       "wordClass": "object",
-      "displayName": "Telescope"
+      "displayName": "telescope"
     },
     {
       "key": "satellite",
       "wordClass": "object",
-      "displayName": "Satellite"
+      "displayName": "satellite"
     },
     {
       "key": "galaxy",
       "wordClass": "object",
-      "displayName": "Galaxy"
+      "displayName": "galaxy"
     }
   ]
 }

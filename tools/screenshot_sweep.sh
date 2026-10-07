@@ -151,6 +151,14 @@ for DEVICE in "${DEVICES[@]}"; do
   #   BLASTER_CONTENT_SIZE=accessibility-medium …
   xcrun simctl ui "$UDID" content_size "${BLASTER_CONTENT_SIZE:-large}" 2>/dev/null || true
 
+  # Appearance. The App Store set is shot in dark: the white picture wells and
+  # the Fitzgerald bands carry the board, and on black they are all you see.
+  # Set it either way, every run — a simulator keeps whatever the last person
+  # left it in, and a store set that is half light and half dark is a re-shoot.
+  #
+  #   BLASTER_APPEARANCE=dark tools/screenshot_sweep.sh …
+  xcrun simctl ui "$UDID" appearance "${BLASTER_APPEARANCE:-light}" 2>/dev/null || true
+
   # A store screenshot should not advertise 47% battery and one bar. Apple's
   # own marketing convention is a full, uncluttered status bar.
   xcrun simctl status_bar "$UDID" override \

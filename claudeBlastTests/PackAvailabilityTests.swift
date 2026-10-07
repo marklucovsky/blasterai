@@ -77,5 +77,62 @@ struct PackAvailabilityTests {
         #expect(tile.isSystem)
         #expect(tile.wordClass == first.wordClass)
     }
+
+    /// Pack words are spelled like the core board: lowercase. They shipped in
+    /// Title Case until build 6, so "Alien" sat beside "airplane" on one page.
+    /// Letters are the exception — their words are capital letters.
+    @Test func bundledPackWordsAreLowercase() {
+        for pack in PackCatalog.all where pack.slug != "letters" {
+            let shouting = pack.words.filter { $0.displayName != $0.displayName.lowercased() }
+            #expect(shouting.isEmpty, "\(pack.slug): \(shouting.map(\.displayName))")
+        }
+    }
+
+    /// The starter scenes carry their own copy of the same words, and a scene
+    /// built from one materializes them before any pack is installed — so the
+    /// pack files alone being lowercase fixed nothing on the Tide Pools board.
+    @Test func starterSceneWordsAreLowercase() throws {
+        for name in ["starter_farm", "starter_mealtime", "starter_tidepools"] {
+            let url = try #require(Bundle.main.url(forResource: name, withExtension: "json"))
+            let json = try #require(try JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
+            let tiles = json["tiles"] as? [[String: Any]] ?? []
+            let names = tiles.compactMap { $0["displayName"] as? String }
+            #expect(!names.isEmpty, "\(name) carries no words — the check looked at nothing")
+            let shouting = names.filter { $0 != $0.lowercased() }
+            #expect(shouting.isEmpty, "\(name): \(shouting)")
+        }
+    }
+
+    /// A device that installed a pack while it was Title Case gets the new
+    /// spelling the next time the pack is installed.
+    @Test func reinstallingFixesACaseOnlyDifference() throws {
+        let ctx = try makeContext()
+        let pack = try #require(PackCatalog.all.first { $0.slug == "space" })
+        let word = try #require(pack.words.first)
+        let old = TileModel(key: word.key, value: word.displayName.capitalized, wordClass: word.wordClass)
+        old.isSystem = true
+        ctx.insert(old)
+        try? ctx.save()
+
+        _ = PackInstaller.install(pack, context: ctx, existing: lookup(ctx))
+
+        #expect(lookup(ctx)[word.key]?.value == word.displayName)
+    }
+
+    /// A rename that changes more than case was the caregiver's choice; a
+    /// reinstall must not undo it.
+    @Test func reinstallingKeepsARealRename() throws {
+        let ctx = try makeContext()
+        let pack = try #require(PackCatalog.all.first { $0.slug == "space" })
+        let word = try #require(pack.words.first)
+        let renamed = TileModel(key: word.key, value: "Zoom Ship", wordClass: word.wordClass)
+        renamed.isSystem = true
+        ctx.insert(renamed)
+        try? ctx.save()
+
+        _ = PackInstaller.install(pack, context: ctx, existing: lookup(ctx))
+
+        #expect(lookup(ctx)[word.key]?.value == "Zoom Ship")
+    }
 }
 }
