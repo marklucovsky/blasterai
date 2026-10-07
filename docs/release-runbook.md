@@ -348,7 +348,7 @@ These are in App Store Connect, in a browser, and they are part of the loop:
 
 ### App Store screenshots
 
-Shot 2026-10-07 for 1.0: five per device, iPad 13" landscape and iPhone 6.9"
+Shot 2026-10-07 for 1.0: five per device, iPad 13" landscape and iPhone (rendered at 6.9", uploaded at the 6.3" slot's 1206×2622)
 portrait, dark mode, Classic Light except the art shot (Playful 3D). Framed by
 `tools/frame_screenshots.py` from `tools/appstore/shots.json`, which holds the
 order, captions and source paths; output lands in `build/shots/framed/`.
