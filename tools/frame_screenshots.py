@@ -23,7 +23,7 @@ rejects anything else at upload. The output is always one of them, whatever the
 source:
 
     iPad 13"     2752 x 2064   landscape — the board's designed orientation
-    iPhone 6.9"  1320 x 2868   portrait
+    iPhone 6.9"  1320 x 2868   portrait, plus 1206 x 2622 for the 6.3" slot
 
 The Mac listing of a Designed-for-iPad app reuses the iPad set.
 
@@ -100,6 +100,15 @@ DEVICES = {
     "iphone": {"canvas": (1320, 2868), "caption_y": 0.065, "device_top": 0.12,
                "bottom": 0.045, "max_w": 0.84, "border": 0.045, "radius": 0.13,
                "type": 0.036},
+}
+
+# Extra sizes written beside the main one, by downscaling the finished image.
+# App Store Connect's iPhone slot is "iPhone with Dynamic Island (medium
+# display)" — 6.1"/6.3", which takes 1206 x 2622 and rejected the 6.9" images
+# outright (2026-10-07). 1206 x 2622 has exactly the 6.9" aspect ratio, so a
+# downscale is lossless in layout. Written to `<device>-<w>x<h>/`.
+EXTRA_SIZES = {
+    "iphone": [(1206, 2622)],
 }
 
 # With subtitles: the headline rises, the subtitle sits under it, and the
@@ -243,6 +252,10 @@ def render(shot: dict, style: dict, out_dir: Path) -> Path:
     out = out_dir / shot["device"] / f"{shot['id']}.png"
     out.parent.mkdir(parents=True, exist_ok=True)
     canvas.save(out, optimize=True)
+    for w, h in EXTRA_SIZES.get(shot["device"], []):
+        extra = out_dir / f"{shot['device']}-{w}x{h}" / f"{shot['id']}.png"
+        extra.parent.mkdir(parents=True, exist_ok=True)
+        canvas.resize((w, h), Image.LANCZOS).save(extra, optimize=True)
     return out
 
 
