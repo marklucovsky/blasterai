@@ -30,20 +30,41 @@ into the work the reviewer and the testers would hit first. PRs #105–#118:
 runbook §0 now says to compare `tools/expected_cloudkit_schema.py` with
 Production before every upload.
 
-## First: build 0.9.0 (5)
+## First: check the session can upload
 
-From the **main checkout**, clean, on `main` (preflight refuses otherwise):
+Build **0.9.0 (5)** is uploaded (2026-10-06, `main` @ `23665b0`). It stopped
+once at the upload step because Claude's shell did not have `ASC_KEY_ID` /
+`ASC_ISSUER_ID`: Claude's Bash loads `~/.zshrc` once, at session start, and the
+exports were added to it during the session. Start this one by checking, without
+printing the values:
 
-    python3 tools/preflight_release.py
-    python3 tools/release.py
-    python3 tools/make_tester_notes.py
+    [ -n "$ASC_KEY_ID" ] && [ -n "$ASC_ISSUER_ID" ] && echo ok
 
-Paste `build/what-to-test.txt` into the build's **What to Test**, and send
-`build/BlasterAI-TestFlight.pdf` to anyone new. Testers who had a key will see
-Enable AI Features once; until they accept, the board runs one word at a time.
-The notes say so.
+If it is not `ok`, run uploads with `!` in the prompt, or pass both inline.
 
-## Then: the dry-run submission
+Build 5's What to Test is `build/what-to-test.txt` (`make_tester_notes.py`).
+Testers who had a key will see Enable AI Features once; until they accept, the
+board runs one word at a time. The notes say so.
+
+## Then: the site (`~/src/blasterai-site`, direct to main)
+
+Mark is testing build 5 as an internal tester and moving external testers to it
+on 2026-10-07. Meanwhile:
+
+- **Vocabulary counts.** The board grew by 84 words to 619 and gained four noun
+  folders; every page that quotes a count, a page list or "Core-First" needs the
+  new numbers and the name **BlasterAI 60**.
+- **Guides: Board Layout and designed-for grids.** Teach that a device picks
+  Standard / Large / Largest (iPad 12×5, 10×4, 9×4; iPhone 4×5, 3×4, 2×4), that
+  a scene can declare the grid it was designed for so its words keep their
+  places, and that a caregiver can opt a device out. Printing starts from the
+  scene's grid.
+- `docs/guides/make-your-first-scene.md` and `scenes-pages-and-packs.md` were
+  updated here for BlasterAI 60 and `(1)` copy names; the site copies were not.
+- Then the main pages and the "how we built it" guide, for whatever session 8
+  made stale.
+
+## After that: collect the App Store material
 
 1. **Screenshots** with `tools/screenshot_sweep.sh` — 13" iPad and 6.9" iPhone;
    the Mac listing reuses the iPad set.
@@ -57,13 +78,11 @@ The notes say so.
 4. **Mint the reviewer's key** with `tools/make_gifted_key.py` on its own OpenAI
    project with a low cap; add it to the ledger.
 5. **What's New in This Version** — the same list as build 5's *What's new*.
+   A release build is `preflight_release.py`, then `release.py --bump build`,
+   then `release.py --no-bump --upload --skip-preflight` (runbook §4).
 6. **Submit**, Version Release set to manual.
 
 ## Also queued
 
-- **Site cleanup pass** (`~/src/blasterai-site`, direct to main): main pages,
-  guides, and the "how we built it" guide. `docs/guides/make-your-first-scene.md`
-  and `scenes-pages-and-packs.md` were updated here for **BlasterAI 60** and the
-  `(1)` copy names; the site copies were not.
 - **Brandi** has the abstract-word cut sheet; we went with the symbol approach
   for because/but so she can judge them in context.
