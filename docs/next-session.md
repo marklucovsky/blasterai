@@ -1,88 +1,83 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# Handoff — App Store dry run
+# Handoff — session 10
 
-Written 2026-10-06 at the close of session 8, replacing the session 7 handoff
-(the iPad mini's extra column, now fixed in #105). Read this first.
+Written 2026-10-08 at the close of session 9, replacing the App Store dry-run
+handoff. Read this first.
 
 ## Where things stand
 
-Session 8 set out to make the app ready for an App Store **dry run** — submit
-with *Manually release this version*, so an approval ships nothing — and grew
-into the work the reviewer and the testers would hit first. PRs #105–#118:
+Session 9 (PRs #119–#121) took the app to its first App Store submission:
 
-- **Trust and keys.** The `OPENAI_API_KEY` override exists only in DEBUG (#106).
-  *Enable AI Features* is explicit, versioned consent before anything reaches
-  OpenAI; revoking leaves the key dormant (#107). A gifted key file installs
-  from every path, including before onboarding finishes (#108).
-- **The board.** Back shares Home's cell (#109). Tile Density became three
-  fixed Board Layouts per device kind (#110); scenes declare the grid they were
-  designed for (#111) and print from it (#112). Placement pass (#114), then 84
-  new words, four noun folders on Groups and art in all five sets (#115).
-- **Caregiver side.** Manage Vocabulary shows every route to a word; the
-  default board is **BlasterAI 60** (#116). Copies are numbered
-  `BlasterAI 60 (1)` with a "Copied from" line (#117).
-- **Tester notes** are per build now: *What's new* and *What to test* at the top
-  of `docs/beta-review-notes.md` §2, earlier builds below (#118).
+- **Site** — Board Layout guide, 619-word counts, the guides synced, and a
+  false claim removed (the phone does not keep the iPad's word positions).
+- **Release tags** — `release.py --upload` refuses an untraceable archive,
+  then commits the bump and tags it `v<version>-<build>` (#119). Builds 3–5
+  backfilled: `v0.9.0-3/4/5`.
+- **Screenshots** — `tools/frame_screenshots.py`, ten real captures, dark mode,
+  "Modern. Familiar. Free." (#120). How: `docs/release-runbook.md`
+  §"App Store screenshots". Pack and starter words lowercased in the same PR.
+- **Listing** — `docs/app-store-listing.md`, every field as submitted, with
+  `tools/check_listing.py` (limits, and `--export` plain text to paste) (#121).
 
-**CloudKit Production** has both post-promotion fields
-(`BlasterScene.designedFor`, `ChildProfile.linkColorModeRaw`), deployed
-2026-10-06. The second had shipped in build 4 a week before its deploy — the
-runbook §0 now says to compare `tools/expected_cloudkit_schema.py` with
-Production before every upload.
+**App Store: 0.9.0 (5) is Waiting for Review**, manual release. Nothing ships
+on approval.
 
-## First: check the session can upload
+## This session, in order
 
-Build **0.9.0 (5)** is uploaded (2026-10-06, `main` @ `23665b0`). It stopped
-once at the upload step because Claude's shell did not have `ASC_KEY_ID` /
-`ASC_ISSUER_ID`: Claude's Bash loads `~/.zshrc` once, at session start, and the
-exports were added to it during the session. Start this one by checking, without
-printing the values:
+1. **gpt-image-2 migration — deadline October 23.** OpenAI shuts down
+   `gpt-image-1` that day; `gpt-image-2` is the documented replacement (not
+   `gpt-image-1-mini` / `-1.5`, which go December 1). The app's art generation
+   (`TileImageGenerator`), `ModelPricing`, tests, `generate_sets.py` and
+   `build_tone_variants.py` all name it.
+   - **Style first.** Render ~20 words × 5 styles with gpt-image-2 and compare
+     against the shipped tiles before switching. New art has to match the sets
+     it lands in.
+   - Check `/images/edits` and refine still behave (multi-image input,
+     `quality`).
+   - Mark upgrades the constrained OpenAI project allowlists, including the
+     reviewer's key. `tools/audit_openai_models.py` lists what the code calls.
+   - Builds 4 and 5 will lose art on the 23rd regardless — confirm it fails as
+     a message, not a crash.
+2. **Coverage drill-down: draw the real grid.** It reflows the page's words
+   instead of drawing the board's geometry (12×5, Home in cell 0), so a dimmed
+   region doesn't read as a place. Boards are fixed grids now; use the scene's
+   designed layout.
+3. **Coverage: count link taps.** Home reads "27 of 47" on a 59-cell page —
+   the 11 folders and keyboard are skipped, including eat/drink/play, which
+   speak *and* navigate. An unopened folder is as much a signal as an unpressed
+   word. A link press needs logging as one.
+4. **Score ourselves against the PRD.** `docs/prd.md`, requirement by
+   requirement: shipped, partial, deliberately dropped, not started.
+5. **Version switch — wait on App Review.** If review sends us back, iterate on
+   **0.9.x**. Move to **1.0.0 (6)** once 0.9.0 is approved and we're cutting
+   the build that will actually release. Open question: whether an
+   approved-unreleased 0.9.0 blocks creating 1.0.0 until withdrawn.
 
-    [ -n "$ASC_KEY_ID" ] && [ -n "$ASC_ISSUER_ID" ] && echo ok
+**Carried, smaller:**
 
-If it is not `ok`, run uploads with `!` in the prompt, or pass both inline.
+- **Onboarding copy** — the welcome screen still leads with "Pick tiles, hear
+  sentences" and "Bring your own AI key". Fix before the release build.
+- **Play double-request** — Play can launch two generation requests ~4ms apart;
+  the first is cancelled and the second counts as a repeat (stray ↻ badge).
+- **`-TileScriptAutorun` re-fires** every time TileScript opens during that
+  launch.
 
-Build 5's What to Test is `build/what-to-test.txt` (`make_tester_notes.py`).
-Testers who had a key will see Enable AI Features once; until they accept, the
-board runs one word at a time. The notes say so.
+## Next session after that
 
-## Then: the site (`~/src/blasterai-site`, direct to main)
+Ideas to get in front of, not market needs.
 
-Mark is testing build 5 as an internal tester and moving external testers to it
-on 2026-10-07. Meanwhile:
-
-- **Vocabulary counts.** The board grew by 84 words to 619 and gained four noun
-  folders; every page that quotes a count, a page list or "Core-First" needs the
-  new numbers and the name **BlasterAI 60**.
-- **Guides: Board Layout and designed-for grids.** Teach that a device picks
-  Standard / Large / Largest (iPad 12×5, 10×4, 9×4; iPhone 4×5, 3×4, 2×4), that
-  a scene can declare the grid it was designed for so its words keep their
-  places, and that a caregiver can opt a device out. Printing starts from the
-  scene's grid.
-- `docs/guides/make-your-first-scene.md` and `scenes-pages-and-packs.md` were
-  updated here for BlasterAI 60 and `(1)` copy names; the site copies were not.
-- Then the main pages and the "how we built it" guide, for whatever session 8
-  made stale.
-
-## After that: collect the App Store material
-
-1. **Screenshots** with `tools/screenshot_sweep.sh` — 13" iPad and 6.9" iPhone;
-   the Mac listing reuses the iPad set.
-2. **`docs/app-store-listing.md`** (direct to main): name, subtitle,
-   description in the pitch order of `docs/final-countdown-plan.md` §"The order
-   of the pitch", keywords, support and privacy URLs, category Education, price
-   Free, availability US / Canada / Australia / UK, age-rating answers, and the
-   privacy-label answers with their reasoning ("Data Not Collected").
-3. **Review Notes**, from `beta-review-notes.md` §1: the gifted key attached as
-   a file and how to install it, why Education and not Kids, what keyless does.
-4. **Mint the reviewer's key** with `tools/make_gifted_key.py` on its own OpenAI
-   project with a low cap; add it to the ledger.
-5. **What's New in This Version** — the same list as build 5's *What's new*.
-   A release build is `preflight_release.py`, then `release.py --bump build`,
-   then `release.py --no-bump --upload --skip-preflight` (runbook §4).
-6. **Submit**, Version Release set to manual.
-
-## Also queued
-
-- **Brandi** has the abstract-word cut sheet; we went with the symbol approach
-  for because/but so she can judge them in context.
+- **URL scene install + `blasterai.app/boards`.** Install a scene from a link,
+  and publish a few boards on the site to seed a tiny ecosystem:
+  - **BlasterAI 40** — learn from Vocal Flair 40 vs 60 and WordPower 40/60.
+    The real goal is a *mechanism*: derive a 40 from the 60 by a transform,
+    if possible, rather than positioning by hand.
+  - **BlasterAI On the Go** — a purpose-built, reduced-vocabulary board for
+    iPhone. (Related: a phone scene generated from the companion iPad's
+    coverage — see memory `project_phone_board_ideas`.)
+- **Spanish localization** — understand the process for app content and
+  display names. `docs/localization-impact.md` is the assessment;
+  `TileModel.key` stays language-neutral.
+- **A web player** — what someone might build if they forked the repo.
+  Player only: scenes are authored in the app, and the web launches an
+  instance from a supplied `.blasterscene`. In this repo or a web-only repo
+  that makes its own claims about accounts and privacy.
