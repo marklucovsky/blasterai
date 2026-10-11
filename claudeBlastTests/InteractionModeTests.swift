@@ -527,6 +527,30 @@ struct InteractionModeTests {
         withExtendedLifetime(container) {}
     }
 
+    /// Regression: two Play taps a few ms apart (before the first request's
+    /// task starts) launched two generations, and the second counted as a
+    /// repeat — a stray ↻ badge on a sentence asked for once.
+    @Test func doublePlayBeforeGenerationStartsIsOneRequest() async throws {
+        let container = try makeContainer()
+        let ctx = container.mainContext
+        let profile = ChildProfile(displayName: "Test", brownsStage: .fourPlus, isActive: true)
+        ctx.insert(profile)
+        try? ctx.save()
+        let resolver = ChildProfileResolver()
+        resolver.configure(modelContext: ctx)
+        let engine = SentenceEngine(provider: MockSentenceProvider(minLatency: 0, maxLatency: 0))
+        engine.configure(modelContext: ctx, profileResolver: resolver)
+
+        engine.addTile(TileModel(key: "eat", wordClass: "actions"))
+        engine.addTile(TileModel(key: "pizza", wordClass: "food"))
+        engine.triggerGo()
+        engine.triggerGo()
+        try await waitUntil { engine.canReplay }
+
+        #expect(engine.repetitionCount == 0)
+        withExtendedLifetime(container) {}
+    }
+
     private func waitUntil(timeout: Duration = .seconds(2),
                            _ condition: @escaping () -> Bool) async throws {
         let start = ContinuousClock.now
