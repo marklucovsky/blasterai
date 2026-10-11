@@ -61,7 +61,11 @@ struct TileScriptView: View {
             .task {
                 // Unattended run: `-TileScriptAutorun <resourceName>`.
                 // Guarded on .idle so a re-render mid-run cannot restart it.
-                guard let name = Self.autorunScriptName, runner.state == .idle else { return }
+                // Claimed once per launch: the argument outlives the run, so
+                // without this every later open of TileScript started it again.
+                guard Self.autorunPending, let name = Self.autorunScriptName,
+                      runner.state == .idle else { return }
+                Self.autorunClaimed = true
                 // Let the view settle before the script starts driving it,
                 // otherwise the first capture photographs a half-laid-out screen.
                 try? await Task.sleep(for: .milliseconds(600))
@@ -365,6 +369,13 @@ struct TileScriptView: View {
         let name = args[idx + 1].trimmingCharacters(in: .whitespaces)
         return name.isEmpty ? nil : name
     }
+
+    /// Set when the autorun starts; the launch argument runs one script per
+    /// launch, not one per visit to this screen.
+    private static var autorunClaimed = false
+
+    /// An autorun was asked for and has not started yet.
+    static var autorunPending: Bool { autorunScriptName != nil && !autorunClaimed }
 
     private var curatedSection: some View {
         Section("Curated Demos") {

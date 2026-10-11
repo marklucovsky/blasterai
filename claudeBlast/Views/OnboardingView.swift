@@ -214,46 +214,37 @@ struct OnboardingView: View {
 
     // MARK: - Steps
 
+    /// Leads with the board, as the App Store description does: it works with
+    /// nothing set up, and it is free. AI comes last, as something the caregiver
+    /// turns on, with what it does for them ahead of sentences for the child.
     private var welcomeStep: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("Welcome to Blaster")
+            Text("Welcome to BlasterAI")
                 .font(.largeTitle.bold())
-            Text("A voice for non-verbal children. Pick tiles, hear sentences.")
+            Text("A free AAC board for children who don't yet speak. It works from the first launch.")
                 .font(.title3)
                 .foregroundStyle(.secondary)
             Divider().padding(.vertical, 8)
-            Label {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Private by default").font(.headline)
-                    Text("Your child's data lives on this device. AI features are optional, and you'll be asked before any are turned on.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            } icon: {
-                Image(systemName: "lock.shield.fill")
-                    .foregroundStyle(.green)
-                    .font(.title)
-            }
-            Label {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Open source").font(.headline)
-                    Text("Apache-licensed. Built so the community can adapt it.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            } icon: {
-                Image(systemName: "heart.fill")
-                    .foregroundStyle(.pink)
-                    .font(.title)
-            }
+            welcomeRow(
+                "A board that's ready now",
+                "BlasterAI 60 puts core words up front in Fitzgerald colors, and its voice works with no network.",
+                symbol: "square.grid.3x3.fill", color: .blue)
+            welcomeRow(
+                "Private by default",
+                "Your child's data lives on this device. AI features are optional, and you'll be asked before any are turned on.",
+                symbol: "lock.shield.fill", color: .green)
+            welcomeRow(
+                "Free and open source",
+                "No trial, no subscription, no account. Apache-licensed, so the community can adapt it.",
+                symbol: "heart.fill", color: .pink)
 
             // Surface the one prerequisite early, in the welcome screen's
             // whitespace, so a parent can get a funded OpenAI Platform account
             // going before the key step (it's set up on OpenAI's site, not here).
             Label {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Bring your own AI key").font(.headline)
-                    Text("AI sentences use OpenAI. You'll want a funded OpenAI Platform account (separate from ChatGPT) — about $5 of credit lasts a long time. Set it up now or skip and add it later.")
+                    Text("AI when you want it").font(.headline)
+                    Text("Build scenes from a description, draw new words in your board's style, and, when your child is ready, turn taps into full sentences. Uses your own OpenAI key; set it up now or later.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                     Button {
@@ -266,12 +257,28 @@ struct OnboardingView: View {
                     .padding(.top, 2)
                 }
             } icon: {
-                Image(systemName: "key.fill")
+                Image(systemName: "sparkles")
                     .foregroundStyle(.orange)
                     .font(.title)
             }
         }
         .sheet(isPresented: $showKeyGuide) { OpenAIKeySetupSheet() }
+    }
+
+    private func welcomeRow(_ title: String, _ detail: String,
+                            symbol: String, color: Color) -> some View {
+        Label {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).font(.headline)
+                Text(detail)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        } icon: {
+            Image(systemName: symbol)
+                .foregroundStyle(color)
+                .font(.title)
+        }
     }
 
     private var roleStep: some View {

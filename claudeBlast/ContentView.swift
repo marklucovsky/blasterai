@@ -116,7 +116,7 @@ struct ContentView: View {
                 // Ungated on purpose — a PIN pad would stall a run nobody is
                 // watching, and the argument had to be typed at launch by
                 // whoever owns the machine.
-                if TileScriptView.autorunScriptName != nil, activeDestination == nil {
+                if TileScriptView.autorunPending, activeDestination == nil {
                     activeDestination = .tileScriptUngated
                 }
                 scriptRunner.onSwitchToHome = { activeDestination = nil }

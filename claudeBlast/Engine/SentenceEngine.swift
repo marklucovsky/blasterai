@@ -581,6 +581,10 @@ final class SentenceEngine {
     func triggerGo() {
         guard activeGroup.tiles.count >= 2 else { return }
         guard activeGroup.state != .locked else { return }
+        // Already asked. `isThinking` only flips once the task runs, so a second
+        // Play (or a grid mash) in that gap used to cancel this request and
+        // re-launch it as a repeat: a stray ↻ badge and a cache-bypassing call.
+        guard !isWaiting, !isThinking else { return }
 
         isWaiting = true
         isIdleNudge = false
