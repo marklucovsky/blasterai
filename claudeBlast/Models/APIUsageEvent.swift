@@ -138,7 +138,7 @@ enum UsageCause: String, Codable, CaseIterable {
 /// - **Chat** (`gpt-4o-mini`): `promptTokens` at the input rate, of which
 ///   `cachedPromptTokens` gets the cached discount; `completionTokens` at the
 ///   output rate. `imageInputTokens` is 0.
-/// - **Images** (`gpt-image-1`): `promptTokens` is total input, of which
+/// - **Images** (`gpt-image-2`): `promptTokens` is total input, of which
 ///   `imageInputTokens` is the image portion (billed higher than text — the
 ///   remainder is text input); `completionTokens` is the generated-image output,
 ///   which is by far the most expensive rate we pay. `cachedPromptTokens` is 0.

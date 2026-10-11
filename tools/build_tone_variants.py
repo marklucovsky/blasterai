@@ -71,8 +71,13 @@ OUT_BASE = Path("tools/tile_sets")
 CLASSIFY_CACHE = Path("tools/tile_sets/classic_skin_tiles.json")
 
 CHAT_MODEL = "gpt-4o-mini"
-IMAGE_MODEL = "gpt-image-1"
-COST_PER_REFINE = 0.044          # measured 2026-08-14, see docs/cost-reconciliation
+IMAGE_MODEL = "gpt-image-2"
+# One tone edit on gpt-image-2, measured 2026-10-10: 1,024 image-input tokens plus
+# 1,756 output tokens at medium, 196 at low. Low held composition and landed the
+# skin within a few luma of medium on a 6-tile chain, so a set's tones are built
+# at low and review rejects re-chained with `--quality medium`.
+COST_PER_STEP = {"low": 0.016, "medium": 0.063}
+COST_PER_REFINE = COST_PER_STEP["medium"]
 COST_PER_CLASSIFY = 0.0004
 
 # Unicode emoji skin-tone modifiers, which are themselves Fitzpatrick-based.
@@ -97,6 +102,18 @@ TONES = {
     "dark":         ("🏿", "Dark",         "Fitzpatrick VI",   "#594539",
                      "deeply pigmented dark brown"),
 }
+# Lips are not skin. The first gpt-image-2 chain filled `mouth` with the skin
+# target, so medium and dark lips came back tan and brown and no longer read as
+# lips. Darker skin has deeper, more pigmented lips that stay distinct from the
+# skin around them; these targets were picked by Mark from edit candidates
+# (2026-10-10) and sampled from the chosen images.
+LIP_TONES = {
+    "medium":      ("#B46F72", "dusty rose"),
+    "medium_dark": ("#6D3645", "deep plum, a reddish mauve-brown"),
+    "dark":        ("#5A2E3A", "deep plum-brown"),
+}
+# Tiles that are lips and nothing else, so they get lips_prompt, not chain_prompt.
+LIPS_ONLY = {"mouth"}
 # Classic's existing figures read as light / medium-light, so those are the
 # tones worth adding.
 DEFAULT_TONES = ["medium", "medium_dark", "dark"]
@@ -145,6 +162,27 @@ def refine_prompt(tone_key: str) -> str:
         "composition and framing. Do not redraw or restyle. Do not add or remove "
         "anything. Do not recolour clothing, food, bread, wood, sand, or any "
         "object — only skin. No text anywhere."
+    )
+
+
+def lips_prompt(tone_key: str) -> str:
+    """For LIPS_ONLY tiles, which the skin prompt cannot be talked out of.
+
+    A general "lips are not skin" clause in chain_prompt was tried (2026-10-10):
+    `mouth` still came back filled with the skin target, and the clause leaked
+    onto faces, turning happy's pink tongue mauve. A tile that is nothing but
+    lips gets its own prompt instead, and faces keep the skin prompt untouched.
+    """
+    hex_lip, name = LIP_TONES[tone_key]
+    r, g, b = tuple(int(hex_lip[i:i + 2], 16) for i in (1, 3, 5))
+    return (
+        f"Edit this illustration. Change ONLY the colour of the lips to {name}, "
+        f"{hex_lip} — RGB red {r}, green {g}, blue {b} — the natural lip colour "
+        f"of a person with {TONES[tone_key][4]} skin. The lips must not be skin "
+        "coloured: not tan, not brown, not bright red, not lipstick. Keep the flat "
+        "fill with no gradients or shading. Keep everything else exactly the "
+        "same: the same shape, the same thick black outline, the same white "
+        "teeth, the same composition and the pure white background."
     )
 
 
@@ -210,6 +248,21 @@ def chain_prompt(prev_key: str | None, tone_key: str) -> str:
     )
 
 
+# Each edit greys a white background by 1-3 levels (measured on gpt-image-2,
+# 2026-10-08), and a chain compounds it: medium-dark is two edits from Classic.
+# Near-white is snapped back to pure white after every step, so the tone sets
+# sit on the same canvas as Classic and the drift cannot accumulate. All three
+# channels must be near white, so pale skin or a cream shirt is left alone.
+WHITE_CLAMP = 244
+
+
+def clamp_white(path: Path) -> None:
+    import numpy as np
+    a = np.array(Image.open(path).convert("RGB"))
+    a[(a >= WHITE_CLAMP).all(axis=2)] = 255
+    Image.fromarray(a).save(path)
+
+
 def flatten_onto_white(path: Path) -> None:
     """Give an edit result an opaque white background.
 
@@ -229,8 +282,9 @@ def flatten_onto_white(path: Path) -> None:
 def build_chain(keys: list[str], chain: list[str], api_key_value: str,
                 quality: str = "medium") -> None:
     """Walk the scale, each tone generated from the previous tone's output."""
+    step_cost = COST_PER_STEP.get(quality, COST_PER_REFINE)
     print(f"Chained build: {len(keys)} tiles × {len(chain)} steps "
-          f"≈ ${len(keys) * len(chain) * COST_PER_REFINE:.2f}  (quality={quality})",
+          f"≈ ${len(keys) * len(chain) * step_cost:.2f}  (quality={quality})",
           flush=True)
 
     done = [0]
@@ -245,7 +299,9 @@ def build_chain(keys: list[str], chain: list[str], api_key_value: str,
             dst = out / f"{key}.png"
             src = prev_dir / f"{key}.png"
             if not dst.exists():
-                fields = {"model": IMAGE_MODEL, "prompt": chain_prompt(prev_tone, tone),
+                prompt = (lips_prompt(tone) if key in LIPS_ONLY
+                          else chain_prompt(prev_tone, tone))
+                fields = {"model": IMAGE_MODEL, "prompt": prompt,
                           "size": "1024x1024", "quality": quality, "n": "1"}
                 files = {"image": (src.name, src.read_bytes())}
                 r = with_retry(
@@ -263,11 +319,12 @@ def build_chain(keys: list[str], chain: list[str], api_key_value: str,
                     with urlrequest.urlopen(item["url"], timeout=120, context=SSL_CTX) as u:
                         dst.write_bytes(u.read())
                 flatten_onto_white(dst)
+                clamp_white(dst)
             prev_dir, prev_tone = out, tone
         done[0] += 1
         if done[0] % 10 == 0:
             print(f"  {done[0]}/{len(keys)} tiles  "
-                  f"(~${done[0] * len(chain) * COST_PER_REFINE:.2f})", flush=True)
+                  f"(~${done[0] * len(chain) * step_cost:.2f})", flush=True)
 
     with ThreadPoolExecutor(max_workers=4) as pool:
         list(pool.map(walk, keys))
@@ -329,8 +386,14 @@ def post_multipart(url: str, fields: dict, files: dict, key: str, timeout: int =
         return json.loads(r.read())
 
 
+class QuotaExhausted(RuntimeError):
+    """The account is out of credits. A 429 like a rate limit, but no wait fixes it:
+    a 2026-10-09 run retried it three times per tile for 350 tiles."""
+
+
 def with_retry(fn, attempts: int = 4, label: str = ""):
-    """Retry on 429/5xx with backoff — image generation rate-limits readily."""
+    """Retry on 429/5xx with backoff — image generation rate-limits readily.
+    Raises QuotaExhausted rather than retrying an out-of-credits 429."""
     for i in range(attempts):
         try:
             return fn()
@@ -341,6 +404,11 @@ def with_retry(fn, attempts: int = 4, label: str = ""):
             # identical retry. Treating it as permanent silently dropped a tile
             # from a set that is supposed to be complete.
             retryable = e.code in (429, 500, 502, 503, 504)
+            if e.code == 429:
+                body = e.read().decode(errors="replace")
+                if "insufficient_quota" in body or "no credits" in body:
+                    raise QuotaExhausted(body) from None
+                e = HTTPError(e.url, e.code, body, e.headers, None)
             if e.code == 400:
                 try:
                     body = json.loads(e.read())
@@ -484,17 +552,32 @@ def build_tone(tone_key: str, skin_keys: list[str], all_keys: list[str],
 
 
 def main():
+    global IMAGE_MODEL, OUT_BASE, SOURCE, CLASSIFY_CACHE
     ap = argparse.ArgumentParser()
     ap.add_argument("--classify", action="store_true")
     ap.add_argument("--pilot", action="store_true")
     ap.add_argument("--build", help="tone name, or 'all'")
     ap.add_argument("--chain", action="store_true",
                     help="generate each tone from the previous tone's output")
-    ap.add_argument("--quality", default="medium", help="gpt-image-1 quality")
+    ap.add_argument("--quality", default="low",
+                    help="image model quality for --chain; re-chain review rejects with medium")
+    ap.add_argument("--model", default=IMAGE_MODEL,
+                    help=f"OpenAI image model (default {IMAGE_MODEL})")
+    ap.add_argument("--out-base", type=Path, default=OUT_BASE,
+                    help="write classic_chain_<tone>/ here instead of tools/tile_sets — "
+                         "for candidates from a new model, reviewed before they replace "
+                         "anything")
+    ap.add_argument("--source", type=Path, default=SOURCE,
+                    help="the light Classic set the tones are chained from — e.g. a "
+                         "re-shot candidate set before it replaces the master")
+    ap.add_argument("--classify-cache", type=Path, default=CLASSIFY_CACHE,
+                    help="who-has-skin cache for --source; a redrawn set needs its own")
     ap.add_argument("--tones", default=",".join(DEFAULT_TONES))
     ap.add_argument("--tiles", default="", help="pilot on these keys instead of PILOT_KEYS")
     ap.add_argument("--yes", action="store_true", help="skip the cost confirmation")
     args = ap.parse_args()
+    IMAGE_MODEL, OUT_BASE = args.model, args.out_base
+    SOURCE, CLASSIFY_CACHE = args.source, args.classify_cache
 
     if not SOURCE.exists():
         sys.exit(f"missing {SOURCE}")
@@ -523,7 +606,7 @@ def main():
             targets = skin_keys          # every tile with a person in it
         else:
             targets = requested or [k for k in PILOT_KEYS if k in skin_keys] or skin_keys[:6]
-        cost = len(targets) * len(tones) * COST_PER_REFINE
+        cost = len(targets) * len(tones) * COST_PER_STEP.get(args.quality, COST_PER_REFINE)
         if len(targets) > 20 and not args.yes:
             print(f"Full chained build: {len(targets)} tiles × {len(tones)} tones ≈ ${cost:.2f}")
             if input("Proceed? [y/N] ").strip().lower() != "y":

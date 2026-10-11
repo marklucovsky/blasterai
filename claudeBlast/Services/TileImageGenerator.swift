@@ -53,11 +53,17 @@ struct ArtResult {
 }
 
 enum TileImageGenerator {
-    /// OpenAI images model. `gpt-image-1` is the current model (dall-e-3 is
-    /// retired on the images endpoint). It always returns base64 and does NOT
-    /// accept `response_format`; `quality` is low/medium/high/auto (not dall-e-3's
-    /// standard/hd). Swap here to change the model later.
-    private static let model = "gpt-image-1"
+    /// OpenAI images model — `ModelID.image`, so the request and the price table
+    /// can't name different models. It always returns base64 and does NOT accept
+    /// `response_format`; `quality` is low/medium/high/auto.
+    private static let model = ModelID.image
+    /// Medium in every style, measured 2026-10-10 against `low` on 47 Classic and
+    /// 45 Playful 3D words. Low loses fine detail — teeth, food edges, metallic
+    /// shine; in Playful 3D also skin, gradients and cloth drape — 3 of 47
+    /// Classic and 9 of 45 Playful 3D tiles failed review. The offline pipeline
+    /// can draw Classic at low because every tile there is reviewed and redrawn;
+    /// a word added here has no reviewer, so it has to be right first time.
+    /// ~$0.063 per drawing with the 256px reference pack.
     private static let quality = "medium" // low | medium | high | auto
 
     /// Generate a square (1024²) image for a word, styled to `imageSet`. Caller
@@ -208,11 +214,30 @@ enum TileImageGenerator {
     }
 
     /// A style's base art — the raw generation everything else transforms from.
+    ///
+    /// ## Drawn from the style's reference pack when it has one
+    ///
+    /// gpt-image-2 does not hold a style from a text description: the Classic
+    /// recipe that gave bold flat pictograms on gpt-image-1 comes back thin-lined
+    /// and shaded. Showing it a few tiles from the set does hold it, so a style
+    /// with a bundled pack (`refpack_<style>__<key>.png`) is drawn through
+    /// /images/edits with the pack as repeated `image[]` — reference composition,
+    /// the operation `transform` must avoid and this one wants. It is the same
+    /// recipe `tools/generate_by_reference.py` used to draw the bundled sets, so a
+    /// word added on device lands in the same style as the words that shipped.
+    /// A style without a pack (an installed third-party set) keeps text-only.
     private static func generateBase(displayName: String,
                                      wordClass: String,
                                      imageSet: ImageSetID,
                                      detail: String,
                                      apiKey: String) async throws -> UIImage {
+        let pack = referencePack(for: imageSet)
+        if !pack.isEmpty {
+            return try await generateFromReferences(
+                pack, prompt: referencePrompt(displayName: displayName, wordClass: wordClass,
+                                              imageSet: imageSet, detail: detail),
+                imageSet: imageSet, apiKey: apiKey)
+        }
         let body: [String: Any] = [
             "model": model,
             "prompt": prompt(displayName: displayName, wordClass: wordClass,
@@ -236,6 +261,90 @@ enum TileImageGenerator {
         }
     }
 
+    /// The bundled reference tiles for an image set's style, in name order so the
+    /// request is the same every time. Keyed by `stylePromptKey`, so the Classic
+    /// tone variants share Classic's pack. The `__` separator keeps
+    /// `high_contrast` from matching `high_contrast_v2`'s files.
+    ///
+    /// **The bundled bytes cannot be sent as they are.** Xcode's `copypng` step
+    /// rewrites every loose bundled PNG into Apple's CgBI variant, which UIKit
+    /// reads and nothing else does: OpenAI answered "Invalid image data" and the
+    /// first on-device word-add failed. `COMPRESS_PNG_FILES = NO` does not stop
+    /// it (tried, 2026-10-10). Each file is decoded and re-encoded to a standard
+    /// PNG instead — tens of milliseconds against a 30–60 s image request.
+    static func referencePack(for imageSet: ImageSetID) -> [(name: String, data: Data)] {
+        let styleKey = ImageSetCatalog.descriptor(for: imageSet)?.stylePromptKey ?? imageSet.rawValue
+        let prefix = "refpack_\(styleKey)__"
+        return (Bundle.main.urls(forResourcesWithExtension: "png", subdirectory: nil) ?? [])
+            .filter { $0.lastPathComponent.hasPrefix(prefix) }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+            .compactMap { url in
+                guard let png = UIImage(contentsOfFile: url.path)?.pngData() else { return nil }
+                return (url.lastPathComponent, png)
+            }
+    }
+
+    /// Ported from `tools/generate_by_reference.py:PROMPT`. Keep the two in step.
+    private static func referencePrompt(displayName: String, wordClass: String,
+                                        imageSet: ImageSetID, detail: String) -> String {
+        let trimmed = detail.trimmingCharacters(in: .whitespacesAndNewlines)
+        let subject = "\(displayName) (\(wordClass))" + (trimmed.isEmpty ? "" : ", \(trimmed)")
+        return """
+        The reference images are tiles from one AAC pictogram symbol set. Draw ONE new tile \
+        for this set showing: \(subject).
+
+        Match the references' drawing style exactly: the same outline weight, the same flat \
+        colors, the same level of simplicity, and people drawn the same way the references draw \
+        them. Keep only what is needed to read the subject — drop small decorative details. \
+        Do not copy any reference's subject into the new tile.
+
+        The set's style, for reference: \(style(for: imageSet))
+        """
+    }
+
+    private static func generateFromReferences(_ pack: [(name: String, data: Data)],
+                                               prompt: String,
+                                               imageSet: ImageSetID,
+                                               apiKey: String) async throws -> UIImage {
+        let boundary = "Boundary-\(UUID().uuidString)"
+        var body = Data()
+        func appendField(_ name: String, _ value: String) {
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"\(name)\"\r\n\r\n".data(using: .utf8)!)
+            body.append("\(value)\r\n".data(using: .utf8)!)
+        }
+        appendField("model", model)
+        appendField("prompt", prompt)
+        appendField("size", "1024x1024")
+        appendField("quality", quality)
+        appendField("n", "1")
+        // Repeated `image[]` on purpose: these are references, not the picture
+        // being edited. See the note on `transform` for why that distinction matters.
+        for ref in pack {
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"image[]\"; filename=\"\(ref.name)\"\r\n"
+                .data(using: .utf8)!)
+            body.append("Content-Type: image/png\r\n\r\n".data(using: .utf8)!)
+            body.append(ref.data)
+            body.append("\r\n".data(using: .utf8)!)
+        }
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+
+        var request = URLRequest(url: URL(string: "https://api.openai.com/v1/images/edits")!)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.httpBody = body
+        request.timeoutInterval = 120
+
+        return try await UsageContext.$current.withValue(
+            UsageContext(cause: .tileImageGenerate, detail: imageSet.rawValue)
+        ) {
+            try await send(request, cause: .tileImageGenerate,
+                           endpoint: OpenAIEndpoint.imagesEdits)
+        }
+    }
+
     /// Does this picture contain a person — anything with skin to recolor?
     ///
     /// **A tone transform applied to a picture with no person destroys it.** The
@@ -252,7 +361,7 @@ enum TileImageGenerator {
     /// refining any of the 552 shipped tiles and copied the rest byte-for-byte.
     /// The offline build needed it for the same reason and I failed to port it.
     ///
-    /// ~$0.0004 per call against ~$0.044 per transform it may save, so it pays
+    /// ~$0.0004 per call against ~$0.063 per transform it may save, so it pays
     /// for itself on any word without a person in it.
     ///
     /// **Returns false when the check itself fails.** Copying is the safer
@@ -375,12 +484,40 @@ enum TileImageGenerator {
         request.httpBody = body
         request.timeoutInterval = 90
 
-        return try await UsageContext.$current.withValue(
+        let toned = try await UsageContext.$current.withValue(
             UsageContext(cause: .tileImageRefine, detail: to.rawValue)
         ) {
             try await send(request, cause: .tileImageRefine,
                            endpoint: OpenAIEndpoint.imagesEdits)
         }
+        return clampWhite(toned)
+    }
+
+    /// Ported from `build_tone_variants.py:clamp_white`, same threshold.
+    ///
+    /// Each gpt-image-2 edit greys a white background by a few levels, and the
+    /// chain compounds it: the first on-device word-add came back with Medium and
+    /// Dark tiles on a visibly grey square beside Light's white. Any pixel whose
+    /// three channels are all at or above the threshold is snapped to pure white,
+    /// so pale skin and a cream shirt are left alone. Returns the input unchanged
+    /// if it cannot be rasterised — a slightly grey tile beats a missing one.
+    static func clampWhite(_ image: UIImage, threshold: UInt8 = 244) -> UIImage {
+        guard let cg = image.cgImage else { return image }
+        let width = cg.width, height = cg.height
+        guard let ctx = CGContext(data: nil, width: width, height: height,
+                                  bitsPerComponent: 8, bytesPerRow: width * 4,
+                                  space: CGColorSpaceCreateDeviceRGB(),
+                                  bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue),
+              let base = ctx.data
+        else { return image }
+        ctx.draw(cg, in: CGRect(x: 0, y: 0, width: width, height: height))
+        let px = base.bindMemory(to: UInt8.self, capacity: width * height * 4)
+        for i in stride(from: 0, to: width * height * 4, by: 4)
+        where px[i] >= threshold && px[i + 1] >= threshold && px[i + 2] >= threshold {
+            px[i] = 255; px[i + 1] = 255; px[i + 2] = 255
+        }
+        guard let out = ctx.makeImage() else { return image }
+        return UIImage(cgImage: out, scale: image.scale, orientation: image.imageOrientation)
     }
 
     /// Ported from `build_tone_variants.py:chain_prompt`. Keep the two in step —

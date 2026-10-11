@@ -29,7 +29,7 @@ THE WHOLE LOOP, including the parts no script can do
    answers "this key is burning money — whose is it?" without anything being
    written down here. Nothing in this repo records keys, and nothing should.
 3. Confirm the project allows all three models the app calls: `gpt-4o-mini`,
-   `omni-moderation-latest`, `gpt-image-1`. Withholding the moderation model
+   `omni-moderation-latest`, `gpt-image-2`. Withholding the moderation model
    silently removes a child-safety tier — the app keeps working and words stop
    being checked. `tools/audit_openai_models.py` lists what the code calls.
 4. Run this script. Text the file.

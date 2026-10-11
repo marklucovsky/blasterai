@@ -39,6 +39,9 @@ VOCAB_FILE = Path("claudeBlast/Resources/vocabulary.json")
 OUTPUT_BASE = Path("tools/tile_sets")
 MIN_IMAGE_BYTES = 50_000
 SLEEP_SECONDS = 15
+# gpt-image-1 shuts down 2026-10-23; --model lets a candidate model render into
+# --out-dir for side-by-side review before the default moves.
+IMAGE_MODEL = "gpt-image-2"
 
 # ---------------------------------------------------------------------------
 # Style definitions
@@ -402,12 +405,13 @@ def build_prompt(subject: str, style: str) -> str:
     return f"{STYLES[style]} Subject: {subject}."
 
 
-def generate_image(prompt: str, api_key: str, session: requests.Session) -> bytes | None:
+def generate_image(prompt: str, api_key: str, session: requests.Session,
+                   model: str = IMAGE_MODEL) -> bytes | None:
     # gpt-image-1 replaced dall-e-3 (April 2025+). It returns b64_json directly
     # and does not accept a `response_format` parameter. Quality values are
     # low/medium/high/auto; medium ≈ legacy "standard" pricing.
     payload = {
-        "model": "gpt-image-1",
+        "model": model,
         "prompt": prompt,
         "n": 1,
         "size": "1024x1024",
@@ -447,7 +451,8 @@ def generate_image(prompt: str, api_key: str, session: requests.Session) -> byte
 def run_set(style_name: str, keys: list[str], prompts: dict[str, str],
             api_key: str, skip_existing: bool, dry_run: bool,
             sleep_seconds: float = SLEEP_SECONDS,
-            out_root: Path | None = None) -> tuple[int, int, list[str]]:
+            out_root: Path | None = None,
+            model: str = IMAGE_MODEL) -> tuple[int, int, list[str]]:
     """Generate one full set. Returns (ok_count, skipped, failed_keys)."""
     out_dir = (out_root or OUTPUT_BASE) / style_name
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -495,7 +500,7 @@ def run_set(style_name: str, keys: list[str], prompts: dict[str, str],
 
         progress = f"[{i+1}/{len(keys)}]"
         print(f"  ⏳ {progress:10s} {key:40s}", end="", flush=True)
-        png_bytes = generate_image(prompt, api_key, session)
+        png_bytes = generate_image(prompt, api_key, session, model)
 
         if png_bytes and len(png_bytes) >= MIN_IMAGE_BYTES:
             dest.write_bytes(png_bytes)
@@ -535,6 +540,13 @@ def main() -> None:
     parser.add_argument("--prompts-file", type=Path, default=None,
                         help="JSON of key → prompt laid over tools/prompts.json for this "
                              "run only, to try a new prompt without committing to it.")
+    parser.add_argument("--styles-file", type=Path, default=None,
+                        help="JSON of style key → style text laid over image_styles.json "
+                             "for this run only, to tune a style without changing what "
+                             "the app ships.")
+    parser.add_argument("--model", default=IMAGE_MODEL,
+                        help=f"OpenAI image model (default {IMAGE_MODEL}). Pair a new model "
+                             "with --out-dir until its tiles are reviewed.")
     args = parser.parse_args()
 
     api_key = os.environ.get("OPENAI_API_KEY", "")
@@ -555,6 +567,9 @@ def main() -> None:
                      f"lowercased — one silently shadows the other. Keys must be "
                      f"unique and lowercase.")
         folded[k.lower()] = k
+
+    if args.styles_file:
+        STYLES.update(json.loads(args.styles_file.read_text()))
 
     if args.prompts_file:
         raw_prompts.update(json.loads(args.prompts_file.read_text()))
@@ -591,7 +606,7 @@ def main() -> None:
         ok, skip, failed = run_set(
             style_name, keys, prompts, api_key,
             skip_existing=args.skip_existing, dry_run=args.dry_run,
-            sleep_seconds=args.sleep, out_root=args.out_dir,
+            sleep_seconds=args.sleep, out_root=args.out_dir, model=args.model,
         )
 
         print(f"\n{style_name}: ✓ {ok} generated  → {skip} skipped  ✗ {len(failed)} failed")

@@ -22,7 +22,7 @@ they tap.
        python3 tools/audit_openai_models.py
 
    It reads the models out of the sources and prints what the project must permit.
-   Today: `gpt-4o-mini`, `omni-moderation-latest`, `gpt-image-1`.
+   Today: `gpt-4o-mini`, `omni-moderation-latest`, `gpt-image-2` (gpt-image-1 until 1.0.0 — it shuts down 2026-10-23).
 
 4. **Mint the file:**
 
@@ -70,7 +70,7 @@ cap as a backstop with alerts, not a fence. To trip one deliberately, set the ca
 *below* current spend rather than burning more calls.
 
 **Images are essentially the entire spend.** ~4.8¢ per image against ~30 calls for
-$1.44; `gpt-4o-mini` needs on the order of 34,000 generated sentences to reach a
+$1.44 on gpt-image-1 (gpt-image-2, from October 2026, is ~6¢ per picture); `gpt-4o-mini` needs on the order of 34,000 generated sentences to reach a
 dollar. A cap is in practice a cap on art generation.
 
 **All evaluators share one project**, so they share its cap: one runaway key

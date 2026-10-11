@@ -81,9 +81,9 @@ struct UsageAccountingTests {
             imageInputTokens: 0,
             completionTokens: 1056
         )
-        // 120 × 5 = 600, 1056 × 40 = 42_240
-        #expect(cost == 42_840)
-        #expect(Double(cost!) / 1_000_000 > 0.04)
+        // 120 × 5 = 600, 1056 × 30 = 31_680
+        #expect(cost == 32_280)
+        #expect(Double(cost!) / 1_000_000 > 0.03)
     }
 
     @Test func imageInputBillsAboveTextInput() {
@@ -93,7 +93,7 @@ struct UsageAccountingTests {
             model: ModelID.image, promptTokens: 1000,
             imageInputTokens: 500, completionTokens: 0)
         #expect(textOnly == 5_000)      // 1000 × 5
-        #expect(halfImage == 7_500)     // 500 × 5 + 500 × 10
+        #expect(halfImage == 6_500)     // 500 × 5 + 500 × 8
     }
 
     @Test func moderationIsFree() {
@@ -131,7 +131,7 @@ struct UsageAccountingTests {
         #expect(ModelPricing.resolveRates(for: "gpt-4o-mini-2099-01-01")?.textInputPerM == 0.15)
         // An unrelated id still resolves to nothing rather than a near neighbour.
         #expect(ModelPricing.resolveRates(for: "claude-something") == nil)
-        #expect(ModelPricing.resolveRates(for: "gpt-image-1-2026-05-01")?.outputPerM == 40.00)
+        #expect(ModelPricing.resolveRates(for: "gpt-image-2-2026-05-01")?.outputPerM == 30.00)
     }
 
     /// The cache key and the request body must never name different models.

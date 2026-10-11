@@ -22,6 +22,7 @@ import hashlib
 import json
 import os
 import shutil
+import subprocess
 import sys
 import webbrowser
 from pathlib import Path
@@ -42,6 +43,13 @@ SET_PREFIX = {
 }
 
 
+# Shipped bundle prefix per master set, for the comparison columns. A
+# `<set>_gi2` candidate set is compared against only the set it replaces —
+# a Playful-3D column next to a Classic redraw is noise.
+BUNDLE_PREFIX = {"classic": "cls", "playful_3d": "p3d", "high_contrast_v2": "hc"}
+DEFAULT_BASELINES = [("p3d", "Playful-3D"), ("cls", "Classic")]
+
+
 def img_to_relative_path(path: Path, html_dir: Path) -> str:
     """Return a relative path from the HTML file's directory to the image."""
     if not path.exists():
@@ -57,7 +65,8 @@ def image_stamp(path: Path) -> str:
     return hashlib.sha1(path.read_bytes()).hexdigest()[:12]
 
 
-def build_page(set_name: str) -> Path:
+def build_page(set_name: str, compare: list[str] | None = None,
+               label: str | None = None) -> Path:
     vocab = json.loads(VOCAB_FILE.read_text())
     set_dir = OUTPUT_BASE / set_name
     set_prefix = SET_PREFIX.get(set_name, set_name)
@@ -98,20 +107,47 @@ def build_page(set_name: str) -> Path:
     # isShippable: false, a legacy external corpus we never generate against,
     # and it permanently lags the vocabulary. Comparing new work against art
     # nobody can select was measuring the wrong thing.
-    current_dir = OUTPUT_BASE / "current_p3d"; current_dir.mkdir(parents=True, exist_ok=True)
-    classic_dir = OUTPUT_BASE / "current_classic"; classic_dir.mkdir(parents=True, exist_ok=True)
+    base = set_name.removesuffix("_gi2")
+    baselines = ([(BUNDLE_PREFIX[base], f"shipped {base}")]
+                 if base != set_name and base in BUNDLE_PREFIX else DEFAULT_BASELINES)
+    baseline_dirs = {pfx: OUTPUT_BASE / f"current_{pfx}" for pfx, _ in baselines}
+    # --compare columns are master folders read in place (a tone review shows
+    # Light | Medium | Dark side by side), not bundle sets that need converting.
+    if compare:
+        baselines, baseline_dirs = [], {}
+        for spec in compare:
+            folder, _, col = spec.partition(":")
+            baselines.append((folder, col or folder))
+            baseline_dirs[folder] = OUTPUT_BASE / folder
+    for d in baseline_dirs.values():
+        d.mkdir(parents=True, exist_ok=True)
+    # The bundle has been HEIC since the August re-encode; looking only for .png
+    # left both comparison columns silently empty. Convert, and only when stale.
+    def bundle_copy(prefix: str, key: str, dest_dir: Path) -> None:
+        dest = dest_dir / f"{key}.png"
+        for ext in ("heic", "png"):
+            src = TILE_IMAGE_SETS / f"{prefix}_{key}.{ext}"
+            if not src.exists():
+                continue
+            if dest.exists() and dest.stat().st_mtime >= src.stat().st_mtime:
+                return
+            if ext == "png":
+                shutil.copy2(src, dest)
+            else:
+                subprocess.run(["sips", "-s", "format", "png", str(src), "--out", str(dest)],
+                               check=True, capture_output=True)
+            return
+
     for key, _wc, _pk in entries:
-        p3d = TILE_IMAGE_SETS / f"p3d_{key}.png"
-        if p3d.exists():
-            shutil.copy2(p3d, current_dir / f"{key}.png")
-        cls = TILE_IMAGE_SETS / f"cls_{key}.png"
-        if cls.exists():
-            shutil.copy2(cls, classic_dir / f"{key}.png")
+        if compare:
+            break
+        for pfx, d in baseline_dirs.items():
+            bundle_copy(pfx, key, d)
 
     tiles_json = []
     for i, (key, wc, pack) in enumerate(entries):
-        current_path = current_dir / f"{key}.png"
-        classic_path = classic_dir / f"{key}.png"
+        base_imgs = [img_to_relative_path(d / f"{key}.png", html_dir)
+                     for d in baseline_dirs.values()]
         # Cover masters live in one shared prefixed folder, not per-set. The
         # p3d/classic columns still resolve through the app bundle above,
         # since covers ship there as <prefix>_packcover_<slug>.png.
@@ -121,7 +157,7 @@ def build_page(set_name: str) -> Path:
             new_path = set_dir / f"{key}.png"
 
         new_img = img_to_relative_path(new_path, html_dir)
-        current_img = img_to_relative_path(current_path, html_dir)
+        current_img = base_imgs[0]
         has_new = new_path.exists()
 
         tiles_json.append({
@@ -129,8 +165,7 @@ def build_page(set_name: str) -> Path:
             "wordClass": wc,
             "pack": pack,
             "index": i,
-            "currentImg": current_img,
-            "classicImg": img_to_relative_path(classic_path, html_dir),
+            "baseImgs": base_imgs,
             "newImg": new_img if has_new else current_img,
             "hasNew": has_new,
             # Content fingerprint, so a saved verdict can be matched to the
@@ -200,6 +235,7 @@ body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans
     box-shadow: 0 1px 4px rgba(0,0,0,0.08); transition: box-shadow 0.2s;
 }}
 .card:hover {{ box-shadow: 0 4px 16px rgba(0,0,0,0.12); }}
+.card.cursor {{ outline: 3px solid #007aff; outline-offset: 2px; }}
 .card.approved {{ border-left: 4px solid #34c759; }}
 .card.rejected {{ border-left: 4px solid #ff3b30; }}
 /* Rejected, and the art has since been regenerated — still rejected so it
@@ -256,6 +292,7 @@ body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans
     gap: 20px; padding: 40px;
 }}
 .lightbox.active {{ display: flex; }}
+#lb-base {{ display: contents; }}
 .lightbox img {{ max-height: 80vh; max-width: 30vw; border-radius: 8px; }}
 .lightbox .label {{
     position: absolute; bottom: 40px; color: white; font-size: 16px; font-weight: 500;
@@ -302,14 +339,15 @@ body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans
 
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
     <span class="close">&times;</span>
-    <img id="lb-p3d" />
-    <img id="lb-classic" />
+    <span id="lb-base"></span>
     <img id="lb-new" />
 </div>
 
 <script>
 const SET_NAME = "{set_name}";
+const NEW_LABEL = {json.dumps(label or "NEW: " + set_name)};
 const TILES = {json.dumps(tiles_json)};
+const BASE_LABELS = {json.dumps([label for _, label in baselines])};
 const STORAGE_KEY = "blaster_review_" + SET_NAME;
 // tools/tile_sets/<set>/rejected.json — the rejects handed off for regen.
 // Seeds a verdict for any key the browser has no opinion on, so a review
@@ -386,7 +424,8 @@ function renderCard(key) {{
     const el = document.getElementById("card-" + key);
     if (!el) return;
     const s = getState(key);
-    el.className = "card " + s.status + (s.refreshed ? " refreshed" : "");
+    el.className = "card " + s.status + (s.refreshed ? " refreshed" : "")
+        + (key === cursorKey ? " cursor" : "") + (el.classList.contains("hidden") ? " hidden" : "");
     const approveBtn = el.querySelector(".btn-approve");
     const rejectBtn = el.querySelector(".btn-reject");
     const commentInput = el.querySelector(".comment-input");
@@ -435,17 +474,13 @@ function buildGrid() {{
 
         card.innerHTML = `
             <div class="card-images" onclick="openLightbox('${{k}}')" style="position:relative">
-                <div class="img-col">
-                    ${{t.currentImg ? `<img src="${{t.currentImg}}" loading="lazy" />` : '<div style="aspect-ratio:1;background:#eee;display:flex;align-items:center;justify-content:center;color:#999;font-size:11px">no p3d</div>'}}
-                    <span class="img-label">Playful-3D</span>
-                </div>
-                <div class="img-col">
-                    ${{t.classicImg ? `<img src="${{t.classicImg}}" loading="lazy" />` : '<div style="aspect-ratio:1;background:#eee;display:flex;align-items:center;justify-content:center;color:#999;font-size:11px">no Classic</div>'}}
-                    <span class="img-label">Classic</span>
-                </div>
+                ${{BASE_LABELS.map((label, i) => `<div class="img-col">
+                    ${{t.baseImgs[i] ? `<img src="${{t.baseImgs[i]}}" loading="lazy" />` : `<div style="aspect-ratio:1;background:#eee;display:flex;align-items:center;justify-content:center;color:#999;font-size:11px">no ${{label}}</div>`}}
+                    <span class="img-label">${{label}}</span>
+                </div>`).join("")}}
                 <div class="img-col">
                     ${{t.hasNew ? `<img src="${{t.newImg}}" loading="lazy" />` : '<div style="aspect-ratio:1;background:#eee;display:flex;align-items:center;justify-content:center;color:#999;font-size:11px">Missing</div>'}}
-                    <span class="img-label">NEW: ${{SET_NAME}}</span>
+                    <span class="img-label">${{NEW_LABEL}}</span>
                 </div>
             </div>
             <div class="card-body">
@@ -544,16 +579,66 @@ function exportAll() {{
 
 function openLightbox(key) {{
     const t = tileMap[key];
-    document.getElementById("lb-p3d").src = t.currentImg || "";
-    document.getElementById("lb-classic").src = t.classicImg || "";
+    document.getElementById("lb-base").innerHTML = t.baseImgs
+        .map(src => src ? `<img src="${{src}}" />` : "").join("");
     document.getElementById("lb-new").src = t.hasNew ? t.newImg : "";
     document.getElementById("lightbox").classList.add("active");
 }}
 function closeLightbox() {{
     document.getElementById("lightbox").classList.remove("active");
 }}
+// Keyboard review: a cursor walks the visible cards.
+//   n / p   next / previous card      Enter  approve, then next
+//   x       reject (type the reason, Enter to save and return to the keys)
+// Clicking a card moves the cursor to it.
+let cursorKey = null;
+function visibleCards() {{
+    return [...document.querySelectorAll(".card:not(.hidden)")];
+}}
+function moveCursor(card) {{
+    if (!card) return;
+    document.querySelectorAll(".card.cursor").forEach(c => c.classList.remove("cursor"));
+    card.classList.add("cursor");
+    cursorKey = card.dataset.key;
+    card.scrollIntoView({{block: "center", behavior: "smooth"}});
+}}
+function step(delta) {{
+    const cards = visibleCards();
+    if (!cards.length) return;
+    const i = cards.findIndex(c => c.dataset.key === cursorKey);
+    if (i === -1) return moveCursor(cards.find(c => getState(c.dataset.key).status === "unreviewed") || cards[0]);
+    moveCursor(cards[Math.max(0, Math.min(cards.length - 1, i + delta))]);
+}}
+document.getElementById("grid").addEventListener("click", e => {{
+    const card = e.target.closest(".card");
+    if (card) {{
+        document.querySelectorAll(".card.cursor").forEach(c => c.classList.remove("cursor"));
+        card.classList.add("cursor");
+        cursorKey = card.dataset.key;
+    }}
+}});
 document.addEventListener("keydown", e => {{
-    if (e.key === "Escape") closeLightbox();
+    if (e.key === "Escape") return closeLightbox();
+    if (e.target.matches("input, select, textarea")) {{
+        // Enter in a comment saves it and hands the keys back to the cursor.
+        if (e.key === "Enter" && e.target.classList.contains("comment-input")) {{
+            e.target.blur();
+        }}
+        return;
+    }}
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === "n") {{ e.preventDefault(); step(1); }}
+    else if (e.key === "p") {{ e.preventDefault(); step(-1); }}
+    else if (e.key === "Enter" && cursorKey) {{
+        e.preventDefault();
+        setState(cursorKey, {{status: "approved"}});
+        step(1);
+    }}
+    else if (e.key === "x" && cursorKey) {{
+        e.preventDefault();
+        setState(cursorKey, {{status: "rejected"}});
+        document.querySelector("#card-" + CSS.escape(cursorKey) + " .comment-input").focus();
+    }}
 }});
 
 // Init
@@ -568,7 +653,7 @@ applyFilters();
 </body>
 </html>"""
 
-    out_path = OUTPUT_BASE / f"review_{set_name}.html"
+    out_path = OUTPUT_BASE / f"review_{set_name.replace('/', '__')}.html"
     out_path.write_text(html)
     print(f"Review page: {out_path} ({len(html) // 1024} KB)")
     return out_path
@@ -579,10 +664,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--set", required=True, help="Tile set name under tools/tile_sets/")
     parser.add_argument("--no-open", action="store_true", help="Don't auto-open in browser")
+    parser.add_argument("--compare", action="append", metavar="FOLDER:LABEL",
+                        help="comparison column from a folder under tools/tile_sets, in order "
+                             "(repeatable); replaces the shipped-set columns")
+    parser.add_argument("--label", help="heading for the column under review")
     args = parser.parse_args()
 
     print(f"\nBuilding review page for {args.set}...")
-    path = build_page(args.set)
+    path = build_page(args.set, compare=args.compare, label=args.label)
     if not args.no_open:
         webbrowser.open(f"file://{path.resolve()}")
 

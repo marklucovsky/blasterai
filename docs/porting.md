@@ -26,7 +26,7 @@ What transfers is everything else, and it is most of the work:
 |---|---|---|
 | 508-word vocabulary with word classes | `claudeBlast/Resources/vocabulary.json` | Curation, deduplication, singular/plural rules |
 | Scene and page structure | `claudeBlast/Resources/scenes/*.json` | Board design, link topology |
-| 2,797 tile images, 5 styles | `claudeBlast/TileImageSets/` | ~$25 per style in API spend, plus review |
+| 3,252 tile images, 5 styles | `claudeBlast/TileImageSets/` | ~$12–$42 per style in API spend (gpt-image-2), plus review |
 | 504 subject prompts, for bulk generation of a new image style | `tools/prompts.json` | One hand-tuned prompt per word |
 | 4 style prompts | `claudeBlast/Resources/image_styles.json` | Many iterations each |
 | The generation pipeline | `tools/generate_sets.py` and friends | Scoring, refinement, tone transforms |
@@ -221,7 +221,7 @@ of the same board. See `GridLayoutCalculator`.
 ## 5. The AI layer
 
 Seven surfaces call OpenAI. The models today are `gpt-4o-mini` for text,
-`gpt-image-1` for art, and `omni-moderation-latest` for the policy net. Run
+`gpt-image-2` for art, and `omni-moderation-latest` for the policy net. Run
 `python3 tools/audit_openai_models.py` for the current authoritative list.
 
 ### Why a small model, and not the best one available
@@ -452,7 +452,11 @@ it. Each entry encodes "here is what this word has to show, learned the hard way
 and it is style-independent by construction, so the lesson is not re-learned per
 art style.
 
-`tools/generate_sets.py` runs the bulk loop: roughly $0.04 per image, ~15s
+On gpt-image-2 the bulk loop is `tools/generate_by_reference.py`, which draws
+each tile from a frozen four-tile reference pack (~1.6¢ per image at low
+quality, ~6¢ at medium; see `docs/guides/commissioning-an-image-set.md`).
+`tools/generate_sets.py` is the text-only loop the gpt-image-1 sets were drawn
+with: roughly $0.04 per image then, ~15s
 between calls for rate limits, and a minimum byte size as a crude "did we get a
 real image" check.
 

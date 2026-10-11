@@ -47,7 +47,7 @@ ROOT = Path("tools/tile_sets")
 # ink, paper, accent — the accent fills the dots.
 STYLES = {
     "classic": dict(paper=(255, 255, 255), ink=(17, 17, 17), accent=(47, 111, 219)),
-    "playful_3d": dict(paper=(246, 214, 181), ink=(92, 64, 43), accent=(224, 108, 74)),
+    "playful_3d": dict(paper=(255, 255, 255), ink=(92, 64, 43), accent=(224, 108, 74)),
     "high_contrast_v2": dict(paper=(0, 0, 0), ink=(255, 255, 255), accent=(255, 149, 0)),
 }
 # The skin-tone sets carry Classic's art byte-for-byte for anything without a

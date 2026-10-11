@@ -39,7 +39,7 @@ struct TileStyleStripView: View {
             }
 
             Button { showComparison = true } label: {
-                Image(systemName: "arrow.up.left.and.arrow.down.right.magnifyingglass")
+                Image(systemName: "plus.magnifyingglass")
                     .font(.title3)
                     .foregroundStyle(.tint)
             }

@@ -11,8 +11,8 @@ guess our way to those sets from here, and shipping one compromise for everybody
 is how AAC art usually goes wrong.
 
 So the tooling is the deliverable. Everything used to build the shipped sets is
-in this repo, and this guide walks it end to end. A set is roughly **$25 of
-compute and an afternoon**, most of which is waiting.
+in this repo, and this guide walks it end to end. A set is roughly **$12–$42 of
+compute and an afternoon** depending on the style, most of which is waiting.
 
 **Who this is for.** Someone comfortable with a terminal and a git clone,
 working with Claude Code or similar. The division of labour that works: **you
@@ -65,8 +65,18 @@ export OPENAI_API_KEY=sk-...             # a funded Platform account
 
 Every tool assumes the **repo root** as the working directory, not `tools/`.
 
-Budget roughly **$25** for a full set at gpt-image-1 `quality: medium`,
-plus a few dollars of iteration. Wall-clock depends on sharding — see step 6.
+Budget, measured on gpt-image-2 (2026-10-10), for about 610 drawn tiles plus
+redraws of the ones review rejects:
+
+| Set | Approach | Cost |
+|---|---|---|
+| Flat pictogram style (like Classic, High Contrast) | low-quality first pass, rejects redrawn at medium | **~$12** |
+| …plus two skin-tone variants (307 tiles with people × 2) | same | **+~$12** |
+| Rendered style (like Playful 3D) | medium throughout | **~$42** |
+
+Add **$5–10 for setting up a new style** (probe rounds and choosing the
+reference pack). A drawing is ~1.6¢ at low quality and ~6¢ at medium; output
+tokens are most of it. Why the quality differs by style is in step 6.
 
 ---
 
@@ -99,6 +109,7 @@ Five places. Do all five before generating anything.
 | `tools/generate_sets.py` → `SET_STYLES` | `"your_set": "your_set"` |
 | `tools/sync_to_app.py` → `SET_PREFIX` | `"your_set": "ys"` (short, unique) |
 | `tools/optimize_tiles.py` → `--set` choices | `"your_set"` |
+| `tools/generate_by_reference.py` → `DEFAULT_QUALITY` | `"your_set": "low"` or `"medium"` (step 6) |
 | `.gitattributes` | `tools/tile_sets/your_set/*.png filter=lfs diff=lfs merge=lfs -text` |
 
 > **The `.gitattributes` line must exist before you commit a single PNG.** The
@@ -219,38 +230,49 @@ Playful-3D years earlier. No amount of style wording beat it; a four-line
 per-key override did. If a rule you stated globally is being ignored by a
 handful of tiles, read their subjects before rewriting the prompt again.
 
-## Step 6 — Generate the full set
+## Step 6 — Freeze a reference pack, then generate the full set
+
+**gpt-image-2 holds a style by example, not by description.** The Classic
+prompt that gave bold flat pictograms on gpt-image-1 comes back thin-lined and
+shaded on gpt-image-2. Showing it four tiles from the set fixes that. So once
+the probe tiles from step 5 are ones you would ship, freeze four of them as the
+set's **reference pack**: deliberately unrelated to each other (a person, an
+action, an object, an abstract), downscaled to **256px**, saved as
+`claudeBlast/Resources/ReferencePacks/refpack_your_set__<key>.png`. The app
+bundles the pack, so a word a caregiver adds later is drawn from the same
+examples as the set.
+
+256px is enough. A 512px reference costs 1,024 input tokens and a 256px one
+costs 256, and on a 47-word comparison the smaller pack held the style just as
+well. One reference at full size is worse than four small ones: the model
+copies that one tile's features instead of the set's style.
+
+Then draw everything through the pack:
 
 ```bash
-python3 tools/generate_sets.py --set your_set --sleep 5
+ls tools/tile_sets/classic/*.png | xargs -n1 basename | sed 's/\.png$//' > /tmp/keys.txt
+python3 tools/generate_by_reference.py --set your_set --keys-file /tmp/keys.txt
 ```
 
-Generation is serial and `SLEEP_SECONDS` defaults to 15 — a DALL-E-3 Tier-1
-number (5 images/minute) that predates gpt-image-1 and was never revisited. At
-the default, a full set is about two hours of pure sleep. Use `--sleep` deliberately.
+It runs six requests in parallel (`--workers`), writes candidates to
+`tools/tile_sets/your_set_gi2/`, and stops cleanly if the account runs out of
+credit; rerun with `--skip-existing`. Keys without a subject in `prompts.json`
+need one via `--subjects-file`.
 
-To go faster, shard across processes on disjoint key lists:
+**Quality is per style, and it is the main cost lever.** Output tokens are most
+of a drawing's price: 1,756 at `medium`, 196 at `low`. Whether a style survives
+`low` has to be reviewed, not assumed. On a side-by-side review of the same
+words (2026-10-10), **Classic** lost little — 3 of 47 tiles failed, all fine
+detail (teeth, a pizza's edge, a metallic shine) — so flat styles draw at
+`low` and the rejects are redrawn with `--quality medium`. **Playful 3D**
+failed 9 of 45: skin, gradients, cloth drape and liquid are what `low` throws
+away, and they are the style. It draws at `medium`. Record the choice in
+`DEFAULT_QUALITY`. The app always draws at `medium`, because a word added there
+has no reviewer.
 
-```bash
-python3 - <<'PY'
-import json, pathlib
-keys = [t["key"] for t in json.loads(open("claudeBlast/Resources/vocabulary.json").read())]
-d = pathlib.Path("/tmp/shards"); d.mkdir(exist_ok=True)
-for i in range(4):
-    (d / f"{i}.txt").write_text("\n".join(keys[i::4]) + "\n")
-PY
-
-for i in 0 1 2 3; do
-  python3 tools/generate_sets.py --set your_set --sleep 5 --keys-file /tmp/shards/$i.txt &
-done; wait
-```
-
-Each process writes distinct files, so they cannot collide. Failures are printed
-with OpenAI's error body and collected in `tools/tile_sets/your_set_failed.txt`;
-re-run those keys with `--key`.
-
-Generate the **whole** set with the final prompt, including tiles you made
-during iteration. A set generated across three prompt revisions is not one set.
+Generate the **whole** set with the final prompt and pack, including tiles you
+made during iteration. A set generated across three prompt revisions is not one
+set.
 
 ## Step 7 — Review and approve
 
@@ -258,13 +280,26 @@ This is the step that cannot be automated, and the reason the previous steps
 exist: to make sure a human only looks at work worth looking at.
 
 ```bash
-python3 tools/build_review_page.py --set your_set
+python3 tools/build_review_page.py --set your_set_gi2
 ```
 
-A self-contained page, one card per tile, showing **Playful-3D | Classic | your
-new tile** side by side, with ✓ / ✗ and a comment box on each. Filter by word
-class, by pack, or by status; approve everything visible in one click when a
-category is clean.
+A self-contained page, one card per tile, showing the shipped Playful-3D and
+Classic tiles beside your new one, with ✓ / ✗ and a comment box on each. A
+redraw of an existing set (`classic_gi2`) is shown beside only the tile it
+replaces. Filter by word class, by pack, or by status; approve everything
+visible in one click when a category is clean.
+
+The comparison columns are yours to choose. `--compare FOLDER:LABEL` (repeatable,
+folders under `tools/tile_sets/`) and `--label` for the column under review —
+this is how a skin-tone set is reviewed as **Light | Medium | Dark**:
+
+```bash
+python3 tools/build_review_page.py --set your_set_dark \
+  --compare your_set:Light --compare your_set_medium:Medium --label Dark
+```
+
+The keyboard does most of the work: **n** / **p** move between cards, **Enter**
+approves and moves on, **x** rejects and puts the cursor in the comment box.
 
 Verdicts persist in `localStorage` and carry a fingerprint of the exact image
 they were given for. When a tile is regenerated, the two verdicts behave
