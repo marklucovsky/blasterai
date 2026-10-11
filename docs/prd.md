@@ -1,6 +1,8 @@
 # Blaster - Next Gen AAC Communication Device
 ## Informal PRD (Living Document)
 
+**Revised 2026-10-11** against what shipped (scored in `docs/prd-scorecard.md`). ~~Struck~~ text is a requirement we changed or dropped on purpose; **Now:** says what replaced it and why. Unstruck text still stands, built or not.
+
 ### Mission
 Redefine communication for non-verbal children. Open source (Apache license) to give back to the community.
 
@@ -9,7 +11,7 @@ Personal motivation: Built after seening how non-verbal granddaughter benefits f
 ---
 
 ### What Blaster Is
-An AI-powered AAC (Augmentative and Alternative Communication) app for non-verbal children. iPad-first. The child selects word tiles, and AI constructs age-appropriate sentences from those selections, delivered as both text and speech.
+An AI-powered AAC (Augmentative and Alternative Communication) app for non-verbal children. iPad-first. The child selects word tiles, and AI constructs ~~age-appropriate~~ sentences at the child's language stage from those selections, delivered as both text and speech. **Now:** language level follows Brown's Stages, not age (#56). The board works fully without AI; sentences are an optional, caregiver-enabled layer.
 
 ### What Makes This "Next Gen"
 The original Blaster was hand-coded with a fixed 500-word vocabulary and proved the concept. This version rethinks the architecture with AI throughout - not just sentence expansion, but AI-assisted vocabulary creation, therapeutic tools, and adaptive growth.
@@ -25,7 +27,7 @@ The original Blaster was hand-coded with a fixed 500-word vocabulary and proved 
 
 **2. Intelligence for the ecosystem**
 - AI serves the therapists, parents, and teachers who shape the child's communication environment.
-- AI generates tile sets, expands sentences, synthesizes speech.
+- AI generates tile sets ~~, expands sentences, synthesizes speech~~ and tile art, and expands sentences. **Now:** speech is on-device (`AVSpeechSynthesizer`, #11), so it works with no network.
 - The child experiences the *output* of AI, not the complexity.
 
 **3. Privacy is non-negotiable**
@@ -44,14 +46,14 @@ The original Blaster was hand-coded with a fixed 500-word vocabulary and proved 
 
 #### Data Layer (Private - SwiftData + iCloud)
 - Tile sets, tiles, layouts, scenes
-- Usage history and analytics (on-device only)
+- Usage history and analytics ~~(on-device only)~~ — on the family's own devices (iCloud), leaving only by an explicit, caregiver-initiated share (the SLP usage report, #62/#63)
 - User preferences, voice settings
 - Therapist-created content
 - Syncs across user's own devices via iCloud. Nothing else.
 
 #### Intelligence Layer (Stateless API Calls)
 - **Sentence expansion**: Child selects tiles ("eat" + "chocolate") -> API constructs natural sentence ("I want to eat some chocolate")
-- **Text-to-speech**: High quality, multiple voices (OpenAI TTS or similar). Voice selection matters - child may want a kid-sounding voice that feels like "theirs"
+- **Text-to-speech**: High quality, multiple voices ~~(OpenAI TTS or similar)~~. Voice selection matters - child may want a kid-sounding voice that feels like "theirs". **Now:** on-device system voices, picked per child (#11, #32).
 - **AI-assisted tile set generation**: Therapist describes a goal ("emotions for a 5-year-old working on frustration vs anger") -> AI generates vocabulary, categories, suggested layout
 - API provider: OpenAI (current target). Architecture should allow swapping providers.
 
@@ -64,7 +66,7 @@ The original Blaster was hand-coded with a fixed 500-word vocabulary and proved 
 - Sentence bar at top showing selected words.
 - "Speak" button to trigger sentence expansion + TTS.
 - Category pages (food, feelings, people, actions, places, etc.)
-- Promoted tiles: Frequently used combinations ("eat chocolate") can be promoted to their own single tile. Emerges from the child's own usage patterns.
+- ~~Promoted tiles: Frequently used combinations ("eat chocolate") can be promoted to their own single tile. Emerges from the child's own usage patterns.~~ **Dropped (2026-10-11).** A tile that appears because of usage moves the board under the child. Motor planning — finding a word where it always is — is how AAC is learned, and self-arranging tiles work against it.
 
 #### Layer 2: Therapist/Parent Surface
 - Behind Face ID / passcode authentication.
@@ -78,7 +80,7 @@ The original Blaster was hand-coded with a fixed 500-word vocabulary and proved 
   - etc.
 - **Import/export tile sets**: File-based, AirDrop between devices. No cloud service needed. Therapist builds on their device, AirDrops to child's iPad.
 - **Usage analytics**: "This week Jamie used 'frustrated' 12 times but never 'disappointed'. Sentence complexity increased." Data stays on device. Child should never feel surveilled.
-- **Session mode**: Therapist takes over the tile set for a focused session (e.g., all about emotions). Reverts to normal home setting afterward.
+- ~~**Session mode**: Therapist takes over the tile set for a focused session (e.g., all about emotions). Reverts to normal home setting afterward.~~ **Dropped (2026-10-11), superseded by admin mode.** Behind the PIN / Face ID gate a caregiver switches scenes and the device's mode directly (long-press Home for the caregiver menu); there is no separate session to start and revert.
 
 ---
 
@@ -93,31 +95,33 @@ The original Blaster was hand-coded with a fixed 500-word vocabulary and proved 
 - Dense grid of tiles filling the iPad screen. Each tile = image + label text below.
 - Tiles are either **audible** (tap adds to sentence tray) or **navigation** (tap jumps to another page)
 - Some tiles are BOTH (e.g., "eat" is audible AND links to the eat page full of food items)
-- Navigation tiles include: home, next_page, previous_page, and category headers
-- Grid is paginated when a category has too many items (actions spans 2 pages with next/prev navigation)
+- Navigation tiles include: home, ~~next_page, previous_page,~~ and category headers
+- Grid is paginated when a category has too many items ~~(actions spans 2 pages with next/prev navigation)~~. **Now:** pages swipe, Home is pinned to cell 0 of every page and shares it with Back (#57, #109), and each device kind has three fixed grids, so a word keeps its cell (#110/#111).
 
 **Page Navigation Structure:**
 - Home page: category navigation tiles (people, actions, social, places, etc.) + frequently used people (mom, dad, grandma, etc.)
 - Category pages: "eat" page has all food (meals, fruit, veggies, snacks in one big page), "drink" page, "actions" page (paginated), "social" page, "people" page
-- Cross-links between related pages (eat page has link to drink page and vice versa)
+- Cross-links between related pages (eat page has link to drink page and vice versa). **Now:** supported, but BlasterAI 60 does not use them. Next to audible links they read wrong: Home → *eat* (audible) → Drinks → lemonade says "eat drink lemonade".
 
 **Sentence Cache:**
 - AI-generated sentences are cached by tile combination key (e.g., "mom, eat" or "eat, mom, pizza")
 - Cache hits avoid redundant API calls - both cost savings and instant response for frequent phrases
-- Cache tracks hit count per entry - feeds into promoted tile logic
+- Cache tracks hit count per entry ~~- feeds into promoted tile logic~~
 - Cache view shows: tile combination, cache hits, generated sentence, date, play/delete buttons
 
 **Usage Analytics:**
 - Per-tile metrics: selected count, used count, cache hits
 - Overview shows "Frequently Used Tiles" ranked by usage
 - "Top Cache Entries" shows most common phrases
-- This data drives the promoted tile feature - high-frequency combinations become single tiles
+- ~~This data drives the promoted tile feature - high-frequency combinations become single tiles~~ (promoted tiles dropped; see Layer 1). **Now:** it drives the caregiver's Activity, Coverage and Patterns views.
 
 ---
 
 ### Data Model (Sketch)
 
-Informed by the original Blaster models but evolved for the next-gen architecture:
+Informed by the original Blaster models but evolved for the next-gen architecture.
+
+**Now:** the shipped shape differs from this sketch. Pages are inline `PageSpec` JSON on `BlasterScene`, not `PageModel`/`PageTileModel` (no relationships in the synced schema, #31). Per-tile metrics live in device-local `MetricEvent`; `type`/`TileType` was removed with promoted tiles. `Scene` shipped as `BlasterScene`. The concepts below — a global vocabulary, per-placement behaviour, wordClass as semantics only — all hold.
 
 **Core concept**: Tiles exist in a global vocabulary. Pages reference tiles and give them position, navigation behavior, and audibility. This separation means the same tile ("eat") can appear on multiple pages with different behaviors.
 
@@ -167,47 +171,47 @@ Scene (future: context switching)
 ### Tile Images / Symbols
 
 The original Blaster uses custom illustrated images per vocabulary word (the key doubles as the asset name). For next gen:
-- **Default**: Ship with the original illustrated image set (or similar open-source AAC symbols)
+- **Default**: ~~Ship with the original illustrated image set (or similar open-source AAC symbols)~~ **Now:** five sets generated for the app and shipped under Apache-2.0 — Classic in three skin tones, Playful 3D, High Contrast. ARASAAC was removed because its non-commercial licence blocked the App Store.
 - **Customization**: Support user photos (camera/photo library) per tile - the child's actual dog, their real kitchen, their friend's face
-- **AI-generated**: For therapist-created tile sets, AI could generate appropriate images
-- **SF Symbols**: Could supplement for abstract/action concepts
+- **AI-generated**: For therapist-created tile sets, AI could generate appropriate images. **Now:** shipped; new words are drawn in the board's own style from a per-style reference pack (`gpt-image-2`, #123).
+- ~~**SF Symbols**: Could supplement for abstract/action concepts~~ **Obsolete.** Concepts no picture fits — letters, numbers, days, function words — are drawn in code (#69). An SF Symbol can still be used where one is the right picture.
 
 ---
 
 ### Sentence Engine
 
 **Interaction flow:**
-1. Child taps tiles → added to sentence tray (tap again to remove)
-2. 1-second debounce: after no taps for ~1 second, trigger sentence generation
+1. Child taps tiles → added to sentence tray ~~(tap again to remove)~~. **Now:** a grid tap only adds; tapping the last tile again escalates, and a word is removed from the tray chip (#26).
+2. ~~1-second debounce: after no taps for ~1 second, trigger sentence generation~~ **Now:** the child presses Play; generation is automatic only at the tile cap (#26).
 3. Cache check first → instant response + audio playback on cache hit
 4. Cache miss → API call to OpenAI
 5. Staleness guard: when API response arrives, verify selection hasn't changed while waiting. If child kept tapping, cache the result but don't display it (it's stale)
 6. Display generated sentence text below tray + play audio
 
-**No "speak" button.** The system auto-generates once the child pauses. This keeps the interaction dead simple - just tap tiles.
+~~**No "speak" button.** The system auto-generates once the child pauses. This keeps the interaction dead simple - just tap tiles.~~ **Now:** there is a Play button (#26).
 
 **Single tile:** If only one tile is selected, just display the word (no API call). Configurable option for auto-voicing single words.
 
-**Max selected tiles:** Currently 4 in original. Should be configurable per child/profile.
+**Max selected tiles:** Currently 4 in original. Should be configurable per child/profile. **Now:** set by the child's Brown's Stage (I = 1, II–III = 4, IV+ = 5–8).
 
 **System prompt design (from original, to evolve):**
 - Persona: "You are their voice and soul"
 - Explains the word-selection communication model
 - Safety rails: no sexual/violent content generation
 - Uses wordClass as disambiguation context - tiles are sent as `"mom (people), eat (actions), pizza (meals)"` so AI can interpret ambiguous words correctly (e.g., "snack bar (food)" vs "snack bar (place)")
-- Age/voice setting: "grammar and vocabulary of a 1st grade student" → should be configurable per child profile in next gen
+- ~~Age/voice setting: "grammar and vocabulary of a 1st grade student" → should be configurable per child profile in next gen~~ **Now:** per child, by Brown's Stage (#56).
 - The prompt encourages relatable first-person sentences: "mom, tired" → "Mom, I am tired. Can I go lie down?"
 
 **API integration:**
-- Provider: OpenAI (target: gpt-4o-audio-preview for integrated text+audio response)
-- Single API call returns both text transcript and base64 audio
+- Provider: OpenAI ~~(target: gpt-4o-audio-preview for integrated text+audio response)~~
+- ~~Single API call returns both text transcript and base64 audio~~ **Now:** text only (`gpt-4o-mini`); speech is on-device.
 - Voice: configurable (original hardcoded "nova"). Child should be able to pick "their" voice
 - Architecture should abstract the provider so it can be swapped
 
 **Sentence cache (SwiftData):**
 - Key: sorted tile combination (e.g., "eat, mom, pizza")
-- Value: generated sentence text + base64 audio data
-- Hit count tracking (feeds promoted tile logic)
+- Value: generated sentence text ~~+ base64 audio data~~
+- Hit count tracking ~~(feeds promoted tile logic)~~
 - Cache lookup avoids API cost + gives instant response for repeated phrases
 - The cache IS the child's developing language - their most common expressions crystallize into instant, cached phrases
 
@@ -236,28 +240,28 @@ The original Blaster uses custom illustrated images per vocabulary word (the key
 
 Sentence generation is proven from the original Blaster. The high-value unknown is the content management / therapist layer. Build order reflects this — data architecture and content tools first, sentence engine is clean re-implementation of solved problem.
 
-1. **SwiftData models** — Tile, Page, PageTile, TileSet/Scene. Get the data architecture right first. This is the foundation everything else builds on.
+1. **SwiftData models** — Tile, ~~Page, PageTile,~~ TileSet/Scene. Get the data architecture right first. This is the foundation everything else builds on. (Pages became inline `PageSpec`.)
 2. **Bootstrap loader** — Load the default ~500 word vocabulary + pages from JSON into SwiftData. Proves the data model works end-to-end.
 3. **Skeletal grid view** — Minimal tile grid + sentence tray. Just enough to see and tap tiles. Scrolling grid with snap/haptics.
 4. **Therapist mode** — The high-value new territory:
    - Face ID / passcode gate
    - Create / edit / save / name tile sets
    - Swap active tile sets (load/unload/swap operations)
-   - Session mode (temporary takeover, revert)
+   - ~~Session mode (temporary takeover, revert)~~ — dropped, superseded by admin mode
    - Import tile sets from JSON (URL, text message, AirDrop)
 5. **Sentence engine** — OpenAI integration, debounce, cache-first lookup, staleness guard, conversational context. Clean re-implementation of proven concept.
-6. **TTS + audio** — Voice selection, integrated audio response, repetition escalation in prosody.
-7. **Promoted tiles** — Usage tracking, surfacing frequent combinations as single tiles.
+6. **TTS + audio** — Voice selection, ~~integrated audio response,~~ repetition escalation in prosody.
+7. ~~**Promoted tiles** — Usage tracking, surfacing frequent combinations as single tiles.~~ — dropped: works against motor planning
 8. **AI tile set generator** — Therapist describes a goal, AI generates vocabulary + layout.
 9. **Import/export polish** — JSON schema finalized, sharing via multiple channels.
-10. **UX polish** — Tray redesign, grid haptics, age-adaptive voice/complexity.
+10. **UX polish** — Tray redesign, grid haptics, ~~age-adaptive~~ stage-adaptive voice/complexity.
 
 ---
 
 ### Platform
 - **iPad + iPhone from the start.** Not "iPhone later" — develop both layouts together.
 - iPhone rationale: old/surplus iPhones are abundant and can be repurposed as dedicated communication devices. Lowers the barrier to access. Aligned with open source mission.
-- Grid adapts to form factor: iPad shows more tiles per screen, iPhone shows fewer but snapping scroll handles it naturally.
+- Grid adapts to form factor: iPad shows more tiles per screen, iPhone shows fewer but snapping scroll handles it naturally. **Now:** three fixed grids per device kind (iPad 12×5 / 10×4 / 9×4, phone 4×5 / 3×4 / 2×4), and a scene declares the grid it was designed for (#110/#111).
 - SwiftUI adaptive layouts handle most of this. Same data, same logic, different grid density.
 - iOS/iPadOS, SwiftUI, SwiftData
 - Target: iOS 26+
@@ -292,8 +296,8 @@ Page structure: Home -> category pages -> sub-pages (with pagination for large c
 - This supports both ad-hoc sharing (therapist texts a tile set to a parent) AND structured publishing (curated tile sets hosted on a website).
 - Privacy preserved: the JSON contains vocabulary/layout only, never usage data or personal info.
 
-**Age/profile influences the AI layer:**
-- Age is a per-child profile setting.
+**~~Age~~ Language stage / profile influences the AI layer:** **Now:** Brown's Stages replaced age, and the child's date of birth was deleted from the schema (#56) — a stage names a language target; a birthday was a privacy liability.
+- ~~Age is a per-child profile setting.~~
 - It determines: sentence complexity, vocabulary level in generated sentences, TTS voice selection/characteristics.
 - A 4-year-old gets simpler sentences and a younger-sounding voice. A 12-year-old gets more complex language.
 - This feeds directly into the system prompt ("communicate at the level of a [age]-year-old").
@@ -326,14 +330,14 @@ See `docs/tilescript.md` for the full technical specification.
 ---
 
 ### Open Questions
-- **TabView / minimum deployment target**: iOS 18 introduced a new `Tab` API with significantly improved iPad behavior (sidebar-style tab bar, better adaptive layout). We're currently using the legacy `tabItem` modifier to support older targets, but should revisit raising the minimum to iOS 18 to get the modern tab experience — especially important for the iPad form factor where the tab bar presentation changed substantially.
-- Voice selection: What voices feel right for a child? Can we let the child pick "their" voice?
+- **TabView / minimum deployment target** (still open; Admin uses legacy `.tabItem`): iOS 18 introduced a new `Tab` API with significantly improved iPad behavior (sidebar-style tab bar, better adaptive layout). We're currently using the legacy `tabItem` modifier to support older targets, but should revisit raising the minimum to iOS 18 to get the modern tab experience — especially important for the iPad form factor where the tab bar presentation changed substantially.
+- ~~Voice selection: What voices feel right for a child? Can we let the child pick "their" voice?~~ Answered: per-child voice picker.
 - Accessibility: Beyond AAC - VoiceOver, Switch Control, other iOS accessibility features?
 - Localization: Multi-language support from the start or later?
-- Image assets: Source/license for the default tile images? Use original Blaster images or find open-source AAC symbol set?
-- Sentence cache: Should cache be per-scene or global? What's the eviction strategy?
-- JSON sharing format: What's the schema? Define early so it's stable for third-party tile set creators.
-- Onboarding: How does a non-technical parent/guardian set up API keys without friction?
+- ~~Image assets: Source/license for the default tile images?~~ Answered: generated for the app, Apache-2.0.
+- ~~Sentence cache: Should cache be per-scene or global? What's the eviction strategy?~~ Answered: global, TTL + LRU (`docs/cache-policy.md`).
+- ~~JSON sharing format: What's the schema?~~ Answered: `.blasterscene` / `.blasterpack`, plus OBF/OBZ export.
+- Onboarding: How does a non-technical parent/guardian set up API keys without friction? Partly answered: setup guide, gifted keys, and a board that needs no key at all.
 
 ---
 
