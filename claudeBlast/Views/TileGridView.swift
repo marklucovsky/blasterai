@@ -328,6 +328,9 @@ struct TileGridView: View {
         .task {
             haptic.prepare()
             coordinator.navigationPath = [activeScene?.homePageKey ?? "home"]
+            coordinator.onPress = { [engine] from, to, linkKey in
+                engine.logNavigation(from: from, to: to, linkKey: linkKey)
+            }
         }
         .onChange(of: activeScene?.id) {
             coordinator.navigateHome(homePageKey: activeScene?.homePageKey ?? "home")
@@ -801,7 +804,7 @@ struct TileGridView: View {
         }
         if !resolvedLink.isEmpty {
             withAnimation(.easeOut(duration: 0.30)) {
-                coordinator.navigate(to: resolvedLink)
+                coordinator.navigate(to: resolvedLink, linkKey: key)
             }
             if recorder.state == .recording {
                 // Skip a separate navigate record if we already recorded an audible-nav for

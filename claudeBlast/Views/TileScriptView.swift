@@ -596,6 +596,7 @@ struct TileScriptView: View {
             // hour to lose.
             ScriptInfo(name: "Load — activity", description: "3k utterances over 90 days — fills the Activity views (not the compactor)", resourceName: "load_activity"),
             ScriptInfo(name: "Load — activity (single word)", description: "The same, as single-word presses — the mode the views must also hold up in", resourceName: "load_activity_words"),
+            ScriptInfo(name: "Load — coverage", description: "~60% of BlasterAI 60's Home plus four folders, for Coverage → By page (best on a fresh install)", resourceName: "load_coverage"),
         ]
         #endif
         return scripts

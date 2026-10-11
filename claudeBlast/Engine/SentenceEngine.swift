@@ -117,6 +117,12 @@ final class SentenceEngine {
     /// guessed at.
     var currentPageKey: String = ""
 
+    /// Record a press that changed page. See `LoggedNavigation`.
+    func logNavigation(from: String, to: String, linkKey: String) {
+        cacheManager?.logNavigation(fromPageKey: from, toPageKey: to, linkKey: linkKey,
+                                    childID: profileResolver?.activeChildID)
+    }
+
     var interactionMode: InteractionMode {
         // No usable key forces single-word, whatever the child's stage says.
         //

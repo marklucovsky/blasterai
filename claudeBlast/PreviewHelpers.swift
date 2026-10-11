@@ -15,7 +15,7 @@ let previewContainer: ModelContainer = {
     let schema = Schema([
         TileModel.self, TileArtVariant.self,
         BlasterScene.self, SentenceCache.self, MetricEvent.self,
-        RecordedScript.self, LoggedUtterance.self,
+        RecordedScript.self, LoggedUtterance.self, LoggedNavigation.self,
     ])  // previews use one in-memory store; the app's synced/local split doesn't apply
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
     let container = try! ModelContainer(for: schema, configurations: [config])

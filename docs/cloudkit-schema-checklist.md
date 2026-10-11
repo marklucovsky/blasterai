@@ -93,6 +93,10 @@ by name are the ones nothing writes in ordinary use:
 - [x] `CD_ChildProfile.CD_linkColorModeRaw` — added after promotion
       (2026-09-27). **Shipped in build 4 before it was deployed**, so child
       profile sync failed in Production until 2026-10-06, when it was deployed.
+- [ ] `CD_LoggedNavigation` — a whole **record type** added after promotion
+      (2026-10-11): one row per link, Home or Back press, for coverage and the
+      activity log. Written by any folder tap, and by the schema exerciser.
+      **Not yet deployed** — deploy before the first build that carries it.
 - [ ] `CD_BlasterScene.CD_pagesData` — the pages blob (so no page or tile field
       should appear here; sparse boards and conceal live inside it)
 

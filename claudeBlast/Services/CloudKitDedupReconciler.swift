@@ -236,5 +236,8 @@ enum CloudKitDedupReconciler {
         if let logs = try? context.fetch(FetchDescriptor<LoggedUtterance>()) {
             for l in logs where dead.contains(l.childID) { l.childID = newID }
         }
+        if let navs = try? context.fetch(FetchDescriptor<LoggedNavigation>()) {
+            for n in navs where dead.contains(n.childID) { n.childID = newID }
+        }
     }
 }

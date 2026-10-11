@@ -10,7 +10,8 @@ tileWait: .fast
 # The first run did exactly that — every press on every page counted as Home.
 sentenceWait: .instant
 
-# Data for COVERAGE → By page, the caregiver-data shot in the App Store set.
+# Data for COVERAGE → By page, the caregiver-data shot in the App Store set —
+# and, at .fast, a watchable run of a child at the board.
 #
 # Why not load_activity: its pool is `most-common` across the whole board and it
 # writes mock *sentences*, so Activity fills with lines like "I want many and
@@ -22,46 +23,75 @@ sentenceWait: .instant
 # requests in every round (want, more, help, stop, yes/no, all done), a middle
 # band of verbs and pronouns in half of them, a few function words twice. The
 # 20 never pressed are mostly function words — the, a, for, with — which is the
-# gap Coverage exists to show. People, Food, Drinks and Play get a little use
-# each, so By page reads like a real board rather than a home page and nothing.
+# gap Coverage exists to show.
 #
-# Rows are shuffled with a fixed seed, so a re-run produces the same counts.
+# ## Pages are visited the way the board visits them
+#
+# `eat`, `drink` and `play` speak AND open a page. A bare `eat` in TileScript is
+# only the word — the first version tapped them that way, so they lit up and
+# nothing opened, and every page trip sat in one block at the end. Now each is
+# followed by its page (`eat, <food>, …, <home>`), and the trips are spread
+# through the rounds. A couple of rows open a folder and come straight back with
+# nothing said — that is what the activity log's page trail is for.
+#
+# Every row starts and ends on Home, so rows can be reordered freely.
+#
+# Two words or more per row. In single-word mode a strip of ONE word is
+# ephemeral — never logged — and Coverage reads the log, so a row like
+# `<food>, pizza` counts for nothing. An early version did exactly that and
+# Food read 0%.
+#
 # Run it on a fresh install: coverage is "ever pressed", so anything earlier in
 # the store stays counted.
 
 script:
-  - comment: Home page — 8 rounds, weighted
+  - comment: Round 1
   - tiles:
-    - yes, do, don't, go, you, my, me, on, down, that, more, like, drink, want, come, up, get, open, help, all_done, stop, out, in, it, eat, i, play, read, not, no
-    - stop, play, go, eat, it, like, down, help, open, come, you, on, me, my, don't, i, not, get, that, yes, more, do, up, in, all_done, drink, out, want, no, read
-    - no, drink, play, help, eat, me, want, go, more, my, it, like, all_done, stop, i, up, out, you, open, yes
-    - i, you, it, eat, go, want, like, drink, all_done, more, up, yes, help, stop, open, my, no, out, play, me
-    - stop, go, yes, i, more, all_done, help, want, no
-    - no, yes, stop, go, more, want, i, help, all_done
-    - more, want, help, all_done, no, stop, yes, go, i
-    - more, yes, no, go, want, all_done, stop, i, help
-  - comment: Four more pages, a little use on each
-  # Two words or more per row. In single-word mode a strip of ONE word is
-  # ephemeral — never logged — and Coverage reads the log, so a row like
-  # `<food>, pizza` counts for nothing. The first version of this script did
-  # exactly that and Food read 0%.
-  - tiles:
+    - yes, do, don't, go, you, my, me, on
+    - want, eat, <food>, pizza, apple, <home>
+    - down, that, more, like, come, up
+    - drink, <drinks>, water, juice, <home>
+    - get, open, help, all_done, stop, out
     - <people>, mom, dad, <home>
-    - <food>, pizza, apple, <home>
-    - <drinks>, water, juice, <home>
-    - <play_activities>, ball, bubbles, <home>
+    - in, it, i, read, not, no
+    - play, <play_activities>, ball, bubbles, <home>
+  - comment: Round 2
+  - tiles:
+    - stop, go, it, like, down, help
+    - eat, <food>, cookie, crackers, banana, <home>
+    - open, come, you, on, me, my
+    - <actions>, <home>, <groups>, <home>, more, want
+    - don't, i, not, get, that, yes
+    - drink, <drinks>, milk, water, <home>
+    - more, do, up, in, all_done, out
+    - play, <play_activities>, swing, slide, <home>
+    - want, no, read, stop
+  - comment: Round 3
+  - tiles:
+    - no, help, me, want, go, more
     - <people>, mom, sister, <home>
-    - <food>, cookie, crackers, banana, <home>
-    - <drinks>, milk, water, <home>
-    - <play_activities>, swing, slide, <home>
+    - my, it, like, all_done, stop, i
+    - eat, <food>, cheese, chips, pizza, <home>
+    - up, out, you, open, yes, more
+  - comment: Round 4
+  - tiles:
+    - i, you, it, go, want, like
+    - drink, <drinks>, chocolate_milk, juice, <home>
+    - all_done, more, up, yes, help, stop
     - <people>, grandma, teacher, <home>
-    - <food>, cheese, chips, pizza, <home>
-    - <play_activities>, blocks, ipad, <home>
+    - open, my, no, out, me, want
+    - play, <play_activities>, blocks, ipad, <home>
+  - comment: Rounds 5–8 — the core requests, and the pages they lead to
+  - tiles:
+    - stop, go, yes, i, more, all_done, help, want, no
+    - eat, <food>, macaroni, nuggets, <home>
+    - <places>, <home>, <describe>, <home>, help, more
+    - no, yes, stop, go, more, want, i, help, all_done
     - <people>, friend, mom, <home>
-    - <food>, macaroni, nuggets, <home>
-    - <drinks>, chocolate_milk, juice, <home>
-    - <play_activities>, puzzle, ball, <home>
-    - <food>, pizza, cookie, <home>
+    - play, <play_activities>, puzzle, ball, <home>
+    - more, want, help, all_done, no, stop, yes, go, i
+    - eat, <food>, pizza, cookie, <home>
+    - more, yes, no, go, want, all_done, stop, i, help
     - <people>, dad, mom, <home>
   - screen: board
   - comment: Coverage load complete — Admin → Activity → Coverage → By page

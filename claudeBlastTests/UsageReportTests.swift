@@ -7,6 +7,7 @@
 
 import Testing
 import Foundation
+import UIKit
 @testable import claudeBlast
 
 extension SerialTests {
@@ -123,6 +124,47 @@ struct UsageReportTests {
             #expect(data.count > 1_000)
             #expect(data.prefix(4) == Data("%PDF".utf8))
         }
+    }
+
+    /// Made on a device in dark mode, the report still prints dark text on a
+    /// white page. It used to draw `label` as white: an almost blank report.
+    @Test func aReportMadeInDarkModeIsStillDarkInkOnPaper() throws {
+        let entries = sampleEntries()
+        let report = UsageReport.make(
+            childName: "Ada", scene: sampleScene(), periodLabel: "Past Week",
+            inWindow: entries, allTime: entries, tileLookup: [:],
+            from: at(day: 3, hour: 0), to: at(day: 9, hour: 23),
+            includesUtterances: false)
+
+        func inkFraction(_ style: UIUserInterfaceStyle) throws -> Double {
+            var data = Data()
+            UITraitCollection(userInterfaceStyle: style).performAsCurrent {
+                data = UsageReportRenderer.render(report)
+            }
+            let doc = try #require(CGPDFDocument(CGDataProvider(data: data as CFData)!))
+            let page = try #require(doc.page(at: 1))
+            let box = page.getBoxRect(.mediaBox)
+            let w = Int(box.width), h = Int(box.height)
+            var pixels = [UInt8](repeating: 0, count: w * h * 4)
+            let ctx = try #require(CGContext(
+                data: &pixels, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue))
+            ctx.setFillColor(UIColor.white.cgColor)
+            ctx.fill(CGRect(x: 0, y: 0, width: w, height: h))
+            ctx.drawPDFPage(page)
+            var dark = 0
+            for i in stride(from: 0, to: pixels.count, by: 4)
+            where Int(pixels[i]) + Int(pixels[i + 1]) + Int(pixels[i + 2]) < 300 {
+                dark += 1
+            }
+            return Double(dark) / Double(w * h)
+        }
+
+        let light = try inkFraction(.light)
+        let dark = try inkFraction(.dark)
+        #expect(light > 0.002)
+        #expect(abs(dark - light) < light * 0.05, "dark-mode ink \(dark) vs light \(light)")
     }
 
     /// An empty period still produces a readable file rather than failing. A

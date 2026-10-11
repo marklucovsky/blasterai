@@ -365,6 +365,15 @@ final class SentenceCacheManager {
         context.insert(entry)
     }
 
+    /// Persist one page change a press caused, stamped with the active scene
+    /// and child the same way `logUtterance` stamps them.
+    func logNavigation(fromPageKey: String, toPageKey: String, linkKey: String,
+                       childID: String? = nil) {
+        context.insert(LoggedNavigation(
+            fromPageKey: fromPageKey, toPageKey: toPageKey, linkKey: linkKey,
+            sceneID: activeScene().id ?? "", childID: childID ?? ""))
+    }
+
     private func activeScene() -> (id: String?, name: String?) {
         var descriptor = FetchDescriptor<BlasterScene>(
             predicate: #Predicate { $0.isActive == true }

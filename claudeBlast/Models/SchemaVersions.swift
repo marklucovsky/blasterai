@@ -53,14 +53,23 @@ import SwiftData
 /// `localModels` are exempt from all of the above — they never enter the
 /// CloudKit schema and can be reshaped freely.
 ///
-/// ## Adding V2
+/// ## Additive changes stay in V1 — do not add a V2 for them
 ///
-/// 1. Copy this enum to `BlasterSchemaV2`, bump `versionIdentifier`, and edit
-///    the model list.
-/// 2. Add V2 to `BlasterMigrationPlan.schemas`.
-/// 3. Add a `MigrationStage` (`.lightweight` for pure additions; `.custom` when
-///    data must be transformed). Old readers stay in the field — a tester on
-///    build 3 must not be broken by build 7's schema.
+/// A new field or a new record type is added here, in V1, and SwiftData's
+/// automatic lightweight migration carries every installed store forward. That
+/// is how `designedFor` and every other post-promotion field arrived.
+///
+/// **A V2 with a migration stage crashes existing installs.** Tried 2026-10-11
+/// for `LoggedNavigation`: the app trapped at launch with *"Cannot use staged
+/// migration with an unknown model version"* (Core Data 134504). V1 lists the
+/// *live* classes, so its fingerprint moves with every additive change, and a
+/// store on disk carries the fingerprint of whichever build last opened it.
+/// Staged migration needs that fingerprint to match a declared version
+/// exactly; an empty plan never checks.
+///
+/// A real V2 — one that has to *transform* data — first needs V1 frozen as
+/// nested snapshot types matching what devices actually hold, plus a test that
+/// opens a store written by the oldest build still in testers' hands.
 enum BlasterSchemaV1: VersionedSchema {
     static var versionIdentifier: Schema.Version { Schema.Version(1, 0, 0) }
 
@@ -74,6 +83,9 @@ enum BlasterSchemaV1: VersionedSchema {
             BlasterScene.self,
             RecordedScript.self,
             LoggedUtterance.self,
+            // Added 2026-10-11, after promotion: a new record type, so
+            // `Deploy Schema to Production` before the build that writes it ships.
+            LoggedNavigation.self,
             ChildProfile.self,
             ReceivedPack.self,
         ]

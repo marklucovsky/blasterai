@@ -41,6 +41,11 @@ before its deploy, because nothing in the release loop asked. Before every
 upload, compare `tools/expected_cloudkit_schema.py` against Production's
 record types: a field it lists that Production lacks means deploy first.
 
+**Pending: `CD_LoggedNavigation`** (a new record type, 2026-10-11). Deploy it
+before the first build after 0.9.0 (5). A new record type is added the same
+way a field is — in `BlasterSchemaV1`, with no migration stage; see the note on
+`BlasterSchemaV1` for why a V2 with a stage crashes existing installs.
+
 ---
 
 ## 1. Preflight
@@ -361,8 +366,9 @@ was poisoned by the content inside it.
    tools/screenshot_sweep.sh shots_appstore build/shots/raw`. Rotate the iPad
    simulator to landscape by hand first (⌘←). The sentence is real, so the
    simulator needs the scheme's key and AI permission accepted once.
-2. **Seeded** — coverage: run `load_coverage` on a fresh install, then
-   capture Coverage → By page by hand.
+2. **Seeded** — coverage: run `load_coverage` on a fresh install (Admin →
+   Device → TileScript → "Load — coverage" in a Debug build, or
+   `-TileScriptAutorun load_coverage`), then capture Coverage → By page by hand.
 3. **By hand** — art, coverage, AI consent, and the iPhone sentence (tap the
    collapsed bubble open). Use Device → Trigger Screenshot; it saves to the
    simulator's own library at
@@ -374,8 +380,8 @@ Traps met on the way:
 - **The AI consent sheet over the board** appears once, on a caregiver device
   with a key and no permission — and never while demo mode is on. To shoot it:
   clear permission, turn demo mode off in the app, return to the board.
-- **`-TileScriptAutorun` fires again** every time TileScript opens for the rest
-  of that launch. Relaunch without it before touching Admin.
+- **`-TileScriptAutorun` used to fire again** every time TileScript opened for
+  the rest of that launch. Fixed in #124: it runs once per launch.
 - **`simctl spawn … defaults write`** reached the app on one simulator and not
   another, where the preferences cache reverted every edit. Prefer the app's
   own settings; check the container's plist if something doesn't take.

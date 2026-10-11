@@ -28,6 +28,7 @@ struct BundledScriptTests {
         "demo_basic",
         "demo_home",
         "demo_onthego",
+        "load_coverage",
     ]
 
     /// A shipped script that doesn't parse is a button that fails when a user

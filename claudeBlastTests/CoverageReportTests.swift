@@ -210,21 +210,9 @@ struct CoverageReportTests {
         #expect(home.usedFraction == 0.0)
     }
 
-    /// A page with no vocabulary of its own contributes no row — pure
-    /// navigation. A 0-of-0 row would read as a finding and is only an absence.
-    @Test func aNavigationOnlyPageIsOmitted() {
-        let report = CoverageReport.make(
-            sceneName: "S",
-            pages: [
-                page("home", [("food", "food")]),
-                page("food", [("pizza", "")]),
-            ],
-            inWindow: [],
-            allTime: []
-        )
-        // Home is pure navigation and contributes no row at all.
-        #expect(report.usageByPage.map(\.pageKey) == ["food"])
-    }
+    // `aNavigationOnlyPageIsOmitted` lived here. Folders now count as cells, so
+    // a page of only folders gets a row: see
+    // `NavigationLogTests.aPageOfOnlyFoldersGetsARow`.
 
     // MARK: - Drill-down keys
 

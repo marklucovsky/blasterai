@@ -19,6 +19,7 @@ struct UsageReportSheet: View {
     private var allEntries: [LoggedUtterance]
     @Query(sort: \BlasterScene.name) private var scenes: [BlasterScene]
     @Query(sort: \TileModel.key) private var allTiles: [TileModel]
+    @Query private var navigations: [LoggedNavigation]
 
     @Environment(ChildProfileResolver.self) private var profileResolver
     @Environment(\.dismiss) private var dismiss
@@ -62,6 +63,7 @@ struct UsageReportSheet: View {
             periodLabel: window.rawValue,
             inWindow: windowedEntries,
             allTime: allEntries,
+            navigations: navigations,
             tileLookup: Dictionary(allTiles.map { ($0.key, $0) },
                                    uniquingKeysWith: { first, _ in first }),
             from: window.earliest(),

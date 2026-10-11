@@ -37,7 +37,7 @@ struct FactoryResetTests {
     @Test func theResetListCoversEverySyncedModel() {
         let cleared: Set<String> = [
             "MetricEvent", "SentenceCache", "BlasterScene", "TileArtVariant",
-            "TileModel", "LoggedUtterance", "RecordedScript", "ReceivedPack",
+            "TileModel", "LoggedUtterance", "LoggedNavigation", "RecordedScript", "ReceivedPack",
             "ChildProfile", "DeviceProfile", "APIUsageEvent", "CompactionRun",
         ]
         let inSchema = (BlasterSchemaV1.syncedModels + BlasterSchemaV1.localModels)
