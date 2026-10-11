@@ -23,7 +23,8 @@ from PIL import Image, ImageDraw, ImageFilter
 from scipy.ndimage import distance_transform_edt
 
 W = 1024
-BG = (243, 236, 225)
+# Playful 3D moved to a pure white canvas with the gpt-image-2 re-shoot (2026-10).
+BG = (255, 255, 255)
 SHAPE_FIT = 660          # bounding-box edge length the shape is fit into
 CENTER = (W // 2, W // 2 - 10)
 LIGHT = np.array([0.45, -0.55, 0.70])

@@ -1,0 +1,2547 @@
+{
+  "rendered": {
+    "because": "render_logic_marks.py",
+    "but": "render_logic_marks.py",
+    "today": "render_strips.py",
+    "tomorrow": "render_strips.py",
+    "yesterday": "render_strips.py",
+    "week": "render_strips.py",
+    "weekend": "render_strips.py",
+    "a": "render_word_glyphs.py",
+    "the": "render_word_glyphs.py",
+    "and": "render_word_glyphs.py",
+    "is": "render_word_glyphs.py",
+    "at": "render_word_glyphs.py"
+  },
+  "ai": {
+    "actions": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "afraid": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "after": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "afternoon": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "again": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "airplane": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "vehicles",
+      "subject": "a passenger airplane flying"
+    },
+    "airport": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "alien": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "space",
+      "subject": "a friendly little green alien with big eyes"
+    },
+    "all": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "all_done": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "alone": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "always": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "ambulance": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "vehicles",
+      "subject": "a white ambulance with a red cross and lights"
+    },
+    "anemone": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "tidepools",
+      "subject": "a pink sea anemone with waving tentacles"
+    },
+    "angry": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "animals": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "answer": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "apart": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "apple": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "applesauce": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "arm": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "around": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "art": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "ask": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "asleep": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "astronaut": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "space",
+      "subject": "a friendly astronaut in a white spacesuit and helmet"
+    },
+    "away": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "awesome": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "baby": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "back": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "back_": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "backyard": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bad": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "ball": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "banana": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bandaid": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "barn": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "farm",
+      "subject": "a classic red barn with a peaked roof and white trim"
+    },
+    "baseball": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "basketball": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bathe": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bathroom": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "be_quiet": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "beach": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bed": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bedroom": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "before": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "behind": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "best": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "better": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "between": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bicycle": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "vehicles",
+      "subject": "a child's bicycle, side view"
+    },
+    "big": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bingo": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bird": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bite": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "blanket": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "blocks": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "blow": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "blueberries": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "blush": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "boat": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "vehicles",
+      "subject": "a small sailboat on blue water"
+    },
+    "body": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "body_health": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "book": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bored": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "boring": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bottom": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bowl": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bowling_alley": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "boy": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "break": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "broccoli": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "broken": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "brontosaurus": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "dinosaurs",
+      "subject": "a long-necked brontosaurus dinosaur"
+    },
+    "brother": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "brush": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "brush_teeth": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bubbles": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "build": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "building": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "busy": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "buy": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bye": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "call": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "calm": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "camp": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "can": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "car": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "vehicles",
+      "subject": "a red cartoon car, side view"
+    },
+    "cards": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "carrot": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "cars": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "cat": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "catch": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "cereal": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "cheap": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "cheese": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "cherry": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "chew": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "chicken": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "farm",
+      "subject": "a white hen chicken standing"
+    },
+    "chips": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "chocolate": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "chocolate_milk": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "church": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "circle": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "clap": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "class": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "clean": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "clean_": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "climb": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "close": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "closed": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "closet": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "clothes": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "cloud": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "coat": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "cold": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "cold_": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "cold__": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "color": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "come": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "comet": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "space",
+      "subject": "a comet with a glowing tail streaking across"
+    },
+    "cook": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "cookie": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "cool": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "cool_": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "corn": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "cough": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "cow": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "farm",
+      "subject": "a cow standing, black and white spots, side view, friendly"
+    },
+    "crab": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "tidepools",
+      "subject": "a red crab with two claws, top view"
+    },
+    "crackers": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "crayons": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "crazy": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "cry": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "cucumber": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "cup": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "mealtime",
+      "subject": "a cup with a handle"
+    },
+    "cut": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "cute": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "dad": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "dance": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "dark": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "day": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "describe": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "diamond": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "different": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "dining_room": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "dino_egg": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "dinosaurs",
+      "subject": "a large spotted dinosaur egg"
+    },
+    "dinosaur": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "dinosaurs",
+      "subject": "a friendly green cartoon dinosaur"
+    },
+    "dirty": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "do": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "doctor": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "dog": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "doll": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "don't": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "door": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "down": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "draw": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "dress_up": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "drink": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "drinks": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "drive": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "dry": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "dry_": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "duck": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "dumb": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "ear": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "easy": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "eat": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "egg": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "farm",
+      "subject": "a single smooth white egg"
+    },
+    "eggs": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "email": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "empty": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "excellent": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "excited": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "exciting": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "excuse_me": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "expensive": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "eye": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "face": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "fall": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "false": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "family": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "far": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "farm": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "farmer": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "farm",
+      "subject": "a friendly farmer in denim overalls and a straw hat, half body"
+    },
+    "fast": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "fat": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "feel": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "feelings": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "fever": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "few": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "find": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "fine": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "finger": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "finish": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "fire_truck": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "vehicles",
+      "subject": "a red fire truck with a ladder"
+    },
+    "fish": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "tidepools",
+      "subject": "a small orange fish, side view"
+    },
+    "fixed": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "fly": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "fog": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "food": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "foot": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "football": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "for": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "forget": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "fork": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "mealtime",
+      "subject": "a single metal fork, top view"
+    },
+    "fossil": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "dinosaurs",
+      "subject": "a dinosaur skeleton fossil"
+    },
+    "friend": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "fries": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "front": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "fruit": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "fruit_snack": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "frustrated": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "full": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "fun": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "funny": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "funny_": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "games": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "get": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "girl": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "give": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "glue": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "go": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "goldfish_cracker": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "good": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "goodbye": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "goodnight": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "graham_cracker": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "grandma": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "grandpa": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "grapes": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "great": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "green_beans": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "grocery_store": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "groups": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "guess": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "hair": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "hamburger": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "hand": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "happy": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "hard": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "hat": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "hate": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "have": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "hay": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "farm",
+      "subject": "a golden round bale of hay"
+    },
+    "he": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "head": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "headache": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "health": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "hear": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "heart": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "heavy": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "helicopter": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "vehicles",
+      "subject": "a helicopter with a spinning top rotor"
+    },
+    "hello": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "help": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "here": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "hide": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "high": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "his": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "hit": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "home": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "home_": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "hope": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "horse": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "farm",
+      "subject": "a brown horse standing, side view"
+    },
+    "hot": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "hot_": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "hot_dog": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "house": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "how": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "how_are_you": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "hug": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "hungry": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "hurt": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "i": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "i_dont_know": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "i_love_it": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "i_love_you": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "ice_cubes": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "iced_tea": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "in": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "ipad": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "it": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "itchy": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "jelly": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "juice": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "jump": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "keyboard": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "kick": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "kiss": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "kitchen": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "knee": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "know": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "lake": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "later": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "laundry": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "learn": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "leave": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "leg": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "lemon": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "lemonade": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "lets": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "lettuce": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "library": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "light": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "lightning": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "like": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "line_up": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "listen": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "little": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "live": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "living_room": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "lonely": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "long": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "look": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "lose": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "loud": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "love": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "low": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "lunch": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "macaroni": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "make": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "mall": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "many": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "markers": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "maybe": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "me": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "meals": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "mean": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "medicine": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "meet": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "messy": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "middle": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "milk": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "milkshake": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "mine": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "mom": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "moon": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "space",
+      "subject": "a pale grey crescent moon"
+    },
+    "more": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "morning": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "mouth": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "move": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "movie": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "music": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "my": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "nap": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "napkin": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "mealtime",
+      "subject": "a folded white napkin"
+    },
+    "near": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "need": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "never": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "new": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "nice": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "nice_to_meet": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "night": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "no": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "no_way": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "nose": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "not": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "now": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "nuggets": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "nurse": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "oatmeal": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "ocean": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "octagon": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "off": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "oh_my": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "okay": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "okay_": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "old": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "on": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "open": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "or": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "orange": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "our": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "out": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "outside": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "oval": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "over": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "paint": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "paintbrush": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "pajamas": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "pancakes": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "pants": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "paper": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "park": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "peanut_butter": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "pear": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "pee": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "pencil": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "people": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "pepper": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "phone": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "pig": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "farm",
+      "subject": "a pink pig standing, side view, friendly"
+    },
+    "pizza": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "places": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "planet": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "space",
+      "subject": "a ringed planet like Saturn, purple and blue"
+    },
+    "plate": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "mealtime",
+      "subject": "an empty round white dinner plate, top view"
+    },
+    "play": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "playdoh": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "playground": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "please": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "police_car": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "vehicles",
+      "subject": "a police car with blue lights on top"
+    },
+    "polish_nails": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "pool": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "poop": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "popcorn": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "popsicle": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "potato": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "potty": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "pour": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "pray": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "pretty": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "pretzel": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "problem": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "proud": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "pterodactyl": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "dinosaurs",
+      "subject": "a pterodactyl flying dinosaur with wings"
+    },
+    "pudding": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "pull": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "push": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "put": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "puzzle": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "question": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "quick": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "quiet": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "rain": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "rainbow": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "raptor": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "dinosaurs",
+      "subject": "a small velociraptor dinosaur"
+    },
+    "read": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "rectangle": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "remember": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "restaurant": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "ride": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "right": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "rocket": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "space",
+      "subject": "a cartoon rocket ship blasting off with flames"
+    },
+    "rooster": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "farm",
+      "subject": "a colorful rooster with a red comb, side view"
+    },
+    "run": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "sad": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "salad": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "same": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "sandwich": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "satellite": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "space",
+      "subject": "a space satellite with solar panels"
+    },
+    "sausage": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "say": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "scared": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "school": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "school_people": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "scissors": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "seaweed": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "tidepools",
+      "subject": "green seaweed strands underwater"
+    },
+    "see": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "shape": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "share": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "sharp": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "she": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "sheep": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "farm",
+      "subject": "a fluffy white sheep standing, side view"
+    },
+    "shell": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "tidepools",
+      "subject": "a spiral seashell, peach and white"
+    },
+    "shirt": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "shoes": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "shop": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "short": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "show": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "shower": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "sick": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "silly": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "silver": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "sing": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "sister": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "sit": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "sleep": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "slide": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "slow": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "smart": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "smell": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "smelly": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "snack": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "snack_bar": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "snail": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "tidepools",
+      "subject": "a sea snail with a brown spiral shell"
+    },
+    "snow": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "soccer": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "social": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "socks": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "soda": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "soft": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "some": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "sometimes": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "soon": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "sore_throat": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "sorry": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "soup": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "spaceship": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "space",
+      "subject": "a silver flying-saucer spaceship"
+    },
+    "spaghetti": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "mealtime",
+      "subject": "a plate of spaghetti noodles with red tomato sauce"
+    },
+    "speech": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "spoon": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "sports": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "square": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "stand": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "star": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "starfish": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "tidepools",
+      "subject": "an orange starfish with five arms, top view"
+    },
+    "stegosaurus": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "dinosaurs",
+      "subject": "a stegosaurus dinosaur with plates on its back"
+    },
+    "sticky": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "stinky": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "stomach": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "stomachache": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "stop": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "store": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "storm": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "strawberry": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "student": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "sun": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "surprised": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "swim": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "swing": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "syrup": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "take": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "talk": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "tape": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "teacher": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "telescope": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "space",
+      "subject": "a telescope on a tripod pointed up at the sky"
+    },
+    "tell": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "tennis": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "terrible": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "terrific": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "thank_you": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "that": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "their": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "therapy": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "there": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "they": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "thin": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "things": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "think": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "thirsty": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "this": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "through": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "throw": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "thunder": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "time": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "tired": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "to": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "toast": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "together": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "toilet": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "tomato": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "tonight": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "tooth": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "toothache": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "toothbrush": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "top": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "tornado": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "toy": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "tractor": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "farm",
+      "subject": "a red farm tractor, side view"
+    },
+    "train": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "vehicles",
+      "subject": "a colorful train engine, side view"
+    },
+    "trampoline": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "trex": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "dinosaurs",
+      "subject": "a friendly Tyrannosaurus Rex dinosaur, green, standing"
+    },
+    "triangle": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "triceratops": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "dinosaurs",
+      "subject": "a triceratops dinosaur with three horns"
+    },
+    "tricycle": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "truck": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "vehicles",
+      "subject": "a blue delivery truck, side view"
+    },
+    "true": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "try": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "tummy": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "turn": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "tv": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "ugly": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "uh_oh": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "uncomfortable": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "under": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "understand": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "up": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "upset": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "use": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "veggie": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "vehicles": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "video_game": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "volcano": {
+      "source": "build_vocab_packs.PACKS",
+      "pack": "dinosaurs",
+      "subject": "an erupting volcano with orange lava"
+    },
+    "wait": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "walk": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "want": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "warm": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "wash": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "wash_hair": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "wash_hands": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "watch": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "water": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "we": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "wear": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "weather": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "wet": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "what": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "whats_up": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "when": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "where": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "which": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "who": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "why": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "will": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "wind": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "window": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "wish": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "with": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "work": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "worried": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "worse": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "worst": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "write": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "wrong": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "yes": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "yogurt": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "you": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "young": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "your": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "youre_welcome": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "yucky": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "yummy": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "zoo": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    }
+  },
+  "special": {
+    "next": "composed by compose_queue.py --set classic from first.png (child figure moved to 2nd position; same pixels as first). Regenerate first, then rerun compose_queue. Its prompts.json entry is spec only.",
+    "last": "composed by compose_queue.py --set classic from first.png (child moved to right end). Its prompt never generated correctly (5 failures). Regenerate first, then rerun compose_queue.",
+    "previous_page": "exact horizontal mirror of next_page.png (measured pixel diff 0.0); derive with mirror_tile.py --set classic --from next_page --to previous_page after regenerating next_page. Its prompts.json entry (clay left arrow on a rounded square base) does not describe the shipped tile."
+  },
+  "unknown": [],
+  "preserved": {
+    "black": "shipped Classic colour disc, kept as-is: gpt-image-2 draws the colour words as patterned balls, and the flat discs are uniform across the set",
+    "blue": "shipped Classic colour disc, kept as-is: gpt-image-2 draws the colour words as patterned balls, and the flat discs are uniform across the set",
+    "brown": "shipped Classic colour disc, kept as-is: gpt-image-2 draws the colour words as patterned balls, and the flat discs are uniform across the set",
+    "colors": "shipped Classic colour disc, kept as-is: gpt-image-2 draws the colour words as patterned balls, and the flat discs are uniform across the set",
+    "gold": "shipped Classic colour disc, kept as-is: gpt-image-2 draws the colour words as patterned balls, and the flat discs are uniform across the set",
+    "green": "shipped Classic colour disc, kept as-is: gpt-image-2 draws the colour words as patterned balls, and the flat discs are uniform across the set",
+    "grey": "shipped Classic colour disc, kept as-is: gpt-image-2 draws the colour words as patterned balls, and the flat discs are uniform across the set",
+    "orange_": "shipped Classic colour disc, kept as-is: gpt-image-2 draws the colour words as patterned balls, and the flat discs are uniform across the set",
+    "pink": "shipped Classic colour disc, kept as-is: gpt-image-2 draws the colour words as patterned balls, and the flat discs are uniform across the set",
+    "purple": "shipped Classic colour disc, kept as-is: gpt-image-2 draws the colour words as patterned balls, and the flat discs are uniform across the set",
+    "red": "shipped Classic colour disc, kept as-is: gpt-image-2 draws the colour words as patterned balls, and the flat discs are uniform across the set",
+    "tan": "shipped Classic colour disc, kept as-is: gpt-image-2 draws the colour words as patterned balls, and the flat discs are uniform across the set",
+    "white": "shipped Classic colour disc, kept as-is: gpt-image-2 draws the colour words as patterned balls, and the flat discs are uniform across the set",
+    "yellow": "shipped Classic colour disc, kept as-is: gpt-image-2 draws the colour words as patterned balls, and the flat discs are uniform across the set",
+    "bus": "review: the shipped bus is better",
+    "galaxy": "review: the shipped galaxy is better",
+    "speak": "review: the shipped speak is the app icon \u2014 part of the brand",
+    "left": "review: left and right_ arrows must be identical shapes; the shipped pair is",
+    "right_": "review: left and right_ arrows must be identical shapes; the shipped pair is",
+    "first": "review: must match next/last, which compose_queue.py builds from the shipped first; the redraw changed figure size and spacing",
+    "next_page": "previous_page is its mirror (special); the redraw recoloured it green, so the pair would no longer match"
+  }
+}

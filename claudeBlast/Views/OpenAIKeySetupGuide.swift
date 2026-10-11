@@ -35,7 +35,7 @@ struct OpenAIKeySetupGuide: View {
                 } trailing: {
                     block("creditcard",
                           "Add billing and a little credit",
-                          "On the Platform, open Settings → Billing, add a payment method, and add about $5 of credit. The API is pay-as-you-go with no free tier, so without credit your key is valid but every request fails. $5 lasts a long time — typical Blaster use is about $0.10–0.50 / month.")
+                          "On the Platform, open Settings → Billing, add a payment method, and add about $5 of credit. The API is pay-as-you-go with no free tier, so without credit your key is valid but every request fails. $5 lasts a long time — sentences cost a fraction of a cent each, and a picture for a new word is about 6¢.")
                 }
 
                 groupHeader("Then get your key",

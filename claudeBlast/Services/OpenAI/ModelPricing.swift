@@ -21,8 +21,9 @@ enum ModelID {
     static let authoring = "gpt-4o-mini"
     /// `/v1/moderations` policy screen — free.
     static let moderation = "omni-moderation-latest"
-    /// Tile art generation and refinement.
-    static let image = "gpt-image-1"
+    /// Tile art generation and refinement. gpt-image-1 shuts down 2026-10-23;
+    /// gpt-image-2 is OpenAI's documented replacement.
+    static let image = "gpt-image-2"
 }
 
 /// Per-million-token rates for one model, in US dollars.
@@ -91,7 +92,7 @@ enum ModelPricing {
     /// Source: https://developers.openai.com/api/docs/pricing
     static let asOf: Date = {
         var c = DateComponents()
-        c.year = 2026; c.month = 8; c.day = 13
+        c.year = 2026; c.month = 10; c.day = 8
         return Calendar(identifier: .gregorian).date(from: c) ?? .distantPast
     }()
 
@@ -100,7 +101,7 @@ enum ModelPricing {
         ModelID.sentence: ModelRates(textInputPerM: 0.15, cachedInputPerM: 0.075,
                                      imageInputPerM: 0, outputPerM: 0.60),
         ModelID.image: ModelRates(textInputPerM: 5.00, cachedInputPerM: 0,
-                                  imageInputPerM: 10.00, outputPerM: 40.00),
+                                  imageInputPerM: 8.00, outputPerM: 30.00),
         ModelID.moderation: .free,
     ]
 
@@ -109,7 +110,7 @@ enum ModelPricing {
     /// The arithmetic collapses neatly: a rate quoted per 1M tokens, applied to
     /// N tokens, expressed in micro-dollars, is just `N × rate`.
     ///   700 prompt tokens × $0.15/M = 105 micros = $0.000105
-    ///   1056 image-output tokens × $40/M = 42,240 micros = $0.042
+    ///   1756 image-output tokens × $30/M = 52,680 micros = $0.053
     ///
     /// Returns `nil` for a model absent from the table. Callers record the row
     /// with **zero cost** rather than guessing: a visible under-report shows up

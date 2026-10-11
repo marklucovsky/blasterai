@@ -21,7 +21,8 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
 W = 1024
-BG = (243, 236, 225)  # warm cream, matches p3d_red/p3d_pink background
+# Playful 3D moved to a pure white canvas with the gpt-image-2 re-shoot (2026-10).
+BG = (255, 255, 255)
 SPHERE_R = 330
 CENTER = (W // 2, W // 2 - 10)
 LIGHT = np.array([0.45, -0.55, 0.70])  # upper-right key light

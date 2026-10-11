@@ -99,7 +99,7 @@ enum GiftedKeyError: LocalizedError, Equatable {
 /// wants the key inside one of these files can have it in ten minutes. That is a
 /// deliberate trade, not an oversight, and it rests on what a gifted key is
 /// worth: one key per evaluator in a capped OpenAI project, scoped to
-/// `gpt-4o-mini`, `omni-moderation-latest` and `gpt-image-1`, revocable from the
+/// `gpt-4o-mini`, `omni-moderation-latest` and `gpt-image-2`, revocable from the
 /// dashboard in one click. A leaked key drains a small cap and identifies its
 /// owner by name.
 ///

@@ -40,7 +40,7 @@ struct APIKeyEntrySheet: View {
                 Section {
                     OpenAIKeyEntrySection(apiKey: $apiKey)
                 } footer: {
-                    Text("Stored only on this device (Keychain). New-word art generation uses it directly — typical cost is well under a cent per image.")
+                    Text("Stored only on this device (Keychain). New-word art generation uses it directly — a picture costs about 6¢, or up to about 19¢ for a word with a person on a darker skin tone.")
                 }
             }
             .navigationTitle("Add an AI Key")

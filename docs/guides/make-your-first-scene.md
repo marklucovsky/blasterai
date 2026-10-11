@@ -147,10 +147,12 @@ style rather than just the active one, so the scene still looks right if you or
 a family switch styles later.
 
 The arithmetic is worth knowing, because artwork is where AI spend actually
-goes: **about 4¢ per picture**, so roughly **20¢ per word** with all five
-styles on. A scene introducing thirty new words is a little over a dollar in
-one style and about six in five. Leave it off unless you know the board will be
-seen in more than one style.
+goes: **about 6¢ per picture**. A word with a person in it costs more in Classic
+on a darker skin tone, because the tones are drawn one step at a time from
+Light: about 13¢ on Medium and 19¢ on Dark. With all five styles on, a word is
+about 19¢ without a person and about 31¢ with one. A scene introducing thirty
+new words is about two dollars in one style and six to nine in all five. Leave
+it off unless you know the board will be seen in more than one style.
 
 ---
 

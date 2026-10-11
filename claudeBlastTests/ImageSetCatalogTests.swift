@@ -9,6 +9,7 @@
 
 import Testing
 import Foundation
+import UIKit
 @testable import claudeBlast
 
 extension SerialTests {
@@ -333,6 +334,69 @@ struct ImageSetCatalogTests {
         #expect(ImageSetCatalog.selectable.allSatisfy(\.isShippable))
         #endif
         #expect(!ImageSetCatalog.selectable.isEmpty)
+    }
+
+    // MARK: - Reference packs
+
+    /// gpt-image-2 holds a style only when shown tiles from the set, so every
+    /// shipping style must bundle its pack — a missing one silently falls back
+    /// to text-only and draws new words in a visibly different style.
+    @Test func everyShippingStyleBundlesItsReferencePack() {
+        for id in [ImageSetID.classic, .playful3D, .highContrast] {
+            #expect(TileImageGenerator.referencePack(for: id).count == 4, "\(id.rawValue)")
+        }
+    }
+
+    /// Tone variants are Classic with a different skin tone, so they draw from
+    /// Classic's references; and `high_contrast_v2`'s files must not leak into a
+    /// prefix match for a style named `high_contrast`.
+    @Test func referencePacksResolveByStyleNotBySetID() {
+        let classic = TileImageGenerator.referencePack(for: .classic).map(\.name)
+        #expect(TileImageGenerator.referencePack(for: .classicMedium).map(\.name) == classic)
+        #expect(TileImageGenerator.referencePack(for: .classicMediumDark).map(\.name) == classic)
+        #expect(TileImageGenerator.referencePack(for: ImageSetID("high_contrast_v")).isEmpty)
+        #expect(TileImageGenerator.referencePack(for: ImageSetID("some_installed_set")).isEmpty)
+    }
+
+    /// Xcode bundles PNGs as Apple's CgBI variant, which OpenAI rejects as
+    /// "Invalid image data", so `referencePack` re-encodes them. A standard PNG's
+    /// first chunk is IHDR, a CgBI file's is CgBI. This reads the real app
+    /// bundle, so it sees what ships.
+    @Test func referencePacksUploadAsStandardPNG() {
+        for id in [ImageSetID.classic, .playful3D, .highContrast] {
+            for ref in TileImageGenerator.referencePack(for: id) {
+                let firstChunk = String(decoding: ref.data.dropFirst(12).prefix(4), as: UTF8.self)
+                #expect(firstChunk == "IHDR", "\(ref.name) starts with \(firstChunk)")
+            }
+        }
+    }
+
+    /// Tone edits grey a white background; `clampWhite` snaps near-white back to
+    /// pure white and leaves anything with one channel below the threshold alone
+    /// (pale skin, a cream shirt).
+    @Test func toneEditsSnapNearWhiteToWhite() {
+        let colors: [UIColor] = [
+            UIColor(red: 246 / 255, green: 245 / 255, blue: 247 / 255, alpha: 1),  // edit-greyed white
+            UIColor(red: 250 / 255, green: 220 / 255, blue: 188 / 255, alpha: 1),  // light skin #FADCBC
+        ]
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 2, height: 1), format: format).image { ctx in
+            for (x, color) in colors.enumerated() {
+                color.setFill()
+                ctx.fill(CGRect(x: x, y: 0, width: 1, height: 1))
+            }
+        }
+        let out = TileImageGenerator.clampWhite(image)
+        guard let cg = out.cgImage,
+              let data = cg.dataProvider?.data,
+              let bytes = CFDataGetBytePtr(data)
+        else { Issue.record("clampWhite produced no bitmap"); return }
+        let stride = cg.bitsPerPixel / 8
+        let first = (bytes[0], bytes[1], bytes[2])
+        let second = (bytes[stride], bytes[stride + 1], bytes[stride + 2])
+        #expect(first == (255, 255, 255))
+        #expect(second.0 == 250 && second.1 == 220 && second.2 == 188)
     }
 }
 }

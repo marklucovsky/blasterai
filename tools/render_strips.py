@@ -61,7 +61,7 @@ STYLES = {
     # generation and reaches no device.
     "high_contrast_v2": dict(bg=(0, 0, 0), cell=(0, 0, 0),
                              stroke=(255, 255, 255), sw=11, radius=10, shadow=False),
-    "playful_3d":    dict(bg=(246, 214, 181), cell=(252, 246, 238),
+    "playful_3d":    dict(bg=(255, 255, 255), cell=(252, 246, 238),
                           stroke=(120, 88, 62), sw=7, radius=26, shadow=True),
 }
 

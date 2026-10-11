@@ -90,7 +90,7 @@ STYLES = {
     # earlier generation and reaches no device. Both are listed because the
     # older one is still reviewed, but v2 is the one that matters.
     "high_contrast_v2": dict(bg=(0, 0, 0), ink=(255, 255, 255)),
-    "playful_3d":    dict(bg=(246, 214, 181), ink=(92, 64, 43)),
+    "playful_3d":    dict(bg=(255, 255, 255), ink=(92, 64, 43)),
 }
 
 FONT_CANDIDATES = [

@@ -79,6 +79,8 @@ tools/tile_sets/current/
 tools/tile_sets/current_p3d/
 tools/tile_sets/current_arasaac/
 tools/tile_sets/current_classic/
+# build_review_page.py's copies of the shipped bundle, one per set prefix
+tools/tile_sets/current_*/
 
 # Review tool artifacts (regenerable)
 tools/tile_sets/playful_3d/review/
@@ -114,3 +116,7 @@ tools/tile_sets/tone_cutsheet/
 # regenerable from tools/test_tone_exemplar.py.
 tools/tile_sets/exemplar_*/
 tools/tile_sets/new_words/
+tools/tile_sets/*_gi2/
+tools/tile_sets/review_*_gi2.html
+tools/tile_sets/review_*_gi2__*.html
+tools/tile_sets/packcovers/*_gi2_*.png

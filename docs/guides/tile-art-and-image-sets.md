@@ -20,8 +20,8 @@ cosmetic detail. Classic — Light is the default.
 
 **Playful 3D** — soft clay-sculpture renders, warm and friendly.
 
-**High Contrast** — white line art on true black, for low vision and CVI. See
-below.
+**High Contrast** — white line art on true black. A starting point for low
+vision, not a CVI set; see below for what it leaves out.
 
 All five cover the entire vocabulary — every word that ships with the app. At
 launch that is **619 core vocabulary words plus the words in the bundled packs,
@@ -96,7 +96,7 @@ generating art for every word that ships with the app, measuring it against
 that spec, and reviewing
 it tile by tile — is in the open-source repo and documented end to end in
 **[Commissioning an image set](commissioning-an-image-set.md)**. It costs about
-$25 of compute and an afternoon, and it needs someone comfortable with a
+$12–$42 of compute and an afternoon, and it needs someone comfortable with a
 terminal, not an artist.
 
 That means a set can be built for **one child's actual vision** — their
