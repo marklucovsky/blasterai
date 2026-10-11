@@ -15,6 +15,17 @@ final class NavigationCoordinator {
     var currentPageKey: String?
     var navigationPath: [String] = []
 
+    /// Called for every page change a press caused — a link tile, Home, Back —
+    /// with the page it was made on, the page it opened, and the tile pressed.
+    /// `navigateHome` (a scene switch, not a press) does not call it.
+    ///
+    /// A hook rather than a log call here so the board and TileScript, which
+    /// both drive this, are recorded the same way without either knowing.
+    var onPress: ((_ from: String, _ to: String, _ linkKey: String) -> Void)?
+
+    /// The page showing now. `currentPageKey` is nil on the home page.
+    private var showingPageKey: String { currentPageKey ?? navigationPath.first ?? "" }
+
     /// Reset navigation to the home page of the given scene.
     func navigateHome(homePageKey: String) {
         currentPageKey = nil
@@ -36,7 +47,9 @@ final class NavigationCoordinator {
     ///
     /// Two exceptions. The home page resets the history, exactly as the Home
     /// button does. A link to the page already showing changes nothing.
-    func navigate(to pageKey: String) {
+    func navigate(to pageKey: String, linkKey: String? = nil) {
+        let from = showingPageKey
+        defer { onPress?(from, pageKey, linkKey ?? pageKey) }
         if pageKey == navigationPath.first {
             navigationPath = [pageKey]
         } else if pageKey != navigationPath.last {
@@ -65,15 +78,22 @@ final class NavigationCoordinator {
     /// Step back one page along the history.
     func goBack() {
         guard canGoBack else { return }
+        let from = showingPageKey
         navigationPath.removeLast()
         currentPageKey = navigationPath.last
+        onPress?(from, showingPageKey, Self.backPageKey)
     }
 
     /// Navigate home (nil key) — pops breadcrumb to root.
     func navigateToRoot() {
+        let from = showingPageKey
         if let home = navigationPath.first {
             navigationPath = [home]
         }
         currentPageKey = nil
+        onPress?(from, showingPageKey, Self.homeLinkKey)
     }
+
+    /// The `linkKey` a Home press is logged under.
+    static let homeLinkKey = "home"
 }

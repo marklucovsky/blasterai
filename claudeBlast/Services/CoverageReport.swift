@@ -84,7 +84,18 @@ struct CoverageReport {
     /// while on this page", not an inference.
     ///
     /// Rows written before that existed carry no pages, and those presses are
-    /// counted in `unattributedPresses` rather than guessed at. The tempting
+    /// counted in `unattributedPresses` rather than guessed at.
+    ///
+    /// ## Cells, not just words
+    ///
+    /// A page is counted by what a child can press on it: its words **and its
+    /// links** — folders, the keyboard, a word that speaks and opens a page. A
+    /// folder nobody opens is as much a finding as a word nobody says, and
+    /// leaving links out made Home read "27 of 47" on a board with 59 cells.
+    /// A link counts as used when `LoggedNavigation` records a press of it on
+    /// this page, or — for a link that also speaks — when its word was pressed
+    /// here. Spacers, concealed cells and the Home cell are not counted: none
+    /// of them is a choice the page offers. The tempting
     /// guess — credit every page a used word appears on — is worse than useless
     /// here: a buried page stocked with core words that also sit on Home would
     /// score as well-used, because those words were pressed on Home. An SLP
@@ -97,11 +108,16 @@ struct CoverageReport {
     /// the scene. One shared type would invite someone to sum a mixed list.
     struct PageCoverage: Identifiable, Equatable {
         let pageKey: String
-        /// Words on this page that were pressed while on this page.
+        /// Cells on this page that were pressed while on this page.
         let used: Int
-        /// Vocabulary words the page carries.
+        /// Pressable cells the page carries: words and links.
         let available: Int
-        /// The page's words **in page order**, and which were reached.
+        /// How many of `available` are links.
+        var linkCount: Int = 0
+        /// Every cell **in page order**, spacers and concealed cells included —
+        /// the board's own layout, for drawing the page as the child sees it.
+        var entries: [TileEntry] = []
+        /// The page's pressable cells **in page order**, and which were reached.
         ///
         /// Order matters here in a way it does not for a part of speech: laid
         /// out as the child sees them, an untouched bottom row or right-hand
@@ -263,6 +279,7 @@ extension CoverageReport {
                      pages: [PageSpec],
                      inWindow: [LoggedUtterance],
                      allTime: [LoggedUtterance],
+                     navigations: [LoggedNavigation] = [],
                      mostUsedLimit: Int = 5,
                      wentQuietLimit: Int = 12) -> CoverageReport {
 
@@ -354,22 +371,38 @@ extension CoverageReport {
             }
         }
 
-        // A page with no vocabulary contributes nothing rather than a 0-of-0
-        // row: it is navigation, and has nothing to reach.
+        // Link presses, credited the same way: to the page they were made on.
+        // Matched on the tile pressed OR the page it opened. A folder's key and
+        // its page often differ (`eat` opens `food`), and a TileScript
+        // `<food>` knows only the page — so either one identifies the cell.
+        var openedFromPage: [String: Set<String>] = [:]
+        var landedFromPage: [String: Set<String>] = [:]
+        for nav in navigations where !nav.fromPageKey.isEmpty {
+            openedFromPage[nav.fromPageKey, default: []].insert(nav.linkKey)
+            landedFromPage[nav.fromPageKey, default: []].insert(nav.toPageKey)
+        }
+
+        // A page with nothing to press contributes nothing rather than a 0-of-0
+        // row.
         let usageByPage = pages.compactMap { page -> PageCoverage? in
             // Page order, deduplicated — the order the child sees.
             var seen = Set<String>()
-            let ordered = page.tiles
-                .filter { $0.link.isEmpty }
-                .map(\.key)
-                .filter { seen.insert($0).inserted }
-            guard !ordered.isEmpty else { return nil }
-            let reached = Set(ordered).intersection(pressedOnPage[page.key] ?? [])
+            let cells = page.tiles.filter { !$0.isEmptyCell && seen.insert($0.key).inserted }
+            guard !cells.isEmpty else { return nil }
+            let pressed = pressedOnPage[page.key] ?? []
+            let opened = openedFromPage[page.key] ?? []
+            let landed = landedFromPage[page.key] ?? []
+            let reached = Set(cells.filter { cell in
+                pressed.contains(cell.key)
+                    || (!cell.link.isEmpty && (opened.contains(cell.key) || landed.contains(cell.link)))
+            }.map(\.key))
             return PageCoverage(
                 pageKey: page.key,
                 used: reached.count,
-                available: ordered.count,
-                keys: ordered,
+                available: cells.count,
+                linkCount: cells.filter { !$0.link.isEmpty }.count,
+                entries: page.tiles,
+                keys: cells.map(\.key),
                 usedKeys: reached
             )
         }

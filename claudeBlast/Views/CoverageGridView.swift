@@ -20,18 +20,34 @@ import SwiftData
 /// responses — move the tiles, or change them — and no percentage distinguishes
 /// them.
 ///
-/// Order therefore matters, and differs by what is being opened. A page carries
-/// its own order, which is what the child actually sees. A part of speech has no
-/// position on the board at all, so its words are alphabetical and the layout
-/// reading above simply does not apply — the grid is then just a legible list.
+/// ## A page is drawn on the board's own grid
+///
+/// A page is laid out exactly as the board lays it out: the scene's designed
+/// grid (12 × 5 on BlasterAI 60), Home in cell 0, spacers and concealed cells
+/// holding their places, broken into screens where the board breaks it. It used
+/// to reflow the words to fit, which kept their order but not their places —
+/// and on a fixed grid a place is the thing a child learns. A dimmed corner
+/// should be the corner.
+///
+/// A part of speech has no position on the board at all, so its words are
+/// alphabetical and the layout reading simply does not apply — the grid is
+/// then just a legible list.
 struct CoverageGridView: View {
     let title: String
-    /// In display order. For a page, the page's own order.
+    /// In display order. For a page, its pressable cells in page order.
     let keys: [String]
     let usedKeys: Set<String>
-    /// Whether `keys` carries real board positions, which decides if the layout
-    /// is worth reading anything into.
-    var isPositional: Bool = true
+    /// The page as the board draws it. Nil for a part of speech.
+    var board: Board? = nil
+
+    /// One page's cells and the grid they are drawn on.
+    struct Board {
+        /// Every cell in page order, spacers and concealed cells included.
+        let entries: [TileEntry]
+        let grid: (cols: Int, rows: Int)
+    }
+
+    private var isPositional: Bool { board != nil }
 
     @Query(sort: \TileModel.key) private var allTiles: [TileModel]
 
@@ -39,8 +55,15 @@ struct CoverageGridView: View {
         Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
     }
 
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    /// Twelve across, the board's own density, so a word is about the size it
+    /// is on the board. A phone cannot fit twelve readable tiles, so there it
+    /// is as many as fit.
     private var columns: [GridItem] {
-        [GridItem(.adaptive(minimum: 68, maximum: 96), spacing: 8)]
+        sizeClass == .compact
+            ? [GridItem(.adaptive(minimum: 64, maximum: 96), spacing: 4)]
+            : Array(repeating: GridItem(.flexible(), spacing: 4), count: 12)
     }
 
     var body: some View {
@@ -48,9 +71,13 @@ struct CoverageGridView: View {
             VStack(alignment: .leading, spacing: 14) {
                 header
 
-                LazyVGrid(columns: columns, spacing: 8) {
-                    ForEach(keys, id: \.self) { key in
-                        cell(for: key)
+                if let board {
+                    boardScreens(board)
+                } else {
+                    LazyVGrid(columns: columns, spacing: 4) {
+                        ForEach(keys, id: \.self) { key in
+                            cell(for: key)
+                        }
                     }
                 }
 
@@ -95,64 +122,132 @@ struct CoverageGridView: View {
     }
 
     /// How to read the grid. Above it, always.
-    ///
-    /// Neither line depends on width, because reflow does not: the child's own
-    /// board reflows to fill whatever screen it is on. There is no faithful
-    /// layout on a big screen and an unfaithful one on a small screen — order
-    /// holds everywhere and wrapping is decided everywhere, so saying so once
-    /// is both simpler and more accurate than apologising for the phone.
     private var readingNote: String {
-        let legend = "Dimmed words have never been pressed."
-        return isPositional
-            ? legend + " Listed in page order — relative placement is correct, but the ultimate layout reflows to fill available screen real estate."
-            : legend + " Listed alphabetically — a part of speech can appear anywhere within a scene."
+        if let board {
+            return "Dimmed tiles have never been pressed on this page, folders included. Drawn on the board's own \(board.grid.cols) × \(board.grid.rows) grid, with Home in the corner."
+        }
+        return "Dimmed words have never been pressed. Listed alphabetically — a part of speech can appear anywhere within a scene."
+    }
+
+    // MARK: - Board layout
+
+    /// The cells the board would draw: retired and unreviewed words are gone,
+    /// spacers and concealed cells keep their place. Same rule as the board.
+    private func drawn(_ board: Board) -> [TileEntry] {
+        board.entries.filter { $0.isEmptyCell || lookup[$0.key]?.isHiddenFromChild != true }
     }
 
     @ViewBuilder
-    private func cell(for key: String) -> some View {
-        let isUsed = usedKeys.contains(key)
-        let tile = lookup[key]
-        VStack(spacing: 3) {
-            ZStack {
-                // The word key, not the art key. `TileImageResolver` follows
-                // `bundleImage` itself, so an aliased word (`him` → `he`, a page
-                // link → `packcover_<slug>`) resolves without the caller knowing.
-                TileImageView(key: key, wordClass: tile?.wordClass ?? "")
-                    .aspectRatio(1, contentMode: .fit)
-                    .background(
-                        TileColorResolver.color(for: tile).opacity(0.12),
-                        in: RoundedRectangle(cornerRadius: 8)
-                    )
-                if !isUsed {
-                    // A scrim rather than `.opacity` on the tile: the veil reads
-                    // as something laid OVER a tile that is still there, which is
-                    // the point — the word has not gone away, it has gone unused.
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color(.systemBackground).opacity(0.62))
+    private func boardScreens(_ board: Board) -> some View {
+        // One cell per screen is Home, as on the board.
+        let perScreen = max(1, board.grid.cols * board.grid.rows - 1)
+        let screens = drawn(board).chunked(into: perScreen)
+        let gridColumns = Array(repeating: GridItem(.flexible(), spacing: 4),
+                                count: board.grid.cols)
+        ForEach(Array(screens.enumerated()), id: \.offset) { index, cells in
+            VStack(alignment: .leading, spacing: 6) {
+                if screens.count > 1 {
+                    Text("Screen \(index + 1) of \(screens.count)")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+                LazyVGrid(columns: gridColumns, spacing: 4) {
+                    homeCell
+                    ForEach(Array(cells.enumerated()), id: \.offset) { _, entry in
+                        boardCell(entry)
+                    }
                 }
             }
-            Text(tile?.value ?? key)
-                .font(.caption2)
-                .lineLimit(1)
-                .foregroundStyle(isUsed ? .primary : .tertiary)
+        }
+    }
+
+    /// Home is on every screen and is not a choice the page offers, so it is
+    /// drawn for position and never dimmed or counted.
+    /// The board's own Home cell, inert, so it looks like the board's.
+    private var homeCell: some View {
+        HomeGridCell(isEnabled: true, action: {}, onOpenMenu: {}, labelFontSize: 9)
+            .allowsHitTesting(false)
+            .accessibilityLabel("Home")
+    }
+
+    @ViewBuilder
+    private func boardCell(_ entry: TileEntry) -> some View {
+        if entry.isEmptyCell {
+            Color.clear.aspectRatio(1, contentMode: .fit)
+        } else {
+            styledTile(entry, isUsed: usedKeys.contains(entry.key))
+        }
+    }
+
+    /// One tile drawn the way the board draws it. Shared by both layouts: a
+    /// part of speech has no place on the board, but its words still have their
+    /// colours, and the label reads far better in its band than as grey text.
+    @ViewBuilder
+    private func styledTile(_ entry: TileEntry, isUsed: Bool) -> some View {
+        let tile = lookup[entry.key]
+        let isLink = !entry.link.isEmpty
+        let accent = isLink
+            ? TileColorResolver.linkColor(slotRawValue: entry.linkColor)
+            : TileColorResolver.color(for: tile)
+        // Drawn the way the board draws it — art on white, the word in a
+        // band of its Fitzgerald color, folders badged — because that is the
+        // picture a caregiver and an SLP already carry of the board. The
+        // scrim lies over the whole tile, colour included, so an unpressed
+        // cell still reads as *that* cell, only quieter.
+        ZStack {
+            VStack(spacing: 0) {
+                ZStack(alignment: .bottomTrailing) {
+                    TileImageView(key: tile?.bundleImage ?? entry.key,
+                                  wordClass: tile?.wordClass ?? "")
+                        .padding(1)
+                        .aspectRatio(1, contentMode: .fit)
+                        .background(Color.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 3))
+                        .padding(3)
+                    if isLink {
+                        let badge = TileColorResolver.marker(on: accent)
+                        Image(systemName: "arrow.right.circle.fill")
+                            .font(.system(size: 8))
+                            .symbolRenderingMode(.palette)
+                            .foregroundStyle(TileColorResolver.label(on: badge), badge)
+                            .padding(2)
+                    }
+                }
+                Text(tile?.displayName ?? entry.key)
+                    .font(.system(size: 9, weight: .semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    .foregroundStyle(TileColorResolver.label(on: accent))
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 2)
+                    .padding(.bottom, 2)
+            }
+            .background(accent)
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            if !isUsed {
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(Color(.systemBackground).opacity(0.62))
+            }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(tile?.value ?? key), \(isUsed ? "used" : "never used")")
+        .accessibilityLabel("\(tile?.displayName ?? entry.key)\(isLink ? ", folder" : ""), \(isUsed ? "used" : "never used")")
+    }
+
+    private func cell(for key: String) -> some View {
+        styledTile(TileEntry(key: key), isUsed: usedKeys.contains(key))
     }
 
     /// What to do about it, once you have looked. A real footnote.
     ///
-    /// Phrased as a run of neighbours rather than "a whole row or column",
-    /// which is what it used to say. Reflow moves the wrap point, so a row is
-    /// not a stable thing to point at — but relative order survives, so a
-    /// stretch of adjacent words going untouched still means what it always
-    /// meant.
+    /// Rows and corners are real again: the grid is the board's, not a reflow.
     private var footnote: String {
         let unused = keys.count - keys.filter { usedKeys.contains($0) }.count
         guard unused > 0 else {
-            return "Every word here has been used at least once."
+            return isPositional
+                ? "Every tile here has been used at least once."
+                : "Every word here has been used at least once."
         }
         guard isPositional else { return "" }
-        return "A run of neighbouring words all dimmed usually means that stretch of the page is hard to reach, rather than the wrong words."
+        return "A dimmed row, column or corner usually means that part of the page is hard to reach, rather than the wrong words. A dimmed folder is a page nobody opens from here."
     }
 }

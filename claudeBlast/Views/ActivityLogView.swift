@@ -15,6 +15,8 @@ struct ActivityLogView: View {
     @Query(sort: \LoggedUtterance.createdAt, order: .reverse)
     private var allEntries: [LoggedUtterance]
     @Query(sort: \TileModel.key) private var allTiles: [TileModel]
+    /// Page changes, read alongside what was said. See `ActivitySession`.
+    @Query(sort: \LoggedNavigation.createdAt) private var allNavigations: [LoggedNavigation]
 
 
     /// View options live in a toolbar menu rather than as controls in the list.
@@ -92,10 +94,20 @@ struct ActivityLogView: View {
         return allEntries.filter { $0.createdAt >= earliest }
     }
 
-    private var groupedByDay: [(day: Date, entries: [LoggedUtterance])] {
+    private var windowedNavigations: [LoggedNavigation] {
+        guard let earliest = window.earliest() else { return allNavigations }
+        return allNavigations.filter { $0.createdAt >= earliest }
+    }
+
+    /// Each day's said-and-moved timeline, newest day first and newest row
+    /// first within it, as the plain timeline has always read.
+    private var groupedByDay: [(day: Date, events: [ActivityEvent])] {
         let cal = Calendar.current
-        let grouped = Dictionary(grouping: windowedEntries) { cal.startOfDay(for: $0.createdAt) }
-        return grouped.keys.sorted(by: >).map { ($0, grouped[$0] ?? []) }
+        let said = Dictionary(grouping: windowedEntries) { cal.startOfDay(for: $0.createdAt) }
+        let moved = Dictionary(grouping: windowedNavigations) { cal.startOfDay(for: $0.createdAt) }
+        return Set(said.keys).union(moved.keys).sorted(by: >).map { day in
+            (day, ActivityGrouping.timeline(said[day] ?? [], moved[day] ?? []).reversed())
+        }
     }
 
     /// Both views read the same pure functions the Admin snippet uses, so the
@@ -110,7 +122,7 @@ struct ActivityLogView: View {
     }
 
     private var sessions: [ActivitySession] {
-        ActivityGrouping.sessions(windowedEntries)
+        ActivityGrouping.sessions(windowedEntries, navigations: windowedNavigations)
     }
 
     /// Distinct words across the whole window — not the sum of the sessions',
@@ -132,7 +144,7 @@ struct ActivityLogView: View {
 
     var body: some View {
         List {
-            if windowedEntries.isEmpty {
+            if windowedEntries.isEmpty && windowedNavigations.isEmpty {
                 emptyState
             } else {
                 content
@@ -247,15 +259,17 @@ struct ActivityLogView: View {
     private func sessionSection(_ session: ActivitySession) -> some View {
         let singleWord = session.isSingleWord(resolving: tileLookup)
         Section {
-            if clusterByName {
+            // A sitting with nothing said has no clusters to show; its trail is
+            // the whole of it.
+            if clusterByName && !session.entries.isEmpty {
                 bandClusters(ActivityHourBand(start: session.startedAt, entries: session.entries))
             } else {
-                ForEach(session.entries) { entryRow($0) }
+                ForEach(session.timeline) { eventRow($0) }
             }
         } header: {
             HStack(spacing: 8) {
                 Text(session.startedAt, format: .dateTime.hour().minute())
-                if session.count > 1 {
+                if session.count > 1 || !session.navigations.isEmpty {
                     Text(sessionSubtitle(session, singleWord: singleWord))
                         .foregroundStyle(.secondary)
                 }
@@ -285,9 +299,17 @@ struct ActivityLogView: View {
         var parts: [String] = []
         let minutes = Int(session.duration / 60)
         if minutes >= 1 { parts.append("\(minutes) min") }
-        parts.append("\(session.count) \(singleWord ? "words" : "said")")
-        if session.distinctWordCount < session.count {
+        if session.count > 0 {
+            parts.append("\(session.count) \(singleWord ? "words" : "said")")
+        } else {
+            parts.append("nothing said")
+        }
+        if session.count > 0 && session.distinctWordCount < session.count {
             parts.append("\(session.distinctWordCount) different")
+        }
+        if !session.navigations.isEmpty {
+            let n = session.navigations.count
+            parts.append("\(n) page change\(n == 1 ? "" : "s")")
         }
         return parts.joined(separator: " · ")
     }
@@ -431,9 +453,7 @@ struct ActivityLogView: View {
     private var timelineContent: some View {
         ForEach(groupedByDay, id: \.day) { group in
             Section(dayHeader(for: group.day)) {
-                ForEach(group.entries) { entry in
-                    entryRow(entry)
-                }
+                ForEach(group.events) { eventRow($0) }
             }
         }
     }
@@ -465,6 +485,44 @@ struct ActivityLogView: View {
                 }
             }
         }
+    }
+
+    @ViewBuilder
+    private func eventRow(_ event: ActivityEvent) -> some View {
+        switch event {
+        case .said(let entry): entryRow(entry)
+        case .moved(let trail): trailRow(trail)
+        }
+    }
+
+    /// A run of page changes with nothing said in it, as the pages visited:
+    /// `Home → Actions → Home → Groups → Home`. Read on its own it says where
+    /// the child looked; a long one between two sentences, or one with no
+    /// sentence after it, is what being lost looks like.
+    @ViewBuilder
+    private func trailRow(_ trail: [LoggedNavigation]) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Image(systemName: "arrow.triangle.turn.up.right.diamond")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(ActivityGrouping.trailPages(trail).map(pageLabel).joined(separator: " → "))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 8)
+            if let first = trail.first {
+                Text(first.createdAt, format: .dateTime.hour().minute())
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Moved between pages: \(ActivityGrouping.trailPages(trail).map(pageLabel).joined(separator: ", "))")
+    }
+
+    private func pageLabel(_ key: String) -> String {
+        key.isEmpty ? "?" : key.replacingOccurrences(of: "_", with: " ").capitalized
     }
 
     /// Dense two-row record (matches the Admin Logs tab): tiles + time on row 1,

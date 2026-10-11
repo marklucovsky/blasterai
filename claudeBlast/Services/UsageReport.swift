@@ -82,6 +82,7 @@ extension UsageReport {
                      periodLabel: String,
                      inWindow: [LoggedUtterance],
                      allTime: [LoggedUtterance],
+                     navigations: [LoggedNavigation] = [],
                      tileLookup: [String: TileModel],
                      from start: Date?,
                      to end: Date = .now,
@@ -99,7 +100,10 @@ extension UsageReport {
             sceneName: scene?.name ?? "",
             pages: scene?.pages ?? [],
             inWindow: inWindow,
-            allTime: allTime)
+            allTime: allTime,
+            // Counts only: a page's folders reached or not, as on the Coverage
+            // screen. The trail itself never goes into a shared report.
+            navigations: navigations)
 
         let summary = Summary(
             sessionCount: sessions.count,

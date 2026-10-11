@@ -594,6 +594,7 @@ extension AdminView {
             try modelContext.delete(model: TileArtVariant.self)
             try modelContext.delete(model: TileModel.self)
             try modelContext.delete(model: LoggedUtterance.self)
+            try modelContext.delete(model: LoggedNavigation.self)
             try modelContext.delete(model: RecordedScript.self)
             try modelContext.delete(model: ReceivedPack.self)
             try modelContext.delete(model: ChildProfile.self)

@@ -73,20 +73,40 @@ struct ActivityHourBand: Identifiable {
 /// communication event. Reading the timestamps instead means iPhone, iPad and
 /// Mac all produce the same answer, because none of them is consulted.
 ///
-/// One consequence to know about: a session cannot exist with nothing in it. A
-/// day where the board was opened and nothing was said produces no session at
-/// all, and has to be told from `MetricEvent` instead.
+/// ## Page changes count as activity
+///
+/// A sitting is anything the child did at the board, and moving between pages
+/// is something they did. A child who opens Actions, goes Home, opens Groups and
+/// goes Home again has said nothing — and that sitting is exactly the one a
+/// therapist needs to see, because it reads as lost. So `LoggedNavigation` rows
+/// join the timeline: they extend a session, and a run of them alone makes one.
+/// The counts below stay counts of what was *said*.
 struct ActivitySession: Identifiable {
     /// Chronological — oldest first, the order they were said in.
     let entries: [LoggedUtterance]
+    /// Page changes in the same sitting, oldest first.
+    var navigations: [LoggedNavigation] = []
 
-    /// The first entry's id. Sessions are derived, so this is stable only for as
+    /// The first row's id. Sessions are derived, so this is stable only for as
     /// long as the underlying rows are — which is exactly as long as the session
     /// itself is.
-    var id: String { entries.first?.id ?? "empty" }
+    var id: String {
+        if let first = entries.first, let nav = navigations.first, nav.createdAt < first.createdAt {
+            return nav.id
+        }
+        return entries.first?.id ?? navigations.first?.id ?? "empty"
+    }
 
-    var startedAt: Date { entries.first?.createdAt ?? .distantPast }
-    var endedAt: Date { entries.last?.createdAt ?? .distantPast }
+    var startedAt: Date {
+        [entries.first?.createdAt, navigations.first?.createdAt].compactMap { $0 }.min() ?? .distantPast
+    }
+    var endedAt: Date {
+        [entries.last?.createdAt, navigations.last?.createdAt].compactMap { $0 }.max() ?? .distantPast
+    }
+
+    /// Said and moved, interleaved in time order — consecutive page changes
+    /// collapsed into one trail, so a sentence reads as the thing between them.
+    var timeline: [ActivityEvent] { ActivityGrouping.timeline(entries, navigations) }
 
     /// First to last. Zero for a single-utterance session, which is honest: one
     /// thing said takes no measurable time.
@@ -146,6 +166,27 @@ struct ActivitySession: Identifiable {
             if lhs.value != rhs.value { return lhs.value < rhs.value }
             return lhs.key > rhs.key
         }?.key
+    }
+}
+
+/// One row of a session read in order: something said, or a run of page
+/// changes with nothing said in between.
+enum ActivityEvent: Identifiable {
+    case said(LoggedUtterance)
+    case moved([LoggedNavigation])
+
+    var id: String {
+        switch self {
+        case .said(let entry): return entry.id
+        case .moved(let trail): return "moved-" + (trail.first?.id ?? "")
+        }
+    }
+
+    var date: Date {
+        switch self {
+        case .said(let entry): return entry.createdAt
+        case .moved(let trail): return trail.first?.createdAt ?? .distantPast
+        }
     }
 }
 
@@ -246,24 +287,57 @@ enum ActivityGrouping {
     /// forwards, because the interesting thing about a sitting is how it
     /// developed: what was tried, what was repeated, what it escalated to.
     static func sessions(_ entries: [LoggedUtterance],
+                         navigations: [LoggedNavigation] = [],
                          gap: TimeInterval = sessionGap) -> [ActivitySession] {
-        guard !entries.isEmpty else { return [] }
+        let events = (entries.map(ActivityEvent.said) + navigations.map { .moved([$0]) })
+            .sorted { $0.date < $1.date }
+        guard let first = events.first else { return [] }
 
-        let chronological = entries.sorted { $0.createdAt < $1.createdAt }
         var sessions: [ActivitySession] = []
-        var current: [LoggedUtterance] = [chronological[0]]
+        var said: [LoggedUtterance] = []
+        var moved: [LoggedNavigation] = []
+        var previous = first.date
 
-        for entry in chronological.dropFirst() {
-            let previous = current[current.count - 1].createdAt
-            if entry.createdAt.timeIntervalSince(previous) > gap {
-                sessions.append(ActivitySession(entries: current))
-                current = [entry]
-            } else {
-                current.append(entry)
-            }
+        func close() {
+            sessions.append(ActivitySession(entries: said, navigations: moved))
+            said = []
+            moved = []
         }
-        sessions.append(ActivitySession(entries: current))
+
+        for event in events {
+            if event.date.timeIntervalSince(previous) > gap { close() }
+            switch event {
+            case .said(let entry): said.append(entry)
+            case .moved(let trail): moved.append(contentsOf: trail)
+            }
+            previous = event.date
+        }
+        close()
 
         return sessions.reversed()
+    }
+
+    /// Utterances and page changes in time order, with each run of page changes
+    /// that has nothing said inside it collapsed into one `.moved` trail.
+    static func timeline(_ entries: [LoggedUtterance],
+                         _ navigations: [LoggedNavigation]) -> [ActivityEvent] {
+        let events = (entries.map(ActivityEvent.said) + navigations.map { .moved([$0]) })
+            .sorted { $0.date < $1.date }
+        var result: [ActivityEvent] = []
+        for event in events {
+            if case .moved(let next) = event, case .moved(let trail)? = result.last {
+                result[result.count - 1] = .moved(trail + next)
+            } else {
+                result.append(event)
+            }
+        }
+        return result
+    }
+
+    /// The pages a trail visited, in order: where it started, then each page a
+    /// press opened. `Home → Actions → Home → Groups → Home`.
+    static func trailPages(_ trail: [LoggedNavigation]) -> [String] {
+        guard let first = trail.first else { return [] }
+        return [first.fromPageKey] + trail.map(\.toPageKey)
     }
 }

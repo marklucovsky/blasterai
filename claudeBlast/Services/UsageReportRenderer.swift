@@ -53,18 +53,25 @@ enum UsageReportRenderer {
         let renderer = UIGraphicsPDFRenderer(bounds: CGRect(origin: .zero, size: size),
                                              format: format)
 
-        return renderer.pdfData { ctx in
-            var writer = PageWriter(context: ctx, paper: size, report: report)
-            writer.beginPage()
+        // Paper is light whatever the screen is. `label` and `secondaryLabel`
+        // resolve against the current appearance, so a report made in dark mode
+        // drew white text on a white page. Resolve them as light, always.
+        var data = Data()
+        UITraitCollection(userInterfaceStyle: .light).performAsCurrent {
+            data = renderer.pdfData { ctx in
+                var writer = PageWriter(context: ctx, paper: size, report: report)
+                writer.beginPage()
 
-            drawTitle(&writer, report)
-            drawSummary(&writer, report)
-            if options.includePatterns { drawPatterns(&writer, report) }
-            if options.includeCoverage { drawCoverage(&writer, report) }
-            drawSessions(&writer, report, includeUtterances: options.includeUtterances)
+                drawTitle(&writer, report)
+                drawSummary(&writer, report)
+                if options.includePatterns { drawPatterns(&writer, report) }
+                if options.includeCoverage { drawCoverage(&writer, report) }
+                drawSessions(&writer, report, includeUtterances: options.includeUtterances)
 
-            writer.finishPage()
+                writer.finishPage()
+            }
         }
+        return data
     }
 
     // MARK: - Page cursor

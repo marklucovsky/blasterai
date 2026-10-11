@@ -23,6 +23,10 @@ struct CoverageView: View {
     private var allEntries: [LoggedUtterance]
     @Query(sort: \BlasterScene.name) private var scenes: [BlasterScene]
     @Query(sort: \TileModel.key) private var allTiles: [TileModel]
+    /// Link presses — folders, Home, Back — for counting a page's links.
+    @Query private var navigations: [LoggedNavigation]
+    @AppStorage(AppSettingsKey.boardLayout) private var boardLayoutRaw: String =
+        BoardLayout.current().rawValue
 
     @AppStorage(AppSettingsKey.activityRange) private var rangeRaw = ActivityLogView.Window.week.rawValue
     /// Which scene is being reported. Empty means "the active one", which is
@@ -69,13 +73,27 @@ struct CoverageView: View {
         return allEntries.filter { $0.createdAt >= earliest }
     }
 
+    /// A page as its scene's board draws it — the designed grid when the scene
+    /// declares one, this device's otherwise. Same calculator as the scene
+    /// preview, so the drill-down cannot disagree with the board.
+    private func board(_ row: CoverageReport.PageCoverage,
+                       in scene: BlasterScene) -> CoverageGridView.Board {
+        CoverageGridView.Board(
+            entries: row.entries,
+            grid: GridLayoutCalculator.authoringGrid(
+                designed: scene.designedLayout,
+                isPhone: GridLayoutCalculator.isPhone(screenSize: GridLayoutCalculator.deviceScreenSize),
+                deviceLayout: BoardLayout(rawValue: boardLayoutRaw) ?? .standard))
+    }
+
     private var report: CoverageReport? {
         guard let scene = selectedScene else { return nil }
         return CoverageReport.make(
             sceneName: scene.name,
             pages: scene.pages,
             inWindow: windowedEntries,
-            allTime: allEntries
+            allTime: allEntries,
+            navigations: navigations
         )
     }
 
@@ -132,7 +150,7 @@ struct CoverageView: View {
             ForEach(report.coverage) { row in
                 NavigationLink {
                     CoverageGridView(title: row.label, keys: row.keys,
-                                     usedKeys: row.usedKeys, isPositional: false)
+                                     usedKeys: row.usedKeys)
                 } label: {
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
@@ -249,7 +267,7 @@ struct CoverageView: View {
                 ForEach(visibleKinds(report)) { row in
                     NavigationLink {
                         CoverageGridView(title: row.label, keys: row.keys,
-                                         usedKeys: row.usedKeys, isPositional: false)
+                                         usedKeys: row.usedKeys)
                     } label: {
                         usageRow(label: row.label, used: row.used,
                                  available: row.available, fraction: row.usedFraction)
@@ -265,7 +283,8 @@ struct CoverageView: View {
                 ForEach(visiblePages(report)) { row in
                     NavigationLink {
                         CoverageGridView(title: pageLabel(row.pageKey), keys: row.keys,
-                                         usedKeys: row.usedKeys)
+                                         usedKeys: row.usedKeys,
+                                         board: selectedScene.map { board(row, in: $0) })
                     } label: {
                         usageRow(label: pageLabel(row.pageKey), used: row.used,
                                  available: row.available, fraction: row.usedFraction)
@@ -369,7 +388,8 @@ struct CoverageView: View {
                 sceneName: scene.name,
                 pages: scene.pages,
                 inWindow: windowedEntries,
-                allTime: allEntries
+                allTime: allEntries,
+                navigations: navigations
             )
             if report.sceneWordCount == 0 {
                 Text("No vocabulary on this scene yet.")
@@ -379,7 +399,7 @@ struct CoverageView: View {
                 ForEach(report.usageByPage.prefix(breakdownPreview)) { row in
                     NavigationLink {
                         CoverageGridView(title: pageLabel(row.pageKey), keys: row.keys,
-                                         usedKeys: row.usedKeys)
+                                         usedKeys: row.usedKeys, board: board(row, in: scene))
                     } label: {
                         usageRow(label: pageLabel(row.pageKey), used: row.used,
                                  available: row.available, fraction: row.usedFraction)

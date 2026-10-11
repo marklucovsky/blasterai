@@ -49,7 +49,7 @@ struct SchemaVersionTests {
     /// list needs rethinking rather than quietly extending.
     @Test func probeOnlyExcludesWhatOrdinaryUseCreates() {
         let arrivesOnItsOwn = ["TileModel", "BlasterScene", "ChildProfile",
-                               "SentenceCache", "LoggedUtterance"]
+                               "SentenceCache", "LoggedUtterance", "LoggedNavigation"]
         for name in arrivesOnItsOwn {
             #expect(!CloudKitSchemaExerciser.probeOnly.contains(name),
                     "\(name) arrives without the probe, so its presence proves nothing")
@@ -72,6 +72,7 @@ struct SchemaVersionTests {
             "BlasterScene",
             "RecordedScript",
             "LoggedUtterance",
+            "LoggedNavigation",
             "ChildProfile",
             "ReceivedPack",
         ])
@@ -120,7 +121,9 @@ struct SchemaVersionTests {
         #expect(BlasterMigrationPlan.schemas.count == 1)
         #expect(String(describing: BlasterMigrationPlan.schemas[0])
                 == String(describing: BlasterSchemaV1.self))
-        // V1 is the first version — nothing to migrate from yet.
+        // Empty on purpose, and not only because V1 is the first version: a
+        // stage makes Core Data demand an exact fingerprint match, which the
+        // stores already on devices do not have. See `BlasterSchemaV1`.
         #expect(BlasterMigrationPlan.stages.isEmpty)
     }
 
@@ -152,5 +155,57 @@ struct SchemaVersionTests {
 
         #expect(try ctx.fetch(FetchDescriptor<TileModel>()).count == 1)
         #expect(try ctx.fetch(FetchDescriptor<MetricEvent>()).count == 1)
+    }
+
+    /// A store written before `LoggedNavigation` existed opens through the
+    /// app's real migration plan, keeps its rows, and takes the new type.
+    ///
+    /// Every installed device holds such a store. The first attempt at this
+    /// change used a V2 with a migration stage and trapped at launch on exactly
+    /// this — so it is tested on disk, with the app's two-configuration split.
+    @MainActor
+    @Test func aStoreWrittenBeforeLoggedNavigationOpensAndKeepsItsRows() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SchemaMigration-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let syncedURL = dir.appendingPathComponent("synced.store")
+        let localURL = dir.appendingPathComponent("local.store")
+        let before = BlasterSchemaV1.syncedModels.filter { $0 != LoggedNavigation.self }
+
+        do {
+            let old = try ModelContainer(
+                for: Schema(before + BlasterSchemaV1.localModels),
+                configurations: [
+                    ModelConfiguration("Local", schema: Schema(BlasterSchemaV1.localModels),
+                                       url: localURL, cloudKitDatabase: .none),
+                    ModelConfiguration("Synced", schema: Schema(before),
+                                       url: syncedURL, cloudKitDatabase: .none),
+                ])
+            let ctx = old.mainContext
+            ctx.insert(LoggedUtterance(tileKeys: ["eat", "pizza"], sentence: "I want pizza",
+                                       repetitionCount: 0, pageKeys: ["home", "food"]))
+            ctx.insert(MetricEvent(subjectType: "cache", subjectKey: "pizza", eventType: .hit))
+            try ctx.save()
+        }
+
+        let current = try ModelContainer(
+            for: Schema(versionedSchema: BlasterSchemaV1.self),
+            migrationPlan: BlasterMigrationPlan.self,
+            configurations: [
+                ModelConfiguration("Local", schema: Schema(BlasterSchemaV1.localModels),
+                                   url: localURL, cloudKitDatabase: .none),
+                ModelConfiguration("Synced", schema: Schema(BlasterSchemaV1.syncedModels),
+                                   url: syncedURL, cloudKitDatabase: .none),
+            ])
+        let ctx = current.mainContext
+        let utterances = try ctx.fetch(FetchDescriptor<LoggedUtterance>())
+        #expect(utterances.map(\.sentence) == ["I want pizza"])
+        #expect(utterances.first?.pageKeys == ["home", "food"])
+        #expect(try ctx.fetch(FetchDescriptor<MetricEvent>()).count == 1)
+
+        ctx.insert(LoggedNavigation(fromPageKey: "home", toPageKey: "food", linkKey: "food"))
+        try ctx.save()
+        #expect(try ctx.fetch(FetchDescriptor<LoggedNavigation>()).count == 1)
     }
 }

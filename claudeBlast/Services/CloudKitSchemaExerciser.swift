@@ -77,6 +77,7 @@ enum CloudKitSchemaExerciser {
         "BlasterScene",
         "RecordedScript",
         "LoggedUtterance",
+        "LoggedNavigation",
         "ChildProfile",
         "ReceivedPack",
     ]
@@ -190,6 +191,14 @@ enum CloudKitSchemaExerciser {
             entry.repetitionCount += 1
         }
 
+        step("LoggedNavigation") {
+            let entry = LoggedNavigation(fromPageKey: "home", toPageKey: marker,
+                                         linkKey: marker, sceneID: marker, childID: marker)
+            context.insert(entry)
+            try context.save()
+            entry.toPageKey = "\(marker)_2"
+        }
+
         step("ChildProfile") {
             let profile = ChildProfile(displayName: marker)
             context.insert(profile)
@@ -235,6 +244,7 @@ enum CloudKitSchemaExerciser {
         purge(BlasterScene.self) { $0.name == marker }
         purge(RecordedScript.self) { $0.name == marker }
         purge(LoggedUtterance.self) { $0.sentence == marker }
+        purge(LoggedNavigation.self) { $0.linkKey == marker }
         purge(ChildProfile.self) { $0.displayName == marker }
         purge(ReceivedPack.self) { $0.slug == marker }
         try? context.save()
