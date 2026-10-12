@@ -72,6 +72,24 @@ struct TilePhotoSection: View {
             }
             .disabled(isLoading || isGenerating)
 
+            // Status sits between the two actions, above the Artwork rows. At the
+            // bottom of the section it fell below the fold once Artwork was
+            // expanded: a caregiver tapped Classic, saw the spinner stop, and had
+            // to know to scroll down to learn the key can't draw.
+            if isLoading || isGenerating {
+                HStack(spacing: 8) {
+                    ProgressView()
+                    if isGenerating {
+                        Text("Generating image…").font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            if let errorMessage {
+                Text(errorMessage)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+
             if !apiKey.isEmpty {
                 DisclosureGroup("Artwork", isExpanded: $showArtOptions) {
                     styleCoverage
@@ -126,20 +144,6 @@ struct TilePhotoSection: View {
                     }
                 }
                 .font(.subheadline)
-            }
-
-            if isLoading || isGenerating {
-                HStack(spacing: 8) {
-                    ProgressView()
-                    if isGenerating {
-                        Text("Generating image…").font(.caption).foregroundStyle(.secondary)
-                    }
-                }
-            }
-            if let errorMessage {
-                Text(errorMessage)
-                    .font(.caption)
-                    .foregroundStyle(.red)
             }
 
             Text("A photo replaces this tile's picture everywhere it appears, on every device signed in to your iCloud.")
