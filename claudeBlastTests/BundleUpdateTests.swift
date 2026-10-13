@@ -200,5 +200,77 @@ struct BundleUpdateTests {
             #expect(hard.first?.isRetired == false, "the kept sense stays live")
         }
     }
+
+    /// The pronoun is "I". A fresh install reads the bundled label; the key,
+    /// which names the art and the cache, stays lowercase.
+    @Test func aFreshInstallSpellsThePronounWithACapital() throws {
+        try withCleanDefaults {
+            let ctx = TestStore.freshContainer().mainContext
+            _ = BootstrapLoader.loadDefaultVocabulary(context: ctx)
+            let tiles = try ctx.fetch(FetchDescriptor<TileModel>())
+            let byKey = Dictionary(tiles.map { ($0.key, $0) }, uniquingKeysWith: { a, _ in a })
+            for (key, label) in ["i": "I", "i_dont_know": "I don't know",
+                                 "i_love_it": "I love it", "i_love_you": "I love you", "tv": "TV"] {
+                let tile = try #require(byKey[key], "\(key) is bundled")
+                #expect(tile.displayName == label)
+                #expect(tile.value == label, "tray and speech read the same as the grid")
+            }
+            #expect(byKey["pizza"]?.displayName == "pizza", "a word with no label still reads its key")
+        }
+    }
+
+    /// An install seeded before labels existed shows "i". The update gives it
+    /// "I" — but a word a caregiver renamed is theirs and keeps its name.
+    @Test func anUpdateRelabelsOnlyWordsStillShowingTheOldDefault() throws {
+        try withCleanDefaults {
+            let ctx = TestStore.freshContainer().mainContext
+            _ = BootstrapLoader.loadDefaultVocabulary(context: ctx)
+            let tiles = try ctx.fetch(FetchDescriptor<TileModel>())
+            // As a store from before this build has them.
+            let i = try #require(tiles.first { $0.key == "i" })
+            i.displayName = "i"; i.value = "i"
+            let tv = try #require(tiles.first { $0.key == "tv" })
+            tv.displayName = "television"; tv.value = "television"   // renamed
+            try ctx.save()
+
+            UserDefaults.standard.set("a-stale-hash-from-an-older-bundle",
+                                      forKey: AppSettingsKey.bootstrapContentHash)
+            #expect(BootstrapLoader.updateSystemScene(context: ctx))
+
+            #expect(i.displayName == "I")
+            #expect(i.value == "I")
+            #expect(tv.displayName == "television", "a caregiver's rename survives")
+            #expect(tv.value == "television")
+        }
+    }
+
+    /// Brandi's report: the board had `is` and no `am`. The rest of `be` is
+    /// on Actions, and an existing install gets the words with the board.
+    @Test func theBoardHasAmAreAndWas() throws {
+        try withCleanDefaults {
+            let ctx = TestStore.freshContainer().mainContext
+            _ = BootstrapLoader.loadDefaultVocabulary(context: ctx)
+            for key in ["am", "are", "was"] {
+                let doomed = try ctx.fetch(FetchDescriptor<TileModel>(predicate: #Predicate { $0.key == key }))
+                doomed.forEach(ctx.delete)
+            }
+            try ctx.save()
+
+            UserDefaults.standard.set("a-stale-hash-from-an-older-bundle",
+                                      forKey: AppSettingsKey.bootstrapContentHash)
+            #expect(BootstrapLoader.updateSystemScene(context: ctx))
+
+            let scenes = try ctx.fetch(FetchDescriptor<BlasterScene>())
+            let system = try #require(scenes.first { $0.systemSceneKey == "core_first" })
+            let actions = try #require(system.pages.first { $0.key == "actions" })
+            let keys = actions.tiles.map(\.key)
+            let tiles = try ctx.fetch(FetchDescriptor<TileModel>())
+            for key in ["am", "are", "was"] {
+                #expect(keys.contains(key), "\(key) is on Actions")
+                #expect(tiles.contains { $0.key == key && $0.isSystem }, "\(key) arrives with the board")
+                #expect(PartOfSpeechIndex.bundledPartOfSpeech(for: key) == .verb, "\(key) is coloured as a verb")
+            }
+        }
+    }
 }
 }

@@ -48,6 +48,10 @@
     "wordClass": "describe"
   },
   {
+    "key": "am",
+    "wordClass": "core"
+  },
+  {
     "key": "ambulance",
     "wordClass": "object"
   },
@@ -78,6 +82,10 @@
   {
     "key": "applesauce",
     "wordClass": "food"
+  },
+  {
+    "key": "are",
+    "wordClass": "core"
   },
   {
     "key": "arm",
@@ -1107,19 +1115,23 @@
   },
   {
     "key": "i",
-    "wordClass": "core"
+    "wordClass": "core",
+    "label": "I"
   },
   {
     "key": "i_dont_know",
-    "wordClass": "social"
+    "wordClass": "social",
+    "label": "I don't know"
   },
   {
     "key": "i_love_it",
-    "wordClass": "social"
+    "wordClass": "social",
+    "label": "I love it"
   },
   {
     "key": "i_love_you",
-    "wordClass": "social"
+    "wordClass": "social",
+    "label": "I love you"
   },
   {
     "key": "ice_cubes",
@@ -2255,7 +2267,8 @@
   },
   {
     "key": "tv",
-    "wordClass": "object"
+    "wordClass": "object",
+    "label": "TV"
   },
   {
     "key": "ugly",
@@ -2321,6 +2334,10 @@
   {
     "key": "warm",
     "wordClass": "weather"
+  },
+  {
+    "key": "was",
+    "wordClass": "core"
   },
   {
     "key": "wash",
