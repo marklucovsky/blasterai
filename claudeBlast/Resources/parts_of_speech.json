@@ -508,7 +508,9 @@
     "youre_welcome"
   ],
   "verb": [
+    "am",
     "answer",
+    "are",
     "ask",
     "bathe",
     "bite",
@@ -619,6 +621,7 @@
     "wait",
     "walk",
     "want",
+    "was",
     "wash",
     "wash_hair",
     "wash_hands",

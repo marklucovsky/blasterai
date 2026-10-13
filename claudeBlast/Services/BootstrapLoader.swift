@@ -331,6 +331,37 @@ enum BootstrapLoader {
     ///
     /// Also retires any bundled word the bundle no longer has, tagged with
     /// `removedFromBundleReason` so the Vocab manager can say why it is hidden.
+    /// Give existing bundled words the label the bundle now spells for them —
+    /// "I" for `i`, "TV" for `tv`.
+    ///
+    /// The insert step above leaves a word it already has alone, so without this
+    /// a store seeded before `label` existed would read "i" forever. Only a word
+    /// still showing the key-spelled default changes: anything else was renamed
+    /// by a caregiver, and that is theirs. Both `displayName` (the grid) and
+    /// `value` (tray, speech and the sentence prompt) move, each checked on its
+    /// own, so the word reads the same everywhere.
+    ///
+    /// Returns how many words changed.
+    @discardableResult
+    static func applyBundledLabels(_ vocab: [TileModelCodable], context: ModelContext) -> Int {
+        let labeled = vocab.filter { ($0.label ?? "").isEmpty == false }
+        guard !labeled.isEmpty else { return 0 }
+        let tiles = (try? context.fetch(FetchDescriptor<TileModel>(
+            predicate: #Predicate { $0.isSystem }))) ?? []
+        let byKey = Dictionary(tiles.map { ($0.key, $0) }, uniquingKeysWith: { a, _ in a })
+        var changed = 0
+        for entry in labeled {
+            guard let tile = byKey[TileModel.normalizeKey(entry.key)] else { continue }
+            let old = TileModelCodable.defaultLabel(forKey: entry.key)
+            let new = entry.resolvedLabel
+            var touched = false
+            if tile.displayName == old, tile.displayName != new { tile.displayName = new; touched = true }
+            if tile.value == old, tile.value != new { tile.value = new; touched = true }
+            if touched { changed += 1 }
+        }
+        return changed
+    }
+
     @discardableResult
     static func updateSystemScene(context: ModelContext) -> Bool {
         guard let url = Bundle.main.url(forResource: "core_first", withExtension: "json"),
@@ -393,6 +424,11 @@ enum BootstrapLoader {
             }
             if retiredTiles > 0 {
                 print("updateSystemScene: retired \(retiredTiles) word(s) no longer bundled")
+            }
+
+            let relabeled = applyBundledLabels(vocab, context: context)
+            if relabeled > 0 {
+                print("updateSystemScene: relabeled \(relabeled) word(s)")
             }
 
             let key = materialized.key

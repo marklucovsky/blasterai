@@ -205,7 +205,8 @@ final class TileModel: Identifiable {
     }
 
     convenience init(from codable: TileModelCodable) {
-        self.init(key: codable.key, wordClass: codable.wordClass)
+        self.init(key: TileModel.normalizeKey(codable.key),
+                  value: codable.resolvedLabel, wordClass: codable.wordClass)
         if let alias = codable.bundleImage, !alias.isEmpty {
             bundleImage = alias
         }

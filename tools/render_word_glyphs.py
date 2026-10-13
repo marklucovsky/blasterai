@@ -65,7 +65,17 @@ WORDS = {
     "and": "and",
     "is": "is",
     "at": "at",
+    # The rest of `be`, added 2026-10-12 after Brandi asked where "am" was.
+    "am": "am",
+    "are": "are",
+    "was": "was",
 }
+
+# The words that set the shared point size. Frozen at the original five on
+# purpose: `was` is wider than `and`, so letting it vote would shrink every
+# glyph already shipped and re-render art nobody asked to change. At this
+# size `was` still fits with a margin (about 76% of the tile's width).
+SIZING_WORDS = ["a", "the", "and", "is", "at"]
 
 # EMPTY, and `keyboard` is the reason it exists as a concept at all.
 #
@@ -84,6 +94,10 @@ LINK_GLYPHS: dict[str, str] = {}
 
 STYLES = {
     "classic":       dict(bg=(255, 255, 255), ink=(17, 17, 17)),
+    # The skin-tone sets ship as complete sets of their own, and a word has no
+    # skin, so they carry Classic's glyph unchanged.
+    "classic_chain_medium":      dict(bg=(255, 255, 255), ink=(17, 17, 17)),
+    "classic_chain_medium_dark": dict(bg=(255, 255, 255), ink=(17, 17, 17)),
     "high_contrast": dict(bg=(0, 0, 0), ink=(255, 255, 255)),
     # `high_contrast_v2` is the set that actually SHIPS as `hc` — see
     # SET_PREFIX in sync_to_app.py. The unversioned folder beside it is the
@@ -158,7 +172,14 @@ def render(word, style, size):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--sets", default=",".join(STYLES))
+    ap.add_argument("--keys", default="",
+                    help="comma-separated keys to draw (default: all). Drawing only "
+                         "new words leaves existing masters untouched, so the drift "
+                         "check doesn't see them as changed.")
     args = ap.parse_args()
+    only = {k.strip() for k in args.keys.split(",") if k.strip()}
+    if only - set(WORDS):
+        sys.exit(f"unknown key(s): {', '.join(sorted(only - set(WORDS)))}")
 
     for style in [s.strip() for s in args.sets.split(",") if s.strip()]:
         if style not in STYLES:
@@ -166,11 +187,15 @@ def main():
         out = Path("tools/tile_sets") / style
         out.mkdir(parents=True, exist_ok=True)
         probe = ImageDraw.Draw(Image.new("RGB", (SIZE, SIZE)))
-        size = shared_font_size(list(WORDS.values()), SIZE * 0.74, probe)
+        size = shared_font_size([WORDS[k] for k in SIZING_WORDS], SIZE * 0.74, probe)
         for key, word in WORDS.items():
+            if only and key not in only:
+                continue
             render(word, style, size).save(out / f"{key}.png")
             print(f"✓ {style}/{key}.png  ({word!r}, {size}pt)")
         for key, word in LINK_GLYPHS.items():
+            if only and key not in only:
+                continue
             own = shared_font_size([word], SIZE * 0.74, probe)
             render(word, style, own).save(out / f"{key}.png")
             print(f"✓ {style}/{key}.png  ({word!r}, {own}pt)")

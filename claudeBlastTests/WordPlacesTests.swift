@@ -53,9 +53,11 @@ struct WordPlacesTests {
         #expect(climb?.screen == 2)
         #expect(climb?.label.hasSuffix("· screen 2") == true)
 
-        let jump = (places()["jump"] ?? []).first { $0.route.last == "Actions" }
-        #expect(jump?.screen == 2)
-        let reflowed = (places(hidden: ["eat"])["jump"] ?? []).first { $0.route.last == "Actions" }
+        // `am` is the first word of screen 2, so hiding one word before it
+        // pulls it back onto screen 1.
+        let am = (places()["am"] ?? []).first { $0.route.last == "Actions" }
+        #expect(am?.screen == 2)
+        let reflowed = (places(hidden: ["eat"])["am"] ?? []).first { $0.route.last == "Actions" }
         #expect(reflowed?.screen == 1)
     }
 

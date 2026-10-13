@@ -22,4 +22,28 @@ struct TileModelCodable: Codable {
     ///
     /// Absent for almost every word, where the key *is* the asset name.
     var bundleImage: String?
+    /// What the tile reads, when spelling it from the key gets it wrong.
+    ///
+    /// A key is lowercase and space-free by rule, and the label is normally the
+    /// key with underscores as spaces. That is wrong for `i` (the pronoun is
+    /// always "I"), `i_dont_know` (capital and an apostrophe), and `tv`. The
+    /// key stays as it is: it names the art and the cache, and changing it
+    /// would orphan both.
+    ///
+    /// Absent for almost every word.
+    var label: String?
+
+    /// The label a tile from this entry starts with.
+    var resolvedLabel: String {
+        if let label, !label.isEmpty { return label }
+        return TileModelCodable.defaultLabel(forKey: key)
+    }
+
+    /// The key spelled as a label, which is what every tile got before `label`
+    /// existed — and so what an existing install still shows.
+    static func defaultLabel(forKey key: String) -> String {
+        TileModel.normalizeKey(key)
+            .replacingOccurrences(of: "_", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 }
