@@ -1,83 +1,150 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# Handoff — session 10
+# Handoff — sessions 10 to 14
 
-Written 2026-10-08 at the close of session 9, replacing the App Store dry-run
-handoff. Read this first.
+Rewritten 2026-10-14, partway through session 10, when OpenAI's GPT-4.x
+retirement notice turned "next session" into a plan for the next several.
+Read this first.
 
 ## Where things stand
 
-Session 9 (PRs #119–#121) took the app to its first App Store submission:
+Session 10 so far (PRs #123–#127, plus `dd3102a` on main):
 
-- **Site** — Board Layout guide, 619-word counts, the guides synced, and a
-  false claim removed (the phone does not keep the iPad's word positions).
-- **Release tags** — `release.py --upload` refuses an untraceable archive,
-  then commits the bump and tags it `v<version>-<build>` (#119). Builds 3–5
-  backfilled: `v0.9.0-3/4/5`.
-- **Screenshots** — `tools/frame_screenshots.py`, ten real captures, dark mode,
-  "Modern. Familiar. Free." (#120). How: `docs/release-runbook.md`
-  §"App Store screenshots". Pack and starter words lowercased in the same PR.
-- **Listing** — `docs/app-store-listing.md`, every field as submitted, with
-  `tools/check_listing.py` (limits, and `--export` plain text to paste) (#121).
+- **gpt-image-2** — art generation moved off `gpt-image-1` (shut down
+  2026-10-23), with per-style reference packs; every drawn set redrawn (#123).
+- **Release polish** — welcome screen leads with the board; one request per
+  Play; `-TileScriptAutorun` runs once (#124).
+- **Coverage** — folders count, the drill-down draws the real grid, page
+  changes join the activity log via a new synced `LoggedNavigation` (#125).
+- **Art errors** show above the Artwork rows, not below the fold (#126).
+- **Brandi's round two** — "I" and TV capitalized through a vocabulary
+  `label`; `am`, `are`, `was` on Actions screen 2 (#127).
+- **PRD** revised as a living document, scored in `docs/prd-scorecard.md`.
 
-**App Store: 0.9.0 (5) is Waiting for Review**, manual release. Nothing ships
-on approval.
+**App Store: 0.9.0 (5) still Waiting for Review** (submitted 2026-10-07).
+Mark sent App Review a status inquiry and re-accepted the yearly developer
+agreement on 2026-10-13.
 
-## This session, in order
+## Two OpenAI deadlines
 
-1. **gpt-image-2 migration — deadline October 23.** OpenAI shuts down
-   `gpt-image-1` that day; `gpt-image-2` is the documented replacement (not
-   `gpt-image-1-mini` / `-1.5`, which go December 1). The app's art generation
-   (`TileImageGenerator`), `ModelPricing`, tests, `generate_sets.py` and
-   `build_tone_variants.py` all name it.
-   - **Style first.** Render ~20 words × 5 styles with gpt-image-2 and compare
-     against the shipped tiles before switching. New art has to match the sets
-     it lands in.
-   - Check `/images/edits` and refine still behave (multi-image input,
-     `quality`).
-   - Mark upgrades the constrained OpenAI project allowlists, including the
-     reviewer's key. `tools/audit_openai_models.py` lists what the code calls.
-   - Builds 4 and 5 will lose art on the 23rd regardless — confirm it fails as
-     a message, not a crash.
-2. **Coverage drill-down: draw the real grid.** It reflows the page's words
-   instead of drawing the board's geometry (12×5, Home in cell 0), so a dimmed
-   region doesn't read as a place. Boards are fixed grids now; use the scene's
-   designed layout.
-3. **Coverage: count link taps.** Home reads "27 of 47" on a 59-cell page —
-   the 11 folders and keyboard are skipped, including eat/drink/play, which
-   speak *and* navigate. An unopened folder is as much a signal as an unpressed
-   word. A link press needs logging as one.
-4. **Score ourselves against the PRD.** `docs/prd.md`, requirement by
-   requirement: shipped, partial, deliberately dropped, not started.
-5. **Version switch — wait on App Review.** If review sends us back, iterate on
-   **0.9.x**. Move to **1.0.0 (6)** once 0.9.0 is approved and we're cutting
-   the build that will actually release. Open question: whether an
-   approved-unreleased 0.9.0 blocks creating 1.0.0 until withdrawn.
+| Date | What retires | Our exposure | Status |
+|---|---|---|---|
+| **2026-10-23** | `gpt-image-1` | All AI tile art | Migrated (#123); needs a shipped build |
+| **2027-01-14** | `gpt-4o`, `gpt-4o-mini`, `gpt-4.1`, `gpt-4.1-mini` | **Every text call** | Sessions 12–14 below |
 
-**Carried, smaller:**
+Every text call is `gpt-4o-mini`: sentences (`CacheKeyPolicy.modelID`),
+`SceneGeneratorService`, `PageGeneratorService`, `SceneRefinerService`,
+`TileSuggestionService`, `WordModerationService`, and `ModelPricing`. The eval
+harness's judge is `gpt-4o`, retiring too. Tools that name a model:
+`test_scene_gen.py`, `test_sentence_prompt.py`, `check_prompt_order.py`,
+`build_tone_variants.py`; `audit_openai_models.py` lists them all.
 
-- **Onboarding copy** — the welcome screen still leads with "Pick tiles, hear
-  sentences" and "Bring your own AI key". Fix before the release build.
-- **Play double-request** — Play can launch two generation requests ~4ms apart;
-  the first is cancelled and the second counts as a repeat (stray ↻ badge).
-- **`-TileScriptAutorun` re-fires** every time TileScript opens during that
-  launch.
+OpenAI's recommended replacement is **GPT-6 Luna**, starting at reasoning
+effort `none`, cheaper per token than gpt-4o-mini. Their guide says: baseline,
+evaluate, tune, roll out gradually.
 
-## Next session after that
+## The plan
 
-Ideas to get in front of, not market needs.
+### Session 10 (now) — cut 1.0.0
 
-- **URL scene install + `blasterai.app/boards`.** Install a scene from a link,
-  and publish a few boards on the site to seed a tiny ecosystem:
-  - **BlasterAI 40** — learn from Vocal Flair 40 vs 60 and WordPower 40/60.
-    The real goal is a *mechanism*: derive a 40 from the 60 by a transform,
-    if possible, rather than positioning by hand.
-  - **BlasterAI On the Go** — a purpose-built, reduced-vocabulary board for
-    iPhone. (Related: a phone scene generated from the companion iPad's
-    coverage — see memory `project_phone_board_ideas`.)
-- **Spanish localization** — understand the process for app content and
-  display names. `docs/localization-impact.md` is the assessment;
-  `TileModel.key` stays language-neutral.
-- **A web player** — what someone might build if they forked the repo.
-  Player only: scenes are authored in the app, and the web launches an
-  instance from a supplied `.blasterscene`. In this repo or a web-only repo
-  that makes its own claims about accounts and privacy.
+Gated on App Review. The release plan:
+
+- Apple sends 0.9.0 back → fix, and ship the new build as the resubmission.
+- Approved → push the new build right after.
+- Still waiting as the 23rd gets close → withdraw, push, resubmit.
+
+**Before that build ships:** Deploy Schema to Production in the CloudKit
+Console (`CD_LoggedNavigation`, from #125), and confirm every OpenAI project
+holding a key allows `gpt-image-2`, the reviewer's included.
+
+### Session 11 — graded reveal: plan, then mechanism
+
+Brandi asked how the system grows with the child: "Eventually, we want a child
+to be able to say anything they need to say. Where will these words live?"
+Before deciding what goes on a bigger board, decide how a board reveals more
+of itself. Ahead of the ecosystem work because it is more fundamental, and
+because it fixes a data shape boards will be built on.
+
+Today's conceal is binary (`TileEntry.isConcealed`: the cell keeps its place,
+draws empty, doesn't respond). The proposal:
+
+- **`TileEntry.revealAt: Int`**, 0 meaning always shown, set by the board's
+  author. It lives in `BlasterScene.pagesData` JSON, so the cell side has no
+  CloudKit schema change. The hand-written `TileEntry` decoder must learn it,
+  and tests must load the real bundled board.
+- **Keep `isConcealed`** as the caregiver's override: the author says when a
+  word normally appears, the caregiver says "not on this board yet". Decide
+  now whether it becomes tri-state (auto / concealed / revealed early).
+- **The child's level on `ChildProfile`** — the one synced field (additive;
+  promote to Production). Default from the Brown's Stage, with an override,
+  as device mode works.
+- **Payoff:** the read-only bundled BlasterAI 60 can grow by levels written
+  in its JSON, with no clone.
+
+Open questions: integer levels with gaps (10/20/30) or named stages; per child
+or a per-board floor; levels on folder links; exports at the current level or
+the full board (OBF has no levels); an editor "preview at level N".
+
+Content comes after, ideally with Brandi: one big board revealed over time
+(LAMP) or stepping up through sizes (WordPower, Crescendo); word forms
+(long-press `be` → am/is/are/was) or separate tiles; how much grammar the AI
+should supply at each stage.
+
+### Session 12 — eval harness, part 1: baseline on gpt-4o-mini
+
+**The baseline must exist before January 14** — the model it is measured
+against disappears that day. The harness (`claudeBlastTests/Eval/`) covers
+sentences and escalation; generation prompts were the known gap.
+
+- **Sentences:** cases per Brown's Stage, single-word mode, escalation,
+  grammar (am / are / was, pronoun case), homographs.
+- **Generation:** scene, page, refine and tile suggestions. A structural
+  Tier-1 (valid JSON, new words declared and used, minimum counts, no core-board
+  leakage) and a Tier-2 judge rubric for topical coverage. "Potty Training"
+  must produce potty / pee / poop.
+- **Moderation:** cases that must pass and must be held.
+- **Record** quality, latency and cost per call type. Move the judge off
+  `gpt-4o`, and keep subject and judge separate.
+
+### Session 13 — Luna migration
+
+- Read the GPT-6 developer guide first: parameters may differ (is
+  `temperature` accepted? reasoning effort, verbosity).
+- One place for model IDs, not seven.
+- Run the harness against Luna at `none`, tune prompts and effort, retest.
+- Update `ModelPricing`. The sentence cache is keyed by model, so every
+  family's cache resets on the switch — intended, and worth a release note.
+
+### Session 14 — ship the Luna build
+
+- TestFlight first: for a BYOK app with no server, that is the gradual
+  rollout.
+- Allow-listed OpenAI projects must allow the new model (the gpt-image-2
+  lesson: it took minutes to propagate). Update the key setup guide, the site,
+  and the reviewer key's project.
+- Aim to submit before mid-December, so App Review and the holidays don't
+  squeeze the January 14 date.
+
+Sessions 11 and 12 are independent: swap them if the Luna guide shows a harder
+migration than expected.
+
+## Later, not time-bound
+
+- **URL scene install + `blasterai.app/boards`** — BlasterAI 40 by a
+  transform from the 60 (learn from Vocal Flair and WordPower 40/60), and
+  BlasterAI On the Go for iPhone.
+- **Spanish localization** — the process for app content and display names
+  (`docs/localization-impact.md`; `TileModel.key` stays language-neutral).
+- **A web player** — what a fork might build: player only, launched from a
+  `.blasterscene`.
+- **OBZ import, maybe.** A whole board will not come across as it was: art,
+  grid and word forms all differ. The version that holds up is importing an
+  OBZ's *vocabulary*, laid out here.
+- **Small PRs:** drop runtime tone chaining; scene word-sense hints
+  ("shears" → scissors); remove promoted-tile leftovers (`promotedHitThreshold`,
+  `speakPromoted`); rebuild the header image.
+- **Next App Store listing round:** a styles graphic showing one word in all
+  five styles.
+- **Brandi:** reminded where the word finder is (Admin › Scenes › Manage
+  Vocabulary) — a discoverability signal for page-editing work. Her idea of
+  reserving each page's top row for subcategories is better answered by
+  curating BlasterAI 60 into a proper board set.
