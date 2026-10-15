@@ -13,7 +13,10 @@ import SwiftUI
 /// is where the child will find it. Undeclared, this device's own layout.
 struct ScenePreviewBoardView: View {
     let scene: BlasterScene
-    let allTiles: [TileModel]
+    /// Built once, in `init`. The tiles come in as a plain array, so nothing
+    /// is lost by not recomputing it — and it used to be recomputed over every
+    /// TileModel for each cell, and for each entry inside `visibleTiles`' filter.
+    private let tileLookup: [String: TileModel]
 
     @Environment(\.dismiss) private var dismiss
     @State private var currentPageKey: String
@@ -23,12 +26,9 @@ struct ScenePreviewBoardView: View {
 
     init(scene: BlasterScene, allTiles: [TileModel]) {
         self.scene = scene
-        self.allTiles = allTiles
+        self.tileLookup = Dictionary(allTiles.map { ($0.key, $0) },
+                                     uniquingKeysWith: { first, _ in first })
         _currentPageKey = State(initialValue: scene.homePageKey)
-    }
-
-    private var tileLookup: [String: TileModel] {
-        Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
     }
 
     private var currentPage: PageSpec? {

@@ -218,6 +218,57 @@ final class TileImageResolver {
         return variantExists(for: art, in: imageSet)
     }
 
+    /// Does `image(for:)` return a picture for `key` — **without decoding one**.
+    ///
+    /// The same ladder as `resolved(_:in:)` against the active set — photo,
+    /// glyph, set art, backfill, any variant, the set's placeholder — asked as
+    /// existence checks. `tilesNeedingArt` used to ask `image(for:) == nil`
+    /// from the scene editor's body, which decoded every distinct tile in the
+    /// scene on every render. With more tiles than `cache` holds, nothing stayed
+    /// cached: ~600 ms per render on an iPad mini, hanging the editor while it
+    /// scrolled. Same failure, and same fix, as `hasArt` above.
+    func hasResolvedArt(for key: String) -> Bool {
+        if hasUserPhoto(for: key) { return true }
+        let art = artKey(for: key)
+        if hasArt(for: art, in: activeSet) { return true }
+        if activeSet != ImageSetID.universalBackfill,
+           hasArt(for: art, in: ImageSetID.universalBackfill) { return true }
+        if anyVariantExists(for: art) { return true }
+        return placeholderExists(for: activeSet)
+    }
+
+    /// `userPhoto(for:)` as a question. Shares its negative cache, so a
+    /// photo-less tile — nearly all of them — costs at most one fetch ever.
+    private func hasUserPhoto(for key: String) -> Bool {
+        guard let context else { return false }
+        if overrideMisses.contains(key) { return false }
+        if overrideCache.object(forKey: NSString(string: "override:\(key)")) != nil { return true }
+        var descriptor = FetchDescriptor<TileModel>(predicate: #Predicate { $0.key == key })
+        descriptor.fetchLimit = 1
+        if let tile = try? context.fetch(descriptor).first, tile.hasUserImage { return true }
+        overrideMisses.insert(key)
+        return false
+    }
+
+    /// `anyVariantImage(for:)` as a question: a row count, no blob faulted in.
+    private func anyVariantExists(for key: String) -> Bool {
+        guard let context else { return false }
+        if variantMisses.contains("any:\(key)") { return false }
+        if variantCache.object(forKey: NSString(string: "variant:any:\(key)")) != nil { return true }
+        var descriptor = FetchDescriptor<TileArtVariant>(predicate: #Predicate { $0.tileKey == key })
+        descriptor.fetchLimit = 1
+        return ((try? context.fetchCount(descriptor)) ?? 0) > 0
+    }
+
+    /// `placeholderImage(for:)` as a question: file presence only.
+    private func placeholderExists(for imageSet: ImageSetID) -> Bool {
+        let prefix = ImageSetCatalog.bundlePrefix(for: imageSet)
+        guard let name = Self.missingPlaceholderName(for: prefix) else { return false }
+        return Self.bundledExtensions.contains {
+            Bundle.main.url(forResource: name, withExtension: $0) != nil
+        }
+    }
+
     /// File presence only — no decode, no cache write.
     private func bundledArtExists(for key: String, in imageSet: ImageSetID) -> Bool {
         let name = "\(ImageSetCatalog.bundlePrefix(for: imageSet))_\(key)"
