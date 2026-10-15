@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import UIKit
+import os
 
 struct SceneEditorView: View {
     @Bindable var scene: BlasterScene
@@ -38,7 +39,10 @@ struct SceneEditorView: View {
     @State private var pageToShare: PageLinkTarget? = nil
 
     private var tileLookup: [String: TileModel] {
-        Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
+        let state = PerfSignposts.signposter.beginInterval(
+            "tileLookup.build", "\(allTiles.count) tiles")
+        defer { PerfSignposts.signposter.endInterval("tileLookup.build", state) }
+        return Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
     }
 
     /// (flagged, blocked) counts for a page's tiles — one pass over a single
@@ -52,8 +56,11 @@ struct SceneEditorView: View {
     /// *and* blocked, but drew only the red ✕. The page row then promised a
     /// flagged tile that no badge on the page would ever show, and the caregiver
     /// is left hunting for something that is not there.
-    private func reviewCounts(_ page: PageSpec) -> (flagged: Int, blocked: Int) {
-        let lookup = tileLookup
+    ///
+    /// Takes the lookup rather than reading `tileLookup`: this runs once per page
+    /// row, and each read rebuilds the dictionary over every TileModel.
+    private func reviewCounts(_ page: PageSpec,
+                              lookup: [String: TileModel]) -> (flagged: Int, blocked: Int) {
         var flagged = 0, blocked = 0
         for entry in page.tiles {
             guard let t = lookup[entry.key] else { continue }
@@ -82,7 +89,9 @@ struct SceneEditorView: View {
 
     /// Caregiver words this scene introduced that still have no art.
     private var tilesNeedingArt: [TileModel] {
-        SceneImageBatch.tilesNeedingArt(in: scene, tileLookup: tileLookup, resolver: imageResolver)
+        PerfSignposts.interval("art.needingArt") {
+            SceneImageBatch.tilesNeedingArt(in: scene, tileLookup: tileLookup, resolver: imageResolver)
+        }
     }
 
     /// The style the caregiver is actually looking at. Completion is offered for
@@ -97,16 +106,20 @@ struct SceneEditorView: View {
     private var tilesMissingVariants: [TileModel] {
         _ = imageResolver.revision
         guard let activeStyle else { return [] }
-        return SceneImageBatch.tilesMissingVariants(in: scene, tileLookup: tileLookup,
-                                                    style: activeStyle, resolver: imageResolver)
+        return PerfSignposts.interval("art.missingVariants") {
+            SceneImageBatch.tilesMissingVariants(in: scene, tileLookup: tileLookup,
+                                                 style: activeStyle, resolver: imageResolver)
+        }
     }
 
     /// Per-style art gaps across every generatable style — the thing the two
     /// offers above cannot see. Reads `revision` so it settles as runs finish.
     private var artCoverage: [SceneImageBatch.StyleCoverage] {
         _ = imageResolver.revision
-        return SceneImageBatch.coverage(in: scene, tileLookup: tileLookup,
-                                        resolver: imageResolver)
+        return PerfSignposts.interval("art.coverage") {
+            SceneImageBatch.coverage(in: scene, tileLookup: tileLookup,
+                                     resolver: imageResolver)
+        }
     }
     /// Identifier of a freshly-created page to navigate into. Stored as the
     /// page key string now that pages are inline structs rather than
@@ -272,34 +285,38 @@ struct SceneEditorView: View {
                          ? "Paused. Tap to resume, continue in the background, or cancel."
                          : "Running in the background. Tap to view progress, pause, or cancel.")
                 }
-            } else if !tilesNeedingArt.isEmpty {
-                if resolvedAPIKey.isEmpty {
-                    Section {
-                        Button {
-                            showKeySheet = true
-                        } label: {
-                            Label("Add an AI Key to generate artwork for new words",
-                                  systemImage: "key.fill")
+            } else {
+                // Once per render: each read is a scan of every word in the scene.
+                let needingArt = tilesNeedingArt
+                if !needingArt.isEmpty {
+                    if resolvedAPIKey.isEmpty {
+                        Section {
+                            Button {
+                                showKeySheet = true
+                            } label: {
+                                Label("Add an AI Key to generate artwork for new words",
+                                      systemImage: "key.fill")
+                            }
+                        } header: {
+                            Text("New-Word Art")
+                        } footer: {
+                            Text("\(needingArt.count) new word\(needingArt.count == 1 ? "" : "s") still need a picture. Add your key to generate them with AI.")
                         }
-                    } header: {
-                        Text("New-Word Art")
-                    } footer: {
-                        Text("\(tilesNeedingArt.count) new word\(tilesNeedingArt.count == 1 ? "" : "s") still need a picture. Add your key to generate them with AI.")
-                    }
-                } else {
-                    Section {
-                        Button {
-                            artController.start(tiles: tilesNeedingArt, apiKey: resolvedAPIKey,
-                                                context: modelContext, resolver: imageResolver)
-                            isGeneratingArt = true
-                        } label: {
-                            Label("Generate art for \(tilesNeedingArt.count) new word\(tilesNeedingArt.count == 1 ? "" : "s")",
-                                  systemImage: "sparkles")
+                    } else {
+                        Section {
+                            Button {
+                                artController.start(tiles: needingArt, apiKey: resolvedAPIKey,
+                                                    context: modelContext, resolver: imageResolver)
+                                isGeneratingArt = true
+                            } label: {
+                                Label("Generate art for \(needingArt.count) new word\(needingArt.count == 1 ? "" : "s")",
+                                      systemImage: "sparkles")
+                            }
+                        } header: {
+                            Text("New-Word Art")
+                        } footer: {
+                            Text("These words don't have pictures yet. They are drawn in the style you're using now; Art Coverage below is where you fill in the others, once you can see how much each one is.")
                         }
-                    } header: {
-                        Text("New-Word Art")
-                    } footer: {
-                        Text("These words don't have pictures yet. They are drawn in the style you're using now; Art Coverage below is where you fill in the others, once you can see how much each one is.")
                     }
                 }
             }
@@ -357,6 +374,7 @@ struct SceneEditorView: View {
             // the per-page rows below already give the breakdown, so the header
             // carries the sum a caregiver would otherwise add up by hand.
             Section {
+                let lookup = tileLookup
                 ForEach(scene.pages, id: \.key) { page in
                     NavigationLink(destination: PageEditorView(scene: scene, pageKey: page.key)) {
                         VStack(alignment: .leading, spacing: 2) {
@@ -377,7 +395,7 @@ struct SceneEditorView: View {
                                 Text("\(page.tiles.count) tile\(page.tiles.count == 1 ? "" : "s")")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
-                                let counts = reviewCounts(page)
+                                let counts = reviewCounts(page, lookup: lookup)
                                 if counts.flagged > 0 { countChip("\(counts.flagged)", "flag.fill", .orange) }
                                 if counts.blocked > 0 { countChip("\(counts.blocked)", "eye.slash.fill", .red) }
                             }

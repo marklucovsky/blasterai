@@ -9,6 +9,7 @@ import SwiftUI
 import SwiftData
 import AVFoundation
 import UIKit
+import os
 
 private let promotedHitThreshold = 3
 
@@ -21,8 +22,15 @@ struct TileGridView: View {
     @Query(sort: \TileModel.key) private var allTiles: [TileModel]
 
 
+    /// Built over every TileModel, reading a SwiftData property on each — so
+    /// build it once per render and pass it down. Each cell used to read this
+    /// property itself: 749 tiles × every cell on the board, on every render.
+    /// The board stays alive under Admin, so every edit there re-rendered it.
     private var tileLookup: [String: TileModel] {
-        Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
+        let state = PerfSignposts.signposter.beginInterval(
+            "board.tileLookup", "\(allTiles.count) tiles")
+        defer { PerfSignposts.signposter.endInterval("board.tileLookup", state) }
+        return Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
     }
 
     @Environment(SentenceEngine.self) private var engine
@@ -421,9 +429,9 @@ struct TileGridView: View {
             let chunkedTiles = visible.isEmpty ? [[]] : visible.chunked(into: vocabPerPage)
             Group {
                 if isLandscape {
-                    landscapeTabView(chunks: chunkedTiles, spec: spec)
+                    landscapeTabView(chunks: chunkedTiles, spec: spec, lookup: lookup)
                 } else {
-                    portraitScrollView(chunks: chunkedTiles, pageHeight: geo.size.height, spec: spec)
+                    portraitScrollView(chunks: chunkedTiles, pageHeight: geo.size.height, spec: spec, lookup: lookup)
                 }
             }
             #if DEBUG
@@ -499,7 +507,8 @@ struct TileGridView: View {
     #endif
 
     @ViewBuilder
-    private func landscapeTabView(chunks: [[TileEntry]], spec: GridLayoutSpec) -> some View {
+    private func landscapeTabView(chunks: [[TileEntry]], spec: GridLayoutSpec,
+                                  lookup: [String: TileModel]) -> some View {
         // Fixed at the computed tile size, not flexible. At Auto the two are the
         // same width; at a row-stepped density the tile is sized by the height,
         // and flexible columns would stretch it back to fill the width — making
@@ -512,7 +521,7 @@ struct TileGridView: View {
                 LazyVGrid(columns: columns, spacing: spec.verticalSpacing) {
                     homeCell(spec: spec)
                     ForEach(tiles, id: \.key) { entry in
-                        tileCellView(for: entry, labelFontSize: spec.labelFontSize)
+                        tileCellView(for: entry, labelFontSize: spec.labelFontSize, lookup: lookup)
                     }
                 }
                 .padding(.horizontal, spec.horizontalPadding)
@@ -528,7 +537,8 @@ struct TileGridView: View {
     }
 
     @ViewBuilder
-    private func portraitScrollView(chunks: [[TileEntry]], pageHeight: CGFloat, spec: GridLayoutSpec) -> some View {
+    private func portraitScrollView(chunks: [[TileEntry]], pageHeight: CGFloat, spec: GridLayoutSpec,
+                                    lookup: [String: TileModel]) -> some View {
         // Fixed at the computed tile size, not flexible. At Auto the two are the
         // same width; at a row-stepped density the tile is sized by the height,
         // and flexible columns would stretch it back to fill the width — making
@@ -545,7 +555,7 @@ struct TileGridView: View {
                     LazyVGrid(columns: columns, spacing: spec.verticalSpacing) {
                         homeCell(spec: spec)
                         ForEach(tiles, id: \.key) { entry in
-                            tileCellView(for: entry, labelFontSize: spec.labelFontSize)
+                            tileCellView(for: entry, labelFontSize: spec.labelFontSize, lookup: lookup)
                         }
                     }
                     .padding(.horizontal, spec.horizontalPadding)
@@ -599,7 +609,8 @@ struct TileGridView: View {
     }
 
     @ViewBuilder
-    private func tileCellView(for entry: TileEntry, labelFontSize: CGFloat) -> some View {
+    private func tileCellView(for entry: TileEntry, labelFontSize: CGFloat,
+                              lookup: [String: TileModel]) -> some View {
         if entry.isEmptyCell {
             // A concealed word and a spacer look identical to the child, and
             // should: both are "nothing is here". They differ only in what the
@@ -614,7 +625,7 @@ struct TileGridView: View {
                 .aspectRatio(1, contentMode: .fit)
                 .frame(maxWidth: .infinity)
                 .accessibilityHidden(true)
-        } else if let tile = tileLookup[entry.key] {
+        } else if let tile = lookup[entry.key] {
             TileView(
                 tile: tile,
                 link: entry.link,

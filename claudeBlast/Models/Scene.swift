@@ -8,6 +8,7 @@
 import SwiftData
 import Foundation
 import CryptoKit
+import os
 
 @Model
 final class BlasterScene {
@@ -191,13 +192,36 @@ final class BlasterScene {
     /// CloudKit mirror is conservative about Codable arrays-as-attributes.
     private var pagesData: Data = Data()
 
+    /// The last decode of `pagesData`, valid while the bytes still match.
+    ///
+    /// Keyed by the bytes rather than invalidated in the setter, because the
+    /// setter is not the only writer: a CloudKit import replaces `pagesData`
+    /// underneath us. Comparing ~60 KB is a memcmp, far below a JSON decode.
+    ///
+    /// A class, so filling it from inside a getter is not a model change.
+    /// Writing an observed property during a view's body would schedule another
+    /// render; mutating the box's contents does not.
+    @Transient private var decodedPages = DecodedPagesCache()
+
     /// Inline page list — replaces the prior PageModel relationship. Pages are
     /// scene-scoped (their `key` is unique only within this scene). No cross-scene
     /// sharing, no SwiftData @Relationship inverse, no deletion-rule fragility.
+    ///
+    /// Reads are served from `decodedPages` while the bytes are unchanged. Every
+    /// read used to decode the whole scene — ~1 ms for a full board — and
+    /// editors read this per cell and per binding access: one Add Word cost
+    /// thousands of decodes on an iPad mini.
     var pages: [PageSpec] {
         get {
-            guard !pagesData.isEmpty else { return [] }
-            return (try? JSONDecoder().decode([PageSpec].self, from: pagesData)) ?? []
+            let data = pagesData
+            guard !data.isEmpty else { return [] }
+            if let hit = decodedPages.pages(for: data) { return hit }
+            let state = PerfSignposts.signposter.beginInterval(
+                "pages.decode", "\(data.count) bytes")
+            defer { PerfSignposts.signposter.endInterval("pages.decode", state) }
+            let pages = (try? JSONDecoder().decode([PageSpec].self, from: data)) ?? []
+            decodedPages.store(pages, for: data)
+            return pages
         }
         set {
             pagesData = (try? JSONEncoder().encode(newValue)) ?? Data()
@@ -520,5 +544,20 @@ final class BlasterScene {
         copy.ensureIdentity(authorID: authorID, authorName: authorName)
         context.insert(copy)
         return copy
+    }
+}
+
+/// `BlasterScene.pages`' decode cache. See `decodedPages`.
+final class DecodedPagesCache {
+    private var data: Data?
+    private var pages: [PageSpec] = []
+
+    func pages(for data: Data) -> [PageSpec]? {
+        self.data == data ? pages : nil
+    }
+
+    func store(_ pages: [PageSpec], for data: Data) {
+        self.data = data
+        self.pages = pages
     }
 }

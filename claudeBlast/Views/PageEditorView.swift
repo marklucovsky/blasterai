@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import os
 import SwiftData
 import UIKit
 
@@ -64,8 +65,14 @@ struct PageEditorView: View {
     /// binding, and deliberately NOT the presentation state.
     @State private var renameDraft = ""
 
+    /// Read once per render and handed to the grid. Each call rebuilds the
+    /// dictionary over every TileModel, so reading it per cell cost
+    /// (all tiles × cells) SwiftData property reads on every render.
     private var tileLookup: [String: TileModel] {
-        Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
+        let state = PerfSignposts.signposter.beginInterval(
+            "pageEditor.tileLookup", "\(allTiles.count) tiles")
+        defer { PerfSignposts.signposter.endInterval("pageEditor.tileLookup", state) }
+        return Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
     }
     private var pageIndex: Int? { scene.pages.firstIndex { $0.key == pageKey } }
     private var page: PageSpec? { scene.pages.first { $0.key == pageKey } }
@@ -158,12 +165,13 @@ struct PageEditorView: View {
                         .buttonStyle(.borderedProminent)
                 }
             } else if page != nil {
+                let lookup = tileLookup
                 VStack(spacing: 0) {
                     pageHeader
                     TileGridEditor(
                         tiles: tilesBinding,
                         isSelecting: $isSelecting,
-                        wordClassOf: { tileLookup[$0]?.wordClass },
+                        wordClassOf: { lookup[$0]?.wordClass },
                         showAddCell: true,
                         onAdd: { openPicker() },
                         onAddSpace: { addSpacer() },
@@ -180,7 +188,7 @@ struct PageEditorView: View {
                             // why — the exact inverse of the child's view.
                             if entry.isSpacer {
                                 SpacerCell()
-                            } else if let tile = tileLookup[entry.key] {
+                            } else if let tile = lookup[entry.key] {
                                 PageTileCell(tile: tile, link: entry.link,
                                              linkColor: entry.linkColor,
                                              isConcealed: entry.isConcealed)

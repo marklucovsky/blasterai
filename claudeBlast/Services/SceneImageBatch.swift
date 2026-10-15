@@ -22,6 +22,9 @@ enum SceneImageBatch {
     /// Asking the resolver (not just `userImageData == nil`) is what makes the
     /// count correct for pack words: a pack word carries no userImageData but has
     /// bundled p3d_/cls_ art, so it resolves and is correctly excluded.
+    ///
+    /// Asked without decoding (`hasResolvedArt`): this runs from the scene
+    /// editor's body on every render.
     @MainActor
     static func tilesNeedingArt(in scene: BlasterScene, tileLookup: [String: TileModel],
                                 resolver: TileImageResolver) -> [TileModel] {
@@ -30,7 +33,7 @@ enum SceneImageBatch {
         for page in scene.pages {
             for entry in page.tiles where seen.insert(entry.key).inserted {
                 guard let tile = tileLookup[entry.key] else { continue }
-                if resolver.image(for: tile.bundleImage) == nil {
+                if !resolver.hasResolvedArt(for: tile.bundleImage) {
                     result.append(tile)
                 }
             }
