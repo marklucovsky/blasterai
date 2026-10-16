@@ -128,7 +128,8 @@ struct TileGridView: View {
     private var currentPage: PageSpec? {
         guard let scene = activeScene else { return nil }
         let key = coordinator.currentPageKey ?? scene.homePageKey
-        return scene.pages.first { $0.key == key }
+        // The board at its level: words above it draw as concealed cells.
+        return scene.visiblePages.first { $0.key == key }
     }
 
     // MARK: - Tray
@@ -719,6 +720,15 @@ struct TileGridView: View {
                     }
                 }
                 Divider()
+                // The level dial stays open after a step on purpose: the board
+                // redraws under the popover, which is how a caregiver finds the
+                // level that fits — step, look, step again.
+                if let scene = activeScene, scene.revealLevelCount > 0 {
+                    RevealLevelControl(scene: scene, compact: true)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                    Divider()
+                }
             }
             // TileScript is deliberately NOT here. It lives in Admin ->
             // Device -> TileScript, which is one door instead of two and is the

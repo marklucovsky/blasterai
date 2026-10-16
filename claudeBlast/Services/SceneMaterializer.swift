@@ -29,9 +29,17 @@ enum SceneMaterializer {
         case unknownVocabularyKey(String)
         case unknownVocabularyClass(String)
         case homePageNotFound(String)
+        /// A `level` line names a word that is not on its page — almost always a
+        /// typo, and silently skipping it would leave the word shown at L1.
+        case levelForUnplacedWord(page: String, key: String)
+        case levelOutOfRange(page: String, level: Int)
 
         var description: String {
             switch self {
+            case .levelForUnplacedWord(let page, let key):
+                return "level names \(key), which is not on page \(page)"
+            case .levelOutOfRange(let page, let level):
+                return "level \(level) on page \(page) is outside the scene's levels"
             case .unknownVocabularyKey(let k): return "Unknown vocabulary key: \(k)"
             case .unknownVocabularyClass(let c): return "Unknown vocabulary class: \(c)"
             case .homePageNotFound(let k): return "homePageKey not present in pages: \(k)"
@@ -50,6 +58,9 @@ enum SceneMaterializer {
         let isDefault: Bool
         let pages: [PageSpec]
         var designedFor: String = ""
+        var revealLevelCount: Int = 0
+        /// The level a new install starts at; 0 when the board has no levels.
+        var revealLevel: Int = 0
     }
 
     /// Materialize a SceneJSON into concrete pages.
@@ -67,10 +78,18 @@ enum SceneMaterializer {
         let keySet   = Set(vocabulary.map(\.key))
         let classSet = Set(vocabulary.map(\.wordClass))
 
+        let levelCount = scene.revealLevels ?? 0
         var materializedPages: [PageSpec] = []
         for page in scene.pages {
             var tiles: [TileEntry] = []
             for cmd in page.tiles {
+                if case .level(let level, let words) = cmd {
+                    guard (1...max(levelCount, 1)).contains(level), levelCount > 0 else {
+                        throw MaterializeError.levelOutOfRange(page: page.key, level: level)
+                    }
+                    try applyLevel(level, words: words, page: page.key, to: &tiles)
+                    continue
+                }
                 try applyCommand(cmd, to: &tiles,
                                  vocabulary: vocabulary,
                                  keySet: keySet, classSet: classSet)
@@ -89,8 +108,26 @@ enum SceneMaterializer {
             homePageKey: scene.homePageKey,
             isDefault: scene.isDefault,
             pages: materializedPages,
-            designedFor: scene.designedFor ?? ""
+            designedFor: scene.designedFor ?? "",
+            revealLevelCount: levelCount,
+            revealLevel: levelCount > 0 ? min(max(scene.revealLevel ?? levelCount, 1), levelCount) : 0
         )
+    }
+
+    private static func applyLevel(_ level: Int, words: [String]?, page: String,
+                                   to tiles: inout [TileEntry]) throws {
+        guard let words else {
+            for i in tiles.indices where tiles[i].revealLevel == 0 && !tiles[i].isSpacer {
+                tiles[i].revealLevel = level
+            }
+            return
+        }
+        for word in words {
+            guard let i = tiles.firstIndex(where: { $0.key == word }) else {
+                throw MaterializeError.levelForUnplacedWord(page: page, key: word)
+            }
+            tiles[i].revealLevel = level
+        }
     }
 
     // MARK: - Command expansion
@@ -148,6 +185,11 @@ enum SceneMaterializer {
 
         case .remove(let key):
             tiles.removeAll { $0.key == key }
+
+        case .level:
+            // Handled by the page loop, which knows the page and the scene's
+            // level count.
+            break
 
         case .space(let count):
             // Appended without any dedupe check, unlike every other command

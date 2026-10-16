@@ -162,19 +162,30 @@ enum ZipWriter {
 }
 
 /// Which image sets an export renders.
-enum ExportSetScope: String, CaseIterable, Identifiable {
+enum ExportSetScope: Hashable {
     /// Just what the child is looking at right now.
     case activeSet
+    /// One named style, whatever the board is showing — pictures for a
+    /// classroom that uses High Contrast, made from a board set to Classic.
+    case set(ImageSetID)
     /// Every installed set, so the caregiver can pick a style later — or print
     /// one board in High Contrast and another in Playful-3D.
     case allSets
 
-    var id: String { rawValue }
-
     var label: String {
         switch self {
-        case .activeSet: return "Current style only"
+        case .activeSet: return "Current style"
+        case .set(let id): return ImageSetCatalog.displayName(for: id)
         case .allSets: return "All styles"
+        }
+    }
+
+    /// The sets this scope renders, given the one the board is showing.
+    func sets(active: ImageSetID) -> [ImageSetID] {
+        switch self {
+        case .activeSet: return [active]
+        case .set(let id): return [id]
+        case .allSets: return ExportArtResolver.allInstalledSets
         }
     }
 }
@@ -210,10 +221,7 @@ enum TileImageExporter {
             .appendingPathComponent(basename, isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
 
-        let sets: [ImageSetID] = switch scope {
-        case .activeSet: [resolver.activeSet]
-        case .allSets: ExportArtResolver.allInstalledSets
-        }
+        let sets = scope.sets(active: resolver.activeSet)
 
         var seen = Set<String>()
         let orderedKeys = keys.filter { seen.insert($0).inserted }

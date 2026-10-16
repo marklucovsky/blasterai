@@ -5,6 +5,8 @@
   "homePageKey": "home",
   "isDefault": true,
   "designedFor": "ipad-12x5",
+  "revealLevels": 4,
+  "revealLevel": 4,
   "pages": [
     {
       "key": "home",
@@ -143,6 +145,82 @@
           "to": "keyboard",
           "audible": false,
           "linkColor": "wayfinding"
+        },
+        {
+          "level": 1,
+          "words": [
+            "i",
+            "you",
+            "want",
+            "more",
+            "help",
+            "stop",
+            "go",
+            "yes",
+            "no",
+            "all_done",
+            "eat",
+            "drink",
+            "play"
+          ]
+        },
+        {
+          "level": 2,
+          "words": [
+            "me",
+            "my",
+            "come",
+            "tell",
+            "listen",
+            "to",
+            "some",
+            "all",
+            "don't",
+            "he",
+            "she",
+            "it",
+            "get",
+            "do",
+            "can",
+            "for",
+            "and",
+            "a",
+            "the",
+            "your",
+            "that",
+            "like",
+            "read",
+            "put",
+            "here",
+            "in",
+            "on",
+            "up",
+            "not",
+            "open",
+            "watch",
+            "work",
+            "is",
+            "with",
+            "out",
+            "off",
+            "down"
+          ]
+        },
+        {
+          "level": 3,
+          "words": [
+            "people",
+            "question",
+            "actions",
+            "places",
+            "social",
+            "time",
+            "describe"
+          ]
+        },
+        {
+          "level": 4,
+          "rest": true
         }
       ]
     },

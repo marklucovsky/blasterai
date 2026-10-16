@@ -77,8 +77,11 @@ enum OBFExporter {
                        tileLookup: [String: TileModel]) -> (boards: [OBFBoard], imageKeys: [String]) {
         var imageKeys: [String] = []
         var seenImages = Set<String>()
+        // OBF has no levels, so the board travels as the sharer's child sees it:
+        // words above the current level go out as gaps, like concealed ones.
+        let scenePages = scene.visiblePages
 
-        let boards: [OBFBoard] = scene.pages.map { page in
+        let boards: [OBFBoard] = scenePages.map { page in
             var buttons: [OBFButton] = []
             var images: [OBFImage] = []
             var order: [String?] = []
@@ -95,7 +98,7 @@ enum OBFExporter {
             // hunted for.
             var pageEntries = page.tiles
             if page.key != scene.homePageKey,
-               scene.pages.contains(where: { $0.key == scene.homePageKey }),
+               scenePages.contains(where: { $0.key == scene.homePageKey }),
                !page.tiles.contains(where: { $0.link == scene.homePageKey || $0.link == "<home>" }) {
                 pageEntries.insert(TileEntry(key: OBFExporter.homeTileKey,
                                              link: scene.homePageKey, isAudible: false),
@@ -140,14 +143,14 @@ enum OBFExporter {
                 var loadBoard: OBFLoadBoard?
                 if !entry.link.isEmpty {
                     let target = entry.link == "<home>" ? scene.homePageKey : entry.link
-                    if scene.pages.contains(where: { $0.key == target }) {
+                    if scenePages.contains(where: { $0.key == target }) {
                         // `path` is what Cboard matches on, and it must equal the
                         // zip entry key exactly. `id` is for readers that resolve
                         // by id instead.
                         // The destination's own name, not one derived from its
                         // key — a renamed page should read the same on the link
                         // as on the board it opens.
-                        let targetTitle = scene.pages.first { $0.key == target }?.title
+                        let targetTitle = scenePages.first { $0.key == target }?.title
                             ?? PageNaming.displayName(target)
                         loadBoard = OBFLoadBoard(id: boardID(for: target, in: scene),
                                                  path: "boards/\(target).\(OBFFormat.boardExtension)",

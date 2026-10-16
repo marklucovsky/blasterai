@@ -77,7 +77,8 @@ enum WordPlaces {
     /// The places in one scene, keyed by word.
     static func index(scene: BlasterScene, hidden: Set<String>,
                       grid: (cols: Int, rows: Int)) -> [String: [WordPlace]] {
-        let pages = scene.pages          // decodes on every get — read once
+        // The board as the child has it: above-level words are not places yet.
+        let pages = scene.visiblePages
         let routes = routesFromHome(pages: pages, homeKey: scene.homePageKey)
         // Home takes cell 0 of every screen.
         let perScreen = max(1, grid.cols * grid.rows - 1)
@@ -119,7 +120,8 @@ enum WordPlaces {
         while !queue.isEmpty {
             let key = queue.removeFirst()
             guard let page = byKey[key], let here = routes[key] else { continue }
-            for entry in page.tiles where !entry.link.isEmpty {
+            // A concealed folder is not a way in: the child sees an empty cell.
+            for entry in page.tiles where !entry.link.isEmpty && !entry.isEmptyCell {
                 let target = entry.link == TileToken.home ? homeKey : entry.link
                 guard routes[target] == nil, let next = byKey[target] else { continue }
                 routes[target] = here + [next.title]

@@ -112,10 +112,20 @@ enum SceneBuilder {
                 }
             }
 
+            // A refine regenerates every placement, and the model knows nothing
+            // of conceal or levels. A word that survives on the same page keeps
+            // the caregiver's choices; only genuinely new placements start shown.
+            var prior: [String: TileEntry] = [:]
+            for page in scene.pages {
+                for entry in page.tiles { prior["\(page.key)/\(entry.key)"] = entry }
+            }
             scene.pages = generated.pages.map { genPage in
                 let tiles = genPage.tiles.compactMap { genTile -> TileEntry? in
                     guard lookup[genTile.key] != nil else { return nil }
-                    return TileEntry(key: genTile.key, link: genTile.link, isAudible: genTile.isAudible)
+                    let was = prior["\(genPage.key)/\(genTile.key)"]
+                    return TileEntry(key: genTile.key, link: genTile.link, isAudible: genTile.isAudible,
+                                     isConcealed: was?.isConcealed ?? false,
+                                     revealLevel: was?.revealLevel ?? 0)
                 }
                 return PageSpec(key: genPage.key, displayName: genPage.displayName, tiles: tiles)
             }

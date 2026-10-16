@@ -132,8 +132,10 @@ enum SceneActivation {
             }
         }
 
-        // Reachable means: a word, present on this device, not concealed here.
-        let reachable = placements.contains { entry in
+        // Reachable means: a word, present on this device, not concealed here —
+        // and not above the board's level, which draws exactly like concealed.
+        let visible = scene.visiblePages.flatMap(\.tiles).filter { !$0.isSpacer && $0.link.isEmpty }
+        let reachable = visible.contains { entry in
             !entry.isConcealed && (vocabulary.isEmpty || vocabulary.contains(entry.key))
         }
         if !reachable { outcome.warnings.append(.noReachableWords) }

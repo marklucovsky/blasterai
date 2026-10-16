@@ -230,6 +230,16 @@ extension AdminView {
                     .buttonStyle(.plain)
                 }
             }
+            if let active = scenes.first(where: \.isActive), active.revealLevelCount > 0 {
+                Section {
+                    RevealLevelControl(scene: active)
+                        .frame(maxWidth: .infinity)
+                } header: {
+                    Text("Board Level")
+                } footer: {
+                    Text("Words above this level stay in place as empty cells, so the board grows by revealing rather than rearranging. Every device on this account follows the level.")
+                }
+            }
         }
     }
 }

@@ -61,6 +61,10 @@ struct PageEditorView: View {
     /// Rename sheet presentation. Separate from `renameDraft` on purpose — see
     /// `rename(to:)`.
     @State private var isRenaming = false
+    /// The level the editor previews: cells above it dim, as concealed cells
+    /// do, so a caregiver sees what a child at that level gets without leaving
+    /// the editor. 0 shows every level at full strength.
+    @State private var previewLevel = 0
     /// What is typed in the rename field. Owned here so the sheet can be a plain
     /// binding, and deliberately NOT the presentation state.
     @State private var renameDraft = ""
@@ -125,6 +129,20 @@ struct PageEditorView: View {
             }
             .buttonStyle(.plain)
             Spacer()
+            if scene.revealLevelCount > 0 {
+                Menu {
+                    Picker("Preview Level", selection: $previewLevel) {
+                        Text("All Levels").tag(0)
+                        ForEach(1...scene.revealLevelCount, id: \.self) { level in
+                            Text("Level \(level)").tag(level)
+                        }
+                    }
+                } label: {
+                    Label(previewLevel == 0 ? "All Levels" : "Preview L\(previewLevel)",
+                          systemImage: "stairs")
+                        .font(.subheadline.weight(.medium))
+                }
+            }
             Button {
                 renameDraft = page?.displayName ?? ""
                 isRenaming = true
@@ -177,6 +195,11 @@ struct PageEditorView: View {
                         onAddSpace: { addSpacer() },
                         onTapTile: { editingTileKey = $0 },
                         boardGrid: boardGrid,
+                        levelCount: scene.revealLevelCount,
+                        onEnableLevels: { count in
+                            scene.setRevealLevelCount(count)
+                            try? modelContext.save()
+                        },
                         cell: { entry in
                             // The editor shows what the child cannot.
                             //
@@ -191,7 +214,10 @@ struct PageEditorView: View {
                             } else if let tile = lookup[entry.key] {
                                 PageTileCell(tile: tile, link: entry.link,
                                              linkColor: entry.linkColor,
-                                             isConcealed: entry.isConcealed)
+                                             isConcealed: entry.isConcealed,
+                                             revealLevel: scene.revealLevelCount > 0 ? entry.revealLevel : 0,
+                                             isAbovePreview: previewLevel > 0
+                                                && entry.isAboveLevel(previewLevel))
                                     .overlay(alignment: .bottomTrailing) {
                                         TileReviewBadge(tile: tile,
                                                         onKeep: { keepReview(tile) },
@@ -469,6 +495,12 @@ struct PageTileCell: View {
     var linkColor: String? = nil
     /// Concealed on this page: still drawn, deliberately muted, and badged.
     var isConcealed: Bool = false
+    /// The level this placement appears from, badged when above 1. 0 hides
+    /// the badge (always shown, or a scene without levels).
+    var revealLevel: Int = 0
+    /// Above the level the editor is previewing: muted like a concealed cell,
+    /// because that is what the child at that level sees.
+    var isAbovePreview: Bool = false
 
     /// Same rule as the board: part of speech for a word, the link's own slot
     /// for a folder.
@@ -533,7 +565,7 @@ struct PageTileCell: View {
         }
         .background(accent)
         .clipShape(RoundedRectangle(cornerRadius: 10))
-        .opacity(isConcealed ? 0.32 : 1)
+        .opacity(isConcealed || isAbovePreview ? 0.32 : 1)
         // Outside the muting, and pinned to the square rather than the whole
         // card: the badge says "this word is hidden", so it must stay legible on
         // a tile that has been dimmed to a third, and it belongs over the
@@ -548,6 +580,19 @@ struct PageTileCell: View {
                             .foregroundStyle(.white)
                             .shadow(radius: 2)
                     )
+            }
+        }
+        .overlay(alignment: .topLeading) {
+            if revealLevel > 1 {
+                Text("L\(revealLevel)")
+                    .font(.caption2.weight(.bold))
+                    .monospacedDigit()
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 2)
+                    .background(Capsule().fill(.black.opacity(0.6)))
+                    .foregroundStyle(.white)
+                    .padding(4)
+                    .accessibilityLabel("Appears from level \(revealLevel)")
             }
         }
         .shadow(color: .black.opacity(0.1), radius: 2, y: 1)
@@ -711,6 +756,26 @@ struct TilePropertiesSheet: View {
         return (link, audible, concealed)
     }
 
+    /// Visibility as one choice: -1 concealed, 0 always shown, N from level N.
+    /// Same three states as the grid editor's multi-select menu.
+    private var visibilityBinding: Binding<Int> {
+        Binding(
+            get: {
+                guard let entry else { return 0 }
+                if entry.isConcealed { return -1 }
+                return entry.revealLevel > 1 ? entry.revealLevel : 0
+            },
+            set: { newValue in
+                var pages = scene.pages
+                guard let p = pages.firstIndex(where: { $0.key == pageKey }),
+                      let t = pages[p].tiles.firstIndex(where: { $0.key == tileKey }) else { return }
+                pages[p].tiles[t].isConcealed = newValue < 0
+                if newValue >= 0 { pages[p].tiles[t].revealLevel = newValue }
+                scene.pages = pages
+            }
+        )
+    }
+
     /// The link's color slot, or nil for "work it out from the destination".
     ///
     /// Writing nil does not merely clear the stored value — it re-resolves and
@@ -804,7 +869,17 @@ struct TilePropertiesSheet: View {
                     Toggle("Add to sentence tray", isOn: entryBinding.audible)
                         .disabled((entry?.link ?? "").isEmpty)
 
-                    Toggle("Conceal on this page", isOn: entryBinding.concealed)
+                    if scene.revealLevelCount > 0 {
+                        Picker("Visibility", selection: visibilityBinding) {
+                            Text("Always Shown").tag(0)
+                            ForEach(2...max(scene.revealLevelCount, 2), id: \.self) { level in
+                                Text("From Level \(level)").tag(level)
+                            }
+                            Text("Concealed").tag(-1)
+                        }
+                    } else {
+                        Toggle("Conceal on this page", isOn: entryBinding.concealed)
+                    }
                 } header: {
                     Text("Behavior")
                 } footer: {

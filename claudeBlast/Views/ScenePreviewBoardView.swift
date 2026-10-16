@@ -32,7 +32,9 @@ struct ScenePreviewBoardView: View {
     }
 
     private var currentPage: PageSpec? {
-        scene.page(withKey: currentPageKey) ?? scene.pages.first
+        // As the child sees it, at the board's current level.
+        let pages = scene.visiblePages
+        return pages.first { $0.key == currentPageKey } ?? pages.first
     }
 
     private var grid: (cols: Int, rows: Int) {

@@ -66,8 +66,9 @@ private enum ShareDestination: String, Identifiable, CaseIterable {
         }
     }
 
-    /// A native file has nothing to configure — it always carries every style —
-    /// so it gets no disclosure and no empty settings panel.
+    /// A native file always carries every style, so it has nothing to configure
+    /// — except the level a scene opens at, which `ShareBoardSheet.hasOptions`
+    /// adds when the board has levels.
     var hasOptions: Bool { self != .nativeFile && self != .openBoard }
 
     /// Only whole scenes travel as OBF. A board set holding one board and no
@@ -84,6 +85,10 @@ struct ShareBoardSheet: View {
         var options = BoardPrintOptions.forScene(subject.scene.designedLayout)
         options.matchPageBreaks = UserDefaults.standard.bool(forKey: AppSettingsKey.printMatchPageBreaks)
         _printOptions = State(initialValue: options)
+        let current = subject.scene.effectiveRevealLevel ?? 0
+        _printLevel = State(initialValue: current)
+        _pictureLevel = State(initialValue: current)
+        _sceneLevel = State(initialValue: current)
     }
 
     @Environment(\.modelContext) private var modelContext
@@ -94,6 +99,15 @@ struct ShareBoardSheet: View {
     @State private var setScope: ExportSetScope = .activeSet
     /// Seeded from the scene's designed grid. See `BoardPrintOptions.forScene`.
     @State private var printOptions: BoardPrintOptions
+    /// The level to print at; 0 prints every level. Starts at the board's
+    /// current level, so a sheet matches the screen unless the caregiver asks
+    /// for more — printing the next level ahead of time is the usual reason.
+    @State private var printLevel: Int
+    /// The level whose words go into Tile Pictures; 0 is every level.
+    @State private var pictureLevel: Int
+    /// The level a shared scene opens at. Always a real level — the file carries
+    /// every level's words either way; this only says where it starts.
+    @State private var sceneLevel: Int
     @State private var exported: ExportedFile?
     @State private var errorMessage: String?
     @State private var work: Work?
@@ -192,7 +206,7 @@ struct ShareBoardSheet: View {
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
-                    if destination.hasOptions {
+                    if hasOptions(destination) {
                         optionsToggle(destination)
                     }
                 }
@@ -234,7 +248,39 @@ struct ShareBoardSheet: View {
         switch destination {
         case .printablePDF: pdfOptionRows
         case .tileImages: pictureOptionRows
-        case .nativeFile, .openBoard: EmptyView()
+        case .nativeFile: sceneOptionRows
+        case .openBoard: EmptyView()
+        }
+    }
+
+    private var sharesLevels: Bool { subject.scene.revealLevelCount > 0 }
+
+    private func hasOptions(_ destination: ShareDestination) -> Bool {
+        destination.hasOptions || (destination == .nativeFile && !isPage && sharesLevels)
+    }
+
+    /// One picker for every destination that takes a level, so they read the
+    /// same: the board's current level is marked, and is where each starts.
+    @ViewBuilder
+    private func levelPicker(_ selection: Binding<Int>, allowsAll: Bool) -> some View {
+        if sharesLevels {
+            let current = subject.scene.effectiveRevealLevel ?? 0
+            Picker("Level", selection: selection) {
+                if allowsAll { Text("All levels").tag(0) }
+                ForEach(1...subject.scene.revealLevelCount, id: \.self) { level in
+                    Text(level == current ? "Level \(level) (current)" : "Level \(level)").tag(level)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var sceneOptionRows: some View {
+        if !isPage {
+            levelPicker($sceneLevel, allowsAll: false)
+            Text("The scene carries every level. This is the level it opens at for whoever receives it.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -291,6 +337,7 @@ struct ShareBoardSheet: View {
     /// activity rather than an artifact.
     @ViewBuilder
     private var pdfOptionRows: some View {
+        levelPicker($printLevel, allowsAll: true)
         let layout = SheetLayout.compute(paper: printOptions.paper,
                                          orientation: printOptions.orientation,
                                          columns: resolvedColumns,
@@ -338,14 +385,29 @@ struct ShareBoardSheet: View {
 
     @ViewBuilder
     private var pictureOptionRows: some View {
+        levelPicker($pictureLevel, allowsAll: true)
         Picker("Styles", selection: $setScope) {
-            ForEach(ExportSetScope.allCases) { scope in
-                Text(scope.label).tag(scope)
+            ForEach(pictureScopes, id: \.self) { scope in
+                Text(scopeLabel(scope)).tag(scope)
             }
         }
         Text("Blaster files always carry every style, so whoever receives one sees your words in whichever style they use. This is only for exported images.")
             .font(.caption)
             .foregroundStyle(.secondary)
+    }
+
+    /// Current style, then each other installed style by name, then all of
+    /// them. The current one is not listed twice.
+    private var pictureScopes: [ExportSetScope] {
+        let active = imageResolver.activeSet
+        return [.activeSet]
+            + ExportArtResolver.allInstalledSets.filter { $0 != active }.map { .set($0) }
+            + [.allSets]
+    }
+
+    private func scopeLabel(_ scope: ExportSetScope) -> String {
+        guard scope == .activeSet else { return scope.label }
+        return "Current style (\(ImageSetCatalog.displayName(for: imageResolver.activeSet)))"
     }
 
     // MARK: - Row summaries
@@ -355,8 +417,9 @@ struct ShareBoardSheet: View {
     private func summary(for destination: ShareDestination) -> String {
         switch destination {
         case .nativeFile:
-            return isPage ? "Words and pictures, for another Blaster"
-                          : "The whole board, for another Blaster"
+            if isPage { return "Words and pictures, for another Blaster" }
+            return sharesLevels ? "The whole board, for another Blaster · opens at level \(sceneLevel)"
+                                : "The whole board, for another Blaster"
         case .printablePDF:
             let layout = SheetLayout.compute(paper: printOptions.paper,
                                              orientation: printOptions.orientation,
@@ -364,9 +427,10 @@ struct ShareBoardSheet: View {
                                              pinnedRows: printOptions.pinnedRows)
             return "\(sheetSummary(layout)) · \(printOptions.paper.displayName) \(printOptions.orientation.label.lowercased())"
         case .tileImages:
-            let sets = setScope == .allSets ? ExportArtResolver.allInstalledSets.count : 1
-            let count = Set(subject.tileKeys).count * sets
-            return "\(count) PNG image\(count == 1 ? "" : "s") · \(setScope.label.lowercased())"
+            let sets = setScope.sets(active: imageResolver.activeSet).count
+            let count = Set(pictureKeys).count * sets
+            let level = sharesLevels && pictureLevel > 0 ? " · level \(pictureLevel)" : ""
+            return "\(count) PNG image\(count == 1 ? "" : "s") · \(setScope.label.lowercased())\(level)"
         case .openBoard:
             let boards = subject.scene.pages.count
             return "\(boards) board\(boards == 1 ? "" : "s") for CoughDrop and other AAC apps"
@@ -410,9 +474,10 @@ struct ShareBoardSheet: View {
     }
 
     private var printablePages: [PageSpec] {
+        let level = printLevel > 0 ? printLevel : nil
         switch subject {
-        case .scene(let scene): return scene.pages
-        case .page(let page, _): return [page]
+        case .scene(let scene): return scene.pages(atLevel: level)
+        case .page(let page, _): return BlasterScene.project([page], atLevel: level)
         }
     }
 
@@ -513,7 +578,8 @@ struct ShareBoardSheet: View {
             let data = try SceneExporter.exportJSON(scene,
                                                     defaultTileKeys: defaultKeys,
                                                     tileLookup: tileLookup,
-                                                    context: modelContext)
+                                                    context: modelContext,
+                                                    level: sharesLevels ? sceneLevel : nil)
             return try ExportedFile.write(data, named: "\(subject.basename).\(BlasterSceneFormat.fileExtension)")
 
         case .page(let page, let scene):
@@ -551,6 +617,19 @@ struct ShareBoardSheet: View {
         return ExportedFile(url: url, displayName: url.lastPathComponent)
     }
 
+    /// The placement keys whose pictures go into Tile Pictures: every word, or
+    /// only those a child at `pictureLevel` can see. Caregiver-concealed words
+    /// are included either way, as they always were — this filters by level
+    /// and nothing else.
+    private var pictureKeys: [String] {
+        guard sharesLevels, pictureLevel > 0 else { return subject.tileKeys }
+        let pages: [PageSpec] = switch subject {
+        case .scene(let scene): scene.pages
+        case .page(let page, _): [page]
+        }
+        return pages.flatMap { $0.tiles.filter { !$0.isAboveLevel(pictureLevel) }.map(\.key) }
+    }
+
     /// The keys art actually resolves under.
     ///
     /// A placement key is not always an art key: a page-link tile aliases another
@@ -558,7 +637,7 @@ struct ShareBoardSheet: View {
     /// exporting by placement key silently produced a missing picture.
     private var artKeys: [String] {
         let lookup = tileLookup
-        return subject.tileKeys.map { key in
+        return pictureKeys.map { key in
             guard let image = lookup[key]?.bundleImage, !image.isEmpty else { return key }
             return image
         }

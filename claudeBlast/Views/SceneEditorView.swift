@@ -129,6 +129,33 @@ struct SceneEditorView: View {
     @Environment(\.horizontalSizeClass) private var hSizeClass
     @State private var isSharingScene = false
 
+    /// Graded reveal: how many levels the board has, where it opens, and where
+    /// it is now. Placements get their level in the page editor, from the same
+    /// control that conceals them.
+    @ViewBuilder
+    private var levelsSection: some View {
+        Section {
+            Picker("Levels", selection: Binding(
+                get: { scene.revealLevelCount },
+                set: { scene.setRevealLevelCount($0); try? modelContext.save() })) {
+                Text("Off").tag(0)
+                ForEach(2...BlasterScene.maxRevealLevels, id: \.self) { n in
+                    Text("\(n) levels").tag(n)
+                }
+            }
+            if scene.revealLevelCount > 0 {
+                RevealLevelControl(scene: scene)
+                    .frame(maxWidth: .infinity)
+            }
+        } header: {
+            Text("Levels")
+        } footer: {
+            Text(scene.revealLevelCount > 0
+                 ? "Each word appears from a level you choose in the page editor. Words above the board's level keep their place as empty cells, so the board grows without rearranging. Copies start at this level; when sharing, you can choose another."
+                 : "Levels let a board start small and grow with the child. Turn them on here, or choose \"Show from level…\" when concealing words in the page editor.")
+        }
+    }
+
     /// Art coverage, style by style — and it stays put.
     ///
     /// The two offers above are transient by design: they describe work to do
@@ -356,6 +383,8 @@ struct SceneEditorView: View {
                     }
                 }
             }
+
+            levelsSection
 
             Section {
                 Button {
@@ -646,9 +675,14 @@ struct SceneEditorView: View {
             for i in pages.indices {
                 pages[i].tiles = pages[i].tiles.compactMap { entry in
                     guard deletedKeys.contains(entry.link) else { return entry }
-                    return entry.isAudible
-                        ? TileEntry(key: entry.key, link: "", isAudible: true)
-                        : nil
+                    guard entry.isAudible else { return nil }
+                    // Keep the placement — its conceal and level — and drop only
+                    // the dead link and the folder color that went with it.
+                    var word = entry
+                    word.link = ""
+                    word.linkColor = nil
+                    word.linkColorIsAuto = true
+                    return word
                 }
             }
         }

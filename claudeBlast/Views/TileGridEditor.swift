@@ -53,6 +53,15 @@ struct TileGridEditor<Cell: View>: View {
     /// Home's place on the board. Nil keeps the adaptive layout.
     var boardGrid: (cols: Int, rows: Int)? = nil
 
+    /// Graded reveal. When the host passes `onEnableLevels`, Conceal becomes a
+    /// visibility menu — Always Shown / Show from Level N / Concealed — so the
+    /// level is set from the control caregivers already use. `levelCount` 0
+    /// with a handler means the scene has no levels yet: choosing a level asks
+    /// to turn them on. No handler keeps the plain conceal toggle (the AI page
+    /// preview, which has no scene to level).
+    var levelCount: Int = 0
+    var onEnableLevels: ((Int) -> Void)? = nil
+
     @ViewBuilder var cell: (TileEntry) -> Cell
 
     @State private var selectedKeys: Set<String> = []
@@ -60,6 +69,8 @@ struct TileGridEditor<Cell: View>: View {
     /// When set, the next tap on a non-selected tile drops the selection before/
     /// after it (collect-to-anchor). Entered from the Move menu.
     @State private var showMixedConcealHelp = false
+    /// A level chosen on a scene without levels, waiting on "turn them on?".
+    @State private var pendingLevel: Int?
     @State private var anchorMode: AnchorMove?
     enum AnchorMove { case before, after }
 
@@ -262,7 +273,11 @@ struct TileGridEditor<Cell: View>: View {
             } label: { Label("Move", systemImage: "arrow.up.arrow.down") }
                 .disabled(selectedKeys.isEmpty)
 
-            concealControl
+            if onEnableLevels != nil {
+                visibilityMenu
+            } else {
+                concealControl
+            }
 
             Button(role: .destructive) { removeKeys() } label: {
                 Label("Delete", systemImage: "trash")
@@ -341,6 +356,85 @@ struct TileGridEditor<Cell: View>: View {
                  + "half.\n\nSelect only concealed tiles to reveal them, or only "
                  + "visible ones to conceal them.")
         }
+    }
+
+    // MARK: - Visibility (conceal at level)
+
+    /// Levels a scene without any is offered, and the count it gets when the
+    /// caregiver says yes. Five is enough to try the idea; the scene editor
+    /// changes it.
+    private static var starterLevelCount: Int { 5 }
+
+    private var offeredLevels: ClosedRange<Int> {
+        2...(levelCount > 0 ? max(levelCount, 2) : Self.starterLevelCount)
+    }
+
+    /// One summary of the selection for the menu's label.
+    private var visibilitySummary: (label: String, icon: String) {
+        let selected = tiles.filter { selectedKeys.contains($0.key) && !$0.isSpacer }
+        guard let first = selected.first else { return ("Visibility", "eye") }
+        func state(_ e: TileEntry) -> String {
+            e.isConcealed ? "c" : (e.revealLevel > 1 ? "L\(e.revealLevel)" : "a")
+        }
+        let s0 = state(first)
+        guard selected.allSatisfy({ state($0) == s0 }) else { return ("Mixed", "eye.trianglebadge.exclamationmark") }
+        if first.isConcealed { return ("Concealed", "eye.slash") }
+        if first.revealLevel > 1 { return ("From L\(first.revealLevel)", "stairs") }
+        return ("Always Shown", "eye")
+    }
+
+    @ViewBuilder
+    private var visibilityMenu: some View {
+        let summary = visibilitySummary
+        Menu {
+            Button { setVisibility(concealed: false, level: 0) } label: {
+                Label("Always Shown", systemImage: "eye")
+            }
+            Section("Show From Level") {
+                ForEach(Array(offeredLevels), id: \.self) { level in
+                    Button("Level \(level)") {
+                        if levelCount > 0 { setVisibility(concealed: false, level: level) }
+                        else { pendingLevel = level }
+                    }
+                }
+            }
+            Button { setVisibility(concealed: true, level: nil) } label: {
+                Label("Concealed", systemImage: "eye.slash")
+            }
+        } label: {
+            Label(summary.label, systemImage: summary.icon)
+        }
+        .disabled(selectedKeys.isEmpty)
+        .alert("Give this board levels?", isPresented: Binding(
+            get: { pendingLevel != nil }, set: { if !$0 { pendingLevel = nil } })) {
+            Button("Turn On \(Self.starterLevelCount) Levels") {
+                if let level = pendingLevel {
+                    onEnableLevels?(Self.starterLevelCount)
+                    setVisibility(concealed: false, level: level)
+                }
+                pendingLevel = nil
+            }
+            Button("Cancel", role: .cancel) { pendingLevel = nil }
+        } message: {
+            Text("Levels let a board start small and grow. Words you show from a "
+                 + "higher level stay in place as empty cells until the board "
+                 + "reaches it. The board starts at its top level, so nothing "
+                 + "disappears until you step it down.")
+        }
+    }
+
+    /// Set every selected tile to one visibility state, in one undoable step.
+    /// `level` nil leaves the placement's level alone (Conceal is an override
+    /// on top of it); spacers are skipped, as in `setConcealed`.
+    private func setVisibility(concealed: Bool, level: Int?) {
+        var next = tiles
+        for index in next.indices
+        where selectedKeys.contains(next[index].key) && !next[index].isSpacer {
+            next[index].isConcealed = concealed
+            if let level { next[index].revealLevel = level }
+        }
+        tiles = next
+        impact(.light)
     }
 
     /// Conceal or reveal every selected tile, in one undoable step.
