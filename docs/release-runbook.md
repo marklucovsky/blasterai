@@ -41,9 +41,11 @@ before its deploy, because nothing in the release loop asked. Before every
 upload, compare `tools/expected_cloudkit_schema.py` against Production's
 record types: a field it lists that Production lacks means deploy first.
 
-**Pending: `CD_LoggedNavigation`** (a new record type, 2026-10-11). Deploy it
-before the first build after 0.9.0 (5). A new record type is added the same
-way a field is — in `BlasterSchemaV1`, with no migration stage; see the note on
+**Pending: two `CD_BlasterScene` level fields** (`revealLevelCount`,
+`revealLevel`; graded reveal, session 11). Deploy them
+before the first build that includes levels. `CD_LoggedNavigation` (a whole
+record type) was deployed 2026-10-15. Fields and record types are added the
+same way — in `BlasterSchemaV1`, with no migration stage; see the note on
 `BlasterSchemaV1` for why a V2 with a stage crashes existing installs.
 
 ---

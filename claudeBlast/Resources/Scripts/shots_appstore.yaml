@@ -41,12 +41,12 @@ script:
   - clear
 
   # ---- 3. A sentence, generated, on the home board ----
-  - comment: mom + want + eat + pizza, back to home, then Play
+  - comment: mom + eat + pizza, back to home, then Play
   - tiles:
     # `eat` is the home folder that opens `food`, so it is tapped as a word and
     # the page is opened by its own key — `<eat isAudible=t/>` would look for a
     # page called `eat`.
-    - <people>, mom, <home>, want, eat, <food>, pizza, <home>
+    - <people>, mom, <home>, eat, <food>, pizza, <home>
   # Paced like the sentence-mode demos (`.human` waits, a 2s settle). At
   # `.fast` Play fired twice — two requests, the first cancelled, an escalation
   # badge on Play, and a capture taken before the second one landed.

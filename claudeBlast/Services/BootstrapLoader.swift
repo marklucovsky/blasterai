@@ -299,6 +299,8 @@ enum BootstrapLoader {
         scene.markFirstPartyIdentity()
         scene.pages = materialized.pages
         scene.designedFor = materialized.designedFor
+        scene.revealLevelCount = materialized.revealLevelCount
+        scene.revealLevel = materialized.revealLevel
         scene.importedContentHash = scene.contentHash   // pristine baseline
         return scene
     }
@@ -439,12 +441,15 @@ enum BootstrapLoader {
                 print("updateSystemScene: no scene with systemSceneKey '\(key)'")
                 return false
             }
-            // Overwrite content in place; preserve id / isActive / isDefault.
+            // Overwrite content in place; preserve id / isActive / isDefault,
+            // and the caregiver's current level (see `applyLevelDeclaration`).
             scene.name = materialized.name
             scene.descriptionText = materialized.description
             scene.homePageKey = materialized.homePageKey
             scene.pages = materialized.pages
             scene.designedFor = materialized.designedFor
+            scene.applyLevelDeclaration(count: materialized.revealLevelCount,
+                                     initial: materialized.revealLevel)
             // Re-baseline: the freshly-applied bundle content IS the new pristine
             // state. Without this the scene would compare against the OLD baseline
             // and start reporting isLocallyModified — labelling our own board

@@ -90,7 +90,7 @@ struct CoverageView: View {
         guard let scene = selectedScene else { return nil }
         return CoverageReport.make(
             sceneName: scene.name,
-            pages: scene.pages,
+            pages: scene.visiblePages,
             inWindow: windowedEntries,
             allTime: allEntries,
             navigations: navigations
@@ -386,7 +386,7 @@ struct CoverageView: View {
         DisclosureGroup {
             let report = CoverageReport.make(
                 sceneName: scene.name,
-                pages: scene.pages,
+                pages: scene.visiblePages,
                 inWindow: windowedEntries,
                 allTime: allEntries,
                 navigations: navigations
@@ -412,7 +412,7 @@ struct CoverageView: View {
                 }
             }
         } label: {
-            let keys = Set(CoverageReport.vocabularyKeys(of: scene.pages))
+            let keys = Set(CoverageReport.vocabularyKeys(of: scene.visiblePages))
             let used = Set(allEntries.flatMap(\.tileKeys)).intersection(keys)
             let fraction = keys.isEmpty ? 0 : Double(used.count) / Double(keys.count)
             HStack(spacing: 12) {

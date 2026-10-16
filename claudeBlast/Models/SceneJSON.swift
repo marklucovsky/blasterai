@@ -25,6 +25,12 @@ struct SceneJSON: Codable {
     let isDefault: Bool
     /// `DesignedLayout.rawValue`, e.g. `"ipad-12x5"`. Absent = undeclared.
     var designedFor: String? = nil
+    /// Graded reveal: how many levels the board declares, and the level a newly
+    /// installed board starts at (the top when absent). After that the level is
+    /// the caregiver's, and a bundle update never moves it. Absent count means
+    /// no levels. Placements get their level from `level` commands on each page.
+    var revealLevels: Int? = nil
+    var revealLevel: Int? = nil
     let pages: [PageJSON]
 }
 
@@ -93,6 +99,17 @@ enum PageBuildCommand: Codable, Hashable {
     /// its key and two identical ones would collide.
     case space(Int)
 
+    /// `level`: stamp a reveal level on placements already on this page.
+    /// `{"level": 1, "words": ["want", "more"]}` names them;
+    /// `{"level": 3, "rest": true}` takes every placement still at level 0
+    /// (gaps excluded) — the usual last line, so whatever no earlier line
+    /// named appears only at the top level.
+    ///
+    /// `words`, not `keys`: the repo's Python tools read any command holding
+    /// `keys` as placing tiles, and would place these words a second time.
+    /// Unknown commands they skip, which is what this should be to them.
+    case level(Int, words: [String]?)
+
     enum OrderBy: String, Codable {
         case vocab   // declaration order in vocabulary.json (default)
         case name    // alphabetical by key
@@ -111,6 +128,19 @@ enum PageBuildCommand: Codable, Hashable {
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: DynamicKey.self)
+
+        if c.contains(.k("level")) {
+            let level = try c.decode(Int.self, forKey: .k("level"))
+            let words = try c.decodeIfPresent([String].self, forKey: .k("words"))
+            let rest = (try c.decodeIfPresent(Bool.self, forKey: .k("rest"))) ?? false
+            guard (words != nil) != rest else {
+                throw DecodingError.dataCorrupted(.init(
+                    codingPath: decoder.codingPath,
+                    debugDescription: "level needs exactly one of \"words\" or \"rest\": true"))
+            }
+            self = .level(level, words: words)
+            return
+        }
 
         if c.contains(.k("class")) {
             // Value is either a string (single class) or [String] (multi-class).
@@ -195,6 +225,10 @@ enum PageBuildCommand: Codable, Hashable {
             try c.encode(key, forKey: .k("remove"))
         case .space(let count):
             try c.encode(count, forKey: .k("space"))
+        case .level(let level, let words):
+            try c.encode(level, forKey: .k("level"))
+            if let words { try c.encode(words, forKey: .k("words")) }
+            else { try c.encode(true, forKey: .k("rest")) }
         }
     }
 }

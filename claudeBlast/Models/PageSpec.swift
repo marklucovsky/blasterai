@@ -174,15 +174,36 @@ struct TileEntry: Codable, Hashable, Identifiable {
     /// than freezing at whatever it happens to hold.
     var linkColorIsAuto: Bool
 
+    /// The board level this placement first appears at. 0 means always shown —
+    /// every placement before levels existed, and every placement on a scene
+    /// that does not use them.
+    ///
+    /// Graded reveal: a scene declares levels (`BlasterScene.revealLevelCount`)
+    /// and a current level, and a placement whose level is above the current
+    /// one draws exactly as a concealed cell does — it keeps its place, so the
+    /// board grows by revealing rather than reflowing. Per placement, like
+    /// `isConcealed`: `eat` can be an L1 word on Home and an L4 word on Food.
+    ///
+    /// `isConcealed` stays the caregiver's override and wins at every level.
+    var revealLevel: Int
+
     init(key: String, link: String = "", isAudible: Bool = true,
          isConcealed: Bool = false, linkColor: String? = nil,
-         linkColorIsAuto: Bool = true) {
+         linkColorIsAuto: Bool = true, revealLevel: Int = 0) {
         self.key = key
         self.link = link
         self.isAudible = isAudible
         self.isConcealed = isConcealed
         self.linkColor = linkColor
         self.linkColorIsAuto = linkColorIsAuto
+        self.revealLevel = revealLevel
+    }
+
+    /// Hidden by the board's level: above `level` and not always-shown. Nil
+    /// `level` means the scene has no levels, so nothing is level-hidden.
+    func isAboveLevel(_ level: Int?) -> Bool {
+        guard let level, revealLevel > 0 else { return false }
+        return revealLevel > level
     }
 
     /// A deliberate gap: real estate with no word behind it.
@@ -231,5 +252,31 @@ struct TileEntry: Codable, Hashable, Identifiable {
         isConcealed = try container.decodeIfPresent(Bool.self, forKey: .isConcealed) ?? false
         linkColor = try container.decodeIfPresent(String.self, forKey: .linkColor)
         linkColorIsAuto = try container.decodeIfPresent(Bool.self, forKey: .linkColorIsAuto) ?? true
+        revealLevel = try container.decodeIfPresent(Int.self, forKey: .revealLevel) ?? 0
+    }
+
+    /// Declared because both halves of Codable are hand-written, which stops
+    /// Swift synthesizing it. A new field needs a case here too.
+    private enum CodingKeys: String, CodingKey {
+        case key, link, isAudible, isConcealed, linkColor, linkColorIsAuto, revealLevel
+    }
+
+    /// Hand-written only to leave `revealLevel` out when it is 0.
+    ///
+    /// Scenes store these bytes, and `BlasterScene.contentHash` hashes them. A
+    /// synthesized encoder would add `"revealLevel":0` to every placement of
+    /// every scene, moving every hash, and every imported scene would start
+    /// reading as "modified locally" against its stored baseline. Every other
+    /// key is written exactly as the synthesized encoder wrote it, in the same
+    /// order — `LegacyTileEntryEncodingTests` pins that byte for byte.
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(key, forKey: .key)
+        try container.encode(link, forKey: .link)
+        try container.encode(isAudible, forKey: .isAudible)
+        try container.encode(isConcealed, forKey: .isConcealed)
+        try container.encodeIfPresent(linkColor, forKey: .linkColor)
+        try container.encode(linkColorIsAuto, forKey: .linkColorIsAuto)
+        if revealLevel != 0 { try container.encode(revealLevel, forKey: .revealLevel) }
     }
 }

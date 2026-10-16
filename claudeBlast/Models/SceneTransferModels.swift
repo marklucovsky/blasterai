@@ -148,6 +148,8 @@ struct ExportablePageTile: Codable {
     /// existed decodes as nil rather than throwing, and absent on the wire for
     /// the overwhelming majority of tiles that are not concealed.
     var isConcealed: Bool? = nil
+    /// The level this placement first appears at. Absent when 0 (always shown).
+    var revealLevel: Int? = nil
 }
 
 struct ExportablePage: Codable {
@@ -178,6 +180,11 @@ struct ExportableScene: Codable {
     /// The grid the scene was designed for, e.g. `"ipad-12x5"`. Optional and
     /// ignored by older builds, so the format version does not change.
     var designedFor: String? = nil
+    /// Graded reveal. The file carries every level's words; `revealLevel` is
+    /// the level it opens at — the sharer's current level unless they chose
+    /// another when sharing. Both absent when the scene has no levels.
+    var revealLevels: Int? = nil
+    var revealLevel: Int? = nil
     var tiles: [ExportableTile]?
     let pages: [ExportablePage]
 
@@ -190,6 +197,7 @@ struct ExportableScene: Codable {
         case version, name, description, homePageKey
         case id, slug, sceneVersion, authorName
         case designedFor
+        case revealLevels, revealLevel
         case tiles, pages
     }
 }

@@ -27,10 +27,13 @@ enum SceneExporter {
     ///   - context: used to collect each custom word's `TileArtVariant` rows. Nil
     ///     exports word identity with no set art — the pre-4A′ behaviour, kept
     ///     for callers that only need the page structure.
+    /// - Parameter level: the level the file opens at; nil means the scene's
+    ///   current level. Ignored for a scene without levels.
     static func export(_ scene: BlasterScene,
                        defaultTileKeys: Set<String> = [],
                        tileLookup: [String: TileModel],
-                       context: ModelContext? = nil) -> ExportableScene {
+                       context: ModelContext? = nil,
+                       level: Int? = nil) -> ExportableScene {
         var exportTiles: [ExportableTile] = []
         var seenTileKeys = Set<String>()
 
@@ -70,7 +73,8 @@ enum SceneExporter {
                     isAudible: entry.isAudible,
                     link: entry.link,
                     // Only when set, so the common case adds nothing to the file.
-                    isConcealed: entry.isConcealed ? true : nil
+                    isConcealed: entry.isConcealed ? true : nil,
+                    revealLevel: entry.revealLevel > 0 ? entry.revealLevel : nil
                 )
             }
             // A rename has to travel, or sharing a board silently reverts
@@ -93,6 +97,9 @@ enum SceneExporter {
             sceneVersion: scene.sceneVersion.isEmpty ? nil : scene.sceneVersion,
             authorName: scene.authorName.isEmpty ? nil : scene.authorName,
             designedFor: scene.designedFor.isEmpty ? nil : scene.designedFor,
+            revealLevels: scene.revealLevelCount > 0 ? scene.revealLevelCount : nil,
+            revealLevel: scene.revealLevelCount > 0
+                ? min(max(level ?? scene.effectiveRevealLevel ?? 1, 1), scene.revealLevelCount) : nil,
             tiles: exportTiles.isEmpty ? nil : exportTiles,
             pages: exportPages
         )
@@ -102,9 +109,10 @@ enum SceneExporter {
     static func exportJSON(_ scene: BlasterScene,
                            defaultTileKeys: Set<String> = [],
                            tileLookup: [String: TileModel],
-                           context: ModelContext? = nil) throws -> Data {
+                           context: ModelContext? = nil,
+                           level: Int? = nil) throws -> Data {
         let exportable = export(scene, defaultTileKeys: defaultTileKeys,
-                                tileLookup: tileLookup, context: context)
+                                tileLookup: tileLookup, context: context, level: level)
         return try encode(exportable)
     }
 

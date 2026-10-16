@@ -68,6 +68,43 @@ final class BlasterScene {
     /// The declared grid, typed. Nil when undeclared or unrecognised.
     var designedLayout: DesignedLayout? { DesignedLayout(rawValue: designedFor) }
 
+    // MARK: - Levels (graded reveal)
+
+    /// How many levels the board declares; 0 means it has none. Authored, like
+    /// `designedFor`: it joins `contentHash` only when set.
+    var revealLevelCount: Int = 0
+
+    /// The level the board is at — 1…`revealLevelCount` whenever the board has
+    /// levels. Synced, so the child's iPad and a parent's phone agree; copied by
+    /// duplicate; carried by a shared file, which opens at it.
+    ///
+    /// There is no separate "default": a board is always *at* a level, and
+    /// whoever moves it moves it. Every writer goes through `setRevealLevel` or
+    /// `setRevealLevelCount`, which keep it in range.
+    ///
+    /// State, not content: it is deliberately **not** in `contentHash`, so
+    /// stepping a board up or down never reads as editing it, and it is the one
+    /// caregiver-owned value a system scene carries — `updateSystemScene`
+    /// preserves it across bundle updates.
+    var revealLevel: Int = 0
+
+    /// Most levels a board may declare.
+    static let maxRevealLevels = 10
+
+    /// The level to draw at, or nil when the board has no levels. A stored level
+    /// out of range — 0 from a scene written before levels were declared —
+    /// reads as the top, which hides nothing.
+    var effectiveRevealLevel: Int? {
+        guard revealLevelCount > 0 else { return nil }
+        return (1...revealLevelCount).contains(revealLevel) ? revealLevel : revealLevelCount
+    }
+
+    /// Move the board to `level`, clamped to the levels it has.
+    func setRevealLevel(_ level: Int) {
+        guard revealLevelCount > 0 else { return }
+        revealLevel = min(max(level, 1), revealLevelCount)
+    }
+
     /// Stable fingerprint of the scene's user-visible content (name + home page +
     /// pages, and the designed-for grid when one is declared). Used only to
     /// detect local edits vs. the imported baseline.
@@ -81,6 +118,11 @@ final class BlasterScene {
         hasher.update(data: Data(homePageKey.utf8))
         hasher.update(data: pagesData)
         if !designedFor.isEmpty { hasher.update(data: Data(designedFor.utf8)) }
+        // Same rule as designedFor: absent unless declared, so older scenes keep
+        // their hash. The current level is state and never joins.
+        if revealLevelCount > 0 {
+            hasher.update(data: Data("levels:\(revealLevelCount)".utf8))
+        }
         return hasher.finalize().map { String(format: "%02x", $0) }.joined()
     }
 
@@ -228,6 +270,89 @@ final class BlasterScene {
             lastModified = .now
             adoptHomePageIfNeeded(newValue)
         }
+    }
+
+    /// The pages as a child at `level` sees them: placements above the level
+    /// come back concealed, so every consumer that already draws a concealed
+    /// cell as an empty one in place handles levels with no change. Nil `level`
+    /// is the identity.
+    ///
+    /// Editors read `pages`; anything drawing the child's board reads this.
+    /// Cached with the decode, so it costs nothing per render.
+    func pages(atLevel level: Int?) -> [PageSpec] {
+        let all = pages
+        guard let level else { return all }
+        let data = pagesData
+        if let hit = decodedPages.projection(for: data, level: level) { return hit }
+        let state = PerfSignposts.signposter.beginInterval("pages.project", "L\(level)")
+        defer { PerfSignposts.signposter.endInterval("pages.project", state) }
+        let projected = Self.project(all, atLevel: level)
+        decodedPages.storeProjection(projected, for: data, level: level)
+        return projected
+    }
+
+    /// The board at its current level.
+    var visiblePages: [PageSpec] { pages(atLevel: effectiveRevealLevel) }
+
+    /// Change how many levels the board has, as its author.
+    ///
+    /// Turning levels on starts the board at the top, so nothing disappears
+    /// until a caregiver steps down. A lowered top brings the board's level and
+    /// any placement above it down to it — otherwise a word would sit above
+    /// every level the board can reach and never show again, lost with nothing
+    /// on screen to say where. Turning levels off (0) leaves placement levels
+    /// alone; they are ignored until levels come back.
+    func setRevealLevelCount(_ count: Int) {
+        let count = min(max(count, 0), Self.maxRevealLevels)
+        let wasOn = revealLevelCount > 0
+        revealLevelCount = count
+        guard count > 0 else { return }
+        if !wasOn || !(1...count).contains(revealLevel) {
+            revealLevel = wasOn ? min(max(revealLevel, 1), count) : count
+        }
+        var all = pages
+        var changed = false
+        for p in all.indices {
+            for t in all[p].tiles.indices where all[p].tiles[t].revealLevel > count {
+                all[p].tiles[t].revealLevel = count
+                changed = true
+            }
+        }
+        if changed { pages = all }
+    }
+
+    /// Take an incoming level count — a bundle update, or a re-import of a
+    /// shared scene — while keeping the caregiver's level. The count is content
+    /// and follows the source; the level is the caregiver's, kept, and brought
+    /// down only when the source no longer reaches it. A board gaining levels
+    /// for the first time starts at `initial` (the source's own level), or the
+    /// top when the source has none.
+    func applyLevelDeclaration(count: Int, initial: Int?) {
+        let wasOn = revealLevelCount > 0
+        revealLevelCount = count
+        guard count > 0 else { revealLevel = 0; return }
+        let start = wasOn && revealLevel > 0 ? revealLevel : (initial ?? count)
+        revealLevel = min(max(start, 1), count)
+    }
+
+    static func project(_ pages: [PageSpec], atLevel level: Int?) -> [PageSpec] {
+        guard let level else { return pages }
+        return pages.map { page in
+            var page = page
+            page.tiles = page.tiles.map { entry in
+                guard entry.isAboveLevel(level) else { return entry }
+                var hidden = entry
+                hidden.isConcealed = true
+                return hidden
+            }
+            return page
+        }
+    }
+
+    /// Placements a child at `level` can actually press — words and folders,
+    /// not gaps. CoughDrop shows the same count beside its level control.
+    func visibleTileCount(atLevel level: Int?) -> Int {
+        pages(atLevel: level).reduce(0) { $0 + $1.tiles.count { !$0.isEmptyCell } }
     }
 
     /// Keep `homePageKey` pointing at a page that exists.
@@ -497,6 +622,8 @@ final class BlasterScene {
         )
         copy.pages = source.pages           // deep copy via the Codable round-trip
         copy.designedFor = source.designedFor
+        copy.revealLevelCount = source.revealLevelCount
+        copy.revealLevel = source.revealLevel
         copy.systemSceneKey = ""            // ← user-owned from here on
         copy.isImported = false
         copy.importedContentHash = ""
@@ -538,6 +665,8 @@ final class BlasterScene {
         )
         copy.pages = source.pages  // deep copy via Codable round-trip in the setter
         copy.designedFor = source.designedFor
+        copy.revealLevelCount = source.revealLevelCount
+        copy.revealLevel = source.revealLevel
         // A duplicate is a new, locally-owned scene: give it a fresh identity
         // under this device's author id (sceneID starts empty → ensureIdentity
         // mints a new one from the duplicate's name).
@@ -547,10 +676,14 @@ final class BlasterScene {
     }
 }
 
-/// `BlasterScene.pages`' decode cache. See `decodedPages`.
+/// `BlasterScene.pages`' decode cache, plus the level projection over it. See
+/// `decodedPages`.
 final class DecodedPagesCache {
     private var data: Data?
     private var pages: [PageSpec] = []
+    private var projectionData: Data?
+    private var projectionLevel: Int?
+    private var projected: [PageSpec] = []
 
     func pages(for data: Data) -> [PageSpec]? {
         self.data == data ? pages : nil
@@ -559,5 +692,15 @@ final class DecodedPagesCache {
     func store(_ pages: [PageSpec], for data: Data) {
         self.data = data
         self.pages = pages
+    }
+
+    func projection(for data: Data, level: Int) -> [PageSpec]? {
+        projectionData == data && projectionLevel == level ? projected : nil
+    }
+
+    func storeProjection(_ pages: [PageSpec], for data: Data, level: Int) {
+        projectionData = data
+        projectionLevel = level
+        projected = pages
     }
 }

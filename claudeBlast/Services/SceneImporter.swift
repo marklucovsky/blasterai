@@ -301,7 +301,8 @@ enum SceneImporter {
                     key: exportTile.key,
                     link: exportTile.link,
                     isAudible: exportTile.isAudible,
-                    isConcealed: exportTile.isConcealed ?? false
+                    isConcealed: exportTile.isConcealed ?? false,
+                    revealLevel: max(0, exportTile.revealLevel ?? 0)
                 )
             }
             return PageSpec(key: exportPage.key,
@@ -332,8 +333,20 @@ enum SceneImporter {
         let incomingDesignedFor = exportable.designedFor
             .flatMap(DesignedLayout.init(rawValue:))?.rawValue ?? ""
 
+        // Levels, clamped to what this build supports. A new copy opens at the
+        // file's level, and so does "Replace Mine with the Update" — the receiver
+        // asked for the file, level included. A quiet refresh of an unedited copy
+        // keeps the level its caregiver set (see `applyLevelDeclaration`).
+        let incomingLevels = min(max(exportable.revealLevels ?? 0, 0), BlasterScene.maxRevealLevels)
+        func applyLevels(_ s: BlasterScene, takeFileLevel: Bool = false) {
+            s.applyLevelDeclaration(count: incomingLevels, initial: exportable.revealLevel)
+            if takeFileLevel, incomingLevels > 0 {
+                s.setRevealLevel(exportable.revealLevel ?? incomingLevels)
+            }
+        }
+
         // Apply `pages` + file metadata to a scene in place.
-        func refresh(_ s: BlasterScene) {
+        func refresh(_ s: BlasterScene, takeFileLevel: Bool = false) {
             s.name = exportable.name
             s.descriptionText = exportable.description
             s.homePageKey = exportable.homePageKey
@@ -344,6 +357,7 @@ enum SceneImporter {
             s.sourceURL = sourceURL
             s.pages = pages
             s.designedFor = incomingDesignedFor
+            applyLevels(s, takeFileLevel: takeFileLevel)
         }
 
         let scene: BlasterScene
@@ -361,7 +375,7 @@ enum SceneImporter {
                     wasUpdate: false, needsReceiverLabel: false,
                     conflict: resolution == nil ? .modifiedExisting(name: existing.name) : .none)
             case .takeUpdate:
-                refresh(existing)
+                refresh(existing, takeFileLevel: true)
                 existing.importedContentHash = existing.contentHash
                 scene = existing; wasUpdate = true
             case .keepBoth:
@@ -375,6 +389,7 @@ enum SceneImporter {
                 fork.authorName = incomingAuthor
                 fork.pages = pages
                 fork.designedFor = incomingDesignedFor
+                applyLevels(fork)
                 fork.ensureIdentity(authorID: DeviceProfileStore.ensureAuthorID(context: context),
                                     authorName: incomingAuthor)
                 fork.importedContentHash = fork.contentHash
@@ -401,6 +416,7 @@ enum SceneImporter {
             newScene.authorName = incomingAuthor
             newScene.pages = pages
             newScene.designedFor = incomingDesignedFor
+            applyLevels(newScene)
             newScene.importedContentHash = newScene.contentHash
             try context.transaction { context.insert(newScene) }
             scene = newScene; wasUpdate = false
