@@ -96,6 +96,11 @@ nonisolated enum AppSettingsKey {
     /// Whether a scene's declared grid (`BlasterScene.designedFor`) overrides
     /// `boardLayout` on a matching device. On unless a caregiver opts out.
     static let honorSceneLayouts     = "honor_scene_layouts"
+    /// Whether the Caregiver Menu (long-press Home) offers quick actions —
+    /// mode, level, scene, tile style — or Admin alone. Device-local, and on
+    /// unless a caregiver turns it off. Patient devices show Admin only
+    /// whatever this says.
+    static let quickActionsEnabled   = "quick_actions_enabled"
     /// PDF export: break sheets where the screen breaks pages. See
     /// `BoardPrintOptions.matchPageBreaks`. Kept between exports — it is a
     /// therapist's standing preference, not a per-board choice.
