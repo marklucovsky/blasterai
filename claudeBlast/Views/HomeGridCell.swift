@@ -66,6 +66,8 @@ struct HomeGridCell: View {
     /// Long-press: the caregiver menu. Carried over from the old chrome Home
     /// button, which is where caregivers already reach for it.
     let onOpenMenu: () -> Void
+    /// Whether the caregiver menu is showing; Home's tap does nothing while it is.
+    var isMenuOpen: Bool = false
 
     /// Matches the label metrics the surrounding tiles use, so the cell's glyph
     /// scales with the board's density instead of staying a fixed size on a
@@ -98,10 +100,21 @@ struct HomeGridCell: View {
         }
     }
 
+    /// Home's tap, unless the menu is open. The button fires on release even
+    /// when the long-press won, and a tap means "go Home" — which would swap
+    /// the page the caregiver is looking at for Home just as the quick actions
+    /// open over it. Asking whether the menu is open, rather than remembering
+    /// that this press opened it, leaves nothing stale behind when a press ends
+    /// with the finger slid off the cell.
+    private func tapHome() {
+        guard !isMenuOpen else { return }
+        if isEnabled { action() }
+    }
+
     // MARK: - Home alone
 
     private var single: some View {
-        Button(action: { if isEnabled { action() } }) {
+        Button(action: tapHome) {
             // Mirrors TileView's structure — a square card with a label beneath
             // — so the square lines up with the tile images across the row.
             // Without the reserved label space the cell centres against the
@@ -179,7 +192,7 @@ struct HomeGridCell: View {
         footprint.overlay {
             VStack(spacing: Self.splitGap) {
                 // Home is always live here: Back only appears two levels down.
-                half("house.fill", isPressed: $isPressed, action: action,
+                half("house.fill", isPressed: $isPressed, action: tapHome,
                      opensMenu: true)
                     .accessibilityLabel("Home")
                     .accessibilityHint("Goes to the first page of this board")

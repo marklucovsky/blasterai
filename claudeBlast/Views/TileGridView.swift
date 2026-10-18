@@ -16,6 +16,8 @@ private let promotedHitThreshold = 3
 struct TileGridView: View {
     @Query(filter: #Predicate<BlasterScene> { $0.isActive })
     var activeScenes: [BlasterScene]
+    /// Every scene, for the Caregiver Menu's scene switcher.
+    @Query(sort: \BlasterScene.name) private var allScenes: [BlasterScene]
 
     /// All vocabulary tiles. Used to resolve a TileEntry.key back to the
     /// underlying TileModel for display (image, label, wordClass).
@@ -52,6 +54,18 @@ struct TileGridView: View {
     /// it has to live on the cell view itself.
     @State private var lastTappedKey: String?
     @AppStorage(AppSettingsKey.demoMode) private var demoMode = false
+    @AppStorage(AppSettingsKey.quickActionsEnabled) private var quickActionsEnabled = true
+    @AppStorage(AppSettingsKey.imageSet) private var imageSetRaw: String = ImageSetID.defaultSet.rawValue
+    @Environment(TileImageResolver.self) private var imageResolver
+    /// A scene switch the menu could not make, or made with a caveat — the same
+    /// messages Admin › Scenes shows.
+    @State private var sceneNotice: SceneNotice?
+
+    struct SceneNotice: Identifiable {
+        let id = UUID()
+        let title: String
+        let message: String
+    }
 
     /// Defaults to what the old density stepper implied, until a layout is
     /// chosen. See `BoardLayout.current`.
@@ -304,6 +318,9 @@ struct TileGridView: View {
                  arrowEdge: .top) {
             caregiverMenuContent
                 .presentationCompactAdaptation(.popover)
+        }
+        .alert(item: $sceneNotice) { notice in
+            Alert(title: Text(notice.title), message: Text(notice.message))
         }
         .onChange(of: engine.canReplay) { _, isReady in
             guard isCompact else { return }
@@ -589,6 +606,7 @@ struct TileGridView: View {
                 currentDisplayPage = 0
             },
             onOpenMenu: { showCaregiverMenu = true },
+            isMenuOpen: showCaregiverMenu,
             labelFontSize: spec.labelFontSize,
             backAction: coordinator.canGoBack ? {
                 withAnimation(.easeOut(duration: 0.30)) {
@@ -684,9 +702,11 @@ struct TileGridView: View {
     /// it is — it changes how their board behaves — and it is not urgent enough
     /// for a caregiver to need outside the gate, since Admin reaches it anyway.
     ///
-    /// On a **caregiver** device the mode switch stays. That device is for
-    /// authoring, demoing and testing, its Admin is ungated by default, and
-    /// flipping modes quickly is the point of having the shortcut at all.
+    /// On a **caregiver** device the quick actions stay: mode, level, scene and
+    /// tile style. That device is for authoring, demoing and testing, its Admin
+    /// is ungated by default, and changing these quickly is the point of having
+    /// the shortcut at all. One device setting, Admin › Device › "Caregiver
+    /// Menu Quick Actions", turns them all off together (on by default).
     ///
     /// TileScript used to be a third entry and is not any more — see the note at
     /// its former call site below.
@@ -698,7 +718,7 @@ struct TileGridView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
                 .padding(.bottom, 4)
-            if !isPatientDevice {
+            if showsQuickActions {
                 // Only the switch *into* sentences is gated.
                 //
                 // Leaving sentence mode never needs anything, but entering it on
@@ -729,6 +749,12 @@ struct TileGridView: View {
                         .padding(.vertical, 10)
                     Divider()
                 }
+                if allScenes.count > 1 {
+                    sceneSwitcher
+                    Divider()
+                }
+                tileStyleSwitcher
+                Divider()
             }
             // TileScript is deliberately NOT here. It lives in Admin ->
             // Device -> TileScript, which is one door instead of two and is the
@@ -746,6 +772,97 @@ struct TileGridView: View {
         }
         .frame(minWidth: 240)
         .padding(.bottom, 8)
+    }
+
+    private var showsQuickActions: Bool { quickActionsEnabled && !isPatientDevice }
+
+    /// The scenes, the active one checked. Picking one closes the menu: the
+    /// board goes to the new scene's Home, so there is nothing left to compare.
+    private var sceneSwitcher: some View {
+        Menu {
+            ForEach(allScenes) { scene in
+                Button {
+                    showCaregiverMenu = false
+                    switchScene(to: scene)
+                } label: {
+                    if scene.isActive {
+                        Label(scene.name, systemImage: "checkmark")
+                    } else {
+                        Text(scene.name)
+                    }
+                }
+            }
+        } label: {
+            menuLabel("Scene", value: activeScene?.name ?? "None",
+                      systemImage: "square.grid.3x3")
+        }
+    }
+
+    /// Device-local, as in Admin › Device. The menu stays open after a pick,
+    /// like the level control: the board redraws underneath, so a caregiver
+    /// can try a style and look before choosing another.
+    private var tileStyleSwitcher: some View {
+        Menu {
+            ForEach(ImageSetCatalog.selectable) { set in
+                Button {
+                    setTileStyle(set.id)
+                } label: {
+                    let name = set.isShippable ? set.displayName : "\(set.displayName) (incomplete)"
+                    if set.id == imageResolver.activeSet {
+                        Label(name, systemImage: "checkmark")
+                    } else {
+                        Text(name)
+                    }
+                }
+            }
+        } label: {
+            menuLabel("Tile Style", value: ImageSetCatalog.displayName(for: imageResolver.activeSet),
+                      systemImage: "paintpalette")
+        }
+    }
+
+    /// A menu row that names its setting and shows the current value, styled to
+    /// match `caregiverMenuRow`.
+    private func menuLabel(_ title: String, value: String, systemImage: String) -> some View {
+        HStack(spacing: 8) {
+            Label(title, systemImage: systemImage)
+            Spacer(minLength: 12)
+            Text(value)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            Image(systemName: "chevron.up.chevron.down")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .font(.body)
+        .foregroundStyle(Color.primary)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .contentShape(Rectangle())
+    }
+
+    /// The same activation Admin › Scenes uses, and the same messages: a scene
+    /// that can't be the board is refused before anything changes.
+    private func switchScene(to scene: BlasterScene) {
+        guard !scene.isActive else { return }
+        do {
+            let outcome = try scene.activate(context: modelContext)
+            try? modelContext.save()
+            if let message = outcome.message {
+                sceneNotice = SceneNotice(title: "Scene Activated", message: message)
+            }
+        } catch {
+            sceneNotice = SceneNotice(title: "Can't Use This Scene",
+                                      message: error.localizedDescription)
+        }
+    }
+
+    /// Both halves, as onboarding learned: the stored preference, and the live
+    /// resolver, which reads the preference only at launch.
+    private func setTileStyle(_ id: ImageSetID) {
+        let resolved = ImageSetID.resolved(id.rawValue)
+        imageSetRaw = resolved.rawValue
+        imageResolver.activeSet = resolved
     }
 
     private func caregiverMenuRow(_ title: String, systemImage: String,
