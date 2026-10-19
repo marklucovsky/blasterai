@@ -1,0 +1,19 @@
+{
+  "name": "2026-10-19-1531-gpt-4o-mini-v0-rejudge",
+  "label": "v0-rejudge",
+  "model": "gpt-4o-mini",
+  "effort": null,
+  "judge": "gpt-6.1-sol",
+  "judge_effort": "low",
+  "judge_n": 1,
+  "samples": 1,
+  "commit": "8f81084+dirty",
+  "prompt_rev": "6d26021a57",
+  "rubric_rev": "90c6a0766c",
+  "rejudged_from": "docs/eval/runs/2026-10-19-1522-gpt-4o-mini-v0",
+  "started": "2026-10-19T15:31:04",
+  "seconds": 113.2,
+  "outputs": 115,
+  "subject_cost": 0.0331029,
+  "judge_cost": 0.342686
+}

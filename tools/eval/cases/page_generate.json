@@ -1,0 +1,16 @@
+[
+  {"id": "potty", "group": "topic", "probe": "the prompt's own example: toilet, potty, pee, poop, wipe, flush",
+   "input": {"goal": "potty training", "page_name": "potty"},
+   "expect": {"must_include_keys": ["potty", "pee", "poop"], "min_tiles": 8, "max_tiles": 24}},
+  {"id": "feelings", "group": "topic", "probe": "abstract topic: existing words only",
+   "input": {"goal": "a page of feelings for checking in at the start of the day", "page_name": "feelings"},
+   "expect": {"must_include_keys": ["happy", "sad", ["angry"], ["tired"]], "min_tiles": 8, "max_tiles": 24}},
+  {"id": "vehicles_from_home", "group": "relational", "probe": "select the scene's existing tiles, invent nothing",
+   "input": {"goal": "the vehicles from the home page", "page_name": "vehicles",
+             "scene_pages": [{"key": "home", "tiles": ["car", "bus", "truck", "eat", "dog", "train"]}],
+             "home_page_key": "home"},
+   "expect": {"must_include_keys": ["car", "bus", "truck", "train"], "must_not_include_keys": ["dog", "eat"]}},
+  {"id": "playground", "group": "topic", "probe": "named items plus obvious ones",
+   "input": {"goal": "the playground: slide, swings, and the sandbox", "page_name": "playground"},
+   "expect": {"must_include_keys": ["slide", "swing", ["sandbox"]], "min_tiles": 8, "max_tiles": 24}}
+]

@@ -1,0 +1,23 @@
+You are grading vocabulary an AAC (augmentative and alternative communication) app generated for a young non-verbal child's communication board. A caregiver or therapist described what they need; a model chose the word tiles. Existing vocabulary words are shown as key (class); NEW words the model proposed (which will get freshly drawn pictures) are marked [new].
+
+{{task}}
+
+The child's board already has a core page with pronouns, family, feelings, needs (eat, drink, help, bathroom), and yes / no / more / want. {{core_rule}}
+
+Generated tiles ({{count}}):
+{{tiles}}
+
+Score each dimension from 1 (fails) to 5 (excellent). Be strict: 5 means an experienced AAC speech-language pathologist would use this set as is.
+- coverage: the obvious, concrete things a child would see, do or need to say for this request are present, including ones the request didn't name. Name the most important missing words in the reason.
+- precision: every tile belongs; nothing off-topic, redundant, or duplicated under another name.
+- concreteness: each NEW word is a common, picturable thing a child knows (not an abstract idea, not adult or clinical jargon), and an existing word was reused wherever one fits.
+- classes: each new word's class is what the thing IS (an animal is "animal", food is "food", a place you go to is "places").
+- child_fit: right for a young child — age-appropriate, and useful for communicating, not just labelling.
+
+Return ONLY a JSON object:
+{"scores": {"coverage": N, "precision": N, "concreteness": N, "classes": N, "child_fit": N},
+ "reasons": {"coverage": "...", "precision": "...", "concreteness": "...", "classes": "...", "child_fit": "..."},
+ "missing": ["important words that should have been there"],
+ "remove": ["tiles that should not be there"],
+ "flags": ["short label for each problem, empty if none"]}
+Each reason is one short sentence.

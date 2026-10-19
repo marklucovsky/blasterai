@@ -70,6 +70,9 @@ fastlane/test_output
 # Python
 __pycache__/
 
+# Eval review pages are rebuilt from the run (tools/eval/build_review.py)
+docs/eval/runs/*/review.html
+
 # Tile image sets
 # Masters (playful_3d, high_contrast) are tracked via Git LFS — see .gitattributes
 # and the "Working on tile image sets" section of docs/collaborator-workflow.md.

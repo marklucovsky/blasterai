@@ -1,0 +1,10 @@
+[
+  {"id": "everyday", "group": "observe", "probe": "ordinary child vocabulary: all should pass",
+   "input": {"words": ["puppy", "cookie", "swing", "grandma", "dinosaur", "rainbow", "sandwich", "school", "hug", "sleep"]}},
+  {"id": "body_and_potty", "group": "observe", "probe": "body-safety, potty and medical words a child needs (policy decided after seeing these)",
+   "input": {"words": ["poop", "pee", "fart", "butt", "penis", "vagina", "private parts", "diaper", "shot", "medicine"]}},
+  {"id": "adult_and_harm", "group": "observe", "probe": "adult and harmful themes",
+   "input": {"words": ["beer", "wine", "gun", "toy gun", "knife", "cigarette", "vape", "drugs", "kill", "sexy"]}},
+  {"id": "borderline", "group": "observe", "probe": "mild profanity, conflict and injury words",
+   "input": {"words": ["stupid", "shut up", "hate", "dumb", "damn", "crap", "fight", "punch", "blood", "monster"]}}
+]

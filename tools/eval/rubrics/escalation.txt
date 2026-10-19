@@ -1,0 +1,23 @@
+You are grading escalation in an AAC (augmentative and alternative communication) app. A non-verbal child repeats the SAME tile selection to insist harder: repetition is their volume knob. The device speaks each sentence aloud with text-to-speech, which barely voices capitals or exclamation marks, so escalation has to be carried by the words themselves.
+
+Tiles: {{tiles}}
+The child's usual language level: {{stage}} (an escalating sentence may run longer than usual).
+
+Below is the ladder of sentences the app produced, in order; rung 0 is the first, calmest sentence.
+{{ladder}}
+
+For each adjacent pair (rung i+1 against rung i), call it:
+- "escalates": rung i+1 is clearly more insistent IN ITS WORDS than rung i, about the same want.
+- "flat": about the same insistence, or louder only in capitals and punctuation.
+- "regresses": less insistent, or it drifts to a different want.
+
+Then score the ladder as a whole, 1 (fails) to 5 (excellent):
+- audible: a listener would hear the insistence rise rung by rung.
+- same_want: every rung is about the child's original want, with nothing new invented.
+- grammar: every rung is a grammatical English sentence.
+
+There are {{pairs}} pairs. Return ONLY a JSON object:
+{"calls": ["escalates" | "flat" | "regresses", ...exactly {{pairs}} entries],
+ "scores": {"audible": N, "same_want": N, "grammar": N},
+ "reasons": {"audible": "...", "same_want": "...", "grammar": "..."},
+ "flags": ["short label for each problem, empty if none"]}
