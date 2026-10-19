@@ -129,50 +129,35 @@ New in This Version" will need.
 > **Enable AI Features**. Most of this needs no key, and that is the
 > configuration most families will run.
 >
-> ### What's new in build 5
+> ### What's new in build 8
 >
-> - **84 new words**, among them potty, pee, poop, medicine, bandaid, hand, foot,
->   tummy, calm, worried, upset, hug, climb, share, hide, because, but and will —
->   and four new folders on **Groups**: Animals, Clothes, Things and Vehicles.
->   Every word is drawn in every picture style.
-> - **Actions, Describe and Body & Health are laid out by hand**, so related words
->   sit together: opposites side by side, the toileting words in a row.
-> - **because** and **but** are drawn as a pair of symbols rather than pictures.
-> - **The default board is called BlasterAI 60** — its home page holds 60 cells.
-> - **Back.** Two folders deep, the Home cell splits into Home and Back.
-> - **Board Layout** (Admin → Device) replaces Tile Density: Standard, Large and
->   Largest are fixed grids, so a word stays where the child learned it. The
->   iPad mini now matches the other iPads.
-> - **AI features ask first.** Enable AI Features says what is sent to OpenAI
->   and needs a yes before any key is used. If you added a key in an earlier
->   build you will be asked once; until you say yes, the board works one word
->   at a time.
-> - **Key files work from anywhere** — opened before setup is finished, or from
->   Admin → Device → Install key from file…
-> - **Manage Vocabulary shows where each word is**: every route from Home, on
->   every board.
-> - **Copies are numbered** — BlasterAI 60 (1), (2) — and each says what it was
->   copied from.
-> - **Printing** starts from the board's own grid and can break pages where the
->   screen does.
+> - **Levels.** BlasterAI 60 can now grow with the child. Touch and hold
+>   **Home** and step the level down: at Level 1 only 13 first words show, Level
+>   2 adds the rest of Home, Level 3 opens the folders, Level 4 is the whole
+>   board. Hidden words keep their place, so nothing moves as words appear. This
+>   is a first map, there to be argued with, not a clinical recommendation.
+> - **Quick actions.** The same Home menu now switches the scene, the level, the
+>   picture style, and Single Words or AI Sentences, without opening Admin.
+> - **Find Word.** Home menu → **Find Word**: type a word and the board goes to
+>   its page and highlights it. Words hidden by the current level show greyed,
+>   with the level that reveals them.
+> - **Your own levels.** In a copy of BlasterAI 60, or your own board: select
+>   tiles, then **Show From Level** in the visibility menu.
+> - **Since build 5:** new pictures are drawn with OpenAI's newer image model; "I"
+>   and TV capitalised; am, are and was on Actions; faster scene and page
+>   editors.
 >
-> ### What to test in build 5
+> ### What to test in build 8
 >
-> - **Look for the new words** under Groups, on Body & Health and on the second
->   page of Actions. What is still missing? What sits next to the wrong
->   neighbour?
-> - **because and but:** could a child learn those two marks? Better or worse
->   than a picture, or than the written word?
-> - **Admin → Scenes → Manage Vocabulary.** Search for **hurt**, then
->   **because**. Do the routes match where you would look?
-> - **Go two folders deep** (Groups → Animals) and use Back. Is half a cell
->   enough for a child's finger?
-> - **Try Large and Largest** under Board Layout. Which would you choose for a
->   child, and why?
-> - **If you had a key:** read the Enable AI Features screen before you answer.
->   Did it tell you what you would want to know?
-> - **Make a copy of BlasterAI 60, then a copy of the copy.** Do the names and
->   the "Copied from" lines make sense?
+> - **Step BlasterAI 60 down to Level 1, then up.** Are those the right first
+>   words? Would you split Level 1 more finely, or open some folders sooner?
+> - **Find Word:** look up the words your child needs. **What is missing?**
+>   Tell us — we keep a running list of known gaps (days of the week, small
+>   words like *of* and *from*, more feelings) and want yours on it.
+> - **Is the Home menu too much** for a caregiver in the moment, or just right?
+>   On iPhone, does it fit?
+> - **Set levels on a board of your own.** Was **Show From Level** where you
+>   expected it?
 >
 <!-- pdf-only -->
 > ---
@@ -257,6 +242,51 @@ New in This Version" will need.
 > 15. **Go back to Activity.** It should now show the sentences, and what they
 >     cost.
 > ### Earlier builds
+>
+> ### What's new in build 5
+>
+> - **84 new words**, among them potty, pee, poop, medicine, bandaid, hand, foot,
+>   tummy, calm, worried, upset, hug, climb, share, hide, because, but and will —
+>   and four new folders on **Groups**: Animals, Clothes, Things and Vehicles.
+>   Every word is drawn in every picture style.
+> - **Actions, Describe and Body & Health are laid out by hand**, so related words
+>   sit together: opposites side by side, the toileting words in a row.
+> - **because** and **but** are drawn as a pair of symbols rather than pictures.
+> - **The default board is called BlasterAI 60** — its home page holds 60 cells.
+> - **Back.** Two folders deep, the Home cell splits into Home and Back.
+> - **Board Layout** (Admin → Device) replaces Tile Density: Standard, Large and
+>   Largest are fixed grids, so a word stays where the child learned it. The
+>   iPad mini now matches the other iPads.
+> - **AI features ask first.** Enable AI Features says what is sent to OpenAI
+>   and needs a yes before any key is used. If you added a key in an earlier
+>   build you will be asked once; until you say yes, the board works one word
+>   at a time.
+> - **Key files work from anywhere** — opened before setup is finished, or from
+>   Admin → Device → Install key from file…
+> - **Manage Vocabulary shows where each word is**: every route from Home, on
+>   every board.
+> - **Copies are numbered** — BlasterAI 60 (1), (2) — and each says what it was
+>   copied from.
+> - **Printing** starts from the board's own grid and can break pages where the
+>   screen does.
+>
+> ### What to test in build 5
+>
+> - **Look for the new words** under Groups, on Body & Health and on the second
+>   page of Actions. What is still missing? What sits next to the wrong
+>   neighbour?
+> - **because and but:** could a child learn those two marks? Better or worse
+>   than a picture, or than the written word?
+> - **Admin → Scenes → Manage Vocabulary.** Search for **hurt**, then
+>   **because**. Do the routes match where you would look?
+> - **Go two folders deep** (Groups → Animals) and use Back. Is half a cell
+>   enough for a child's finger?
+> - **Try Large and Largest** under Board Layout. Which would you choose for a
+>   child, and why?
+> - **If you had a key:** read the Enable AI Features screen before you answer.
+>   Did it tell you what you would want to know?
+> - **Make a copy of BlasterAI 60, then a copy of the copy.** Do the names and
+>   the "Copied from" lines make sense?
 >
 > ### Build 4 — folder colours
 >

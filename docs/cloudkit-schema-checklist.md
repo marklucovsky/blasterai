@@ -90,9 +90,10 @@ by name are the ones nothing writes in ordinary use:
 - [x] `CD_BlasterScene.CD_designedFor` — added after promotion (session 8);
       empty on any scene without a declared grid. Deployed to Production
       2026-10-06.
-- [ ] `CD_BlasterScene.CD_revealLevelCount`, `CD_revealLevel` — graded
+- [x] `CD_BlasterScene.CD_revealLevelCount`, `CD_revealLevel` — graded
       reveal (session 11). 0 on any scene without levels; `revealLevel` is the
-      board's current level and changes with ordinary use. **Deploy before the build that ships levels.**
+      board's current level and changes with ordinary use. Deployed to
+      Production 2026-10-19, before build 8.
 - [x] `CD_ChildProfile.CD_linkColorModeRaw` — added after promotion
       (2026-09-27). **Shipped in build 4 before it was deployed**, so child
       profile sync failed in Production until 2026-10-06, when it was deployed.
