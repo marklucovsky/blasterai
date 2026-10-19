@@ -1,0 +1,8 @@
+{
+  "I": "at Brown's Stage I: single words, mean utterance length 1.0-2.0, no grammatical morphemes",
+  "I/escalating": "at Brown's Stage I: single words, mean utterance length 1.0-2.0, no grammatical morphemes",
+  "II-III": "at Brown's Stage II-III: mean utterance length 2.0-3.0, two- and three-word combinations, early grammatical morphemes only (present progressive -ing, the prepositions in and on, regular plural -s). Keep sentences short and concrete; do not use complex clauses",
+  "II-III/escalating": "at Brown's Stage II-III: mean utterance length 2.0-3.0, two- and three-word combinations, early grammatical morphemes only (present progressive -ing, the prepositions in and on, regular plural -s). They are insisting right now, so this sentence may be longer and more forceful than their usual level — keep the words simple, but do not shorten it back down",
+  "IV+": "at Brown's Stage IV or later: mean utterance length above 3.0, full simple sentences with embedding and coordination, including irregular past tense, possessives, articles and contractible copula",
+  "IV+/escalating": "at Brown's Stage IV or later: mean utterance length above 3.0, full simple sentences with embedding and coordination, including irregular past tense, possessives, articles and contractible copula"
+}

@@ -32,18 +32,7 @@ struct SceneRefinerService {
                 chrome: SceneNavigation.ChromeBundle = .none) async throws -> GeneratedScene {
         guard !apiKey.isEmpty else { throw OpenAIError.missingAPIKey }
 
-        let system = buildSystemPrompt(currentTopical: currentTopical)
-        let user = buildUserPrompt(instruction: instruction, vocabBlock: buildVocabBlock(allTiles: allTiles))
-
-        let body: [String: Any] = [
-            "model": model,
-            "temperature": temperature,
-            "max_tokens": maxTokens,
-            "messages": [
-                ["role": "system", "content": system],
-                ["role": "user",   "content": user]
-            ]
-        ]
+        let body = requestBody(instruction: instruction, currentTopical: currentTopical, allTiles: allTiles)
 
         let url = URL(string: "https://api.openai.com/v1/chat/completions")!
         var request = URLRequest(url: url)
@@ -79,6 +68,23 @@ struct SceneRefinerService {
                                         extraNewWords: carryOver, chrome: chrome)
     }
 
+    /// The exact chat-completions body `refine` sends. Pure, so the prompt
+    /// fixtures (`PromptFixtureTests`) can pin it without a network call.
+    func requestBody(instruction: String, currentTopical: [GeneratedTile],
+                     allTiles: [TileModel]) -> [String: Any] {
+        let system = buildSystemPrompt(currentTopical: currentTopical)
+        let user = buildUserPrompt(instruction: instruction, vocabBlock: buildVocabBlock(allTiles: allTiles))
+        return [
+            "model": model,
+            "temperature": temperature,
+            "max_tokens": maxTokens,
+            "messages": [
+                ["role": "system", "content": system],
+                ["role": "user",   "content": user]
+            ]
+        ]
+    }
+
     // MARK: - Prompt builders
 
     private func buildSystemPrompt(currentTopical: [GeneratedTile]) -> String {
@@ -88,49 +94,15 @@ struct SceneRefinerService {
                 return "\(tile.key) — \(name)"
             }
             .joined(separator: "\n")
-        return """
-        You are an expert AAC specialist refining the ACTIVITY VOCABULARY of an existing scene for a \
-        non-verbal child. The app supplies the child's familiar core board automatically (pronouns, \
-        family, needs, feelings, food/drinks/people/body&health) — you ONLY manage the TOPICAL tiles \
-        for the activity. The therapist will give an instruction; apply ONLY that change.
-
-        Here are the CURRENT topical tiles (key — what it shows):
-        \(listing)
-
-        Rules:
-        - Return the COMPLETE updated topical tile list: keep every current topical tile unless the \
-          instruction removes it, and add the new ones.
-        - When the instruction introduces concrete things, INFER the obvious related items too (a fish \
-          pond implies fish, frog, lily pad, water; a creek implies bridge, rock, stream). Pull the \
-          full relevant set.
-        - Stay topical: do NOT add pronouns, family, feelings, generic foods/drinks, needs, or social \
-          words — those are on the core board already.
-        - Prefer existing vocabulary keys. Declare any genuinely new concrete word ONCE in the \
-          top-level "newWords" array with "displayName" and "wordClass" (one of: \
-          \(VocabularyClasses.caregiverSelectable.map(\.name).joined(separator: ", "))); reference it \
-          by the same key. Concrete nouns only.
-        - \(VocabularyClasses.classSelectionGuidance)
-        - Put every topical tile on a SINGLE page; no navigation tiles.
-
-        Return ONLY valid JSON matching this schema exactly — no markdown, no prose. Each tile MUST be \
-        an object, never a bare string:
-        {
-          "name": "string",
-          "description": "string",
-          "homePageKey": "string",
-          "newWords": [ { "key": "frog", "displayName": "frog", "wordClass": "animal" } ],
-          "pages": [ { "key": "string", "tiles": [ { "key": "fish", "isAudible": true, "link": "" } ] } ]
-        }
-        """
+        return PromptTemplate.render("scene_refine_system", [
+            "current_tiles": listing,
+            "class_guidance": VocabularyClasses.classSelectionGuidance,
+            "class_list": VocabularyClasses.caregiverSelectable.map(\.name).joined(separator: ", "),
+        ])
     }
 
     private func buildUserPrompt(instruction: String, vocabBlock: String) -> String {
-        """
-        Instruction: \(instruction)
-
-        Available vocabulary by category:
-        \(vocabBlock)
-        """
+        PromptTemplate.render("scene_refine_user", ["instruction": instruction, "vocab_block": vocabBlock])
     }
 
     private func buildVocabBlock(allTiles: [TileModel]) -> String {

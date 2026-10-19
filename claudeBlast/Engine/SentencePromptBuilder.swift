@@ -46,8 +46,7 @@ struct SentencePromptBuilder {
     /// surprising category (e.g. "pony (food)" comes out as a pet, not food).
     /// Kept as a system-prompt enhancement rather than appended to the user
     /// prompt so the user turn stays pure tile content.
-    static let categoryHonorRule =
-        "The category in parentheses after a word is that word's intended meaning — honor it even when unusual."
+    static let categoryHonorRule = PromptTemplate.raw("sentence_category_rule")
 
     func buildSystemPrompt() -> [PromptMessage] {
         var systemPrompt: [PromptMessage] = Self.loadBaseMessages(
@@ -67,6 +66,32 @@ struct SentencePromptBuilder {
     func formatUserPrompt(tiles: [TileSelection]) -> String {
         tiles.map { "\($0.value) (\($0.wordClass))" }
             .joined(separator: ", ")
+    }
+
+    /// Caregiver refine directive, appended to the system turn when a refine
+    /// carries an instruction (mirrors the tile-art refine flow): the model
+    /// revises the sentence the caregiver is reacting to rather than rerolling.
+    static func refinePrompt(previous: String, instruction: String) -> String {
+        PromptTemplate.render("sentence_refine", ["previous": previous, "instruction": instruction])
+    }
+
+    /// The conversation context handed to the provider: prior sentences, then
+    /// the user prompt last. The provider sends every entry but the last as a
+    /// prior assistant turn, and the last as the user turn.
+    ///
+    /// For escalation the model must see the exact sentence it is escalating
+    /// from, but `history` (derived from `groupHistory`) doesn't include it —
+    /// the group is still active, so its sentence hasn't been flushed. It is
+    /// spliced in here. A refine likewise gets the sentence it's revising as
+    /// its prior turn, so the instruction has an explicit target to rework.
+    static func context(history: [String], escalatingFrom prior: String?,
+                        refining original: String?, userPrompt: String) -> [String] {
+        var context = history
+        if let prior { context.append(prior) }
+        if let original, !original.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            context.append(original)
+        }
+        return context + [userPrompt]
     }
 
     private static func loadBaseMessages(stage: BrownsStage,
@@ -133,46 +158,6 @@ struct SentencePromptBuilder {
     /// repeat count — the audible ramp moves into the TTS layer and this ladder
     /// can get shorter again. Until then the words carry it.
     private func escalationPrompt(_ count: Int) -> String {
-        """
-        The child just selected the SAME tiles again — repeat #\(count). Repetition is how a \
-        non-verbal child turns up the volume: the want hasn't changed, but they mean it MORE. \
-        Your own previous sentence for this want is your most recent reply above. Make THIS \
-        sentence clearly more insistent than that one — never calmer, never the same wording, \
-        escalate on every repeat while keeping the exact same want.
-
-        While escalating you MAY use more words than the child's usual level allows, and the \
-        sentence may grow longer on each rung. Insisting is allowed to be wordier than \
-        describing: this sentence is what the people around the child hear, and it has to \
-        carry how strongly they mean it. Do not introduce a new want — only more insistence \
-        about the one they chose.
-
-        Climb this intensity ladder as the repeat count rises (you are at #\(count)):
-        • 1 — add urgency and a please ("really", "right now").
-        • 2 — turn the want into a NEED and keep the urgency words you already added \
-        ("I really NEED … right now!"). Escalating never means removing urgency.
-        • 3 — very emphatic: put the most important word in CAPITALS and end with an \
-        exclamation.
-        • 4+ — maximal: several words in ALL-CAPS with multiple exclamation marks, like a \
-        child on the edge of tears who will not be ignored.
-
-        The GRAMMAR BY WORD CLASS rule still holds at every rung — escalating is never a \
-        reason to move a word into a role it cannot take. In particular a (feeling) or \
-        (health) word never becomes something wanted: "I WANT HUNGRY NOW" is always wrong, \
-        however loud the child is.
-
-        Because intensifiers alone run out fast, escalate a feeling by making the request it \
-        IMPLIES more urgent — hungry implies eating, tired implies rest, hurt implies help:
-        "Dad, I am hungry." → "Dad, I am really hungry, can I eat?" → "Dad, I am SO hungry! I \
-        need to eat now!" → "DAD! I am SO, SO HUNGRY! I need to EAT NOW!!!"
-        That is not a new want — it is the same one, said more urgently.
-
-        Every rung must be a grammatical English sentence. Capitals are for emphasis only — \
-        never reshape the grammar around a word just to capitalise it.
-
-        Example trajectory for a generic want, "juice":
-        "Can I please have some juice?" → "I really want juice right now." → \
-        "I need JUICE now!" → "I WANT JUICE NOW!!!"
-        Apply that escalation to the child's actual tiles — do not mention juice.
-        """
+        PromptTemplate.render("sentence_escalation", ["count": String(count)])
     }
 }

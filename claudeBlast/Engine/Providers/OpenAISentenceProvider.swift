@@ -45,7 +45,7 @@ struct OpenAISentenceProvider: SentenceProvider {
         request.httpMethod = "POST"
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONSerialization.data(withJSONObject: buildRequestBody(
+        request.httpBody = try JSONSerialization.data(withJSONObject: Self.requestBody(
             systemPrompt: systemPrompt,
             conversationContext: conversationContext
         ))
@@ -69,7 +69,9 @@ struct OpenAISentenceProvider: SentenceProvider {
 
     // MARK: - Request building
 
-    private func buildRequestBody(
+    /// The exact chat-completions body sent. Pure, so the prompt fixtures
+    /// (`PromptFixtureTests`) can pin it without a network call.
+    static func requestBody(
         systemPrompt: [PromptMessage],
         conversationContext: [String]
     ) -> [String: Any] {

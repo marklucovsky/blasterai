@@ -26,53 +26,7 @@ struct TileSuggestionService {
         guard !apiKey.isEmpty else { throw OpenAIError.missingAPIKey }
 
         let validKeys = Set(allTiles.map(\.key))
-        let vocabBlock = buildVocabBlock(allTiles: allTiles)
-
-        let systemMessage = """
-        You are an expert AAC (Augmentative and Alternative Communication) specialist choosing the \
-        tiles for one topical page on a non-verbal child's communication board.
-
-        1. WORLD INFERENCE — From the goal, brainstorm the common, concrete things a child would \
-        actually SEE or DO for it: objects, animals, foods, places, people-roles, plus the core \
-        action or describing words at the heart of it. Include the obvious items even if the goal \
-        did not name them (e.g. potty training implies toilet, potty, pee, poop, wipe, flush, wash, \
-        dry, underwear). Pull the FULL relevant set, not just a couple.
-
-        2. PREFER EXISTING — Before proposing a NEW word, search the vocabulary below for an existing \
-        word with the same or a near-identical meaning and use that key instead. Only introduce a new \
-        word when nothing existing fits.
-
-        3. NEW WORDS — A NEW word must be a COMMON, CONCRETE thing with a single clear visual (an \
-        animal, object, food, place, or person). NEVER make abstract concepts, feelings, or actions \
-        into new words — those must come from existing vocabulary. \(VocabularyClasses.classSelectionGuidance) \
-        Declare each new word ONCE in "newWords" with its "displayName" and "wordClass" (one of: \
-        \(VocabularyClasses.caregiverSelectable.map(\.name).joined(separator: ", "))).
-
-        Return ONLY valid JSON matching this schema exactly — no markdown, no prose:
-        {
-          "keys": ["toilet", "potty", "pee"],
-          "newWords": [ { "key": "potty", "displayName": "potty", "wordClass": "body" } ]
-        }
-        Every entry in "keys" MUST be either an existing vocabulary key or a key declared in \
-        "newWords". Aim for 8–20 tiles total.
-        """
-
-        let userMessage = """
-        Goal: \(goal)
-
-        Existing vocabulary by category:
-        \(vocabBlock)
-        """
-
-        let body: [String: Any] = [
-            "model": "gpt-4o-mini",
-            "temperature": 0.4,
-            "max_tokens": 700,
-            "messages": [
-                ["role": "system", "content": systemMessage],
-                ["role": "user",   "content": userMessage]
-            ]
-        ]
+        let body = requestBody(goal: goal, allTiles: allTiles)
 
         let url = URL(string: "https://api.openai.com/v1/chat/completions")!
         var request = URLRequest(url: url)
@@ -93,6 +47,27 @@ struct TileSuggestionService {
         }
 
         return try parseResult(data: data, validKeys: validKeys)
+    }
+
+    /// The exact chat-completions body `suggest` sends. Pure, so the prompt
+    /// fixtures (`PromptFixtureTests`) can pin it without a network call.
+    func requestBody(goal: String, allTiles: [TileModel]) -> [String: Any] {
+        let vocabBlock = buildVocabBlock(allTiles: allTiles)
+        let systemMessage = PromptTemplate.render("tile_suggest_system", [
+            "class_guidance": VocabularyClasses.classSelectionGuidance,
+            "class_list": VocabularyClasses.caregiverSelectable.map(\.name).joined(separator: ", "),
+        ])
+        let userMessage = PromptTemplate.render("tile_suggest_user", ["goal": goal, "vocab_block": vocabBlock])
+
+        return [
+            "model": "gpt-4o-mini",
+            "temperature": 0.4,
+            "max_tokens": 700,
+            "messages": [
+                ["role": "system", "content": systemMessage],
+                ["role": "user",   "content": userMessage]
+            ]
+        ]
     }
 
     // MARK: - Helpers

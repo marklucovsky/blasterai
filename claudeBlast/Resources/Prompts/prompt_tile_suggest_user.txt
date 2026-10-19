@@ -1,0 +1,4 @@
+Goal: {{goal}}
+
+Existing vocabulary by category:
+{{vocab_block}}

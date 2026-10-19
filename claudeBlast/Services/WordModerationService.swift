@@ -196,21 +196,21 @@ struct WordModerationService {
     enum Rating: String { case appropriate, questionable, inappropriate }
 
     private func appropriatenessRatings(for words: [String]) async throws -> [String: Rating] {
-        let system = """
-        You screen vocabulary words for a YOUNG NON-VERBAL CHILD's AAC communication \
-        board. For every input word, rate it exactly one of: "appropriate", \
-        "questionable", "inappropriate".
-        - inappropriate: weapons/firearms/ammunition, drugs, alcohol, tobacco/vaping, \
-          gambling, sexual/adult themes, graphic violence, or anything unsuitable for a \
-          young child's board.
-        - questionable: borderline — mild risk, or only appropriate in narrow contexts.
-        - appropriate: ordinary everyday child vocabulary (people, food, animals, \
-          actions, feelings, places, toys, school, home).
-        Return ONLY JSON, no prose: {"ratings": {"<word>": "<rating>", ...}} with an \
-        entry for every input word, keyed by the word exactly as given.
-        """
-        let content = try await chat(system: system, user: words.joined(separator: ", "))
+        let content = try await chat(body: Self.rubricRequestBody(words: words))
         return Self.parseRatings(content, words: words)
+    }
+
+    /// The exact chat-completions body the rubric sends. Pure, so the prompt
+    /// fixtures (`PromptFixtureTests`) can pin it without a network call.
+    nonisolated static func rubricRequestBody(words: [String]) -> [String: Any] {
+        [
+            "model": "gpt-4o-mini",
+            "temperature": 0,
+            "messages": [
+                ["role": "system", "content": PromptTemplate.raw("moderation_rubric_system")],
+                ["role": "user", "content": words.joined(separator: ", ")],
+            ],
+        ]
     }
 
     /// Parse the rubric's `{"ratings": {...}}` payload. `nonisolated static` + pure
@@ -231,20 +231,13 @@ struct WordModerationService {
         return out
     }
 
-    private func chat(system: String, user: String) async throws -> String {
+    private func chat(body: [String: Any]) async throws -> String {
         let url = URL(string: "https://api.openai.com/v1/chat/completions")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONSerialization.data(withJSONObject: [
-            "model": "gpt-4o-mini",
-            "temperature": 0,
-            "messages": [
-                ["role": "system", "content": system],
-                ["role": "user", "content": user],
-            ],
-        ])
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
         // Tier 3 — the age-appropriateness rubric. The only billable part of a
         // word audit; tier 1 is offline and tier 2 (below) is free.
         let (data, response) = try await OpenAIClient.send(

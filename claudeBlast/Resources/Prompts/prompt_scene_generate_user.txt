@@ -1,0 +1,4 @@
+Session description: {{description}}
+
+Available vocabulary by category:
+{{vocab_block}}

@@ -68,7 +68,7 @@ fastlane/test_output
 .wrangler/
 
 # Python
-tools/__pycache__/
+__pycache__/
 
 # Tile image sets
 # Masters (playful_3d, high_contrast) are tracked via Git LFS — see .gitattributes
