@@ -1082,12 +1082,8 @@ final class SentenceEngine {
         // plain "try again".
         if refine, let instruction = refineInstruction,
            !instruction.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            systemPrompt.append(PromptMessage(role: .system, content: """
-            The caregiver reviewed your previous sentence for these tiles and wants it revised. \
-            Previous sentence: "\(originalSentence ?? "")". Caregiver's instruction: "\(instruction)". \
-            Produce ONE revised sentence for the same tiles that follows the instruction and stays \
-            age-appropriate. Return only the sentence.
-            """))
+            systemPrompt.append(PromptMessage(role: .system, content: SentencePromptBuilder.refinePrompt(
+                previous: originalSentence ?? "", instruction: instruction)))
         }
         // Frozen: the `async let`s below run concurrently and can't capture a var.
         let prompt = systemPrompt
@@ -1097,23 +1093,11 @@ final class SentenceEngine {
         let shouldCompare = compareProviders && repetition == 0
         let comparisonProvider: (any SentenceProvider)? = shouldCompare ? makeAppleProviderIfAvailable() : nil
 
-        // Provider treats the conversation context as a sequence of prior assistant turns, with
-        // the last entry replaced as the user prompt. For escalation/replay we want the model to
-        // see the exact sentence it is escalating from — but `conversationHistory` (derived from
-        // `groupHistory`) doesn't include it (the group is still active, or
-        // the active group's sentence simply hasn't been flushed). Splice it in here so escalation
-        // requests carry the prior turn explicitly.
-        var contextWithPrior = conversationHistory
-        if repetition > 0, let prior = activeGroup.sentence {
-            contextWithPrior.append(prior)
-        }
-        // Refine: give the model the sentence it's revising as its prior turn, so
-        // the instruction in the system prompt has an explicit target to rework.
-        if refine, let original = originalSentence,
-           !original.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            contextWithPrior.append(original)
-        }
-        let context = contextWithPrior + [userPrompt]
+        let context = SentencePromptBuilder.context(
+            history: conversationHistory,
+            escalatingFrom: repetition > 0 ? activeGroup.sentence : nil,
+            refining: refine ? originalSentence : nil,
+            userPrompt: userPrompt)
         let apiStart = ContinuousClock.now
 
         // A plain sentence, an escalation, and a caregiver refine all reach the

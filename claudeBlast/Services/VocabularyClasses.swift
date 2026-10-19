@@ -114,14 +114,8 @@ enum VocabularyClasses {
     /// speak with one voice and can't drift. `object` is deliberately framed as a
     /// LAST resort: it was over-used as a dumping ground (whole packs of animals
     /// and plants leaked into it), which pollutes the class hint the LLM sees.
-    static let classSelectionGuidance =
-        "Choose the wordClass by what the thing IS. \"places\" is ONLY a location the child goes to " +
-        "(park, barn, store) — never a portable thing. Any living creature — pet, farm animal, sea " +
-        "creature, bug, or dinosaur — is \"animal\". A growing thing — tree, flower, seaweed, hay — is " +
-        "\"plant\". Anything edible is \"food\"; a beverage is \"drinks\". A person or role is \"people\". " +
-        "Use \"object\" ONLY as a last resort, for a man-made tool, vehicle, instrument, or piece of " +
-        "equipment (ladder, tractor, car, hose) that fits no more specific class — always prefer " +
-        "animal / plant / food / places / people first."
+    /// Text in `Resources/Prompts/prompt_class_guidance.txt`.
+    static let classSelectionGuidance = PromptTemplate.raw("class_guidance")
 
     private static let byName: [String: VocabularyClass] =
         Dictionary(uniqueKeysWithValues: all.map { ($0.name, $0) })

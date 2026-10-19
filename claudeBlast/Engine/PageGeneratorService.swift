@@ -24,20 +24,8 @@ struct PageGeneratorService {
                   scenePages: [PageSpec] = [], homePageKey: String = "") async throws -> GeneratedPageResult {
         guard !apiKey.isEmpty else { throw OpenAIError.missingAPIKey }
 
-        let vocabBlock = buildVocabBlock(allTiles: allTiles)
-        let sceneBlock = buildSceneBlock(scenePages: scenePages, homePageKey: homePageKey, allTiles: allTiles)
-        let system = buildSystemPrompt()
-        let user = buildUserPrompt(pageGoal: pageGoal, pageName: pageName, vocabBlock: vocabBlock, sceneBlock: sceneBlock)
-
-        let body: [String: Any] = [
-            "model": model,
-            "temperature": temperature,
-            "max_tokens": maxTokens,
-            "messages": [
-                ["role": "system", "content": system],
-                ["role": "user",   "content": user]
-            ]
-        ]
+        let body = requestBody(pageGoal: pageGoal, pageName: pageName, allTiles: allTiles,
+                               scenePages: scenePages, homePageKey: homePageKey)
 
         let url = URL(string: "https://api.openai.com/v1/chat/completions")!
         var request = URLRequest(url: url)
@@ -69,20 +57,9 @@ struct PageGeneratorService {
                 scenePages: [PageSpec] = [], homePageKey: String = "") async throws -> GeneratedPageResult {
         guard !apiKey.isEmpty else { throw OpenAIError.missingAPIKey }
 
-        let vocabBlock = buildVocabBlock(allTiles: allTiles)
-        let sceneBlock = buildSceneBlock(scenePages: scenePages, homePageKey: homePageKey, allTiles: allTiles)
-        let system = buildRefineSystemPrompt(currentTiles: currentTiles)
-        let user = buildUserPrompt(pageGoal: instruction, pageName: pageName, vocabBlock: vocabBlock, sceneBlock: sceneBlock)
-
-        let body: [String: Any] = [
-            "model": model,
-            "temperature": temperature,
-            "max_tokens": maxTokens,
-            "messages": [
-                ["role": "system", "content": system],
-                ["role": "user",   "content": user]
-            ]
-        ]
+        let body = refineRequestBody(instruction: instruction, pageName: pageName,
+                                     currentTiles: currentTiles, allTiles: allTiles,
+                                     scenePages: scenePages, homePageKey: homePageKey)
 
         let url = URL(string: "https://api.openai.com/v1/chat/completions")!
         var request = URLRequest(url: url)
@@ -109,6 +86,41 @@ struct PageGeneratorService {
                              validKeys: Set(allTiles.map(\.key)), extraNewWords: carryOver)
     }
 
+    // MARK: - Request bodies
+    // Pure, so the prompt fixtures (`PromptFixtureTests`) can pin exactly what
+    // is sent without a network call.
+
+    func requestBody(pageGoal: String, pageName: String, allTiles: [TileModel],
+                     scenePages: [PageSpec] = [], homePageKey: String = "") -> [String: Any] {
+        let vocabBlock = buildVocabBlock(allTiles: allTiles)
+        let sceneBlock = buildSceneBlock(scenePages: scenePages, homePageKey: homePageKey, allTiles: allTiles)
+        let system = buildSystemPrompt()
+        let user = buildUserPrompt(pageGoal: pageGoal, pageName: pageName, vocabBlock: vocabBlock, sceneBlock: sceneBlock)
+        return body(system: system, user: user)
+    }
+
+    func refineRequestBody(instruction: String, pageName: String,
+                           currentTiles: [GeneratedTile], allTiles: [TileModel],
+                           scenePages: [PageSpec] = [], homePageKey: String = "") -> [String: Any] {
+        let vocabBlock = buildVocabBlock(allTiles: allTiles)
+        let sceneBlock = buildSceneBlock(scenePages: scenePages, homePageKey: homePageKey, allTiles: allTiles)
+        let system = buildRefineSystemPrompt(currentTiles: currentTiles)
+        let user = buildUserPrompt(pageGoal: instruction, pageName: pageName, vocabBlock: vocabBlock, sceneBlock: sceneBlock)
+        return body(system: system, user: user)
+    }
+
+    private func body(system: String, user: String) -> [String: Any] {
+        [
+            "model": model,
+            "temperature": temperature,
+            "max_tokens": maxTokens,
+            "messages": [
+                ["role": "system", "content": system],
+                ["role": "user",   "content": user]
+            ]
+        ]
+    }
+
     // MARK: - Prompt builders
 
     private func buildRefineSystemPrompt(currentTiles: [GeneratedTile]) -> String {
@@ -116,100 +128,25 @@ struct PageGeneratorService {
             let name = tile.displayName ?? tile.key.replacingOccurrences(of: "_", with: " ")
             return "\(tile.key) — \(name)"
         }.joined(separator: "\n")
-        return """
-        You are a specialist in AAC (Augmentative and Alternative Communication) for non-verbal children, \
-        REFINING an existing single page. The caregiver will give an instruction; apply ONLY that change.
-
-        Here are the page's CURRENT tiles (key — what it shows):
-        \(listing)
-
-        Rules:
-        - Return the COMPLETE updated tile list: keep every current tile unless the instruction removes \
-          it, and add the new ones.
-        - When the instruction names concrete things, include EVERY one — reuse an existing vocabulary \
-          key if present, otherwise declare it new.
-        - A NEW word must be a COMMON, CONCRETE thing with a single clear visual (an animal, object, \
-          food, place, or person). Declare each new word ONCE in "newWords" with "displayName" and \
-          "wordClass" (one of: \(VocabularyClasses.caregiverSelectable.map(\.name).joined(separator: ", "))), \
-          then reference it by the same "key". \(VocabularyClasses.classSelectionGuidance)
-        - Put every tile on the SINGLE page (isAudible=true, empty link); no navigation tiles.
-        - Aim for 8–24 tiles.
-
-        Return ONLY valid JSON — no markdown, no prose:
-        {
-          "key": "string",
-          "newWords": [ { "key": "horse", "displayName": "horse", "wordClass": "animal" } ],
-          "tiles": [ { "key": "horse", "isAudible": true, "link": "" } ],
-          "newPages": []
-        }
-        """
+        return PromptTemplate.render("page_refine_system", [
+            "current_tiles": listing,
+            "class_guidance": VocabularyClasses.classSelectionGuidance,
+            "class_list": VocabularyClasses.caregiverSelectable.map(\.name).joined(separator: ", "),
+        ])
     }
 
     private func buildSystemPrompt() -> String {
-        """
-        You are a specialist in AAC (Augmentative and Alternative Communication) for non-verbal children. \
-        Given a goal and vocabulary, select tiles for a single focused page.
-
-        WORLD INFERENCE — From the goal, brainstorm the common, concrete things a child would actually \
-        SEE or DO for it: objects, animals, foods, places, people-roles, plus the core action or \
-        describing words at the heart of it. Include the obvious items even when the goal did NOT name \
-        them (e.g. potty training implies toilet, potty, pee, poop, wipe, flush, wash, dry, underwear). \
-        Pull the FULL relevant set, not just a couple — reuse an existing key where one fits and declare \
-        the rest as new words.
-
-        You may optionally include navigation tiles that link to new sub-pages when the vocabulary genuinely \
-        spans two distinct contexts (e.g. general emotions + detailed feelings). Keep navigation to a minimum — \
-        prefer a flat page for focused, single-topic goals.
-
-        Tile rules:
-        - Prefer existing tile keys from the provided vocabulary; reuse an existing word \
-          rather than proposing a new one whenever a suitable match already exists.
-        - When the goal REFERENCES tiles already in the scene (e.g. "the vehicles from the home page", \
-          "the animals already on the board"), SELECT those exact existing tiles by key from the \
-          "Current scene" listing below — do NOT invent new words for things that are already there.
-        - When the goal NAMES specific concrete things (animals, foods, places, objects), \
-          include EVERY one named — reuse an existing key if present, otherwise declare it new.
-        - A NEW word must be a COMMON, CONCRETE thing with a single clear visual (an animal, \
-          object, food, place, or person). NEVER make abstract concepts, feelings, or actions new.
-        - Choose wordClass by what the thing IS: "places" is ONLY a location you go to — for a physical \
-          object, tool, vehicle, or piece of equipment use "object".
-        - Declare every new word ONCE in the top-level "newWords" array with its "displayName" \
-          and "wordClass" (one of: \(VocabularyClasses.caregiverSelectable.map(\.name).joined(separator: ", "))), \
-          then reference it by the same "key" in tiles. Every tile key MUST be either an existing \
-          vocabulary key or a key declared in "newWords".
-        - Audible tiles (isAudible=true) contribute to the sentence tray.
-        - Navigation tiles must have isAudible=false and a non-empty link matching a key in newPages.
-        - Aim for 8–24 tiles on the primary page.
-
-        Return ONLY valid JSON — no markdown, no prose:
-        {
-          "key": "string",
-          "newWords": [
-            { "key": "horse", "displayName": "horse", "wordClass": "animal" }
-          ],
-          "tiles": [
-            { "key": "eat", "isAudible": true, "link": "" },
-            { "key": "horse", "isAudible": true, "link": "" }
-          ],
-          "newPages": [
-            {
-              "key": "string",
-              "tiles": [{ "key": "string", "isAudible": true, "link": "" }]
-            }
-          ]
-        }
-        """
+        PromptTemplate.render("page_generate_system", ["class_list": VocabularyClasses.caregiverSelectable.map(\.name).joined(separator: ", ")])
     }
 
     private func buildUserPrompt(pageGoal: String, pageName: String, vocabBlock: String, sceneBlock: String) -> String {
         let sceneSection = sceneBlock.isEmpty ? "" : "\nCurrent scene (existing pages and their tiles):\n\(sceneBlock)\n"
-        return """
-        Page name: \(pageName)
-        Goal: \(pageGoal)
-        \(sceneSection)
-        Available vocabulary by category:
-        \(vocabBlock)
-        """
+        return PromptTemplate.render("page_user", [
+            "page_name": pageName,
+            "goal": pageGoal,
+            "scene_section": sceneSection,
+            "vocab_block": vocabBlock,
+        ])
     }
 
     // MARK: - Vocab formatting

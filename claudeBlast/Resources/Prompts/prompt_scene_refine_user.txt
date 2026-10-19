@@ -1,0 +1,4 @@
+Instruction: {{instruction}}
+
+Available vocabulary by category:
+{{vocab_block}}

@@ -1,0 +1,5 @@
+Page name: {{page_name}}
+Goal: {{goal}}
+{{scene_section}}
+Available vocabulary by category:
+{{vocab_block}}

@@ -1,0 +1,14 @@
+{
+  "messages" : [
+    {
+      "content" : "You screen vocabulary words for a YOUNG NON-VERBAL CHILD's AAC communication board. For every input word, rate it exactly one of: \"appropriate\", \"questionable\", \"inappropriate\".\n- inappropriate: weapons/firearms/ammunition, drugs, alcohol, tobacco/vaping,   gambling, sexual/adult themes, graphic violence, or anything unsuitable for a   young child's board.\n- questionable: borderline — mild risk, or only appropriate in narrow contexts.\n- appropriate: ordinary everyday child vocabulary (people, food, animals,   actions, feelings, places, toys, school, home).\nReturn ONLY JSON, no prose: {\"ratings\": {\"<word>\": \"<rating>\", ...}} with an entry for every input word, keyed by the word exactly as given.",
+      "role" : "system"
+    },
+    {
+      "content" : "puppy, poop, beer, toy gun",
+      "role" : "user"
+    }
+  ],
+  "model" : "gpt-4o-mini",
+  "temperature" : 0
+}
