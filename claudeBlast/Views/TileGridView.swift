@@ -60,6 +60,18 @@ struct TileGridView: View {
     /// A scene switch the menu could not make, or made with a caveat — the same
     /// messages Admin › Scenes shows.
     @State private var sceneNotice: SceneNotice?
+    @State private var showFindWord = false
+    /// Set by the menu's Find Word row; the sheet opens once the popover is gone.
+    @State private var findWordAfterMenu = false
+    /// The word Find Word went to. It breathes until any tap on the board.
+    @State private var findHighlight: FindHighlight?
+
+    struct FindHighlight: Equatable {
+        let key: String
+        let pageKey: String
+        /// A fresh find of the same word still re-pages the grid to it.
+        let token = UUID()
+    }
 
     struct SceneNotice: Identifiable {
         let id = UUID()
@@ -322,6 +334,29 @@ struct TileGridView: View {
         .alert(item: $sceneNotice) { notice in
             Alert(title: Text(notice.title), message: Text(notice.message))
         }
+        .onChange(of: showCaregiverMenu) { _, isOpen in
+            guard !isOpen, findWordAfterMenu else { return }
+            findWordAfterMenu = false
+            // A sheet asked for while the popover is still animating away is
+            // dropped on iPad; wait it out.
+            Task {
+                try? await Task.sleep(for: .milliseconds(350))
+                showFindWord = true
+            }
+        }
+        .sheet(isPresented: $showFindWord) {
+            if let scene = activeScene {
+                FindWordSheet(scene: scene, lookup: tileLookup) { finding in
+                    go(to: finding, in: scene)
+                }
+            }
+        }
+        // Any tap anywhere ends the highlight, and still does what it does —
+        // a tap on the found word speaks it. Off when there is nothing to end.
+        .simultaneousGesture(
+            TapGesture().onEnded { findHighlight = nil },
+            including: findHighlight == nil ? .subviews : .all
+        )
         .onChange(of: engine.canReplay) { _, isReady in
             guard isCompact else { return }
             // Only auto-present the popover when the tray cannot show the
@@ -361,6 +396,7 @@ struct TileGridView: View {
         .onChange(of: activeScene?.id) {
             coordinator.navigateHome(homePageKey: activeScene?.homePageKey ?? "home")
             currentDisplayPage = 0
+            findHighlight = nil
             engine.clearSelection()
         }
         .onChange(of: activeScene?.pages.map(\.key)) { _, pageNames in
@@ -462,6 +498,17 @@ struct TileGridView: View {
             #endif
             .onChange(of: isLandscape) { _, _ in
                 currentDisplayPage = 0
+            }
+            // Find Word: page to the screen holding the found word. A task, not
+            // an onChange, so it runs after navigation has reset the grid to
+            // its first screen rather than racing it.
+            .task(id: findHighlight?.token) {
+                guard let target = findHighlight, target.pageKey == page.key,
+                      let idx = visible.firstIndex(where: { $0.key == target.key }) else { return }
+                let chunk = idx / vocabPerPage
+                if currentDisplayPage != chunk {
+                    withAnimation { currentDisplayPage = chunk }
+                }
             }
             .onChange(of: scriptRunner.tapPulseKey) { _, key in
                 // During TileScript playback, page the grid to the display-chunk that
@@ -652,7 +699,8 @@ struct TileGridView: View {
                 isAudible: entry.isAudible,
                 labelFontSize: labelFontSize,
                 scriptPulseKey: scriptRunner.tapPulseKey,
-                scriptPulseCount: scriptRunner.tapPulseCount
+                scriptPulseCount: scriptRunner.tapPulseCount,
+                isHighlighted: isFindTarget(entry)
             ) {
                 lastTappedKey = entry.key
                 handleTileTap(entry)
@@ -667,7 +715,8 @@ struct TileGridView: View {
             // Lift the tile that just pulsed (live tap or scripted) above its
             // neighbors so the grow animation draws on top — not half-under the
             // cell to its right.
-            .zIndex(lastTappedKey == entry.key || scriptRunner.tapPulseKey == entry.key ? 1 : 0)
+            .zIndex(lastTappedKey == entry.key || scriptRunner.tapPulseKey == entry.key
+                    || isFindTarget(entry) ? 1 : 0)
             // Identity is scoped to the page, not just the tile key.
             //
             // `ForEach(tiles, id: \.key)` alone made a tile the *same view* on
@@ -702,8 +751,8 @@ struct TileGridView: View {
     /// it is — it changes how their board behaves — and it is not urgent enough
     /// for a caregiver to need outside the gate, since Admin reaches it anyway.
     ///
-    /// On a **caregiver** device the quick actions stay: mode, level, scene and
-    /// tile style. That device is for authoring, demoing and testing, its Admin
+    /// On a **caregiver** device the quick actions stay: mode, level, Find
+    /// Word, scene and tile style. That device is for authoring, demoing and testing, its Admin
     /// is ungated by default, and changing these quickly is the point of having
     /// the shortcut at all. One device setting, Admin › Device › "Caregiver
     /// Menu Quick Actions", turns them all off together (on by default).
@@ -749,6 +798,13 @@ struct TileGridView: View {
                         .padding(.vertical, 10)
                     Divider()
                 }
+                if activeScene != nil {
+                    caregiverMenuRow("Find Word", systemImage: "magnifyingglass") {
+                        findWordAfterMenu = true
+                        showCaregiverMenu = false
+                    }
+                    Divider()
+                }
                 if allScenes.count > 1 {
                     sceneSwitcher
                     Divider()
@@ -770,11 +826,27 @@ struct TileGridView: View {
                 caregiverMenu.requested = .admin
             }
         }
-        .frame(minWidth: 240)
+        // Wide enough for a name and its value side by side. The popover sizes
+        // to its content, so without a floor it changed width with the tile
+        // style's name and squeezed the rows on a phone.
+        .frame(minWidth: 320)
         .padding(.bottom, 8)
     }
 
     private var showsQuickActions: Bool { quickActionsEnabled && !isPatientDevice }
+
+    private func isFindTarget(_ entry: TileEntry) -> Bool {
+        findHighlight?.key == entry.key && findHighlight?.pageKey == identityPageKey
+    }
+
+    /// Open the folders from home to the found word's page, as though tapped,
+    /// and mark the word. See `NavigationCoordinator.show(path:homePageKey:)`.
+    private func go(to finding: WordFinder.Finding, in scene: BlasterScene) {
+        withAnimation(.easeOut(duration: 0.30)) {
+            coordinator.show(path: finding.path, homePageKey: scene.homePageKey)
+        }
+        findHighlight = FindHighlight(key: finding.key, pageKey: finding.pageKey)
+    }
 
     /// The scenes, the active one checked. Picking one closes the menu: the
     /// board goes to the new scene's Home, so there is nothing left to compare.
@@ -825,7 +897,10 @@ struct TileGridView: View {
     /// match `caregiverMenuRow`.
     private func menuLabel(_ title: String, value: String, systemImage: String) -> some View {
         HStack(spacing: 8) {
+            // The setting's name never truncates; a long value does. "Tile
+            // St…" beside a full "Playful 3D" was the wrong way round.
             Label(title, systemImage: systemImage)
+                .fixedSize()
             Spacer(minLength: 12)
             Text(value)
                 .foregroundStyle(.secondary)

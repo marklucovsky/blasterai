@@ -84,6 +84,17 @@ final class NavigationCoordinator {
         onPress?(from, showingPageKey, Self.backPageKey)
     }
 
+    /// Show a page as though it had been reached by opening `path` from home,
+    /// one folder at a time — what Find Word does — so Back and Home behave
+    /// afterwards exactly as they would after those taps.
+    ///
+    /// Not a press, so `onPress` is not called: the caregiver went there, the
+    /// child did not, and the navigation log is the child's.
+    func show(path: [String], homePageKey: String) {
+        navigationPath = [homePageKey] + path.suffix(Self.maxHistory - 1)
+        currentPageKey = path.last
+    }
+
     /// Navigate home (nil key) — pops breadcrumb to root.
     func navigateToRoot() {
         let from = showingPageKey

@@ -114,20 +114,28 @@ enum WordPlaces {
     /// from the result is not reachable from home.
     static func routesFromHome(pages: [PageSpec], homeKey: String) -> [String: [String]] {
         let byKey = Dictionary(pages.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
+        return pathsFromHome(pages: pages, homeKey: homeKey)
+            .mapValues { path in path.compactMap { byKey[$0]?.title } }
+    }
+
+    /// `routesFromHome` as page keys rather than titles — the pages to open, in
+    /// order, to reach each page. Find Word walks these.
+    static func pathsFromHome(pages: [PageSpec], homeKey: String) -> [String: [String]] {
+        let byKey = Dictionary(pages.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
         guard byKey[homeKey] != nil else { return [:] }
-        var routes: [String: [String]] = [homeKey: []]
+        var paths: [String: [String]] = [homeKey: []]
         var queue = [homeKey]
         while !queue.isEmpty {
             let key = queue.removeFirst()
-            guard let page = byKey[key], let here = routes[key] else { continue }
+            guard let page = byKey[key], let here = paths[key] else { continue }
             // A concealed folder is not a way in: the child sees an empty cell.
             for entry in page.tiles where !entry.link.isEmpty && !entry.isEmptyCell {
                 let target = entry.link == TileToken.home ? homeKey : entry.link
-                guard routes[target] == nil, let next = byKey[target] else { continue }
-                routes[target] = here + [next.title]
+                guard paths[target] == nil, byKey[target] != nil else { continue }
+                paths[target] = here + [target]
                 queue.append(target)
             }
         }
-        return routes
+        return paths
     }
 }

@@ -21,11 +21,15 @@ struct TileView: View {
     /// each scripted tap, including repeated taps in repetition demos.
     var scriptPulseKey: String? = nil
     var scriptPulseCount: Int = 0
+    /// Find Word's target: the tile breathes until the caregiver taps anywhere.
+    var isHighlighted: Bool = false
     let onTap: () -> Void
 
     private var isNavigation: Bool { !link.isEmpty }
     @State private var pulseScale: CGFloat = 1.0
     @State private var glow: CGFloat = 0.0
+    /// 0…1, cycling while `isHighlighted`.
+    @State private var highlight: CGFloat = 0.0
     /// True while a finger is down on this tile.
     ///
     /// Tracked from the touch rather than fired from the tap, which is what
@@ -101,6 +105,15 @@ struct TileView: View {
         // press-vs-scroll arbitration the system already does — and as a bonus
         // it cancels the press when a scroll begins, which a raw drag does not.
         .buttonStyle(PressReportingButtonStyle(isPressed: $isPressed))
+        // Find Word: the press's own ring and glow, held and breathing, so the
+        // found word reads as "this one" in the board's existing language.
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color.white.opacity(highlight), lineWidth: 5)
+                .allowsHitTesting(false)
+        )
+        .shadow(color: Color.cyan.opacity(0.9 * highlight), radius: 18)
+        .scaleEffect(1 + 0.08 * highlight)
         .scaleEffect(pulseScale)
         // Deliberately the same spring and the same depth as `HomeGridCell`,
         // which is the press in this app that feels right: shallow, slow enough
@@ -121,14 +134,26 @@ struct TileView: View {
         .onDisappear {
             pulseScale = 1.0
             glow = 0.0
+            highlight = 0.0
             isPressed = false
         }
+        .onAppear { if isHighlighted { setHighlighted(true) } }
+        .onChange(of: isHighlighted) { _, on in setHighlighted(on) }
         .onChange(of: scriptPulseCount) { _, _ in
             // Scripted taps don't press the Button, so drive the same bounce from
             // the runner's pulse. The count changes every tap, so mashing the same
             // tile re-fires the animation.
             guard scriptPulseKey == tile.key else { return }
             triggerPulse()
+        }
+    }
+
+    private func setHighlighted(_ on: Bool) {
+        if on {
+            highlight = 0
+            withAnimation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true)) { highlight = 1 }
+        } else {
+            withAnimation(.easeOut(duration: 0.2)) { highlight = 0 }
         }
     }
 
