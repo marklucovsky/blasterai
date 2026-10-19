@@ -1,0 +1,466 @@
+{
+  "run": "2026-10-19-1531-gpt-4o-mini-v0-rejudge",
+  "exported": "2026-10-19T23:04:04.501Z",
+  "items": {
+    "sentence/dad_park_slide#0": {
+      "verdict": "approve"
+    },
+    "sentence/mom_cookie#0": {
+      "verdict": "approve",
+      "claude": "agree"
+    },
+    "sentence/outside#0": {
+      "comment": "I should have flagged this. Today, the UI prevents sentence generation on single tile input, but I approve",
+      "verdict": "approve",
+      "claude": "agree"
+    },
+    "sentence/me_want_juice#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/him_hit_me#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "sentence/her_pool#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "sentence/pizza_eat_mom_scrambled#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/juice_more#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/tv_stop#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/grandma_book#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/yes_no#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/i_bus_school#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "sentence/she_pool#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "sentence/he_find_raptor#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "sentence/they_play_ball#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/we_go_park#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/you_help_me#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/dad_eat_pizza#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/we_park#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/they_ball#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/he_raptor#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "sentence/i_school#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/she_pizza#0": {
+      "verdict": "reject",
+      "claude": "agree"
+    },
+    "sentence/teacher_tired#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/mom_want_eat_pizza#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/go_potty#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/find_ball#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/take_bus#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/stop_hit#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/i_like_dog#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "sentence/see_cat#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/i_am_tired#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/they_are_happy#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/i_was_scared#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/not_want_milk#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "sentence/no_bed#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "sentence/no_house#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "sentence/no_bed_no#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/no_bath#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/where_mom#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "sentence/what_eat#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/when_go_park#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/tomorrow_pool#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "sentence/yesterday_park_play#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "sentence/later_tv#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "sentence/dog_in_car#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/all_done#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/again_swing#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/tired_bed_II-III#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/tired_bed_IV#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/mom_hungry_IV#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/go_outside_play_IV#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/she_pool_IV#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "sentence/yesterday_park_play_IV#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/hurt_stomach#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/he_hit_me#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/dog_bite_me#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "sentence/scared#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/mom_head_hurt#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/teacher_sick#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/history_more#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/history_unrelated#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/snack_bar_food#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/orange_food#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "sentence/bowl_actions#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/refine_question#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/refine_shorter#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "escalation/chocolate#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/mom_hungry#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "escalation/watch_tv#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "escalation/go_house#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "escalation/mom_snack#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/she_pool#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "escalation/where_mom#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "escalation/stop_hit#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/chocolate_IV#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "scene_generate/potty_training#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "scene_generate/dentist#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "scene_generate/farm_trip#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "scene_generate/birthday_party#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "scene_generate/swimming#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "scene_generate/hospital_stay#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "scene_generate/church#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "scene_generate/morning_circle#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "scene_generate/grocery_store#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "scene_generate/bedtime#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "scene_generate/sensory_break#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "scene_generate/zoo_terse#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "scene_generate/pancakes_long#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "scene_generate/shooting_range#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "scene_refine/farm_add_pond#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "scene_refine/farm_remove_tractor#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "scene_refine/potty_add_bath#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "scene_refine/party_add_games#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "scene_refine/zoo_only_animals#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "scene_refine/dentist_add_waiting#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "page_generate/potty#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "page_generate/feelings#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "page_generate/vehicles_from_home#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "page_generate/playground#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "page_refine/playground_add_climb#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "page_refine/feelings_remove#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "page_refine/snacks_add_fruit#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "tile_suggest/potty_training#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "tile_suggest/dentist#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "tile_suggest/beach#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "tile_suggest/cooking#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "tile_suggest/bedtime#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "tile_suggest/doctor_visit#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "tile_suggest/haircut#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "tile_suggest/dinosaurs#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "moderation/everyday#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "moderation/body_and_potty#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "moderation/adult_and_harm#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "moderation/borderline#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    }
+  }
+}

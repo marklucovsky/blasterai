@@ -1,0 +1,14 @@
+[
+  {"id": "playground_add_climb", "group": "add", "probe": "add a named thing",
+   "input": {"instruction": "add the climbing wall and monkey bars", "page_name": "playground",
+             "current": ["slide", "swing", "playground", {"key": "sandbox", "displayName": "sandbox"}]},
+   "expect": {"must_include_keys": [["climbing_wall", "climb"], ["monkey_bars"]]}},
+  {"id": "feelings_remove", "group": "remove", "probe": "remove one word, keep the rest",
+   "input": {"instruction": "take out bored", "page_name": "feelings",
+             "current": ["happy", "sad", "angry", "tired", "scared", "bored", "excited"]},
+   "expect": {"must_not_include_keys": ["bored"]}},
+  {"id": "snacks_add_fruit", "group": "add", "probe": "add a category's worth",
+   "input": {"instruction": "add some fruit", "page_name": "snacks",
+             "current": ["cookie", "chocolate", {"key": "crackers", "displayName": "crackers"}]},
+   "expect": {"must_include_keys": [["apple", "banana", "orange", "grapes", "strawberry"]]}}
+]

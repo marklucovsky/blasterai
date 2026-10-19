@@ -1,0 +1,20 @@
+[
+  {"id": "want_chocolate", "group": "escalation", "probe": "single want, intensity ramp (a lone tile only re-speaks, so want + chocolate)",
+   "input": {"stage": "II-III", "tiles": ["want:actions", "chocolate:food"], "rungs": 4}},
+  {"id": "mom_hungry", "group": "escalation", "probe": "feeling escalates through the request it implies, never 'I want hungry'",
+   "input": {"stage": "II-III", "tiles": ["mom:people", "hungry:feeling"], "rungs": 4}},
+  {"id": "watch_tv", "group": "escalation", "probe": "deep ramp: the ceiling problem at rung 4",
+   "input": {"stage": "II-III", "tiles": ["watch:actions", "tv:object"], "rungs": 5}},
+  {"id": "go_house", "group": "escalation", "probe": "insistence on leaving",
+   "input": {"stage": "II-III", "tiles": ["go:actions", "house:places"], "rungs": 4}},
+  {"id": "mom_snack", "group": "escalation", "probe": "multi-item request: the need frame must survive",
+   "input": {"stage": "II-III", "tiles": ["mom:people", "chocolate milk:drinks", "graham cracker:food"], "rungs": 4}},
+  {"id": "she_pool", "group": "escalation", "probe": "the chosen subject survives every rung",
+   "input": {"stage": "II-III", "tiles": ["she:people", "pool:places"], "rungs": 4}},
+  {"id": "where_mom", "group": "escalation", "probe": "a question escalates as a question",
+   "input": {"stage": "II-III", "tiles": ["where:question", "mom:people"], "rungs": 4}},
+  {"id": "stop_hit", "group": "escalation", "probe": "an instruction to someone else escalates",
+   "input": {"stage": "II-III", "tiles": ["stop:actions", "hit:actions"], "rungs": 4}},
+  {"id": "want_chocolate_IV", "group": "escalation", "probe": "the same ramp at Stage IV+",
+   "input": {"stage": "IV+", "tiles": ["want:actions", "chocolate:food"], "rungs": 4}}
+]
