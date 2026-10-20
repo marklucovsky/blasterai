@@ -161,7 +161,7 @@ def score(rec: dict) -> None:
     if s == "sentence":
         issues = S.score_sentence(out, i["tiles"], i["stage"], rec["expect"])
     elif s == "escalation":
-        levels, issues = S.score_escalation(out, i["tiles"], i["stage"])
+        levels, issues = S.score_escalation(out, i["tiles"], i["stage"], rec["expect"])
         rec["intensities"] = levels
     elif s in AUTHORING:
         current = i.get("current")

@@ -1074,6 +1074,7 @@ final class SentenceEngine {
         let stage = currentStage
         var promptBuilder = SentencePromptBuilder(brownsStage: stage)
         promptBuilder.repetitionCount = repetition
+        if repetition > 0 { promptBuilder.escalatingFrom = activeGroup.sentence }
         promptBuilder.conversationContext = conversationHistory
         var systemPrompt = promptBuilder.buildSystemPrompt()
         // Instruction-guided refine (mirrors the tile-art refine flow): feed the

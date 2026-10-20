@@ -96,6 +96,29 @@ class EscalationChecks(unittest.TestCase):
         _, issues = S.score_escalation(ladder, tiles("chocolate:food"), "II-III")
         self.assertEqual(issues, [])
 
+    def test_top_rung_holds_instead_of_stacking(self):
+        top = "I really, really NEED to watch TV right now! Please, please! I can't wait!"
+        climb = ["I want to watch TV.", "I really want to watch TV right now, please!",
+                 "I really NEED to watch TV right now, please!", top]
+        _, issues = S.score_escalation(climb + [top], tiles("watch:actions", "tv:object"), "II-III")
+        self.assertEqual(issues, [])
+        _, issues = S.score_escalation(climb + [top + " I really can't wait!"],
+                                       tiles("watch:actions", "tv:object"), "II-III")
+        self.assertTrue(any("rung 4: insisting phrase stacked" in i for i in issues))
+
+    def test_expectations_hold_on_every_rung(self):
+        ladder = ["No, I don't want to go to bed.", "No! I really don't want to go to bed!",
+                  "I really want to go to bed now, please!"]
+        _, issues = S.score_escalation(ladder, tiles("no:social", "bed:object"), "II-III",
+                                       {"negation": True})
+        self.assertIn("rung 2: negation lost", issues)
+
+    def test_stalling_below_the_top(self):
+        ladder = ["She is at the pool.", "She is at the pool!", "Listen! She is at the pool!",
+                  "Listen! She is at the pool!"]
+        _, issues = S.score_escalation(ladder, tiles("she:people", "pool:places"), "II-III")
+        self.assertIn("rung 3 repeats rung 2", issues)
+
 
 def scene(tiles_, new_words=()):
     return json.dumps({"name": "x", "description": "x", "homePageKey": "p",

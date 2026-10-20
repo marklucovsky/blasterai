@@ -13,8 +13,16 @@
    "input": {"stage": "II-III", "tiles": ["she:people", "pool:places"], "rungs": 4}},
   {"id": "where_mom", "group": "escalation", "probe": "a question escalates as a question",
    "input": {"stage": "II-III", "tiles": ["where:question", "mom:people"], "rungs": 4}},
+  {"id": "he_hit_me", "group": "escalation", "probe": "a report escalates by being heard and asking for help — never softened, never a request",
+   "input": {"stage": "II-III", "tiles": ["he:people", "hit:actions", "me:core"], "rungs": 4}},
   {"id": "stop_hit", "group": "escalation", "probe": "an instruction to someone else escalates",
    "input": {"stage": "II-III", "tiles": ["stop:actions", "hit:actions"], "rungs": 4}},
+  {"id": "no_home", "group": "escalation", "probe": "a refusal escalates as a refusal — every rung keeps the no (Aubrey: no, home)",
+   "input": {"stage": "II-III", "tiles": ["no:social", "home:places"], "rungs": 4},
+   "expect": {"negation": true, "must_not_match": "(?<!n't )(?<!not )\\bwant to go (home|to the house)"}},
+  {"id": "no_bed", "group": "escalation", "probe": "a refusal escalates as a refusal — never flips into wanting bed (Aubrey: no, bed)",
+   "input": {"stage": "II-III", "tiles": ["no:social", "bed:object"], "rungs": 4},
+   "expect": {"negation": true, "must_not_match": "(?<!n't )(?<!not )\\bwant (to go )?(to )?(bed|sleep)"}},
   {"id": "want_chocolate_IV", "group": "escalation", "probe": "the same ramp at Stage IV+",
    "input": {"stage": "IV+", "tiles": ["want:actions", "chocolate:food"], "rungs": 4}}
 ]

@@ -41,6 +41,8 @@ CASES = {
         "II-III", [{"value": "chocolate", "wordClass": "food"}], repetition=1, prior="I want chocolate!"),
     "sentence__chocolate__escalate_3": lambda: P.sentence_body(
         "II-III", [{"value": "chocolate", "wordClass": "food"}], repetition=3, prior="I want chocolate!"),
+    "sentence__chocolate__escalate_4": lambda: P.sentence_body(
+        "II-III", [{"value": "chocolate", "wordClass": "food"}], repetition=4, prior="I want chocolate!"),
     "sentence__mom_eat_pizza__refine": lambda: P.sentence_body(
         "II-III", MOM_EAT_PIZZA, refine=("Mom, I want pizza.", "make it a question")),
     "scene_generate__potty_training": lambda: P.scene_generate_body(

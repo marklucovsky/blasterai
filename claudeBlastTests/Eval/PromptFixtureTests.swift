@@ -54,9 +54,9 @@ struct PromptFixtureTests {
                                history: ["Mom, I am hungry.", "Can I have some juice?"]))
     }
 
-    @Test("Sentence: escalation carries the rung it escalates from")
+    @Test("Sentence: escalation carries the rung it escalates from, and holds past the top")
     func sentenceEscalation() throws {
-        for count in [1, 3] {
+        for count in [1, 3, 4] {
             try check("sentence__chocolate__escalate_\(count)",
                       sentenceBody(stage: .twoThree, tiles: [Self.tile("chocolate", "food")],
                                    repetition: count, prior: "I want chocolate!"))
@@ -184,6 +184,7 @@ struct PromptFixtureTests {
                       refine: (original: String, instruction: String)? = nil) -> [String: Any] {
         var builder = SentencePromptBuilder(brownsStage: stage)
         builder.repetitionCount = repetition
+        if repetition > 0 { builder.escalatingFrom = prior }
         builder.conversationContext = history
         var system = builder.buildSystemPrompt()
         if let refine {

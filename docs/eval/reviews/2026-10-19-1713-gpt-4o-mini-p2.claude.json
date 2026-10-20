@@ -1,0 +1,123 @@
+{
+ "escalation/want_chocolate#0": {
+  "verdict": "approve",
+  "note": "Climbs in words to the top. Rung 1 only adds '!'."
+ },
+ "escalation/want_chocolate#1": {
+  "verdict": "approve",
+  "note": "Climbs in words to the top. Rung 1 only adds '!'."
+ },
+ "escalation/want_chocolate#2": {
+  "verdict": "approve",
+  "note": "Climbs in words to the top. Rung 1 only adds '!'."
+ },
+ "escalation/mom_hungry#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "escalation/mom_hungry#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "escalation/mom_hungry#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "escalation/watch_tv#0": {
+  "verdict": "approve",
+  "note": "Climbs in words to rung 4."
+ },
+ "escalation/watch_tv#1": {
+  "verdict": "approve",
+  "note": "Climbs in words to rung 4."
+ },
+ "escalation/watch_tv#2": {
+  "verdict": "reject",
+  "cause": "escalation-duplication",
+  "note": "Rung 4 repeats the whole sentence twice."
+ },
+ "escalation/go_house#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "escalation/go_house#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "escalation/go_house#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "escalation/mom_snack#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "escalation/mom_snack#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "escalation/mom_snack#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "escalation/she_pool#0": {
+  "verdict": "approve",
+  "note": "Heard, not a want: 'Listen to me! She IS at the pool, right now!' Rung 2 sometimes caps-only."
+ },
+ "escalation/she_pool#1": {
+  "verdict": "approve",
+  "note": "Heard, not a want: 'Listen to me! She IS at the pool, right now!' Rung 2 sometimes caps-only."
+ },
+ "escalation/she_pool#2": {
+  "verdict": "approve",
+  "note": "Heard, not a want: 'Listen to me! She IS at the pool, right now!' Rung 2 sometimes caps-only."
+ },
+ "escalation/where_mom#0": {
+  "verdict": "approve",
+  "note": "Keeps asking, more urgently."
+ },
+ "escalation/where_mom#1": {
+  "verdict": "approve",
+  "note": "Keeps asking, more urgently."
+ },
+ "escalation/where_mom#2": {
+  "verdict": "approve",
+  "note": "Keeps asking, more urgently."
+ },
+ "escalation/he_hit_me#0": {
+  "verdict": "approve",
+  "note": "Escalates to asking for help, never softened."
+ },
+ "escalation/he_hit_me#1": {
+  "verdict": "approve",
+  "note": "Escalates to asking for help, never softened."
+ },
+ "escalation/he_hit_me#2": {
+  "verdict": "approve",
+  "note": "Escalates to asking for help, never softened."
+ },
+ "escalation/stop_hit#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "escalation/stop_hit#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "escalation/stop_hit#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "escalation/want_chocolate_IV#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "escalation/want_chocolate_IV#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "escalation/want_chocolate_IV#2": {
+  "verdict": "approve",
+  "note": ""
+ }
+}
