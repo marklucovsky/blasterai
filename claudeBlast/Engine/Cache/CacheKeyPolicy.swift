@@ -47,7 +47,12 @@ enum CacheKeyPolicy {
     // entry, so whichever order was generated first won forever and the
     // inconsistency was invisible on every later hit. Every v3 entry was produced
     // under that ambiguity and one of the two readings is now wrong.
-    nonisolated static let promptVersion = 4
+    //
+    // v5: pronoun, report and negation rules (2026-10, the eval harness's
+    // first prompt revision). v4 turned "she, pool" into "She, I want to go to
+    // the pool", "dog, bite, me" into "Dog, bite me!" and dropped "not"; those
+    // sentences are wrong, and cached they would outlive the fix.
+    nonisolated static let promptVersion = 5
 
     /// Stamped onto each cache entry (`SentenceCache.keyVersion`) and embedded in
     /// the key. Excludes stage + word class on purpose — those are legitimate

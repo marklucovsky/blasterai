@@ -1,0 +1,19 @@
+{
+  "name": "2026-10-19-1953-gpt-4o-mini-p3-refusal",
+  "label": "p3-refusal",
+  "model": "gpt-4o-mini",
+  "effort": null,
+  "judge": null,
+  "judge_effort": "low",
+  "judge_n": 1,
+  "samples": 5,
+  "commit": "13a1a73+dirty",
+  "prompt_rev": "00e34bf03e",
+  "rubric_rev": "90c6a0766c",
+  "rejudged_from": null,
+  "started": "2026-10-19T19:53:58",
+  "seconds": 8.1,
+  "outputs": 10,
+  "subject_cost": 0.007883999999999999,
+  "judge_cost": 0
+}

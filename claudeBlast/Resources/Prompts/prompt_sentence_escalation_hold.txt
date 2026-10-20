@@ -1,0 +1,1 @@
+(Same tiles again — repeat #{{count}}. Your last sentence is already the top of the ladder: say it again, unchanged.)

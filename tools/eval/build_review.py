@@ -61,6 +61,41 @@ def slim(r: dict) -> dict:
     return out
 
 
+# Case ids renamed since a run was reviewed (see docs/eval/WORKLIST.md), so an
+# earlier verdict still finds its case.
+RENAMED = {"escalation/chocolate": "escalation/want_chocolate",
+           "escalation/chocolate_IV": "escalation/want_chocolate_IV",
+           "sentence/outside": "sentence/mom_outside", "sentence/all_done": "sentence/all_done_mom",
+           "sentence/scared": "sentence/dad_scared"}
+
+
+def previous_verdicts(run_name: str) -> dict:
+    """The compared run's verdict per case (any sample rejected → rejected).
+    Mark's verdict wins over Claude's where he gave one."""
+    def read(suffix):
+        p = REVIEWS / f"{run_name}.{suffix}.json"
+        if not p.exists():
+            return {}
+        d = json.loads(p.read_text())
+        return d.get("items", d)
+    claude, mark = read("claude"), read("mark")
+    out = {}
+    for k in set(claude) | set(mark):
+        c, m = claude.get(k, {}), mark.get(k, {})
+        verdict = m.get("verdict") or c.get("verdict")
+        if not verdict:
+            continue
+        base = k.split("#")[0]
+        base = RENAMED.get(base, base)
+        entry = out.setdefault(base, {"verdict": "approve", "notes": []})
+        if verdict == "reject":
+            entry["verdict"] = "reject"
+        for note in (m.get("comment"), c.get("note")):
+            if note and note not in entry["notes"]:
+                entry["notes"].append(note)
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("run")
@@ -74,14 +109,15 @@ def main() -> int:
     claude_file = REVIEWS / f"{meta['name']}.claude.json"
     if claude_file.exists():
         claude = json.loads(claude_file.read_text())
-    compare, compare_name = {}, None
+    compare, compare_name, previous = {}, None, {}
     if args.compare:
         cmeta, cresults = load(Path(args.compare))
         compare_name = cmeta["name"]
         compare = {key(r): slim(r) for r in cresults}
+        previous = previous_verdicts(cmeta["name"])
 
     data = {"run": meta, "items": [slim(r) for r in results], "claude": claude,
-            "compare": compare, "compareName": compare_name,
+            "compare": compare, "compareName": compare_name, "previous": previous,
             "classes": P.word_classes()}
     page = TEMPLATE.replace("__TITLE__", html.escape(meta["name"])).replace(
         "__DATA__", json.dumps(data, ensure_ascii=False).replace("</", "<\\/"))
@@ -137,7 +173,8 @@ details summary { cursor:pointer; color:var(--muted); font-size:13px }
     <select id="group"><option value="">all groups</option></select>
     <select id="status">
       <option value="">everything</option><option value="todo">not reviewed by me</option>
-      <option value="claude-reject">Claude rejected</option><option value="tier1">Tier-1 failed</option>
+      <option value="claude-reject">Claude rejected</option><option value="prev-reject">rejected in the compared run</option>
+      <option value="tier1">Tier-1 failed</option>
       <option value="disagree">I disagree with Claude</option><option value="rejected">I rejected</option>
       <option value="commented">has my comment</option>
     </select>
@@ -231,9 +268,14 @@ function claudeHTML(it) {
 }
 
 function compareHTML(it) {
-  const o = DATA.compare[it.key]; if (!o) return "";
+  const prev = DATA.previous[`${it.surface}/${it.case}`];
+  const prevHTML = prev ? `<div><b style="color:${prev.verdict === "reject" ? "var(--bad)" : "var(--ok)"}">` +
+    `${prev.verdict === "reject" ? "rejected" : "approved"} there</b>${prev.notes.length ? " — " + prev.notes.map(esc).join(" / ") : ""}</div>` : "";
+  // The compared run may hold only sample 0 of a case, or the case under its old id.
+  const o = DATA.compare[it.key] || Object.values(DATA.compare).find(x => `${x.surface}/${x.case}` === `${it.surface}/${it.case}`);
+  if (!o) return prevHTML ? `<div class="cmp">${prevHTML}</div>` : "";
   const text = Array.isArray(o.output) ? o.output.join(" → ") : o.tiles ? o.tiles.join(", ") : o.ratings ? JSON.stringify(o.ratings) : o.output;
-  return `<div class="cmp"><b>${esc(DATA.compareName)}:</b> ${esc(text)}${o.tier1.length ? `<div class="issues">${o.tier1.map(esc).join("; ")}</div>` : ""}</div>`;
+  return `<div class="cmp"><b>${esc(DATA.compareName)}:</b> ${esc(text)}${o.tier1.length ? `<div class="issues">${o.tier1.map(esc).join("; ")}</div>` : ""}${prevHTML}</div>`;
 }
 
 function card(it) {
@@ -262,6 +304,7 @@ function visible(it) {
   const st = f("status");
   if (st === "todo" && s.verdict) return false;
   if (st === "claude-reject" && c?.verdict !== "reject") return false;
+  if (st === "prev-reject" && DATA.previous[`${it.surface}/${it.case}`]?.verdict !== "reject") return false;
   if (st === "tier1" && !it.tier1.length) return false;
   if (st === "disagree" && s.claude !== "disagree") return false;
   if (st === "rejected" && s.verdict !== "reject") return false;

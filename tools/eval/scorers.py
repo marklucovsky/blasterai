@@ -148,12 +148,29 @@ def intensity(text: str) -> int:
     return exclam * 2 + caps * 3 + urgency
 
 
-def score_escalation(ladder: list[str], tiles: list[dict], stage: str) -> tuple[list[int], list[str]]:
+# The top of the want ladder. Mark (2026-10-19): "never more than a single
+# Please, please! I can't wait" — past the top a rung holds, it doesn't stack.
+TOP_RUNG = 3
+INSISTING_PHRASES = [r"please,\s*please", r"can'?t wait"]
+
+
+def stacked_insistence(text: str) -> list[str]:
+    return [rx for rx in INSISTING_PHRASES if len(re.findall(rx, text, re.I)) > 1]
+
+
+def score_escalation(ladder: list[str], tiles: list[dict], stage: str,
+                     expect: dict | None = None) -> tuple[list[int], list[str]]:
+    """`expect` holds on every rung — a refusal must still refuse at the top."""
     issues = []
     levels = [intensity(t) for t in ladder]
     for i, text in enumerate(ladder):
-        if rung := score_sentence(text, tiles, stage, escalating=i > 0):
+        if rung := score_sentence(text, tiles, stage, expect, escalating=i > 0):
             issues.append(f"rung {i}: {', '.join(rung)}")
+        if stacked := stacked_insistence(text):
+            issues.append(f"rung {i}: insisting phrase stacked ({', '.join(stacked)})")
+        # Holding is right past the top (SentencePromptBuilder.topRung), a stall below it.
+        if 0 < i <= TOP_RUNG and text.strip() == ladder[i - 1].strip():
+            issues.append(f"rung {i} repeats rung {i - 1}")
     for i in range(1, len(levels)):
         if levels[i] < levels[i - 1]:
             issues.append(f"rung {i} less insistent than rung {i - 1} ({levels[i]} < {levels[i - 1]})")

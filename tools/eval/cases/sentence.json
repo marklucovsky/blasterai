@@ -113,7 +113,7 @@
    "expect": {"negation": true, "must_not_match": "(?<!n't )(?<!not )\\bwant (to go )?(to )?(bed|sleep)"}},
   {"id": "no_house", "group": "refusal", "probe": "Aubrey: 'no, home' refuses going home",
    "input": {"stage": "II-III", "tiles": ["no:social", "house:places"]},
-   "expect": {"negation": true, "must_not_match": "\\bwant to go (home|to the house)"}},
+   "expect": {"negation": true, "must_not_match": "(?<!n't )(?<!not )\\bwant to go (home|to the house)"}},
   {"id": "no_bed_no", "group": "refusal", "probe": "Aubrey's repeated no: 'no, bed, no'",
    "input": {"stage": "II-III", "tiles": ["no:social", "bed:object", "no:social"]},
    "expect": {"negation": true, "must_not_match": "(?<!n't )(?<!not )\\bwant (to go )?(to )?(bed|sleep)"}},
@@ -207,8 +207,8 @@
    "input": {"stage": "II-III", "tiles": ["mom:people", "eat:actions", "pizza:food"],
              "refine": ["Mom, I want pizza.", "make it a question"]},
    "expect": {"question": true, "must_include": ["pizza"]}},
-  {"id": "refine_shorter", "group": "refine", "probe": "caregiver asks for shorter",
+  {"id": "refine_shorter", "group": "refine", "probe": "caregiver asks for shorter: the original is 15 words, so 10 or fewer is a real cut",
    "input": {"stage": "II-III", "tiles": ["go:actions", "park:places", "swing:play"],
              "refine": ["I would really like to go to the park and play on the swings, please.", "shorter"]},
-   "expect": {"max_words": 8}}
+   "expect": {"max_words": 10}}
 ]

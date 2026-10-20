@@ -1,0 +1,42 @@
+{
+ "escalation/no_home#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "escalation/no_home#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "escalation/no_home#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "escalation/no_home#3": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "escalation/no_home#4": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "escalation/no_bed#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "escalation/no_bed#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "escalation/no_bed#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "escalation/no_bed#3": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "escalation/no_bed#4": {
+  "verdict": "approve",
+  "note": ""
+ }
+}

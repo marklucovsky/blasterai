@@ -96,6 +96,29 @@ class EscalationChecks(unittest.TestCase):
         _, issues = S.score_escalation(ladder, tiles("chocolate:food"), "II-III")
         self.assertEqual(issues, [])
 
+    def test_top_rung_holds_instead_of_stacking(self):
+        top = "I really, really NEED to watch TV right now! Please, please! I can't wait!"
+        climb = ["I want to watch TV.", "I really want to watch TV right now, please!",
+                 "I really NEED to watch TV right now, please!", top]
+        _, issues = S.score_escalation(climb + [top], tiles("watch:actions", "tv:object"), "II-III")
+        self.assertEqual(issues, [])
+        _, issues = S.score_escalation(climb + [top + " I really can't wait!"],
+                                       tiles("watch:actions", "tv:object"), "II-III")
+        self.assertTrue(any("rung 4: insisting phrase stacked" in i for i in issues))
+
+    def test_expectations_hold_on_every_rung(self):
+        ladder = ["No, I don't want to go to bed.", "No! I really don't want to go to bed!",
+                  "I really want to go to bed now, please!"]
+        _, issues = S.score_escalation(ladder, tiles("no:social", "bed:object"), "II-III",
+                                       {"negation": True})
+        self.assertIn("rung 2: negation lost", issues)
+
+    def test_stalling_below_the_top(self):
+        ladder = ["She is at the pool.", "She is at the pool!", "Listen! She is at the pool!",
+                  "Listen! She is at the pool!"]
+        _, issues = S.score_escalation(ladder, tiles("she:people", "pool:places"), "II-III")
+        self.assertIn("rung 3 repeats rung 2", issues)
+
 
 def scene(tiles_, new_words=()):
     return json.dumps({"name": "x", "description": "x", "homePageKey": "p",
@@ -206,6 +229,25 @@ class ModelAdaptation(unittest.TestCase):
                  "prompt_tokens_details": {"cached_tokens": 1000, "cache_write_tokens": 500}}
         expected = (500 * 0.10 + 1000 * 0.01 + 500 * 0.125 + 100 * 0.50) / 1e6
         self.assertAlmostEqual(models.cost("gpt-6-luna", usage), expected)
+
+
+class HeldOutCases(unittest.TestCase):
+    """A prompt example that is also an eval case teaches to the test: the case
+    passes because the answer is in the prompt, and proves nothing about the
+    selections families actually make. Prompt examples use other words."""
+
+    def test_sentence_prompt_examples_are_not_cases(self):
+        import re
+        root = Path(__file__).resolve().parents[2]
+        messages = json.loads((root / "claudeBlast/Resources/sentence_prompt.json").read_text())
+        text = " ".join(messages) + " ".join(p.read_text() for p in (root / "claudeBlast/Resources/Prompts").glob("prompt_sentence_*.txt"))
+        examples = {m.lower() for m in re.findall(r'"([A-Za-z ]+(?:, [A-Za-z ]+)+)"', text)}
+        cases = []
+        for name in ("sentence", "escalation"):
+            cases += json.loads((Path(__file__).resolve().parent / "cases" / f"{name}.json").read_text())
+        selections = {", ".join(t.rsplit(":", 1)[0].lower() for t in c["input"]["tiles"]) for c in cases}
+        self.assertTrue(examples, "found no examples in the prompt — the pattern is broken")
+        self.assertEqual(sorted(examples & selections), [])
 
 
 if __name__ == "__main__":

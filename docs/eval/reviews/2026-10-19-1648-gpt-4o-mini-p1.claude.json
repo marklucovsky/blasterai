@@ -1,0 +1,938 @@
+{
+ "sentence/dad_park_slide#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/dad_park_slide#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/dad_park_slide#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/mom_cookie#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/mom_cookie#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/mom_cookie#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/mom_outside#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/mom_outside#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/mom_outside#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/me_want_juice#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/me_want_juice#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/me_want_juice#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/him_hit_me#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/him_hit_me#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/him_hit_me#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/her_pool#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/her_pool#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/her_pool#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/pizza_eat_mom_scrambled#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/pizza_eat_mom_scrambled#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/pizza_eat_mom_scrambled#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/juice_more#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/juice_more#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/juice_more#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/tv_stop#0": {
+  "verdict": "approve",
+  "note": "Unchanged from v0; 'Turn off the TV' would be more natural."
+ },
+ "sentence/tv_stop#1": {
+  "verdict": "approve",
+  "note": "Unchanged from v0; 'Turn off the TV' would be more natural."
+ },
+ "sentence/tv_stop#2": {
+  "verdict": "approve",
+  "note": "Unchanged from v0; 'Turn off the TV' would be more natural."
+ },
+ "sentence/grandma_book#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/grandma_book#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/grandma_book#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/yes_no#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/yes_no#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/yes_no#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/i_bus_school#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/i_bus_school#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/i_bus_school#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/she_pool#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/she_pool#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/she_pool#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/he_find_raptor#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/he_find_raptor#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/he_find_raptor#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/they_play_ball#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/they_play_ball#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/they_play_ball#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/we_go_park#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/we_go_park#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/we_go_park#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/you_help_me#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/you_help_me#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/you_help_me#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/dad_eat_pizza#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/dad_eat_pizza#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/dad_eat_pizza#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/we_park#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/we_park#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/we_park#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/they_ball#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/they_ball#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/they_ball#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/he_raptor#0": {
+  "verdict": "reject",
+  "cause": "odd-reading",
+  "note": "Still 'He is a raptor!' on every sample. 'He has a raptor' / 'He likes raptors' is likelier."
+ },
+ "sentence/he_raptor#1": {
+  "verdict": "reject",
+  "cause": "odd-reading",
+  "note": "Still 'He is a raptor!' on every sample. 'He has a raptor' / 'He likes raptors' is likelier."
+ },
+ "sentence/he_raptor#2": {
+  "verdict": "reject",
+  "cause": "odd-reading",
+  "note": "Still 'He is a raptor!' on every sample. 'He has a raptor' / 'He likes raptors' is likelier."
+ },
+ "sentence/i_school#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/i_school#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/i_school#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/she_pizza#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/she_pizza#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/she_pizza#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/teacher_tired#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/teacher_tired#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/teacher_tired#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/mom_want_eat_pizza#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/mom_want_eat_pizza#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/mom_want_eat_pizza#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/go_potty#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/go_potty#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/go_potty#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/find_ball#0": {
+  "verdict": "approve",
+  "note": "'Can I find the ball?' is OK; 'Where is the ball?' / 'Help me find the ball' is more natural."
+ },
+ "sentence/find_ball#1": {
+  "verdict": "approve",
+  "note": "'Can I find the ball?' is OK; 'Where is the ball?' / 'Help me find the ball' is more natural."
+ },
+ "sentence/find_ball#2": {
+  "verdict": "approve",
+  "note": "'Can I find the ball?' is OK; 'Where is the ball?' / 'Help me find the ball' is more natural."
+ },
+ "sentence/take_bus#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/take_bus#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/take_bus#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/stop_hit#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/stop_hit#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/stop_hit#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/i_like_dog#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/i_like_dog#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/i_like_dog#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/see_cat#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/see_cat#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/see_cat#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/i_am_tired#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/i_am_tired#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/i_am_tired#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/they_are_happy#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/they_are_happy#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/they_are_happy#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/i_was_scared#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/i_was_scared#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/i_was_scared#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/not_want_milk#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/not_want_milk#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/not_want_milk#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/no_bed#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/no_bed#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/no_bed#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/no_house#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/no_house#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/no_house#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/no_bed_no#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/no_bed_no#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/no_bed_no#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/no_bath#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/no_bath#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/no_bath#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/where_mom#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/where_mom#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/where_mom#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/what_eat#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/what_eat#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/what_eat#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/when_go_park#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/when_go_park#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/when_go_park#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/tomorrow_pool#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/tomorrow_pool#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/tomorrow_pool#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/yesterday_park_play#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/yesterday_park_play#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/yesterday_park_play#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/later_tv#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/later_tv#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/later_tv#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/dog_in_car#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/dog_in_car#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/dog_in_car#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/all_done_mom#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/all_done_mom#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/all_done_mom#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/again_swing#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/again_swing#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/again_swing#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/tired_bed_II-III#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/tired_bed_II-III#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/tired_bed_II-III#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/tired_bed_IV#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/tired_bed_IV#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/tired_bed_IV#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/mom_hungry_IV#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/mom_hungry_IV#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/mom_hungry_IV#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/go_outside_play_IV#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/go_outside_play_IV#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/go_outside_play_IV#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/she_pool_IV#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/she_pool_IV#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/she_pool_IV#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/yesterday_park_play_IV#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/yesterday_park_play_IV#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/yesterday_park_play_IV#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/hurt_stomach#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/hurt_stomach#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/hurt_stomach#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/he_hit_me#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/he_hit_me#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/he_hit_me#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/dog_bite_me#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/dog_bite_me#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/dog_bite_me#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/dad_scared#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/dad_scared#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/dad_scared#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/mom_head_hurt#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/mom_head_hurt#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/mom_head_hurt#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/teacher_sick#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/teacher_sick#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/teacher_sick#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/history_more#0": {
+  "verdict": "reject",
+  "cause": "history-unused",
+  "note": "'Please, I want more.' is awkward and ignores the juice in the history: 'More juice, please!'"
+ },
+ "sentence/history_more#1": {
+  "verdict": "reject",
+  "cause": "history-unused",
+  "note": "'Please, I want more.' is awkward and ignores the juice in the history: 'More juice, please!'"
+ },
+ "sentence/history_more#2": {
+  "verdict": "reject",
+  "cause": "history-unused",
+  "note": "'Please, I want more.' is awkward and ignores the juice in the history: 'More juice, please!'"
+ },
+ "sentence/history_unrelated#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/history_unrelated#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/history_unrelated#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/snack_bar_food#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/snack_bar_food#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/snack_bar_food#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/orange_food#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/orange_food#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/orange_food#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/bowl_actions#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/bowl_actions#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/bowl_actions#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/refine_question#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/refine_question#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/refine_question#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/refine_shorter#0": {
+  "verdict": "approve",
+  "note": "15 → 9 words. My v0 reject was wrong: v0's 12 words were also shorter than the original 15."
+ },
+ "sentence/refine_shorter#1": {
+  "verdict": "approve",
+  "note": "15 → 9 words. My v0 reject was wrong: v0's 12 words were also shorter than the original 15."
+ },
+ "sentence/refine_shorter#2": {
+  "verdict": "approve",
+  "note": "15 → 9 words. My v0 reject was wrong: v0's 12 words were also shorter than the original 15."
+ },
+ "escalation/want_chocolate#0": {
+  "verdict": "reject",
+  "cause": "escalation-flat",
+  "note": "Rungs 1–3 identical words, or rung 3 falls back to 'I want to eat chocolate!'"
+ },
+ "escalation/want_chocolate#1": {
+  "verdict": "reject",
+  "cause": "escalation-flat",
+  "note": "Rungs 1–3 identical words, or rung 3 falls back to 'I want to eat chocolate!'"
+ },
+ "escalation/want_chocolate#2": {
+  "verdict": "reject",
+  "cause": "escalation-flat",
+  "note": "Rungs 1–3 identical words, or rung 3 falls back to 'I want to eat chocolate!'"
+ },
+ "escalation/mom_hungry#0": {
+  "verdict": "approve",
+  "note": "Climbs through the implied request; the Tier-1 intensity proxy under-counts 'can I eat?'."
+ },
+ "escalation/mom_hungry#1": {
+  "verdict": "approve",
+  "note": "Climbs through the implied request; the Tier-1 intensity proxy under-counts 'can I eat?'."
+ },
+ "escalation/mom_hungry#2": {
+  "verdict": "approve",
+  "note": "Climbs through the implied request; the Tier-1 intensity proxy under-counts 'can I eat?'."
+ },
+ "escalation/watch_tv#0": {
+  "verdict": "reject",
+  "cause": "escalation-flat",
+  "note": "Rung 4 drops 'NEED' back to 'WANT'; later rungs lean on caps."
+ },
+ "escalation/watch_tv#1": {
+  "verdict": "reject",
+  "cause": "escalation-flat",
+  "note": "Rung 4 drops 'NEED' back to 'WANT'; later rungs lean on caps."
+ },
+ "escalation/watch_tv#2": {
+  "verdict": "reject",
+  "cause": "escalation-flat",
+  "note": "Rung 4 drops 'NEED' back to 'WANT'; later rungs lean on caps."
+ },
+ "escalation/go_house#0": {
+  "verdict": "reject",
+  "cause": "escalation-flat",
+  "note": "Rung 3 drops 'really NEED' for caps."
+ },
+ "escalation/go_house#1": {
+  "verdict": "reject",
+  "cause": "escalation-flat",
+  "note": "Rung 3 drops 'really NEED' for caps."
+ },
+ "escalation/go_house#2": {
+  "verdict": "reject",
+  "cause": "escalation-flat",
+  "note": "Rung 3 drops 'really NEED' for caps."
+ },
+ "escalation/mom_snack#0": {
+  "verdict": "approve",
+  "note": "Good climb."
+ },
+ "escalation/mom_snack#1": {
+  "verdict": "approve",
+  "note": "Good climb."
+ },
+ "escalation/mom_snack#2": {
+  "verdict": "approve",
+  "note": "Good climb."
+ },
+ "escalation/she_pool#0": {
+  "verdict": "reject",
+  "cause": "escalation-statement",
+  "note": "A statement about her doesn't escalate ('She is at the pool right now!'); the ladder then switches to the child's want."
+ },
+ "escalation/she_pool#1": {
+  "verdict": "reject",
+  "cause": "escalation-statement",
+  "note": "A statement about her doesn't escalate ('She is at the pool right now!'); the ladder then switches to the child's want."
+ },
+ "escalation/she_pool#2": {
+  "verdict": "reject",
+  "cause": "escalation-statement",
+  "note": "A statement about her doesn't escalate ('She is at the pool right now!'); the ladder then switches to the child's want."
+ },
+ "escalation/where_mom#0": {
+  "verdict": "reject",
+  "cause": "escalation-drift",
+  "note": "Climbs, then rung 3 drops 'I need you'."
+ },
+ "escalation/where_mom#1": {
+  "verdict": "reject",
+  "cause": "escalation-drift",
+  "note": "Climbs, then rung 3 drops 'I need you'."
+ },
+ "escalation/where_mom#2": {
+  "verdict": "reject",
+  "cause": "escalation-drift",
+  "note": "Climbs, then rung 3 drops 'I need you'."
+ },
+ "escalation/stop_hit#0": {
+  "verdict": "approve",
+  "note": "Good climb."
+ },
+ "escalation/stop_hit#1": {
+  "verdict": "approve",
+  "note": "Good climb."
+ },
+ "escalation/stop_hit#2": {
+  "verdict": "approve",
+  "note": "Good climb."
+ },
+ "escalation/want_chocolate_IV#0": {
+  "verdict": "reject",
+  "cause": "escalation-flat",
+  "note": "Rung 3 falls back to 'I want to eat chocolate!' on every sample."
+ },
+ "escalation/want_chocolate_IV#1": {
+  "verdict": "reject",
+  "cause": "escalation-flat",
+  "note": "Rung 3 falls back to 'I want to eat chocolate!' on every sample."
+ },
+ "escalation/want_chocolate_IV#2": {
+  "verdict": "reject",
+  "cause": "escalation-flat",
+  "note": "Rung 3 falls back to 'I want to eat chocolate!' on every sample."
+ }
+}

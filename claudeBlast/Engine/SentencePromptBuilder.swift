@@ -39,6 +39,11 @@ struct SentencePromptBuilder {
     /// morpheme inventory instead. See `BrownsStage`.
     var brownsStage: BrownsStage
     var repetitionCount: Int = 0
+    /// The sentence a repeat escalates from (the active group's last sentence).
+    /// Quoted inside the escalation directive: the eval showed gpt-4o-mini
+    /// falling back to its calm first wording when only told to beat "your
+    /// most recent reply above".
+    var escalatingFrom: String? = nil
     var conversationContext: [String] = []
 
     /// Reinforces the word-class annotation rule near the end of the system
@@ -60,13 +65,28 @@ struct SentencePromptBuilder {
         return systemPrompt
     }
 
-    /// The user turn: just the selected tiles as `word (class)`, comma-joined.
+    /// The user turn: the selected tiles as `word (class)`, comma-joined.
     /// Enhancements (the category-honor rule, escalation) live in the system
-    /// prompt — see `buildSystemPrompt`.
+    /// prompt — see `buildSystemPrompt` — with one exception: a repeat adds a
+    /// short note after the tiles. The escalation directive alone sits above
+    /// the conversation, and the last thing the model then reads is the same
+    /// tiles as a fresh request; the eval showed ladders snapping back to the
+    /// first, calm wording until the note was there.
+    ///
+    /// Past `topRung` the note says to hold rather than climb, so a long run of
+    /// repeats doesn't stack "please, please" on itself. It is chosen here, by
+    /// count, because a single note that said "hold if you're at the top" let
+    /// statements and questions stall at rung 2.
     func formatUserPrompt(tiles: [TileSelection]) -> String {
-        tiles.map { "\($0.value) (\($0.wordClass))" }
+        let selection = tiles.map { "\($0.value) (\($0.wordClass))" }
             .joined(separator: ", ")
+        guard repetitionCount > 0 else { return selection }
+        let note = repetitionCount > Self.topRung ? "sentence_escalation_hold" : "sentence_escalation_note"
+        return selection + "\n" + PromptTemplate.render(note, ["count": String(repetitionCount)])
     }
+
+    /// The last repeat that escalates; later repeats say the top sentence again.
+    static let topRung = 3
 
     /// Caregiver refine directive, appended to the system turn when a refine
     /// carries an instruction (mirrors the tile-art refine flow): the model
@@ -158,6 +178,7 @@ struct SentencePromptBuilder {
     /// repeat count — the audible ramp moves into the TTS layer and this ladder
     /// can get shorter again. Until then the words carry it.
     private func escalationPrompt(_ count: Int) -> String {
-        PromptTemplate.render("sentence_escalation", ["count": String(count)])
+        PromptTemplate.render("sentence_escalation",
+                              ["count": String(count), "previous": escalatingFrom ?? ""])
     }
 }

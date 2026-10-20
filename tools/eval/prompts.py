@@ -97,6 +97,8 @@ def _listing(tiles: list[dict]) -> str:
 
 # MARK: - Sentences
 
+TOP_RUNG = 3  # SentencePromptBuilder.topRung
+
 def sentence_body(stage: str, tiles: list[dict], history: list[str] = (),
                   repetition: int = 0, prior: str | None = None,
                   refine: tuple[str, str] | None = None) -> dict:
@@ -109,12 +111,15 @@ def sentence_body(stage: str, tiles: list[dict], history: list[str] = (),
     system = [m.replace("{stage}", descriptor) for m in base]
     system.append(raw("sentence_category_rule"))
     if escalating:
-        system.append(render("sentence_escalation", {"count": str(repetition)}))
+        system.append(render("sentence_escalation", {"count": str(repetition), "previous": prior or ""}))
     if refine and refine[1].strip():
         system.append(render("sentence_refine", {"previous": refine[0], "instruction": refine[1]}))
 
-    # SentencePromptBuilder.context
+    # SentencePromptBuilder.formatUserPrompt, then .context
     user_prompt = ", ".join(f"{t['value']} ({t['wordClass']})" for t in tiles)
+    if escalating:
+        note = "sentence_escalation_hold" if repetition > TOP_RUNG else "sentence_escalation_note"
+        user_prompt += "\n" + render(note, {"count": str(repetition)})
     context = list(history)
     if escalating and prior is not None:
         context.append(prior)

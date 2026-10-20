@@ -1,0 +1,127 @@
+{
+  "run": "2026-10-19-1713-gpt-4o-mini-p2",
+  "exported": "2026-10-20T02:40:09.569Z",
+  "items": {
+    "escalation/want_chocolate#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/want_chocolate#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/want_chocolate#2": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/mom_hungry#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/mom_hungry#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/mom_hungry#2": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/watch_tv#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/watch_tv#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/watch_tv#2": {
+      "verdict": "reject",
+      "claude": "agree",
+      "comment": "the 5th escalation feels like overkill. Let's never do more than a single Please, please! I can't wait\""
+    },
+    "escalation/go_house#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/go_house#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/go_house#2": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/mom_snack#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/mom_snack#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/mom_snack#2": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/she_pool#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/she_pool#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/she_pool#2": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/where_mom#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/where_mom#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/where_mom#2": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/he_hit_me#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/he_hit_me#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/he_hit_me#2": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/stop_hit#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/stop_hit#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/stop_hit#2": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/want_chocolate_IV#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/want_chocolate_IV#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/want_chocolate_IV#2": {
+      "claude": "agree",
+      "verdict": "approve"
+    }
+  }
+}
