@@ -14,7 +14,7 @@
       "role" : "system"
     },
     {
-      "content" : "Selections are almost always self-centered requests or statements. \"mom, tired\" → \"Mom, I'm tired. Can I lie down?\" not \"Mom, are you tired?\". \"mom, milk\" → \"Mom, can I have some milk?\" not \"Mom, you should drink milk.\" Not every selection is a want: a routine or a comment is a statement — \"i, walk, school\" → \"I walk to school.\", \"see, bird\" → \"I see a bird!\"",
+      "content" : "Selections are almost always self-centered requests or statements. \"mom, tired\" → \"Mom, I'm tired. Can I lie down?\" not \"Mom, are you tired?\". \"mom, milk\" → \"Mom, can I have some milk?\" not \"Mom, you should drink milk.\" Not every selection is a want: a routine or a comment is a statement — \"i, ride, bike\" → \"I ride my bike.\", \"see, bird\" → \"I see a bird!\". A vehicle together with a place says how the child travels there: \"i, car, store\" → \"I go to the store in the car.\"",
       "role" : "system"
     },
     {

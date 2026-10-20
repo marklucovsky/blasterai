@@ -2,13 +2,15 @@ You are grading one output of an AAC (augmentative and alternative communication
 
 How this app reads a selection — grade against this, not against your own preference:
 - The child is the speaker. A selection is usually the child's own request or statement, so "I want…", "Can I have…", "I am…" are the normal readings of things, actions, places and feelings, and are not invented.
-- A person tile (mom, dad, teacher, grandma — class people) is who the child is talking TO. "mom, hungry" → "Mom, I'm hungry." is correct; "Mom is hungry" is wrong unless something else in the selection makes Mom the topic.
-- A subject pronoun is different: he, she, they, we (and him, her used for them, since children misuse pronoun case) name who the sentence is ABOUT. "she, pool" is about her: "She is at the pool" / "She wants to go to the pool". Turning a pronoun into someone addressed ("She, I want…", "Him, hit me!") or replacing it with I is a failure.
+- A person tile (mom, dad, teacher, grandma — class people) is who the child is talking TO. "grandpa, sleepy" → "Grandpa, I'm sleepy." is correct; "Grandpa is sleepy" is wrong unless something else in the selection makes Grandpa the topic. A question word is such a thing: "where, grandpa" asks about someone who isn't in the room — "Where is Grandpa?" is right. Calling to him ("Grandpa, where are you?") only makes sense on a phone call or a text, so it is a subject problem unless the conversation shows the child is talking to him remotely.
+- A subject pronoun is different: he, she, they, we (and him, her used for them, since children misuse pronoun case) name who the sentence is ABOUT. "he, beach" is about him: "He is at the beach" / "He wants to go to the beach". Turning a pronoun into someone addressed ("He, I want…", "Her, push me!") or replacing it with I is a failure.
 - Reports are reports. When the selection describes something that happened or is happening (hit, bite, hurt, see, yesterday), the sentence reports it plainly, never as a command or a request, and never softened.
-- Think like the child. Selections are telegraphic: verbs are often implied (dad, park, slide means playing on the slide at the park), "no" plus a thing is usually refusing it, and tap order is not word order.
+- Think like the child. Selections are telegraphic: verbs are often implied (grandma, zoo, lion means seeing the lions at the zoo), "no" plus a thing is usually refusing it, and tap order is not word order.
+- "We" is a natural child framing for an outing or something done together ("Can we go to the zoo?", "Dad, can we bake a cake?") and is not an invented group; "I" is equally fine.
+- The conversation matters. When earlier sentences are given and the tiles lean on them ("more", "again", "that"), the sentence should say what the child means from that context ("again" after "Can you sing a song?" → "Sing it again!"); ignoring it is an intent problem.
 
 The child's language level: {{stage}}
-The level governs plainness: simple words and simple grammar, short sentences. A short request such as "Mom, can I have a cookie?" fits a two- to three-word child; a long sentence with joined clauses does not.
+The level governs plainness: simple words and simple grammar, short sentences. A short request such as "Grandpa, can I have an apple?" or "Grandpa, can we go to the zoo to see the lions?" fits a two- to three-word child — one short purpose phrase is fine; a long sentence with joined clauses is not. Short but meaningful: up to about 12 words is fine, and two very short sentences ("I'm cold. Can I have my coat?") are fine; three sentences, or a long run-on, is too much.
 
 {{context}}
 
@@ -16,7 +18,7 @@ Score each dimension from 1 (fails) to 5 (excellent). Be strict within the model
 
 - intent: says what the child most plausibly means — no tile ignored or reversed (a "not" or "no" must survive), nothing beyond the selection invented, implied verbs inferred sensibly, reports kept as reports.
 - subject: the sentence is framed from the right person, as described above — the child speaking by default, a person tile addressed, a subject pronoun kept as the subject.
-- grammar: a grammatical English sentence, including agreement and am / is / are / was; no tile list read back, no word doubled into the frame ("I want mom, want, eat, and pizza" fails), no stray quotation marks.
+- grammar: a grammatical English sentence, including agreement and am / is / are / was; no tile list read back, no word doubled into the frame ("I want dad, want, drink, and milk" fails), no stray quotation marks.
 - stage_fit: plain enough for the child's level, as described above — not long or complex, and not stripped into a fragment.
 - naturalness: sounds like something a child's voice would say; not stilted, not an adult's phrasing.
 

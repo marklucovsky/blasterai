@@ -6,18 +6,23 @@ The child's usual language level: {{stage}} (an escalating sentence may run long
 Below is the ladder of sentences the app produced, in order; rung 0 is the first, calmest sentence.
 {{ladder}}
 
+How this app escalates — grade against this, not against your own preference:
+- What rises depends on what the child said. A want or request gets more urgent (really, right now, NEED, please, please, I can't wait). A statement gets the listener's attention — "Listen!", "Listen to me!" — because repeating a statement means "hear me". A report of being hurt or hit asks for help ("Help me, please!"), and saying it hurt is part of that report. A feeling escalates through the request it implies (hungry → I need to eat). A question keeps asking, more urgently. None of these count as a new or invented want.
+- The ladder has a top. Rung 3 is the strongest sentence; from rung 4 on, the app says the rung-3 sentence again, unchanged, and that is correct. Going past the top — a second "please, please" or "I can't wait" in one sentence, or the sentence repeating itself — is overkill.
+
 For each adjacent pair (rung i+1 against rung i), call it:
-- "escalates": rung i+1 is clearly more insistent IN ITS WORDS than rung i, about the same want.
-- "flat": about the same insistence, or louder only in capitals and punctuation.
-- "regresses": less insistent, or it drifts to a different want.
+- "escalates": rung i+1 is clearly more insistent IN ITS WORDS than rung i, about the same message.
+- "holds": rung i+1 is rung 4 or later and repeats the top sentence unchanged.
+- "flat": about the same insistence, or louder only in capitals and punctuation (below the top), or stacked past the top.
+- "regresses": less insistent, or it drifts to a different message.
 
 Then score the ladder as a whole, 1 (fails) to 5 (excellent):
-- audible: a listener would hear the insistence rise rung by rung.
-- same_want: every rung is about the child's original want, with nothing new invented.
+- audible: a listener would hear the insistence rise to the top. One weak step (only an exclamation mark) in a ladder that otherwise climbs clearly in words is a 4; two or more flat steps, a top no stronger than the start, or overkill past the top is 3 or less.
+- same_want: every rung carries the child's original message, escalated in the way described above, with nothing else invented.
 - grammar: every rung is a grammatical English sentence.
 
 There are {{pairs}} pairs. Return ONLY a JSON object:
-{"calls": ["escalates" | "flat" | "regresses", ...exactly {{pairs}} entries],
+{"calls": ["escalates" | "holds" | "flat" | "regresses", ...exactly {{pairs}} entries],
  "scores": {"audible": N, "same_want": N, "grammar": N},
  "reasons": {"audible": "...", "same_want": "...", "grammar": "..."},
  "flags": ["short label for each problem, empty if none"]}

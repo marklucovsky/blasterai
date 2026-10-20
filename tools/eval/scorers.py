@@ -105,9 +105,30 @@ def score_sentence(text: str, tiles: list[dict], stage: str, expect: dict | None
         issues.append("'want' tile doubled into the frame")
     if (p := pronoun_as_address(text)) and p in {v.lower() for v in values}:
         issues.append(f"chosen subject '{p}' turned into a form of address")
+    if not escalating:
+        issues += length_issues(text, stage)
     lower = text.lower()
     issues += [f"unsafe fragment '{b}'" for b in UNSAFE_FRAGMENTS if b in lower]
     issues += expectation_issues(text, expect)
+    return issues
+
+
+# Mark (2026-10-20): short but meaningful — 8 to 12 words is fine, two or three
+# sentences is not. Escalation is exempt: a top rung runs longer by design.
+MAX_WORDS_II_III = 12
+MAX_SENTENCES = 2
+
+
+def sentence_count(text: str) -> int:
+    return len([s for s in re.split(r"[.!?]+(?:\s+|$)", text.strip()) if _words(s)])
+
+
+def length_issues(text: str, stage: str) -> list[str]:
+    issues = []
+    if stage == "II-III" and (n := len(_words(text))) > MAX_WORDS_II_III:
+        issues.append(f"{n} words, over {MAX_WORDS_II_III} for Stage II-III")
+    if (n := sentence_count(text)) > MAX_SENTENCES:
+        issues.append(f"{n} sentences")
     return issues
 
 
