@@ -1,0 +1,306 @@
+{
+  "run": "2026-10-19-1648-gpt-4o-mini-p1",
+  "exported": "2026-10-20T00:05:35.274Z",
+  "items": {
+    "sentence/him_hit_me#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/him_hit_me#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/him_hit_me#2": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/her_pool#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/her_pool#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/her_pool#2": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/i_bus_school#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/i_bus_school#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/i_bus_school#2": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/she_pool#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/she_pool#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/she_pool#2": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/he_find_raptor#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/he_find_raptor#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/he_find_raptor#2": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/he_raptor#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "sentence/he_raptor#1": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "sentence/he_raptor#2": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "sentence/she_pizza#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/she_pizza#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/she_pizza#2": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/i_like_dog#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/i_like_dog#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/i_like_dog#2": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/not_want_milk#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/not_want_milk#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/not_want_milk#2": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/no_bed#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/no_bed#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/no_bed#2": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/no_house#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/no_house#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/no_house#2": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/where_mom#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/where_mom#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/where_mom#2": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/tomorrow_pool#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/tomorrow_pool#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/tomorrow_pool#2": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/yesterday_park_play#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/yesterday_park_play#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/yesterday_park_play#2": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/later_tv#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/later_tv#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/later_tv#2": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/she_pool_IV#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/she_pool_IV#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/she_pool_IV#2": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/dog_bite_me#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/dog_bite_me#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/dog_bite_me#2": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/orange_food#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/orange_food#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/orange_food#2": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/refine_shorter#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/refine_shorter#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "sentence/refine_shorter#2": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/mom_hungry#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/mom_hungry#1": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/mom_hungry#2": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "escalation/watch_tv#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "escalation/watch_tv#1": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "escalation/watch_tv#2": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "escalation/go_house#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "escalation/go_house#1": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "escalation/go_house#2": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "escalation/she_pool#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "escalation/she_pool#1": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "escalation/she_pool#2": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "escalation/where_mom#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "escalation/where_mom#1": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "escalation/where_mom#2": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "escalation/want_chocolate_IV#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "escalation/want_chocolate_IV#1": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "escalation/want_chocolate_IV#2": {
+      "claude": "agree",
+      "verdict": "reject"
+    }
+  }
+}

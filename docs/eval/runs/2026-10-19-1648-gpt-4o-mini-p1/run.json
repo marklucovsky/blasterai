@@ -1,0 +1,19 @@
+{
+  "name": "2026-10-19-1648-gpt-4o-mini-p1",
+  "label": "p1",
+  "model": "gpt-4o-mini",
+  "effort": null,
+  "judge": null,
+  "judge_effort": "low",
+  "judge_n": 1,
+  "samples": 3,
+  "commit": "70173e5+dirty",
+  "prompt_rev": "91753ce058",
+  "rubric_rev": "90c6a0766c",
+  "rejudged_from": null,
+  "started": "2026-10-19T16:48:30",
+  "seconds": 44.3,
+  "outputs": 228,
+  "subject_cost": 0.04538445,
+  "judge_cost": 0
+}

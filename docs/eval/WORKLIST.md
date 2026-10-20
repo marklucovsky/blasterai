@@ -18,23 +18,25 @@ Case ids renamed since v0 (one tile never generates — see `cases/README.md`):
 
 | # | Cause | Cases | Likely root cause | Planned fix | Status |
 |---|---|---|---|---|---|
-| S1 | **pronoun-as-address** (6) | she_pool, her_pool, she_pizza, he_find_raptor, she_pool_IV, escalation/she_pool | he/she/they/we are `people` in vocabulary.json, and the prompt says `(people)` = who the child talks TO | Prompt: a subject-pronoun rule (pronoun = who the sentence is about; him/her for he/she). Consider a `pronoun` word class (data change, own PR). | open |
-| S2 | **report-as-command** (2) | him_hit_me ("Him, hit me!"), dog_bite_me ("Dog, bite me!") | Same addressee rule applied to a pronoun and an animal; no rule that events are reported | Prompt: reports stay reports (hit, bite, hurt → "He hit me", "The dog bit me"); animals are not addressed | open |
-| S3 | **negation-lost** (1) | not_want_milk | `not (describe)` reads as an adjective | Prompt: no / not / don't must survive and flip the meaning | open |
-| S4 | **refusal-reversed** (1) | no_house ("No, I want to go home") | No refusal rule | Prompt: "no" + a thing or place refuses it (Aubrey: no, bed / no, home) | open |
-| S5 | question-form (1) | where_mom ('"Mom, where?"') | Question words treated as tags; quotes in output | Prompt: a question word makes a full question; never wrap output in quotes | open |
-| S6 | tense (1) | yesterday_park_play (II-III) | Time words ignored at II-III | Prompt: yesterday → past, tomorrow / later → future | open |
-| S7 | odd-reading (3) | later_tv, tomorrow_pool, he_raptor | Time words and pronoun + animal | Mostly S1 and S6; re-check after them | open |
-| S8 | want-forced (1) | i_bus_school | Self-centred-want rule over-applies to routines | Prompt: not every selection is a want; routines and comments are statements | open |
-| S9 | refine-ignored (1) | refine_shorter | Refine directive doesn't outrank the stage clause | `prompt_sentence_refine.txt`: the caregiver's instruction wins | open |
-| S10 | grammar-minor (3) | i_like_dog, orange_food, no_bed | Articles and plurals dropped | Prompt: natural articles / plurals; may clear with S4 for no_bed | open |
+| S1 | **pronoun-as-address** (6) | she_pool, her_pool, she_pizza, he_find_raptor, she_pool_IV, escalation/she_pool | he/she/they/we are `people` in vocabulary.json, and the prompt says `(people)` = who the child talks TO | Prompt: a subject-pronoun rule (pronoun = who the sentence is about; him/her for he/she). Consider a `pronoun` word class (data change, own PR). | **p1: fixed** on every sample ("She is at the pool.", "She wants pizza.", "He is finding a raptor."). Escalation side → E3 |
+| S2 | **report-as-command** (2) | him_hit_me ("Him, hit me!"), dog_bite_me ("Dog, bite me!") | Same addressee rule applied to a pronoun and an animal; no rule that events are reported | Prompt: reports stay reports (hit, bite, hurt → "He hit me", "The dog bit me"); animals are not addressed | **p1: fixed** ("He hit me!", "The dog bit me!") |
+| S3 | **negation-lost** (1) | not_want_milk | `not (describe)` reads as an adjective | Prompt: no / not / don't must survive and flip the meaning | **p1: fixed** ("I don't want to drink milk.") |
+| S4 | **refusal-reversed** (1) | no_house ("No, I want to go home") | No refusal rule | Prompt: "no" + a thing or place refuses it (Aubrey: no, bed / no, home) | **p1: fixed** (no_house, no_bed, no_bed_no, no_bath all refuse) |
+| S5 | question-form (1) | where_mom ('"Mom, where?"') | Question words treated as tags; quotes in output | Prompt: a question word makes a full question; never wrap output in quotes | **p1: fixed** ("Where is Mom?") |
+| S6 | tense (1) | yesterday_park_play (II-III) | Time words ignored at II-III | Prompt: yesterday → past, tomorrow / later → future | **p1: fixed** — needed the exception inside the `(describe)` rule, because time words are filed as `describe` and that rule won |
+| S7 | odd-reading (3) | later_tv, tomorrow_pool, he_raptor | Time words and pronoun + animal | Mostly S1 and S6; re-check after them | later_tv, tomorrow_pool **fixed in p1**; he_raptor ("He is a raptor!") **open** |
+| S8 | want-forced (1) | i_bus_school | Self-centred-want rule over-applies to routines | Prompt: not every selection is a want; routines and comments are statements | **p1: fixed** ("I am on the bus to school.") |
+| S9 | refine-ignored (1) | refine_shorter | Refine directive doesn't outrank the stage clause | `prompt_sentence_refine.txt`: the caregiver's instruction wins | **p1: 9 words.** Correction: the v0 reject was mistaken — the original was 15 words, so v0's 12 was already shorter; expectation now ≤10 |
+| S10 | grammar-minor (3) | i_like_dog, orange_food, no_bed | Articles and plurals dropped | Prompt: natural articles / plurals; may clear with S4 for no_bed | **p1: fixed** ("I like dogs.", "an orange", "No! I don't want to go to bed.") |
+| S11 | history-unused (new in p1 review) | history_more ("Please, I want more.") | — | Prompt: use the conversation for a bare "more" | open |
 
 ## Escalation — `prompt_sentence_escalation.txt`
 
 | # | Cause | Cases | Likely root cause | Planned fix | Status |
 |---|---|---|---|---|---|
 | E1 | **escalation-flat** (4) | mom_hungry, watch_tv, go_house, want_chocolate_IV | The ladder runs out of words at rung 3+; the model leans on caps, or falls back to calm | Ladder gives new *words* per rung (need → right now → please, please → I can't wait); never drop an intensifier already used | open |
-| E2 | escalation-drift (1) | where_mom | A question has no escalation pattern | A question escalates as a more urgent question ("Where is Mom? I need Mom!") | open |
+| E2 | escalation-drift (1) | where_mom | A question has no escalation pattern | A question escalates as a more urgent question ("Where is Mom? I need Mom!") | p1: starts right ("Where is Mom? I need her!"), still drops back at rung 3 — open |
+| E3 | escalation-statement (new in p1) | she_pool | With S1 fixed, rung 0 is a statement ("She is at the pool."), and the ladder has nothing to climb, then switches to the child's own want | Decide what repeating a statement means (the child insists it's true? wants to join her?) — Mark | open |
 
 ## Generation — `prompt_scene_*`, `prompt_page_*`, `prompt_tile_suggest_*`
 
@@ -60,4 +62,5 @@ Case ids renamed since v0 (one tile never generates — see `cases/README.md`):
 |---|---|---|
 | D1 | `school` and `toilet` filed as `social`; `home` as `navigation`; `bowl` as `actions`; pronouns as `people` | open — vocabulary PR (session 14 vocabulary work, or with S1) |
 | D2 | `SentencePromptBuilder.hardcodedFallback` is a stale copy of `sentence_prompt.json` | open |
-| D3 | The word-class rule is stated twice in the sentence prompt | open — fold into the S-series rewrite |
+| D3 | The word-class rule is stated twice in the sentence prompt | p1: the duplicate "(people) is who the child is speaking TO" sentence removed from the MOST IMPORTANT rule; the rest stays |
+| D4 | Time words (now, today, tomorrow, yesterday, later, again) are filed as `describe` | worked around in the prompt (p1); a `time` class would be cleaner — vocabulary PR |

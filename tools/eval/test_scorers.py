@@ -208,5 +208,24 @@ class ModelAdaptation(unittest.TestCase):
         self.assertAlmostEqual(models.cost("gpt-6-luna", usage), expected)
 
 
+class HeldOutCases(unittest.TestCase):
+    """A prompt example that is also an eval case teaches to the test: the case
+    passes because the answer is in the prompt, and proves nothing about the
+    selections families actually make. Prompt examples use other words."""
+
+    def test_sentence_prompt_examples_are_not_cases(self):
+        import re
+        root = Path(__file__).resolve().parents[2]
+        messages = json.loads((root / "claudeBlast/Resources/sentence_prompt.json").read_text())
+        text = " ".join(messages) + " ".join(p.read_text() for p in (root / "claudeBlast/Resources/Prompts").glob("prompt_sentence_*.txt"))
+        examples = {m.lower() for m in re.findall(r'"([A-Za-z ]+(?:, [A-Za-z ]+)+)"', text)}
+        cases = []
+        for name in ("sentence", "escalation"):
+            cases += json.loads((Path(__file__).resolve().parent / "cases" / f"{name}.json").read_text())
+        selections = {", ".join(t.rsplit(":", 1)[0].lower() for t in c["input"]["tiles"]) for c in cases}
+        self.assertTrue(examples, "found no examples in the prompt — the pattern is broken")
+        self.assertEqual(sorted(examples & selections), [])
+
+
 if __name__ == "__main__":
     unittest.main()
