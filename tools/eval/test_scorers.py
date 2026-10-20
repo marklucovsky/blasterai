@@ -79,6 +79,15 @@ class SentenceChecks(unittest.TestCase):
         self.assertEqual(S.expectation_issues("He hit me.", {"subject": "he"}), [])
         self.assertEqual(S.expectation_issues("The dog is here.", {"subject": "he"}), ["subject 'he' missing"])
 
+    def test_short_but_meaningful(self):
+        # Mark, 2026-10-20: 8–12 words is fine, two or three sentences is not.
+        bed = tiles("tired:feeling", "bed:object")
+        self.assertEqual(S.score_sentence("I am tired. I want to go to bed.", bed, "II-III"), [])
+        self.assertEqual(S.score_sentence("I am tired. I want to go to bed. Can you tuck me in?", bed, "II-III"),
+                         ["14 words, over 12 for Stage II-III", "3 sentences"])
+        self.assertEqual(S.score_sentence("I'm tired. Bed now. Please, Mom.", bed, "IV+"), ["3 sentences"])
+        self.assertEqual(S.score_sentence("I'm tired. Bed now. Please, Mom.", bed, "IV+", escalating=True), [])
+
 
 class EscalationChecks(unittest.TestCase):
     def test_flat_ladder(self):
@@ -248,6 +257,31 @@ class HeldOutCases(unittest.TestCase):
         selections = {", ".join(t.rsplit(":", 1)[0].lower() for t in c["input"]["tiles"]) for c in cases}
         self.assertTrue(examples, "found no examples in the prompt — the pattern is broken")
         self.assertEqual(sorted(examples & selections), [])
+
+    def test_example_sentences_dont_spell_out_a_case(self):
+        """A quoted example sentence that contains every tile of a case is that
+        case's answer ("Mom, can I have a cookie?" for mom, cookie). Applies to
+        the judge's rubrics too: a judge shown the answer grades the case by
+        matching, not by judgement."""
+        import re
+        root = Path(__file__).resolve().parents[2]
+        here = Path(__file__).resolve().parent
+        texts = {p.name: p.read_text() for p in (here / "rubrics").glob("*.txt")}
+        texts |= {p.name: p.read_text() for p in (root / "claudeBlast/Resources/Prompts").glob("prompt_sentence_*.txt")}
+        texts["sentence_prompt.json"] = " ".join(json.loads((root / "claudeBlast/Resources/sentence_prompt.json").read_text()))
+        cases = []
+        for name in ("sentence", "escalation"):
+            cases += json.loads((here / "cases" / f"{name}.json").read_text())
+        leaks = []
+        for fname, text in texts.items():
+            for quote in [s for s in text.split("\"") if 8 <= len(s) <= 120]:
+                words = set(re.findall(r"[a-z']+", quote.lower()))
+                for c in cases:
+                    values = {t.rsplit(":", 1)[0].lower() for t in c["input"]["tiles"]}
+                    if len(values) >= 2 and all(set(v.split()) <= words for v in values):
+                        leaks.append(f"{fname}: \"{quote}\" spells out {c['id']}")
+        self.maxDiff = None
+        self.assertEqual(leaks, [])
 
 
 if __name__ == "__main__":

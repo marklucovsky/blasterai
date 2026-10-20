@@ -40,7 +40,7 @@ A list inside a list means "any one of these".
 
 Sentences: `must_include`, `must_not_include` (whole words, any case),
 `must_match`, `must_not_match` (regex, any case), `question`, `negation`,
-`subject` (that word must appear), `max_words`.
+`subject` (that word must appear), `max_words`. Every sentence (not escalation) also gets the stage-wide length check in `scorers.length_issues`: at most 12 words at Stage II-III, at most two sentences at any stage.
 
 Authoring: `must_include_keys`, `must_not_include_keys` (a plural/singular swap
 and spaces-for-underscores count as a match), `min_tiles`, `max_tiles`,

@@ -30,6 +30,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import prompts as P  # noqa: E402
+from calibrate import judge_pass  # noqa: E402
 
 REVIEWS = P.ROOT / "docs/eval/reviews"
 
@@ -53,11 +54,40 @@ def slim(r: dict) -> dict:
            "notes": (r.get("summary") or {}).get("notes", []),
            "judge": {"scores": j.get("scores"), "reasons": j.get("reasons"), "flags": j.get("flags"),
                      "extra": j.get("extra")} if j.get("scores") else None}
+    if out["judge"]:
+        out["judge"]["ok"], out["judge"]["why"] = judge_pass(r, 4)
     if "summary" in r:
         out["tiles"] = r["summary"]["keys"]
         out["new_words"] = r["summary"]["new_words"]
     if "ratings" in r:
         out["ratings"] = r["ratings"]
+    return out
+
+
+def dedupe(items: list[dict], claude: dict) -> list[dict]:
+    """One card per distinct output of a case. Samples that said the same thing
+    (and drew the same Tier-1 issues and Claude verdict) are one decision; the
+    card lists their judge scores once per distinct set. A verdict on the card
+    is exported for every sample it stands for."""
+    groups: dict[tuple, list[dict]] = {}
+    for it in items:
+        c = claude.get(it["key"], {})
+        g = (it["surface"], it["case"], json.dumps(it["output"], sort_keys=True), it["error"],
+             json.dumps(it["tier1"]), c.get("verdict"), c.get("cause"), c.get("note"))
+        groups.setdefault(g, []).append(it)
+    out = []
+    for members in groups.values():
+        head = dict(members[0])
+        head["keys"] = [m["key"] for m in members]
+        head["samples"] = [m["sample"] for m in members]
+        judges: dict[str, dict] = {}
+        for m in members:
+            if m["judge"]:
+                j = judges.setdefault(json.dumps(m["judge"]["scores"], sort_keys=True), dict(m["judge"], samples=[]))
+                j["samples"].append(m["sample"])
+        head["judges"] = list(judges.values())
+        head["judge"] = {"ok": all(j["ok"] for j in judges.values())} if judges else None
+        out.append(head)
     return out
 
 
@@ -107,6 +137,9 @@ def main() -> int:
 
     claude = {}
     claude_file = REVIEWS / f"{meta['name']}.claude.json"
+    if not claude_file.exists() and meta.get("rejudged_from"):
+        # A rejudge has the same outputs: Claude's verdicts carry over.
+        claude_file = REVIEWS / f"{Path(meta['rejudged_from']).name}.claude.json"
     if claude_file.exists():
         claude = json.loads(claude_file.read_text())
     compare, compare_name, previous = {}, None, {}
@@ -116,14 +149,15 @@ def main() -> int:
         compare = {key(r): slim(r) for r in cresults}
         previous = previous_verdicts(cmeta["name"])
 
-    data = {"run": meta, "items": [slim(r) for r in results], "claude": claude,
+    items = dedupe([slim(r) for r in results], claude)
+    data = {"run": meta, "items": items, "outputs": len(results), "claude": claude,
             "compare": compare, "compareName": compare_name, "previous": previous,
             "classes": P.word_classes()}
     page = TEMPLATE.replace("__TITLE__", html.escape(meta["name"])).replace(
         "__DATA__", json.dumps(data, ensure_ascii=False).replace("</", "<\\/"))
     out = run / "review.html"
     out.write_text(page, encoding="utf-8")
-    print(f"{out.relative_to(P.ROOT)}  ({len(results)} outputs, Claude verdicts: {len(claude)})")
+    print(f"{out.relative_to(P.ROOT)}  ({len(results)} outputs on {len(items)} cards, Claude verdicts: {len(claude)})")
     if not args.no_open:
         subprocess.run(["open", str(out)])
     return 0
@@ -157,7 +191,7 @@ kbd { font:12px ui-monospace, monospace; border:1px solid var(--line); border-ra
 .out { font-size:18px; margin:8px 0; white-space:pre-wrap } .out.ladder div { font-size:16px; margin:2px 0 }
 .cmp { border-top:1px dashed var(--line); margin-top:6px; padding-top:6px; color:var(--muted) }
 .issues { color:var(--bad); font-size:13px; margin:4px 0 } .notes { color:var(--warn); font-size:13px }
-.judge { font-size:13px; color:var(--muted) } .judge b { color:var(--ink) } .low { color:var(--bad); font-weight:600 }
+.jpass { color:#2a7 } .judge { font-size:13px; color:var(--muted) } .judge b { color:var(--ink) } .low { color:var(--bad); font-weight:600 }
 .claude { font-size:13px; margin-top:6px; padding:6px 8px; border-radius:8px; background:rgba(127,127,127,.08) }
 .actions { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; align-items:center }
 textarea { width:100%; min-height:38px; font:inherit; font-size:14px; padding:6px; border:1px solid var(--line); border-radius:7px; background:var(--card); color:var(--ink) }
@@ -175,6 +209,8 @@ details summary { cursor:pointer; color:var(--muted); font-size:13px }
       <option value="">everything</option><option value="todo">not reviewed by me</option>
       <option value="claude-reject">Claude rejected</option><option value="prev-reject">rejected in the compared run</option>
       <option value="tier1">Tier-1 failed</option>
+      <option value="judge-fail">judge failed</option><option value="judge-vs-claude">judge ≠ Claude</option>
+      <option value="judge-vs-me">judge ≠ my verdict</option>
       <option value="disagree">I disagree with Claude</option><option value="rejected">I rejected</option>
       <option value="commented">has my comment</option>
     </select>
@@ -205,7 +241,7 @@ const chip = (word, cls, isNew) =>
 
 document.getElementById("meta").textContent =
   `subject ${DATA.run.model}${DATA.run.effort ? " @" + DATA.run.effort : ""} · prompts ${DATA.run.prompt_rev} · ` +
-  `${DATA.run.judge ? "judge " + DATA.run.judge + " ×" + DATA.run.judge_n : "no judge"} · ${DATA.items.length} outputs` +
+  `${DATA.run.judge ? "judge " + DATA.run.judge + " ×" + DATA.run.judge_n : "no judge"} · ${DATA.outputs} outputs on ${DATA.items.length} cards` +
   (DATA.compareName ? ` · compared with ${DATA.compareName}` : "");
 
 for (const [id, field] of [["surface", "surface"], ["group", "group"]]) {
@@ -248,7 +284,12 @@ function outputHTML(it) {
 }
 
 function judgeHTML(it) {
-  const j = it.judge; if (!j) return "";
+  // One row per distinct set of judge scores among the card's samples.
+  const multi = it.judges.length > 1;
+  return it.judges.map(j => judgeRow(it, j, multi ? `<b>#${j.samples.join(", #")}</b> · ` : "")).join("");
+}
+
+function judgeRow(it, j, label) {
   const sc = Object.entries(j.scores).map(([d, v]) => `<span class="${v <= 3 ? "low" : ""}">${d} ${v}</span>`).join(" · ");
   const why = Object.entries(j.reasons || {}).filter(([d]) => j.scores[d] <= 3).map(([d, r]) => `<div>${d}: ${esc(r)}</div>`).join("");
   const ex = j.extra || {};
@@ -257,7 +298,8 @@ function judgeHTML(it) {
   if (ex.missing?.length) more += `<div>missing: ${ex.missing.map(esc).join(", ")}</div>`;
   if (ex.remove?.length) more += `<div>remove: ${ex.remove.map(esc).join(", ")}</div>`;
   if (ex.calls) more += `<div>steps: ${ex.calls.join(" → ")}</div>`;
-  return `<div class="judge"><b>judge</b> ${sc}${why}${more}</div>`;
+  const badge = j.ok ? `<b class="jpass">judge: pass</b>` : `<b class="low">judge: fail (${esc(j.why.join(", "))})</b>`;
+  return `<div class="judge">${label}${badge} · ${sc}${why}${more}</div>`;
 }
 
 function claudeHTML(it) {
@@ -284,7 +326,7 @@ function card(it) {
               (it.key === cursorKey ? " cursor" : "");
   const btn = (field, val, label) => `<button data-k="${esc(it.key)}" data-f="${field}" data-v="${val}" class="${s[field] === val ? "on" : ""}">${label}</button>`;
   return `<div class="card ${cls}" id="${esc(it.key)}" data-key="${esc(it.key)}">
-    <div class="head"><div><span class="id">${esc(it.surface)}/${esc(it.case)}</span> <span class="probe">#${it.sample} · ${esc(it.group || "")}</span></div>
+    <div class="head"><div><span class="id">${esc(it.surface)}/${esc(it.case)}</span> <span class="probe">${it.samples.length > 1 ? `<b>×${it.samples.length}</b> same output (#${it.samples.join(", #")})` : `#${it.sample}`} · ${esc(it.group || "")}</span></div>
       <div class="probe">${esc(it.probe || "")}</div></div>
     ${inputHTML(it)}${outputHTML(it)}${compareHTML(it)}
     ${it.tier1.length ? `<div class="issues">Tier-1: ${it.tier1.map(esc).join("; ")}</div>` : ""}
@@ -306,6 +348,10 @@ function visible(it) {
   if (st === "claude-reject" && c?.verdict !== "reject") return false;
   if (st === "prev-reject" && DATA.previous[`${it.surface}/${it.case}`]?.verdict !== "reject") return false;
   if (st === "tier1" && !it.tier1.length) return false;
+  const jok = it.judge ? it.judge.ok : null;
+  if (st === "judge-fail" && jok !== false) return false;
+  if (st === "judge-vs-claude" && (jok === null || !c || (c.verdict === "approve") === jok)) return false;
+  if (st === "judge-vs-me" && (jok === null || !s.verdict || (s.verdict === "approve") === jok)) return false;
   if (st === "disagree" && s.claude !== "disagree") return false;
   if (st === "rejected" && s.verdict !== "reject") return false;
   if (st === "commented" && !s.comment) return false;
@@ -318,7 +364,8 @@ function render() {
   const items = DATA.items.filter(visible);
   document.getElementById("list").innerHTML = items.map(card).join("");
   const done = DATA.items.filter(i => state[i.key]?.verdict).length;
-  document.getElementById("count").textContent = `${items.length} shown · ${done}/${DATA.items.length} reviewed`;
+  document.getElementById("count").textContent =
+    `${items.length} shown · ${done}/${DATA.items.length} cards reviewed (${DATA.outputs} outputs)`;
 }
 
 function set(k, field, value, toggle) {
@@ -385,7 +432,11 @@ document.addEventListener("input", e => {
 });
 for (const id of ["surface", "group", "status", "q"]) document.getElementById(id).addEventListener("input", render);
 document.getElementById("export").addEventListener("click", () => {
-  const review = {run: RUN, exported: new Date().toISOString(), items: state};
+  // A card stands for every sample that said the same thing: export its
+  // verdict once per sample, so the review file stays per output.
+  const items = {};
+  for (const it of DATA.items) if (state[it.key]) for (const k of it.keys) items[k] = state[it.key];
+  const review = {run: RUN, exported: new Date().toISOString(), items};
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([JSON.stringify(review, null, 2)], {type: "application/json"}));
   a.download = `${RUN}.mark.json`; a.click();
