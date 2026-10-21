@@ -1,0 +1,263 @@
+{
+ "escalation/want_chocolate#0": {
+  "verdict": "approve",
+  "note": "Want ladder to the top; 'I can't wait' at most once."
+ },
+ "escalation/want_chocolate#1": {
+  "verdict": "approve",
+  "note": "Want ladder to the top; 'I can't wait' at most once."
+ },
+ "escalation/want_chocolate#2": {
+  "verdict": "approve",
+  "note": "Want ladder to the top; 'I can't wait' at most once."
+ },
+ "escalation/want_chocolate#3": {
+  "verdict": "approve",
+  "note": "Want ladder to the top; 'I can't wait' at most once."
+ },
+ "escalation/want_chocolate#4": {
+  "verdict": "approve",
+  "note": "Want ladder to the top; 'I can't wait' at most once."
+ },
+ "escalation/mom_hungry#0": {
+  "verdict": "approve",
+  "note": "A feeling climbs to the need it implies; some samples take 'Mom, listen!' — fine for a feeling."
+ },
+ "escalation/mom_hungry#1": {
+  "verdict": "approve",
+  "note": "A feeling climbs to the need it implies; some samples take 'Mom, listen!' — fine for a feeling."
+ },
+ "escalation/mom_hungry#2": {
+  "verdict": "approve",
+  "note": "A feeling climbs to the need it implies; some samples take 'Mom, listen!' — fine for a feeling."
+ },
+ "escalation/mom_hungry#3": {
+  "verdict": "approve",
+  "note": "A feeling climbs to the need it implies; some samples take 'Mom, listen!' — fine for a feeling."
+ },
+ "escalation/mom_hungry#4": {
+  "verdict": "approve",
+  "note": "A feeling climbs to the need it implies; some samples take 'Mom, listen!' — fine for a feeling."
+ },
+ "escalation/watch_tv#0": {
+  "verdict": "approve",
+  "note": "Rung 4 holds the top unchanged."
+ },
+ "escalation/watch_tv#1": {
+  "verdict": "approve",
+  "note": "Rung 4 holds the top unchanged."
+ },
+ "escalation/watch_tv#2": {
+  "verdict": "approve",
+  "note": "Rung 4 holds the top unchanged."
+ },
+ "escalation/watch_tv#3": {
+  "verdict": "approve",
+  "note": "Rung 4 holds the top unchanged."
+ },
+ "escalation/watch_tv#4": {
+  "verdict": "approve",
+  "note": "Rung 4 holds the top unchanged."
+ },
+ "escalation/go_house#0": {
+  "verdict": "approve",
+  "note": "Want ladder to the top."
+ },
+ "escalation/go_house#1": {
+  "verdict": "approve",
+  "note": "Want ladder to the top."
+ },
+ "escalation/go_house#2": {
+  "verdict": "approve",
+  "note": "Want ladder to the top."
+ },
+ "escalation/go_house#3": {
+  "verdict": "approve",
+  "note": "Want ladder to the top."
+ },
+ "escalation/go_house#4": {
+  "verdict": "approve",
+  "note": "Want ladder to the top."
+ },
+ "escalation/mom_snack#0": {
+  "verdict": "approve",
+  "note": "Both items survive every rung."
+ },
+ "escalation/mom_snack#1": {
+  "verdict": "approve",
+  "note": "Both items survive every rung."
+ },
+ "escalation/mom_snack#2": {
+  "verdict": "approve",
+  "note": "Both items survive every rung."
+ },
+ "escalation/mom_snack#3": {
+  "verdict": "approve",
+  "note": "Both items survive every rung."
+ },
+ "escalation/mom_snack#4": {
+  "verdict": "approve",
+  "note": "Both items survive every rung."
+ },
+ "escalation/she_pool#0": {
+  "verdict": "approve",
+  "note": "Statement ladder: heard, no invented want. 'really at the pool' a little odd."
+ },
+ "escalation/she_pool#1": {
+  "verdict": "approve",
+  "note": "Statement ladder: heard, no invented want. 'really at the pool' a little odd."
+ },
+ "escalation/she_pool#2": {
+  "verdict": "approve",
+  "note": "Statement ladder: heard, no invented want. 'really at the pool' a little odd."
+ },
+ "escalation/she_pool#3": {
+  "verdict": "approve",
+  "note": "Statement ladder: heard, no invented want. 'really at the pool' a little odd."
+ },
+ "escalation/she_pool#4": {
+  "verdict": "approve",
+  "note": "Statement ladder: heard, no invented want. 'really at the pool' a little odd."
+ },
+ "escalation/where_mom#0": {
+  "verdict": "approve",
+  "note": "Question ladder, holds; no 'I can't wait'. Minor: some rung 2s borrow 'Listen!', one top stacks 'Please, please!'."
+ },
+ "escalation/where_mom#1": {
+  "verdict": "approve",
+  "note": "Question ladder, holds; no 'I can't wait'. Minor: some rung 2s borrow 'Listen!', one top stacks 'Please, please!'."
+ },
+ "escalation/where_mom#2": {
+  "verdict": "approve",
+  "note": "Question ladder, holds; no 'I can't wait'. Minor: some rung 2s borrow 'Listen!', one top stacks 'Please, please!'."
+ },
+ "escalation/where_mom#3": {
+  "verdict": "approve",
+  "note": "Question ladder, holds; no 'I can't wait'. Minor: some rung 2s borrow 'Listen!', one top stacks 'Please, please!'."
+ },
+ "escalation/where_mom#4": {
+  "verdict": "approve",
+  "note": "Question ladder, holds; no 'I can't wait'. Minor: some rung 2s borrow 'Listen!', one top stacks 'Please, please!'."
+ },
+ "escalation/what_eat#0": {
+  "verdict": "approve",
+  "note": "Question ladder to 'Please, what can I eat?…', holds."
+ },
+ "escalation/what_eat#1": {
+  "verdict": "approve",
+  "note": "Question ladder to 'Please, what can I eat?…', holds."
+ },
+ "escalation/what_eat#2": {
+  "verdict": "approve",
+  "note": "Question ladder to 'Please, what can I eat?…', holds."
+ },
+ "escalation/what_eat#3": {
+  "verdict": "approve",
+  "note": "Question ladder to 'Please, what can I eat?…', holds."
+ },
+ "escalation/what_eat#4": {
+  "verdict": "approve",
+  "note": "Question ladder to 'Please, what can I eat?…', holds."
+ },
+ "escalation/he_hit_me#0": {
+  "verdict": "approve",
+  "note": "Report ladder: help, never softened."
+ },
+ "escalation/he_hit_me#1": {
+  "verdict": "approve",
+  "note": "Report ladder: help, never softened."
+ },
+ "escalation/he_hit_me#2": {
+  "verdict": "approve",
+  "note": "Report ladder: help, never softened."
+ },
+ "escalation/he_hit_me#3": {
+  "verdict": "approve",
+  "note": "Report ladder: help, never softened."
+ },
+ "escalation/he_hit_me#4": {
+  "verdict": "reject",
+  "cause": "escalation-drift",
+  "note": "'It really happened!' replaces the hurt — a report says it hurt (the judge passed this)."
+ },
+ "escalation/stop_hit#0": {
+  "verdict": "approve",
+  "note": "Instruction ladder: firmer, never the child's want."
+ },
+ "escalation/stop_hit#1": {
+  "verdict": "approve",
+  "note": "Instruction ladder: firmer, never the child's want."
+ },
+ "escalation/stop_hit#2": {
+  "verdict": "approve",
+  "note": "Instruction ladder: firmer, never the child's want."
+ },
+ "escalation/stop_hit#3": {
+  "verdict": "approve",
+  "note": "Instruction ladder: firmer, never the child's want."
+ },
+ "escalation/stop_hit#4": {
+  "verdict": "approve",
+  "note": "Instruction ladder: firmer, never the child's want."
+ },
+ "escalation/no_home#0": {
+  "verdict": "approve",
+  "note": "Refusal ladder: no, no, no — the no survives, no clause repeated."
+ },
+ "escalation/no_home#1": {
+  "verdict": "approve",
+  "note": "Refusal ladder: no, no, no — the no survives, no clause repeated."
+ },
+ "escalation/no_home#2": {
+  "verdict": "approve",
+  "note": "Refusal ladder: no, no, no — the no survives, no clause repeated."
+ },
+ "escalation/no_home#3": {
+  "verdict": "approve",
+  "note": "Refusal ladder: no, no, no — the no survives, no clause repeated."
+ },
+ "escalation/no_home#4": {
+  "verdict": "approve",
+  "note": "Refusal ladder: no, no, no — the no survives, no clause repeated."
+ },
+ "escalation/no_bed#0": {
+  "verdict": "approve",
+  "note": "Refusal ladder: no, no, no — the no survives, no clause repeated."
+ },
+ "escalation/no_bed#1": {
+  "verdict": "approve",
+  "note": "Refusal ladder: no, no, no — the no survives, no clause repeated."
+ },
+ "escalation/no_bed#2": {
+  "verdict": "approve",
+  "note": "Refusal ladder: no, no, no — the no survives, no clause repeated."
+ },
+ "escalation/no_bed#3": {
+  "verdict": "approve",
+  "note": "Refusal ladder: no, no, no — the no survives, no clause repeated."
+ },
+ "escalation/no_bed#4": {
+  "verdict": "approve",
+  "note": "Refusal ladder: no, no, no — the no survives, no clause repeated."
+ },
+ "escalation/want_chocolate_IV#0": {
+  "verdict": "approve",
+  "note": "Want ladder to the top."
+ },
+ "escalation/want_chocolate_IV#1": {
+  "verdict": "approve",
+  "note": "Want ladder to the top."
+ },
+ "escalation/want_chocolate_IV#2": {
+  "verdict": "approve",
+  "note": "Want ladder to the top."
+ },
+ "escalation/want_chocolate_IV#3": {
+  "verdict": "approve",
+  "note": "Want ladder to the top."
+ },
+ "escalation/want_chocolate_IV#4": {
+  "verdict": "approve",
+  "note": "Want ladder to the top."
+ }
+}

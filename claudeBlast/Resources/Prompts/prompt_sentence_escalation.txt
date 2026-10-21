@@ -7,10 +7,14 @@ The sentence is spoken aloud by a text-to-speech voice, which does not voice cap
 
 While escalating you MAY use more words than the child's usual level allows, and the sentence may grow longer on each rung. Insisting is allowed to be wordier than describing: this sentence is what the people around the child hear, and it has to carry how strongly they mean it.
 
-What escalates depends on what the child is saying:
+What escalates depends on what the child is saying. First decide which ONE of these kinds the child's first sentence is, then climb only that ladder — words from another ladder never mix in:
 • A want or a request gets more urgent. Climb by repeat count (you are at #{{count}}): 1 — add urgency and a please ("really", "right now", "please"). 2 — turn the want into a NEED and keep the urgency words ("I really NEED … right now, please!"). 3 — the TOP of the ladder: "I really, really NEED … right now! Please, please! I can't wait!". 4+ — stay at the top: say the rung-3 sentence again.
-• A statement, a report or a feeling is about being HEARD. Do not invent a want the child didn't select — make the people around them listen: "He is on the swing." → "He IS on the swing!" → "Listen! He is on the swing!" → "Listen to me! He is on the swing, right now!" A report of being hurt gets more urgent and asks for help, and is never softened: "The cat scratched me!" → "The cat scratched me! It really scratched me!" → "Help! The cat scratched me!" → "Help me, please! The cat really scratched me!" A feeling escalates through the request it implies — hungry implies eating, tired implies rest, hurt implies help — never "I want hungry".
-• A question keeps asking, more urgently: "Where is the ball?" → "Where is the ball? I need it!" → "Where is the ball? I really need it right now!" → "Please, where is the ball? I really need it right now!"
+• A statement — something the child is telling you — is about being HEARD. Do not invent a want the child didn't select — make the people around them listen, with a ladder of its own and none of the want ladder's words. By repeat count: 1 — insist it is true ("He IS on the swing!"). 2 — call for attention ("Listen! He IS on the swing!"). 3 — the TOP ("Listen to me! He IS on the swing, right now!"). 4+ — say the rung-3 sentence again.
+• A report of being hurt asks for help, always says that it hurt ("It really hurt!"), and is never softened. By repeat count: 1 — "The cat scratched me! It really hurt!" 2 — "Help! The cat scratched me! It really hurt!" 3 — the TOP: "Help me, please! The cat scratched me! It really, really hurt!" 4+ — say the rung-3 sentence again.
+• An instruction to someone else (stop, give, help) gets firmer, never turned into the child's own want. By repeat count: 1 — "Stop pushing! Please stop!" 2 — "Stop pushing right now! Please stop!" 3 — the TOP: "Stop it! Stop pushing right now! Please, stop!" 4+ — say the rung-3 sentence again.
+• A feeling escalates through the request it implies — hungry implies eating, tired implies rest, hurt implies help — never "I want hungry".
+• A question keeps asking, more urgently, and has a ladder of its own — it does not borrow the want ladder's top. By repeat count: 1 — say why it matters ("Where is the ball? I need it!"). 2 — add urgency ("Where is the ball? I really need it right now!"). 3 — the TOP: put a single please in front of the question and keep rung 2's words ("Please, where is the ball? I really need it right now!"). That is the whole question ladder: none of the want ladder's words. 4+ — say the rung-3 sentence again.
+• A refusal ("no" + a thing, a place or an action) stays a refusal on every rung and climbs with more no's, never by saying its clause twice. By repeat count: 1 — "No! I really don't want my shoes!" 2 — "No, no! I really don't want my shoes right now!" 3 — the TOP: "No, no, no! I really, really don't want my shoes! Please, no!" 4+ — say the rung-3 sentence again.
 
 Every ladder tops out at repeat #3 and holds there. In any one sentence each insisting phrase appears at most ONCE, and the sentence never repeats itself.
 
@@ -18,4 +22,4 @@ The GRAMMAR BY WORD CLASS, PRONOUNS and NO AND NOT rules still hold at every run
 
 Example trajectory for a want, "juice":
 "Can I please have some juice?" → "I really want juice right now, please." → "I really NEED juice right now, please!" → "I really NEED juice right now! Please, please!"
-Apply the escalation to the child's actual tiles — do not mention juice, the swing, the cat or the ball.
+Apply the escalation to the child's actual tiles — do not mention juice, the swing, the cat, the ball, shoes or pushing.

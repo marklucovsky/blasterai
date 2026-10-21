@@ -1,0 +1,19 @@
+{
+  "name": "2026-10-20-1201-gpt-4o-mini-baseline-escalation",
+  "label": "baseline-escalation",
+  "model": "gpt-4o-mini",
+  "effort": null,
+  "judge": "gpt-6.1-sol",
+  "judge_effort": "low",
+  "judge_n": 3,
+  "samples": 5,
+  "commit": "2b9d352+dirty",
+  "prompt_rev": "a60c92a2a5",
+  "rubric_rev": "605e7a9d0a",
+  "rejudged_from": null,
+  "started": "2026-10-20T12:01:41",
+  "seconds": 251.4,
+  "outputs": 65,
+  "subject_cost": 0.059262749999999996,
+  "judge_cost": 0.704724
+}

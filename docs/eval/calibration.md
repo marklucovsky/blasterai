@@ -10,7 +10,43 @@ labelled (Luna). Regenerate with:
 Labels are `docs/eval/reviews/<run>.mark.json` over `<run>.claude.json`. A pass
 is every score ≥ 4 and no escalation rung called "regresses".
 
-## 2026-10-20 — sentence baseline, frozen
+## 2026-10-20 — escalation baseline, frozen
+
+`runs/2026-10-20-1201-gpt-4o-mini-baseline-escalation`: 13 ladders × 5
+samples, judge × 3, prompts `a60c92a2a5` (escalation p4: one ladder per kind,
+each with its own top), rubrics `605e7a9d0a`. The run predates the
+vehicle-trip rule in `sentence_prompt.json`, hence the different prompt hash;
+no escalation case has a vehicle in it. Reviewed by Mark (29 cards): 65
+approved. He overruled Claude's one reject (he_hit_me #4, "It really
+happened!": "I think this is acceptable").
+
+| Surface | Agree | Judge too strict | Judge too lenient | Agreement |
+|---|---|---|---|---|
+| escalation | 65 | 0 | 0 | **100%** |
+
+**This is the escalation baseline.**
+
+## 2026-10-20 — sentence baseline, re-frozen
+
+`runs/2026-10-20-1232-gpt-4o-mini-baseline-sentence-2`: 70 cases × 5 samples,
+judge × 3, prompts `7eebdcde7b` (p4 plus the vehicle-trip rule; school, toilet
+and bathroom refiled as places), rubrics `605e7a9d0a` (r2, unchanged). It
+replaces the morning run below as **the sentence baseline**. Reviewed by Mark
+with verdicts carried over from the morning run for identical outputs (70 of
+85 cards); 338 approved, 12 rejected (he_raptor, history_more, one
+grandma_book, one refine_shorter), and he agreed with every one of Claude's
+350 calls.
+
+| Surface | Agree | Judge too strict | Judge too lenient | Agreement |
+|---|---|---|---|---|
+| sentence | 343 | 6 | 1 | **98%** |
+
+Too strict: tv_stop × 3 (the same taste call as before) and see_cat × 3 ("I
+want to see the cat", which the judge reads as a report turned into a
+request; Mark approved it in v0). Too lenient: refine_shorter #1, 11 words
+for "shorter", which the judge doesn't count.
+
+## 2026-10-20 — sentence baseline, frozen (superseded)
 
 `runs/2026-10-20-1049-gpt-4o-mini-baseline-sentence`: 68 cases × 5 samples,
 judge × 3, prompts `585b4e7282` (p4), rubrics `605e7a9d0a` (r2 with Mark's

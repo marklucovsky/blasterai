@@ -52,7 +52,12 @@ enum CacheKeyPolicy {
     // first prompt revision). v4 turned "she, pool" into "She, I want to go to
     // the pool", "dog, bite, me" into "Dog, bite me!" and dropped "not"; those
     // sentences are wrong, and cached they would outlive the fix.
-    nonisolated static let promptVersion = 5
+    //
+    // v6: school, toilet and bathroom refiled from social to places, and a
+    // vehicle with a place made a trip (2026-10-20). As `social`, "school, i,
+    // bus" opened like a greeting — "School, I ride the bus." — and "i, park,
+    // bus" became "I want the bus to the park"; both are cached under v5.
+    nonisolated static let promptVersion = 6
 
     /// Stamped onto each cache entry (`SentenceCache.keyVersion`) and embedded in
     /// the key. Excludes stage + word class on purpose — those are legitimate

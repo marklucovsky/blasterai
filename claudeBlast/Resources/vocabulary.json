@@ -166,7 +166,7 @@
   },
   {
     "key": "bathroom",
-    "wordClass": "social"
+    "wordClass": "places"
   },
   {
     "key": "be_quiet",
@@ -1813,7 +1813,7 @@
   },
   {
     "key": "school",
-    "wordClass": "social"
+    "wordClass": "places"
   },
   {
     "key": "school_people",
@@ -2190,7 +2190,7 @@
   },
   {
     "key": "toilet",
-    "wordClass": "social"
+    "wordClass": "places"
   },
   {
     "key": "tomato",

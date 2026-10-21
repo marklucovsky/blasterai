@@ -72,7 +72,8 @@ def tile_list_read_back(text: str, values: list[str]) -> bool:
     body = re.sub(r"[.!?]+$", "", text.strip().lower())
     segments = [s.strip() for s in re.split(r",\s*(?:and\s+)?|\s+and\s+", body)]
     tile_words = {v.lower() for v in values}
-    return sum(1 for s in segments if s in tile_words) >= 3
+    # Distinct words: "No, no, no!" is an insisting refusal, not a list.
+    return len({s for s in segments if s in tile_words}) >= 3
 
 
 def doubled_want(text: str, values: list[str]) -> bool:

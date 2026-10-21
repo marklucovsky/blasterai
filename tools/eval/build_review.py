@@ -126,6 +126,25 @@ def previous_verdicts(run_name: str) -> dict:
     return out
 
 
+def mark_by_output(results: list[dict], run_name: str) -> dict:
+    """Mark's verdict per (surface, case, output) in a reviewed run. An output he
+    judged differently on different samples carries nothing."""
+    p = REVIEWS / f"{run_name}.mark.json"
+    if not p.exists():
+        return {}
+    d = json.loads(p.read_text())
+    labels = d.get("items", d)
+    out: dict[tuple, dict | None] = {}
+    for r in results:
+        m = labels.get(key(r), {})
+        if not m.get("verdict"):
+            continue
+        k = (r["surface"], r["case"], json.dumps(r["output"], sort_keys=True))
+        v = {"verdict": m["verdict"], "comment": m.get("comment", "")}
+        out[k] = v if out.get(k, v) == v else None
+    return {k: v for k, v in out.items() if v}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("run")
@@ -150,6 +169,13 @@ def main() -> int:
         previous = previous_verdicts(cmeta["name"])
 
     items = dedupe([slim(r) for r in results], claude)
+    if args.compare:
+        # Mark's verdict on the exact same output in the compared run carries
+        # over: he reviews only what is new, and the export still covers all.
+        seen = mark_by_output(cresults, cmeta["name"])
+        for it in items:
+            if c := seen.get((it["surface"], it["case"], json.dumps(it["output"], sort_keys=True))):
+                it["carried"] = c
     data = {"run": meta, "items": items, "outputs": len(results), "claude": claude,
             "compare": compare, "compareName": compare_name, "previous": previous,
             "classes": P.word_classes()}
@@ -207,6 +233,7 @@ details summary { cursor:pointer; color:var(--muted); font-size:13px }
     <select id="group"><option value="">all groups</option></select>
     <select id="status">
       <option value="">everything</option><option value="todo">not reviewed by me</option>
+      <option value="new">new outputs (no verdict carried)</option>
       <option value="claude-reject">Claude rejected</option><option value="prev-reject">rejected in the compared run</option>
       <option value="tier1">Tier-1 failed</option>
       <option value="judge-fail">judge failed</option><option value="judge-vs-claude">judge ≠ Claude</option>
@@ -309,6 +336,13 @@ function claudeHTML(it) {
     `${c.cause ? ` · <i>${esc(c.cause)}</i>` : ""}${c.note ? ` — ${esc(c.note)}` : ""}</div>`;
 }
 
+function carriedHTML(it) {
+  const c = it.carried; if (!c) return "";
+  return `<div class="claude"><b style="color:${c.verdict === "reject" ? "var(--bad)" : "var(--ok)"}">` +
+    `you ${c.verdict === "reject" ? "rejected" : "approved"} this exact output in ${esc(DATA.compareName)}</b>` +
+    `${c.comment ? " — " + esc(c.comment) : ""} · carried over unless you mark it here</div>`;
+}
+
 function compareHTML(it) {
   const prev = DATA.previous[`${it.surface}/${it.case}`];
   const prevHTML = prev ? `<div><b style="color:${prev.verdict === "reject" ? "var(--bad)" : "var(--ok)"}">` +
@@ -331,7 +365,7 @@ function card(it) {
     ${inputHTML(it)}${outputHTML(it)}${compareHTML(it)}
     ${it.tier1.length ? `<div class="issues">Tier-1: ${it.tier1.map(esc).join("; ")}</div>` : ""}
     ${it.notes?.length ? `<div class="notes">${it.notes.map(esc).join("; ")}</div>` : ""}
-    ${judgeHTML(it)}${claudeHTML(it)}
+    ${judgeHTML(it)}${claudeHTML(it)}${carriedHTML(it)}
     <div class="actions">output: ${btn("verdict", "approve", "✓ approve")}${btn("verdict", "reject", "✗ reject")}
       ${DATA.claude[it.key] ? `&nbsp; Claude's call: ${btn("claude", "agree", "agree")}${btn("claude", "disagree", "disagree")}` : ""}</div>
     <textarea data-k="${esc(it.key)}" placeholder="comment (what's wrong, what it should say)">${esc(s.comment || "")}</textarea>
@@ -347,6 +381,8 @@ function visible(it) {
   if (st === "todo" && s.verdict) return false;
   if (st === "claude-reject" && c?.verdict !== "reject") return false;
   if (st === "prev-reject" && DATA.previous[`${it.surface}/${it.case}`]?.verdict !== "reject") return false;
+  if (st === "new" && it.carried) return false;
+  if (st === "todo" && it.carried) return false;
   if (st === "tier1" && !it.tier1.length) return false;
   const jok = it.judge ? it.judge.ok : null;
   if (st === "judge-fail" && jok !== false) return false;
@@ -363,7 +399,7 @@ function visible(it) {
 function render() {
   const items = DATA.items.filter(visible);
   document.getElementById("list").innerHTML = items.map(card).join("");
-  const done = DATA.items.filter(i => state[i.key]?.verdict).length;
+  const done = DATA.items.filter(i => state[i.key]?.verdict || i.carried).length;
   document.getElementById("count").textContent =
     `${items.length} shown · ${done}/${DATA.items.length} cards reviewed (${DATA.outputs} outputs)`;
 }
@@ -435,7 +471,10 @@ document.getElementById("export").addEventListener("click", () => {
   // A card stands for every sample that said the same thing: export its
   // verdict once per sample, so the review file stays per output.
   const items = {};
-  for (const it of DATA.items) if (state[it.key]) for (const k of it.keys) items[k] = state[it.key];
+  for (const it of DATA.items) {
+    const s = state[it.key]?.verdict ? state[it.key] : it.carried ? {...it.carried, carried: true} : state[it.key];
+    if (s) for (const k of it.keys) items[k] = s;
+  }
   const review = {run: RUN, exported: new Date().toISOString(), items};
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([JSON.stringify(review, null, 2)], {type: "application/json"}));
