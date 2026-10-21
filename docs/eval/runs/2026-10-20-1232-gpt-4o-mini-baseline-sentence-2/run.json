@@ -1,0 +1,19 @@
+{
+  "name": "2026-10-20-1232-gpt-4o-mini-baseline-sentence-2",
+  "label": "baseline-sentence-2",
+  "model": "gpt-4o-mini",
+  "effort": null,
+  "judge": "gpt-6.1-sol",
+  "judge_effort": "low",
+  "judge_n": 3,
+  "samples": 5,
+  "commit": "2b9d352+dirty",
+  "prompt_rev": "7eebdcde7b",
+  "rubric_rev": "605e7a9d0a",
+  "rejudged_from": null,
+  "started": "2026-10-20T12:32:23",
+  "seconds": 719.8,
+  "outputs": 350,
+  "subject_cost": 0.0450849,
+  "judge_cost": 1.5470405
+}
