@@ -1,0 +1,146 @@
+{
+ "topic_words/ho_paw_patrol#0": {
+  "verdict": "approve",
+  "note": "Approve — all the pups, Ryder, the Lookout, their vehicles. About 10 named characters: most need a caregiver picture."
+ },
+ "topic_words/ho_paw_patrol#1": {
+  "verdict": "approve",
+  "note": "Approve — all the pups, Ryder, the Lookout, their vehicles. About 10 named characters: most need a caregiver picture."
+ },
+ "topic_words/ho_paw_patrol#2": {
+  "verdict": "approve",
+  "note": "Approve — all the pups, Ryder, the Lookout, their vehicles. About 10 named characters: most need a caregiver picture."
+ },
+ "topic_words/ho_chuck_e_cheese#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/ho_chuck_e_cheese#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/ho_chuck_e_cheese#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/ho_disney_world#0": {
+  "verdict": "approve",
+  "note": "Approve — castle, parade, fireworks, characters, wait/tired/scared. #2 has a 4-word snack name as a tile."
+ },
+ "topic_words/ho_disney_world#1": {
+  "verdict": "approve",
+  "note": "Approve — castle, parade, fireworks, characters, wait/tired/scared. #2 has a 4-word snack name as a tile."
+ },
+ "topic_words/ho_disney_world#2": {
+  "verdict": "approve",
+  "note": "Approve — castle, parade, fireworks, characters, wait/tired/scared. #2 has a 4-word snack name as a tile."
+ },
+ "topic_words/ho_minecraft#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/ho_minecraft#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/ho_minecraft#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/ho_soccer#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/ho_soccer#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/ho_soccer#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/ho_easter#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/ho_easter#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/ho_easter#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/ho_camping#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/ho_camping#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/ho_camping#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/ho_haircut#0": {
+  "verdict": "approve",
+  "note": "Approve — clippers, cape, neck, itchy, loud, break; names what he hates."
+ },
+ "topic_words/ho_haircut#1": {
+  "verdict": "approve",
+  "note": "Approve — clippers, cape, neck, itchy, loud, break; names what he hates."
+ },
+ "topic_words/ho_haircut#2": {
+  "verdict": "approve",
+  "note": "Approve — clippers, cape, neck, itchy, loud, break; names what he hates."
+ },
+ "topic_words/ho_hungry_caterpillar#0": {
+  "verdict": "approve",
+  "note": "Approve — every food in the book, cocoon/stomachache, full/sick."
+ },
+ "topic_words/ho_hungry_caterpillar#1": {
+  "verdict": "approve",
+  "note": "Approve — every food in the book, cocoon/stomachache, full/sick."
+ },
+ "topic_words/ho_hungry_caterpillar#2": {
+  "verdict": "approve",
+  "note": "Approve — every food in the book, cocoon/stomachache, full/sick."
+ },
+ "topic_words/ho_old_macdonald#0": {
+  "verdict": "approve",
+  "note": "Approve — each animal with its sound, E-I-E-I-O."
+ },
+ "topic_words/ho_old_macdonald#1": {
+  "verdict": "approve",
+  "note": "Approve — each animal with its sound, E-I-E-I-O."
+ },
+ "topic_words/ho_old_macdonald#2": {
+  "verdict": "approve",
+  "note": "Approve — each animal with its sound, E-I-E-I-O."
+ },
+ "topic_words/ho_taco_night#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/ho_taco_night#1": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/ho_taco_night#2": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/ho_leaf_weather#0": {
+  "verdict": "approve",
+  "note": "Approve — clothing per weather. 'shorts' was matched to the adjective 'short' (matcher bug, fixed)."
+ },
+ "topic_words/ho_leaf_weather#1": {
+  "verdict": "approve",
+  "note": "Approve — clothing per weather. 'shorts' was matched to the adjective 'short' (matcher bug, fixed)."
+ },
+ "topic_words/ho_leaf_weather#2": {
+  "verdict": "approve",
+  "note": "Approve — clothing per weather. 'shorts' was matched to the adjective 'short' (matcher bug, fixed)."
+ }
+}

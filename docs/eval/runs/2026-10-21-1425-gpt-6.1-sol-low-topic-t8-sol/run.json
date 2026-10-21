@@ -1,0 +1,19 @@
+{
+  "name": "2026-10-21-1425-gpt-6.1-sol-low-topic-t8-sol",
+  "label": "topic-t8-sol",
+  "model": "gpt-6.1-sol",
+  "effort": "low",
+  "judge": "gpt-6-astra",
+  "judge_effort": "low",
+  "judge_n": 1,
+  "samples": 3,
+  "commit": "d1d0f5c+dirty",
+  "prompt_rev": "b2394f7c5d",
+  "rubric_rev": "19aa1baaa0",
+  "rejudged_from": null,
+  "started": "2026-10-21T14:25:15",
+  "seconds": 328.9,
+  "outputs": 102,
+  "subject_cost": 0.8277991,
+  "judge_cost": 2.7927825
+}

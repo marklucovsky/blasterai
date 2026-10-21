@@ -1,0 +1,435 @@
+{
+ "topic_words/gpt-4o-mini/potty_training#0": {
+  "verdict": "reject",
+  "cause": "filler",
+  "note": "Filler (fun, play, silly) and 'try on' for a potty page; no sit or wipe."
+ },
+ "topic_words/gpt-6-luna-none+review/potty_training#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6.1-sol-low/potty_training#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/dentist#0": {
+  "verdict": "reject",
+  "cause": "filler",
+  "note": "Generic (appointment, visit, healthy, gentle, bright); no sit, rinse or spit."
+ },
+ "topic_words/gpt-6-luna-none+review/dentist#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6.1-sol-low/dentist#0": {
+  "verdict": "approve",
+  "note": "Excellent: rinse, spit, bib, suction, wide, light, scared/calm/proud."
+ },
+ "topic_words/gpt-4o-mini/farm_trip#0": {
+  "verdict": "reject",
+  "cause": "filler",
+  "note": "green, brown, sun, fruit, fun; no farmer or barn."
+ },
+ "topic_words/gpt-6-luna-none+review/farm_trip#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6.1-sol-low/farm_trip#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/birthday_party#0": {
+  "verdict": "reject",
+  "cause": "filler",
+  "note": "playground, photo, play dough, smile, fun; no candles, blow, open."
+ },
+ "topic_words/gpt-6-luna-none+review/birthday_party#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6.1-sol-low/birthday_party#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/swimming#0": {
+  "verdict": "reject",
+  "cause": "filler",
+  "note": "playground, fun, safe, learn; no lifeguard or towel."
+ },
+ "topic_words/gpt-6-luna-none+review/swimming#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6.1-sol-low/swimming#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/hospital_stay#0": {
+  "verdict": "reject",
+  "cause": "broken-word",
+  "note": "'blood pressure' split into two tiles (blood, pressure); playdoh, happy."
+ },
+ "topic_words/gpt-6-luna-none+review/hospital_stay#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6.1-sol-low/hospital_stay#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/church#0": {
+  "verdict": "reject",
+  "cause": "filler",
+  "note": "together, joy, worship, service, smile, excited; no sit/quiet."
+ },
+ "topic_words/gpt-6-luna-none+review/church#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6.1-sol-low/church#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/morning_circle#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6-luna-none+review/morning_circle#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6.1-sol-low/morning_circle#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/grocery_store#0": {
+  "verdict": "reject",
+  "cause": "filler",
+  "note": "Four colour words (red, green, yellow, blue) on a grocery page."
+ },
+ "topic_words/gpt-6-luna-none+review/grocery_store#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6.1-sol-low/grocery_store#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/bedtime#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6-luna-none+review/bedtime#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6.1-sol-low/bedtime#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/sensory_break#0": {
+  "verdict": "reject",
+  "cause": "filler",
+  "note": "happy, sad, playdoh, busy, outside, inside — dilutes a calm-down page."
+ },
+ "topic_words/gpt-6-luna-none+review/sensory_break#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6.1-sol-low/sensory_break#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/zoo_terse#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6-luna-none+review/zoo_terse#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6.1-sol-low/zoo_terse#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/pancakes_long#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6-luna-none+review/pancakes_long#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6.1-sol-low/pancakes_long#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/shooting_range#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6-luna-none+review/shooting_range#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6.1-sol-low/shooting_range#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/holidays#0": {
+  "verdict": "reject",
+  "cause": "filler",
+  "note": "red, fun, play; thin on the holidays' own things (no candy, Santa, costume)."
+ },
+ "topic_words/gpt-6-luna-none+review/holidays#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6.1-sol-low/holidays#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/doctor_visit#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6-luna-none+review/doctor_visit#0": {
+  "verdict": "reject",
+  "cause": "off-topic",
+  "note": "Became a body-parts page: no stethoscope, scale, shot, waiting room."
+ },
+ "topic_words/gpt-6.1-sol-low/doctor_visit#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/restaurant#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6-luna-none+review/restaurant#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6.1-sol-low/restaurant#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/bible_stories#0": {
+  "verdict": "reject",
+  "cause": "abstract",
+  "note": "Abstract words a child can't picture: kindness, peace, joy, believe, light."
+ },
+ "topic_words/gpt-6-luna-none+review/bible_stories#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6.1-sol-low/bible_stories#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/favorite_show#0": {
+  "verdict": "reject",
+  "cause": "not-specific",
+  "note": "Only Bluey and Bingo; adventure, explore, imagine, together, playtime."
+ },
+ "topic_words/gpt-6-luna-none+review/favorite_show#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6.1-sol-low/favorite_show#0": {
+  "verdict": "approve",
+  "note": "Very specific (Keepy Uppy, Magic Xylophone, Grannies, Featherwand)."
+ },
+ "topic_words/gpt-4o-mini/snack_time#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6-luna-none+review/snack_time#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6.1-sol-low/snack_time#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/movie#0": {
+  "verdict": "reject",
+  "cause": "filler",
+  "note": "Six filler words: fun, happy, together, adventure, beautiful, play."
+ },
+ "topic_words/gpt-6-luna-none+review/movie#0": {
+  "verdict": "reject",
+  "cause": "phrase",
+  "note": "Four song titles as tiles (Let It Go, Do You Want to Build a Snowman…)."
+ },
+ "topic_words/gpt-6.1-sol-low/movie#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/video_game#0": {
+  "verdict": "reject",
+  "cause": "filler",
+  "note": "Team, challenge, play together, jumping (dup of jump); no Yoshi/Toad/controller."
+ },
+ "topic_words/gpt-6-luna-none+review/video_game#0": {
+  "verdict": "approve",
+  "note": "Good and specific (Toad, Yoshi, pipe, mushroom, controller, turn); the judge's 2 is too harsh."
+ },
+ "topic_words/gpt-6.1-sol-low/video_game#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/basketball#0": {
+  "verdict": "reject",
+  "cause": "jargon",
+  "note": "teamwork, defense, offense, drill — adult sports jargon."
+ },
+ "topic_words/gpt-6-luna-none+review/basketball#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6.1-sol-low/basketball#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/library#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6-luna-none+review/library#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6.1-sol-low/library#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/beach#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6-luna-none+review/beach#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6.1-sol-low/beach#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/airplane#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6-luna-none+review/airplane#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6.1-sol-low/airplane#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/art_class#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6-luna-none+review/art_class#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6.1-sol-low/art_class#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/song#0": {
+  "verdict": "reject",
+  "cause": "not-specific",
+  "note": "Misses the song's verses (wipers, up/down, beep, swish); fun, together, city."
+ },
+ "topic_words/gpt-6-luna-none+review/song#0": {
+  "verdict": "approve",
+  "note": "Has the verses: wipers, swish, horn, beep, open/close, up/down."
+ },
+ "topic_words/gpt-6.1-sol-low/song#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/fast_food#0": {
+  "verdict": "reject",
+  "cause": "not-specific",
+  "note": "No sizes or ordering words; happy twice, play, table."
+ },
+ "topic_words/gpt-6-luna-none+review/fast_food#0": {
+  "verdict": "reject",
+  "cause": "not-specific",
+  "note": "A generic restaurant page: no Happy Meal, McNuggets or sizes."
+ },
+ "topic_words/gpt-6.1-sol-low/fast_food#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/national_park#0": {
+  "verdict": "reject",
+  "cause": "filler",
+  "note": "nature, wildlife, explore, beautiful, fun; no ranger or bear."
+ },
+ "topic_words/gpt-6-luna-none+review/national_park#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6.1-sol-low/national_park#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/leaf_feelings#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6-luna-none+review/leaf_feelings#0": {
+  "verdict": "reject",
+  "cause": "phrase",
+  "note": "how_are_you and i_dont_know as tiles; morning, today, how."
+ },
+ "topic_words/gpt-6.1-sol-low/leaf_feelings#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/leaf_playground#0": {
+  "verdict": "reject",
+  "cause": "phrase",
+  "note": "slide_down, swing_high as tiles; playdoh, family, bubbles."
+ },
+ "topic_words/gpt-6-luna-none+review/leaf_playground#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6.1-sol-low/leaf_playground#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/leaf_winter_holidays#0": {
+  "verdict": "reject",
+  "cause": "filler",
+  "note": "No Santa; celebration, fun, yummy, party."
+ },
+ "topic_words/gpt-6-luna-none+review/leaf_winter_holidays#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6.1-sol-low/leaf_winter_holidays#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-4o-mini/leaf_my_body#0": {
+  "verdict": "reject",
+  "cause": "filler",
+  "note": "yes, no, good, bad, describe, tell — not body words."
+ },
+ "topic_words/gpt-6-luna-none+review/leaf_my_body#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "topic_words/gpt-6.1-sol-low/leaf_my_body#0": {
+  "verdict": "approve",
+  "note": "Excellent; the judge's 2 is too harsh."
+ }
+}

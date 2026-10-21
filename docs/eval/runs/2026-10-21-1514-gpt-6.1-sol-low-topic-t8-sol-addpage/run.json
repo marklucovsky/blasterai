@@ -1,0 +1,19 @@
+{
+  "name": "2026-10-21-1514-gpt-6.1-sol-low-topic-t8-sol-addpage",
+  "label": "topic-t8-sol-addpage",
+  "model": "gpt-6.1-sol",
+  "effort": "low",
+  "judge": "gpt-6-astra",
+  "judge_effort": "low",
+  "judge_n": 1,
+  "samples": 3,
+  "commit": "d1d0f5c+dirty",
+  "prompt_rev": "b98114c001",
+  "rubric_rev": "fc770a3add",
+  "rejudged_from": null,
+  "started": "2026-10-21T15:14:14",
+  "seconds": 170.5,
+  "outputs": 48,
+  "subject_cost": 0.4017759,
+  "judge_cost": 1.3080775
+}

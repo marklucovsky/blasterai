@@ -1,0 +1,28 @@
+You are grading the words an AAC (augmentative and alternative communication) app chose for one page of a young non-verbal child's communication board. A caregiver or therapist described a topic; a model returned a ranked list of words. The first {{budget}} go on the page; the rest are overflow, offered later as suggestions for another page.
+
+The request: {{description}}
+
+This page is {{where}}
+
+Words in rank order, as word (part of speech) — NEW words, which will get freshly drawn pictures, are marked [new]:
+On the page ({{page_count}}):
+{{page}}
+Overflow ({{overflow_count}}):
+{{overflow}}
+
+The page should hold two kinds of words: the topic's own vocabulary (things, people and characters, places, and the actions and describing words that belong to it, including the obvious ones the request didn't name), and the common words closely related to it — the actions a child in this topic does or is asked to do, the describing words that come up, and a few feelings this topic brings up. When the topic is a particular show, song, story, game, restaurant or place, its real names (characters, the song's parts, menu items, landmarks) are what make the page. Filler that would fit on every page (greetings, manners, praise, "fun", "together") doesn't belong unless the topic needs it. A child uses the page to talk, not only to name things.
+
+Score each dimension from 1 (fails) to 5 (excellent). A 4 means an experienced AAC speech-language pathologist would put this page in front of a child, perhaps after swapping a word or two; 3 means it needs real rework first. A page of 25 cannot hold every word a topic has, and two experts would choose a few words differently — that alone is never below a 4. Score down for what makes the page worse to use: filler, generic words where the topic has specific ones, phrases or titles as tiles, off-topic words, abstract or adult words, and missing the topic's central things.
+- coverage: the topic's central things are on the page — the place, its main people or characters, the things a child would see and use, and for a particular show, song, story, game, restaurant or place, its real names (characters, the song's parts, menu items, landmarks). 3 or below only when something central is missing (a song page without the song's parts, a doctor visit without the doctor's tools, a named show with only one or two of its characters), not because a few more good words could have been added. Name the central missing words in the reason.
+- precision: every word earns its place on THIS page. Score down for filler that would fit on any page (fun, together, play, good, happy, nice, adventure, explore), generic words standing in for the topic's specific ones, words from another topic, abstract ideas a child can't picture (peace, kindness, teamwork), and a multi-word phrase, sentence or title as one tile. Two words a family might use for one thing (potty / toilet, finish / all done) are not a fault.
+- related_core: the page lets a child DO something with the topic, not only name things: the actions a child does or is asked to do here, and a few describing words and feelings that come up. 3 or below only when the page is nearly all nouns.
+- ranking: nothing the child clearly needs was left in the overflow while filler or a weak word made the page. Swapping one good word for another good word is not a ranking problem; score it 4 or 5. With no overflow, score 5 unless a central word is missing from the page entirely.
+- child_fit: right for a young child — age-appropriate, plain words a child knows (not adult, clinical or sports jargon such as offense, drill, appointment), NEW words picturable, and useful for communicating.
+
+Return ONLY a JSON object:
+{"scores": {"coverage": N, "precision": N, "related_core": N, "ranking": N, "child_fit": N},
+ "reasons": {"coverage": "...", "precision": "...", "related_core": "...", "ranking": "...", "child_fit": "..."},
+ "missing": ["important words that should have been on the page"],
+ "remove": ["words on the page that should not be there"],
+ "flags": ["short label for each problem, empty if none"]}
+Each reason is one short sentence.

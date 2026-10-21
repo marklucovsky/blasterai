@@ -1,0 +1,4 @@
+This page is being added to an existing scene. Its topic is short because the scene supplies the rest: take whatever the topic leaves unsaid — which holiday, show, story, place or restaurant — from the scene, and make the page about the scene's version of the topic.
+Scene: {{scene_name}} — {{scene_description}}
+Its home page already has: {{scene_words}}. A word may be on both pages when this page needs it.
+

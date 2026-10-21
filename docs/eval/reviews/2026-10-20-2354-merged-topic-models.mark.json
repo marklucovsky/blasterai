@@ -1,0 +1,415 @@
+{
+  "run": "2026-10-20-2354-merged-topic-models",
+  "exported": "2026-10-21T21:12:10.657Z",
+  "items": {
+    "topic_words/gpt-4o-mini/potty_training#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "topic_words/gpt-6-luna-none+review/potty_training#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/potty_training#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/dentist#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "topic_words/gpt-6-luna-none+review/dentist#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/dentist#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/farm_trip#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "topic_words/gpt-6-luna-none+review/farm_trip#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/farm_trip#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/birthday_party#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "topic_words/gpt-6-luna-none+review/birthday_party#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/birthday_party#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/swimming#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "topic_words/gpt-6-luna-none+review/swimming#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/swimming#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/hospital_stay#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "topic_words/gpt-6-luna-none+review/hospital_stay#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/hospital_stay#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/church#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "topic_words/gpt-6-luna-none+review/church#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/church#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/morning_circle#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6-luna-none+review/morning_circle#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/morning_circle#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/grocery_store#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "topic_words/gpt-6-luna-none+review/grocery_store#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/grocery_store#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/bedtime#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6-luna-none+review/bedtime#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/bedtime#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/sensory_break#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "topic_words/gpt-6-luna-none+review/sensory_break#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/sensory_break#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/zoo_terse#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6-luna-none+review/zoo_terse#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/zoo_terse#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/pancakes_long#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6-luna-none+review/pancakes_long#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/pancakes_long#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/shooting_range#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6-luna-none+review/shooting_range#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/shooting_range#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/holidays#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "topic_words/gpt-6-luna-none+review/holidays#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/holidays#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/doctor_visit#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6-luna-none+review/doctor_visit#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "topic_words/gpt-6.1-sol-low/doctor_visit#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/restaurant#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6-luna-none+review/restaurant#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/restaurant#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/bible_stories#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "topic_words/gpt-6-luna-none+review/bible_stories#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/bible_stories#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/favorite_show#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "topic_words/gpt-6-luna-none+review/favorite_show#0": {
+      "comment": "",
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/favorite_show#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/snack_time#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6-luna-none+review/snack_time#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/snack_time#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/movie#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "topic_words/gpt-6-luna-none+review/movie#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "topic_words/gpt-6.1-sol-low/movie#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/video_game#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "topic_words/gpt-6-luna-none+review/video_game#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/video_game#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/basketball#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "topic_words/gpt-6-luna-none+review/basketball#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/basketball#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/library#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6-luna-none+review/library#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/library#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/beach#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6-luna-none+review/beach#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/beach#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/airplane#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6-luna-none+review/airplane#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/airplane#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/art_class#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6-luna-none+review/art_class#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/art_class#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/song#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "topic_words/gpt-6-luna-none+review/song#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/song#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/fast_food#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "topic_words/gpt-6-luna-none+review/fast_food#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "topic_words/gpt-6.1-sol-low/fast_food#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/national_park#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "topic_words/gpt-6-luna-none+review/national_park#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/national_park#0": {
+      "verdict": "approve",
+      "claude": "agree"
+    },
+    "topic_words/gpt-4o-mini/leaf_feelings#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6-luna-none+review/leaf_feelings#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "topic_words/gpt-6.1-sol-low/leaf_feelings#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/leaf_playground#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "topic_words/gpt-6-luna-none+review/leaf_playground#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/leaf_playground#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/leaf_winter_holidays#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "topic_words/gpt-6-luna-none+review/leaf_winter_holidays#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/leaf_winter_holidays#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-4o-mini/leaf_my_body#0": {
+      "claude": "agree",
+      "verdict": "reject"
+    },
+    "topic_words/gpt-6-luna-none+review/leaf_my_body#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    },
+    "topic_words/gpt-6.1-sol-low/leaf_my_body#0": {
+      "claude": "agree",
+      "verdict": "approve"
+    }
+  }
+}

@@ -48,8 +48,9 @@ HERE = Path(__file__).resolve().parent
 CASES = HERE / "cases"
 RUNS = P.ROOT / "docs/eval/runs"
 SURFACES = ["sentence", "escalation", "scene_generate", "scene_refine", "page_generate",
-            "page_refine", "tile_suggest", "moderation"]
+            "page_refine", "tile_suggest", "moderation", "topic_words"]
 AUTHORING = {"scene_generate", "scene_refine", "page_generate", "page_refine", "tile_suggest"}
+WORD_LISTS = AUTHORING | {"topic_words"}  # outputs summarised as a list of tiles
 
 
 # MARK: - Cases
@@ -115,6 +116,8 @@ def request_for(case: dict, **sentence_overrides) -> dict:
         return P.tile_suggest_body(i["goal"])
     if s == "moderation":
         return P.moderation_rubric_body(i["words"])
+    if s == "topic_words":
+        return P.topic_words_body(i["description"], i.get("template", "home"), i.get("scene"))
     raise ValueError(s)
 
 
@@ -143,8 +146,13 @@ def run_unit(case: dict, sample: int, args) -> dict:
         rec["output"] = rungs
         rec["error"] = next((c["error"] for c in calls if c["error"]), None)
     else:
-        r = subject_call(request_for(case), args)
+        body = request_for(case)
+        r = subject_call(body, args)
         rec["calls"] = [r]
+        if s == "topic_words" and args.topic_review and not r["error"]:
+            rec["draft"] = r["text"].strip()
+            r = subject_call(P.topic_review_body(body, rec["draft"], case["input"]["description"]), args)
+            rec["calls"].append(r)
         rec["output"] = r["text"].strip()
         rec["error"] = r["error"]
     score(rec)
@@ -153,8 +161,13 @@ def run_unit(case: dict, sample: int, args) -> dict:
     return rec
 
 
+def base(surface: str) -> str:
+    """`topic_words/<model>` in a merged run is graded as `topic_words`."""
+    return surface.split("/", 1)[0]
+
+
 def score(rec: dict) -> None:
-    s, i, out = rec["surface"], rec["input"], rec["output"]
+    s, i, out = base(rec["surface"]), rec["input"], rec["output"]
     if rec.get("error"):
         rec["tier1"] = {"passed": False, "issues": [f"call failed: {rec['error']}"]}
         return
@@ -163,6 +176,8 @@ def score(rec: dict) -> None:
     elif s == "escalation":
         levels, issues = S.score_escalation(out, i["tiles"], i["stage"], rec["expect"])
         rec["intensities"] = levels
+    elif s == "topic_words":
+        rec["summary"], issues = S.score_topic_words(out, i.get("template", "home"), rec["expect"])
     elif s in AUTHORING:
         current = i.get("current")
         summary, issues = S.score_authoring(s, out, rec["expect"], current)
@@ -173,12 +188,14 @@ def score(rec: dict) -> None:
 
 
 def grade(rec: dict, args) -> None:
-    s = rec["surface"]
+    s = base(rec["surface"])
     case = {"surface": s, "input": rec["input"]}
     if s == "sentence":
         prompt = J.sentence_request(case, rec["output"])
     elif s == "escalation":
         prompt = J.escalation_request(case, rec["output"])
+    elif s == "topic_words" and (rec.get("summary") or {}).get("page"):
+        prompt = J.topic_words_request(case, rec["summary"])
     elif s in AUTHORING and rec.get("summary"):
         prompt = J.authoring_request(case, rec["summary"])
     else:
@@ -198,7 +215,7 @@ def digest(paths) -> str:
 
 
 def prompt_rev() -> str:
-    return digest(list(P.PROMPTS.glob("*")) + [P.RESOURCES / "sentence_prompt.json"])
+    return digest(list(P.PROMPTS.glob("*")) + list(P.CANDIDATES.glob("*.txt")) + [P.RESOURCES / "sentence_prompt.json"])
 
 
 def rubric_rev() -> str:
@@ -256,8 +273,8 @@ def summarize(results: list[dict], meta: dict) -> str:
     lines += ["", f"## Worth a look ({len(worth)})", ""]
     for r in worth[:60]:
         out = r["output"] if isinstance(r["output"], str) else " → ".join(r["output"])
-        if r["surface"] in AUTHORING or r["surface"] == "moderation":
-            out = f"({len(r.get('summary', {}).get('keys', []))} tiles)" if r["surface"] in AUTHORING else ""
+        if r["surface"] in WORD_LISTS or r["surface"] == "moderation":
+            out = f"({len(r.get('summary', {}).get('keys', []))} tiles)" if r["surface"] in WORD_LISTS else ""
         why = r["tier1"]["issues"] + [f"{d}={v}" for d, v in r.get("judge", {}).get("scores", {}).items() if v <= 3]
         lines.append(f"- **{r['surface']}/{r['case']}** #{r['sample']}: {out[:200]}  \n  {'; '.join(why)[:300]}")
     return "\n".join(lines) + "\n"
@@ -291,6 +308,8 @@ def main() -> int:
     ap.add_argument("--workers", type=int, default=6)
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--rejudge", default=None, help="re-grade a saved run directory")
+    ap.add_argument("--topic-review", action="store_true",
+                    help="topic_words: a second call reviews and revises the first draft")
     args = ap.parse_args()
     if args.no_judge:
         args.judge = None
@@ -304,7 +323,9 @@ def main() -> int:
         src = Path(args.rejudge)
         old = json.loads((src / "run.json").read_text())
         results = [json.loads(l) for l in (src / "results.jsonl").read_text().splitlines() if l.strip()]
-        args.model, args.effort, args.samples = old["model"], old.get("effort"), old["samples"]
+        # A merged run (merge_runs.py) has several subjects; it is named "merged".
+        args.model, args.effort = old.get("model", "merged"), old.get("effort")
+        args.samples = old["samples"]
         args.label = f"{old['label']}-rejudge"
         print(f"re-grading {len(results)} outputs from {src.name}")
     else:
@@ -334,7 +355,7 @@ def main() -> int:
             current = {(c["surface"], c["id"]): c for c in load_cases(SURFACES, [], [])}
 
             def regrade(rec):
-                if (case := current.get((rec["surface"], rec["case"]))) is not None:
+                if (case := current.get((base(rec["surface"]), rec["case"]))) is not None:
                     rec["expect"] = case.get("expect", {})
                 if args.judge:
                     rec.pop("judge", None)

@@ -59,6 +59,9 @@ def slim(r: dict) -> dict:
     if "summary" in r:
         out["tiles"] = r["summary"]["keys"]
         out["new_words"] = r["summary"]["new_words"]
+        if "page" in r["summary"]:  # scene_home: ranked, cut at the budget
+            out["page_count"] = len(r["summary"]["page"])
+            out["word_info"] = r["summary"]["words"]
     if "ratings" in r:
         out["ratings"] = r["ratings"]
     return out
@@ -303,8 +306,17 @@ function outputHTML(it) {
       `<tr><td>${esc(w)}</td><td class="${esc(r.split(" ")[0])}">${esc(r)}</td></tr>`).join("")}</table>`;
   if (it.tiles) {
     const nw = it.new_words || {};
-    return `<div class="chips">${it.tiles.map(k => chip(nw[k]?.displayName || k, nw[k]?.wordClass || DATA.classes[k],
-      !!nw[k])).join("")}</div><div class="probe">${it.tiles.length} tiles · dashed = new word</div>` +
+    const wi = it.word_info || {};
+    const chips = ks => ks.map(k => chip((nw[k]?.displayName || k) + "",
+      nw[k]?.wordClass || DATA.classes[k], !!nw[k])).join("");
+    if (it.page_count !== undefined) {
+      const page = it.tiles.slice(0, it.page_count), over = it.tiles.slice(it.page_count);
+      return `<div class="chips">${chips(page)}</div>` +
+        (over.length ? `<div class="probe">overflow (next-page suggestions):</div><div class="chips" style="opacity:.55">${chips(over)}</div>` : "") +
+        `<div class="probe">${page.length} on the page in rank order · ${over.length} overflow · dashed = new word</div>` +
+        `<details><summary>raw model output</summary><pre style="white-space:pre-wrap;font-size:12px">${esc(it.output)}</pre></details>`;
+    }
+    return `<div class="chips">${chips(it.tiles)}</div><div class="probe">${it.tiles.length} tiles · dashed = new word</div>` +
       `<details><summary>raw model output</summary><pre style="white-space:pre-wrap;font-size:12px">${esc(it.output)}</pre></details>`;
   }
   return `<div class="out">${esc(it.output)}</div>`;

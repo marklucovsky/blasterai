@@ -1,0 +1,19 @@
+{
+  "name": "2026-10-21-1421-gpt-6.1-sol-low-topic-t6-sol-rejudge",
+  "label": "topic-t6-sol-rejudge",
+  "model": "gpt-6.1-sol",
+  "effort": "low",
+  "judge": "gpt-6-astra",
+  "judge_effort": "low",
+  "judge_n": 1,
+  "samples": 3,
+  "commit": "d1d0f5c+dirty",
+  "prompt_rev": "5705c5eb09",
+  "rubric_rev": "19aa1baaa0",
+  "rejudged_from": "docs/eval/runs/2026-10-20-2347-gpt-6.1-sol-low-topic-t6-sol",
+  "started": "2026-10-21T14:21:02",
+  "seconds": 132.2,
+  "outputs": 102,
+  "subject_cost": 0.8314713,
+  "judge_cost": 2.350921
+}
