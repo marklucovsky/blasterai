@@ -1,0 +1,23 @@
+{
+ "name": "2026-10-20-2354-merged-topic-models",
+ "label": "topic-models",
+ "merged_from": [
+  {
+   "run": "2026-10-20-2338-gpt-4o-mini-topic-t6",
+   "tag": "gpt-4o-mini",
+   "judge": "gpt-6.1-sol"
+  },
+  {
+   "run": "2026-10-20-2342-gpt-6-luna-none-topic-t7-review-luna",
+   "tag": "gpt-6-luna-none+review",
+   "judge": "gpt-6.1-sol"
+  },
+  {
+   "run": "2026-10-20-2347-gpt-6.1-sol-low-topic-t6-sol",
+   "tag": "gpt-6.1-sol-low",
+   "judge": "gpt-6-astra"
+  }
+ ],
+ "samples": 1,
+ "outputs": 102
+}

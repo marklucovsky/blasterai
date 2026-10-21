@@ -22,6 +22,12 @@ Each `*_body` function mirrors one Swift `requestBody`:
     page_refine_body       PageGeneratorService.refineRequestBody
     tile_suggest_body      TileSuggestionService.requestBody
     moderation_rubric_body WordModerationService.rubricRequestBody
+
+and one that mirrors nothing yet — a candidate the app doesn't ship:
+
+    topic_words_body       ranked words for any page — a scene's home page
+                           (with the frame) or a leaf page (without);
+                           docs/eval/scenes.md, prompts in tools/eval/candidates/
 """
 import json
 from functools import cache
@@ -31,17 +37,22 @@ ROOT = Path(__file__).resolve().parents[2]
 PROMPTS = ROOT / "claudeBlast/Resources/Prompts"
 RESOURCES = ROOT / "claudeBlast/Resources"
 FIXTURES = ROOT / "claudeBlastTests/Fixtures/prompts"
+CANDIDATES = Path(__file__).resolve().parent / "candidates"
 
 
 # MARK: - Templates (mirrors PromptTemplate.swift)
 
-def raw(name: str) -> str:
-    text = (PROMPTS / f"prompt_{name}.txt").read_text(encoding="utf-8")
+# Read once per process: a run renders requests as it goes, so without this an
+# edit made while a run is in flight would split it across two prompts
+# (2026-10-20: 40 of 72 outputs of a Luna run).
+@cache
+def raw(name: str, folder: Path = PROMPTS) -> str:
+    text = (folder / f"prompt_{name}.txt").read_text(encoding="utf-8")
     return text[:-1] if text.endswith("\n") else text
 
 
-def render(name: str, values: dict[str, str] | None = None) -> str:
-    text = raw(name)
+def render(name: str, values: dict[str, str] | None = None, folder: Path = PROMPTS) -> str:
+    text = raw(name, folder)
     for key, value in (values or {}).items():
         token = "{{" + key + "}}"
         if token not in text:
@@ -55,6 +66,11 @@ def render(name: str, values: dict[str, str] | None = None) -> str:
 @cache
 def stages() -> dict[str, str]:
     return json.loads((PROMPTS / "prompt_stages.json").read_text(encoding="utf-8"))
+
+
+@cache
+def sentence_base() -> list[str]:
+    return json.loads((RESOURCES / "sentence_prompt.json").read_text(encoding="utf-8"))
 
 
 @cache
@@ -107,7 +123,7 @@ def sentence_body(stage: str, tiles: list[dict], history: list[str] = (),
     repetition > 0, as SentenceEngine does)."""
     escalating = repetition > 0
     descriptor = stages()[stage + ("/escalating" if escalating else "")]
-    base = json.loads((RESOURCES / "sentence_prompt.json").read_text(encoding="utf-8"))
+    base = sentence_base()
     system = [m.replace("{stage}", descriptor) for m in base]
     system.append(raw("sentence_category_rule"))
     if escalating:
@@ -186,3 +202,57 @@ def tile_suggest_body(goal: str) -> dict:
 
 def moderation_rubric_body(words: list[str]) -> dict:
     return _chat("gpt-4o-mini", 0, _two(raw("moderation_rubric_system"), ", ".join(words)), None)
+
+
+# MARK: - Candidates (not in the app)
+
+# One prompt for every page (Mark, 2026-10-20): the words are the same kind
+# for a scene's home page and a leaf page; the template differs, and is code.
+# The home template's frame (docs/eval/scenes.md) is BlasterAI 60's level-1
+# words minus the three that are folders on its home; a leaf page has none.
+FRAMES = {"home": ["i", "you", "want", "more", "go", "stop", "help", "yes", "no", "all_done"], "leaf": []}
+TOPIC_BUDGET = 25
+TOPIC_MAX = 32
+
+
+def scene_context(scene: dict | None) -> str:
+    """For a page added to an existing scene: the scene's name, the summary the
+    model wrote when it made the scene (`BlasterScene.descriptionText`, which
+    syncs — the caregiver's own prompt stays on the device), and its home
+    page's words. Empty for a page that starts a scene."""
+    if not scene:
+        return ""
+    words = ", ".join(w.replace("_", " ") for w in scene.get("words", []))
+    return render("topic_scene_context", {"scene_name": scene["name"], "scene_description": scene["description"],
+                                          "scene_words": words}, CANDIDATES)
+
+
+def topic_words_body(description: str, template: str = "home", scene: dict | None = None) -> dict:
+    frame = FRAMES[template]
+    exclude = ("\n\nThis page already has these words, always in the same place — never return them: "
+               + ", ".join(w.replace("_", " ") for w in frame) + ".") if frame else ""
+    system = render("topic_words_system", {
+        "budget": str(TOPIC_BUDGET), "max_words": str(TOPIC_MAX),
+        "class_list": app_inputs()["class_list"]}, CANDIDATES)
+    user = render("topic_words_user", {"description": description, "vocab_block": app_inputs()["vocab_block"],
+                                       "exclude_rule": exclude, "scene_context": scene_context(scene)}, CANDIDATES)
+    return _chat("gpt-4o-mini", 0.5, _two(system, user), 3000)
+
+
+def topic_review_body(first: dict, draft_text: str, description: str) -> dict:
+    """A second pass over the first draft (`first` is the first request):
+    the same conversation, the draft as the assistant's turn, then a review."""
+    draft = draft_text
+    try:
+        import scorers  # late: scorers imports prompts
+        parsed = scorers.extract_json(draft_text) or {}
+        words = [w.get("word") for w in parsed.get("words") or [] if isinstance(w, dict)]
+        if words:
+            draft = ", ".join(f"{n}. {w}" for n, w in enumerate(words, 1))
+    except Exception:
+        pass
+    review = render("topic_review_user", {"description": description, "draft": draft,
+                                          "budget": str(TOPIC_BUDGET)}, CANDIDATES)
+    messages = first["messages"] + [{"role": "assistant", "content": draft_text},
+                                    {"role": "user", "content": review}]
+    return {**first, "messages": messages}

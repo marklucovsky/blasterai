@@ -1,0 +1,8 @@
+Here is your first draft for "{{description}}", in rank order:
+{{draft}}
+
+Now review it as a strict AAC speech-language pathologist would, then return the improved page in the same JSON format:
+1. CUT every word that would fit on almost any page — general feelings like happy, general praise, fun, together, nature, explore, see, take — unless THIS topic truly needs it.
+2. ADD what is missing: the topic's own real names (the characters, the parts of the song, the dishes on that menu, the place's own landmarks and animals), the things a child would actually see and touch there, what they do and are told to do there, and the two or three feelings this topic really brings up.
+3. RE-RANK so that nothing the child really needs comes after word {{budget}}.
+Return only the JSON.

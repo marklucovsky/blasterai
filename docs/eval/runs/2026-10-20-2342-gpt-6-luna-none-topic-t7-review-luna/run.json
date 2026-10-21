@@ -1,0 +1,19 @@
+{
+  "name": "2026-10-20-2342-gpt-6-luna-none-topic-t7-review-luna",
+  "label": "topic-t7-review-luna",
+  "model": "gpt-6-luna",
+  "effort": "none",
+  "judge": "gpt-6.1-sol",
+  "judge_effort": "low",
+  "judge_n": 1,
+  "samples": 3,
+  "commit": "d1d0f5c+dirty",
+  "prompt_rev": "5705c5eb09",
+  "rubric_rev": "8f550b6a15",
+  "rejudged_from": null,
+  "started": "2026-10-20T23:42:49",
+  "seconds": 280.0,
+  "outputs": 102,
+  "subject_cost": 0.05734839,
+  "judge_cost": 0.437324
+}

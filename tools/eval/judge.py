@@ -95,6 +95,29 @@ def authoring_request(case: dict, summary: dict) -> str:
                                  "count": str(len(tiles)), "tiles": "\n".join(tiles)})
 
 
+def topic_words_request(case: dict, summary: dict) -> str:
+    def line(k: str) -> str:
+        info = summary["words"][k]
+        label = (summary["new_words"].get(k) or {}).get("displayName") or k.replace("_", " ")
+        return f"{label} ({info.get('pos')}){' [new]' if info.get('new') else ''}"
+    frame = prompts.FRAMES[case["input"].get("template", "home")]
+    return _rubric("topic_words", {
+        "budget": str(prompts.TOPIC_BUDGET),
+        "description": f'"{case["input"]["description"]}"' + (
+            f' — a page added to the scene "{sc["name"]}" ({sc["description"]}), whose home page has: '
+            + ", ".join(w.replace("_", " ") for w in sc.get("words", []))
+            + ". The page should be about the scene's version of its topic."
+            if (sc := case["input"].get("scene")) else ""),
+        "where": ("the HOME PAGE of a scene. The page also has a fixed frame of core words the model was told "
+                  "not to repeat: " + ", ".join(w.replace("_", " ") for w in frame) + ". Don't count those as missing.")
+                 if frame else "a page of its own (no frame), linked from the child's board.",
+        "page_count": str(len(summary["page"])),
+        "page": "\n".join(f"{n}. {line(k)}" for n, k in enumerate(summary["page"], 1)) or "(none)",
+        "overflow_count": str(len(summary["overflow"])),
+        "overflow": "\n".join(line(k) for k in summary["overflow"]) or "(none)",
+    })
+
+
 # MARK: - Calling the judge
 
 def judge(prompt: str, model: str, effort: str | None, n: int = 1) -> dict:

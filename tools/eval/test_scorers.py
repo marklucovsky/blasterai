@@ -9,6 +9,7 @@ The bad outputs here are real ones from boards, not invented: a check that
 can't catch its own motivating example is not a check.
 """
 import json
+import re
 import sys
 import unittest
 from pathlib import Path
@@ -281,6 +282,72 @@ class HeldOutCases(unittest.TestCase):
                     if len(values) >= 2 and all(set(v.split()) <= words for v in values):
                         leaks.append(f"{fname}: \"{quote}\" spells out {c['id']}")
         self.maxDiff = None
+        self.assertEqual(leaks, [])
+
+
+def topic_output(*words, refused=False):
+    return json.dumps({"name": "t", "description": "d", "refused": refused,
+                       "words": [{"word": w, "wordClass": "object"} for w in words]})
+
+
+class TopicWords(unittest.TestCase):
+    def test_a_plural_resolves_only_onto_a_noun(self):
+        vocab = {"short", "cookie"}
+        self.assertEqual(S.resolve_key("cookies", vocab), "cookie")
+        self.assertIsNone(S.resolve_key("shorts", vocab))  # clothing, not the adjective
+
+    def test_frame_words_are_dropped_on_home_only(self):
+        out = topic_output("doctor", "want", "sit")
+        summary, issues = S.score_topic_words(out, "home", {"min_words": 1})
+        self.assertEqual(summary["keys"], ["doctor", "sit"])
+        self.assertIn("frame words dropped: want", summary["notes"])
+        self.assertEqual(issues, [])
+        summary, _ = S.score_topic_words(out, "leaf", {"min_words": 1})
+        self.assertEqual(summary["keys"], ["doctor", "want", "sit"])
+
+    def test_words_are_matched_to_the_vocabulary_by_code(self):
+        """topic-t3: the model left Elsa unmarked as new; now nothing is marked —
+        a word in the vocabulary is that word, anything else is new."""
+        summary, _ = S.score_topic_words(topic_output("Elsa", "teeth", "brush teeth", "hot"), "leaf",
+                                         {"min_words": 1})
+        self.assertEqual(summary["keys"], ["elsa", "tooth", "brush_teeth", "hot_" if "hot" not in
+                                           S.prompts.word_classes() else "hot"])
+        self.assertEqual(list(summary["new_words"]), ["elsa"])
+        self.assertEqual(summary["new_words"]["elsa"]["displayName"], "Elsa")
+
+    def test_required_word_past_the_budget_is_missing_from_the_page(self):
+        filler = [f"new_thing_{n}" for n in range(25)]
+        summary, issues = S.score_topic_words(topic_output(*filler, "towel"), "leaf", {"must_include_keys": ["towel"]})
+        self.assertEqual(summary["overflow"], ["towel"])
+        self.assertIn("missing 'towel' (in the overflow)", issues)
+
+    def test_placer_promotes_actions_and_feelings_over_the_last_nouns(self):
+        """topic-t7: Luna ranked hot, scared and excited past the cut."""
+        nouns = [f"new_thing_{n}" for n in range(25)]
+        summary, _ = S.score_topic_words(topic_output(*nouns, "open", "scared", "excited", "towel"), "leaf")
+        self.assertEqual(summary["page"][-3:], ["open", "scared", "excited"])
+        self.assertEqual(summary["overflow"][:3], ["new_thing_22", "new_thing_23", "new_thing_24"])
+        self.assertIn("towel", summary["overflow"])
+
+    def test_refusal(self):
+        _, issues = S.score_topic_words(topic_output(refused=True), "home", {"refused": True})
+        self.assertEqual(issues, [])
+        _, issues = S.score_topic_words(topic_output("target"), "home", {"refused": True})
+        self.assertEqual(issues, ["should have refused the topic, returned 1 words"])
+
+    def test_candidate_prompt_examples_dont_spell_out_a_case(self):
+        """The held-out rule for the topic prompt: no case's required words
+        appear in the prompt's examples."""
+        here = Path(__file__).resolve().parent
+        text = (here / "candidates" / "prompt_topic_words_system.txt").read_text().lower()
+        examples = " ".join(s for s in text.split("(")[1:] for s in [s.split(")")[0]])
+        examples += " ".join(text.split("return only valid json")[1:])
+        leaks = []
+        for c in json.loads((here / "cases" / "topic_words.json").read_text()):
+            for w in c.get("expect", {}).get("must_include_keys", []):
+                for o in (w if isinstance(w, list) else [w]):
+                    if re.search(rf"\b{re.escape(o.replace('_', ' '))}\b", examples):
+                        leaks.append(f"{c['id']}: {o}")
         self.assertEqual(leaks, [])
 
 

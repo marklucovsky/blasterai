@@ -18,6 +18,7 @@ Per-case expectations come from the case file's `expect` block — see
 """
 import json
 import re
+from collections import Counter
 from functools import cache
 
 import prompts
@@ -342,3 +343,161 @@ def score_moderation(text: str, words: list[str], expect: dict | None = None) ->
         if not ratings.get(w, "").startswith(want):
             issues.append(f"{w!r} rated {ratings.get(w)}, expected {want}")
     return ratings, issues
+
+
+# MARK: - Topic words (candidate surface, docs/eval/scenes.md)
+
+# Part of speech drives layout (Fitzgerald bands). The model isn't asked for
+# it — it confused the tags with word classes (2026-10-20, topic-t1) — so it
+# comes from parts_of_speech.json for an existing word and from the word
+# class for a new one.
+CLASS_POS = {"actions": "verb", "describe": "adjective", "feeling": "adjective", "colors": "adjective",
+             "shape": "adjective", "social": "social"}
+
+
+# The placer's floor for a page that talks rather than labels (2026-10-20,
+# topic-t7: Luna ranked the feelings and describing words last, so hot,
+# scared and excited lost their cells to wolf, eagle and fence).
+PAGE_FLOOR = {"verb": 5, "adjective": 3}
+
+
+def balance(ranked: list[str], info: dict, budget: int) -> tuple[list[str], list[str], list[str]]:
+    """Cut at the budget, then pull verbs and adjectives up from the overflow
+    until the page has PAGE_FLOOR of each, each one displacing the
+    lowest-ranked noun on the page. Returns (page, overflow, promoted)."""
+    page, overflow, promoted = ranked[:budget], ranked[budget:], []
+    for pos, floor in PAGE_FLOOR.items():
+        while sum(info[k]["pos"] == pos for k in page) < floor:
+            up = next((k for k in overflow if info[k]["pos"] == pos), None)
+            down = next((k for k in reversed(page) if info[k]["pos"] == "noun"), None)
+            if up is None or down is None:
+                break
+            page.remove(down)
+            overflow.remove(up)
+            page.append(up)
+            overflow.append(down)
+            promoted.append(up)
+    rank = {k: n for n, k in enumerate(ranked)}
+    return page, sorted(overflow, key=rank.get), promoted
+
+
+IRREGULAR_PLURALS = {"teeth": "tooth", "feet": "foot", "mice": "mouse", "geese": "goose", "children": "child"}
+
+
+def resolve_key(k: str, vocab: set[str]) -> str | None:
+    """An unknown key that is plainly an existing word: a plural of it, or the
+    bare form of a sense-marked key ("hot" → "hot_"). The placer would do the
+    same rather than drop the word or draw a duplicate.
+
+    Only a noun has a plural: "shorts" is not more than one "short" (an
+    adjective), so it stays a new word rather than turning into the wrong tile."""
+    pos = part_of_speech()
+    plurals = (IRREGULAR_PLURALS.get(k), k[:-1] if k.endswith("s") else None,
+               k[:-2] if k.endswith("es") else None)
+    for c in plurals:
+        if c and c in vocab and pos.get(c, "noun") == "noun":
+            return c
+    for c in (k + "_", k + "__"):
+        if c in vocab:
+            return c
+    return None
+
+
+@cache
+def part_of_speech() -> dict[str, str]:
+    raw = json.loads((prompts.RESOURCES / "parts_of_speech.json").read_text(encoding="utf-8"))
+    return {k: pos for pos, keys in raw.items() for k in keys}
+
+
+def score_topic_words(text: str, template: str = "home",
+                      expect: dict | None = None) -> tuple[dict | None, list[str]]:
+    """The ranked word list for one page: a scene's home page (`template`
+    "home", which has a frame of core words) or a leaf page ("leaf", none).
+
+    `summary["keys"]` is every word in rank order (frame words and duplicates
+    dropped, as the placer would); `summary["page"]` is the first
+    TOPIC_BUDGET of them and `summary["overflow"]` the rest. Required
+    core (`must_include_keys`) is checked against the page, not the overflow:
+    a word that missed the cut isn't on the board."""
+    expect = expect or {}
+    parsed = extract_json(text)
+    if parsed is None:
+        return None, ["output is not valid JSON"]
+    vocab = set(prompts.word_classes())
+    allowed_classes = set(prompts.app_inputs()["class_list"].split(", "))
+    frame = set(prompts.FRAMES[template])
+    # The model writes words, not keys (2026-10-20, topic-t3: gpt-4o-mini left
+    # Elsa, Mario and Christmas unmarked as new, so the app would have dropped
+    # them). Matching a word to the vocabulary is code's job.
+    words = [w for w in parsed.get("words") or []
+             if isinstance(w, dict) and isinstance(w.get("word") or w.get("key"), str)]
+    empty = {"keys": [], "new_words": {}, "page": [], "overflow": [], "words": {}}
+
+    if expect.get("refused"):
+        if words or not parsed.get("refused"):
+            return empty, [f"should have refused the topic, returned {len(words)} words"]
+        return empty, []
+    if parsed.get("refused"):
+        return empty, ["refused a topic it should build"]
+
+    ranked, info, new_words, seen = [], {}, {}, set()
+    framed, dupes, bad_class, phrases, resolved = [], [], [], [], []
+    for w in words:
+        label = (w.get("word") or w.get("key")).strip()
+        k = normalize_key(label)
+        if k not in vocab and (r := resolve_key(k, vocab)):
+            resolved.append(f"{k}→{r}")
+            k = r
+        if k in frame:
+            framed.append(k)
+            continue
+        if k in seen:
+            dupes.append(k)
+            continue
+        seen.add(k)
+        ranked.append(k)
+        is_new = k not in vocab
+        pos = (CLASS_POS.get(w.get("wordClass"), "noun") if is_new
+               else part_of_speech().get(k) or CLASS_POS.get(prompts.word_classes().get(k), "noun"))
+        info[k] = {"pos": pos, "new": is_new}
+        if is_new:
+            new_words[k] = {"displayName": w.get("displayName") or label, "wordClass": w.get("wordClass")}
+            if w.get("wordClass") not in allowed_classes:
+                bad_class.append(k)
+        if len(label.split()) > 3:
+            phrases.append(k)
+
+    budget = prompts.TOPIC_BUDGET
+    page, overflow, promoted = balance(ranked, info, budget)
+    pos_counts = dict(sorted(Counter(info[k]["pos"] for k in page).items()))
+    summary = {"keys": ranked, "new_words": new_words, "page": page, "overflow": overflow, "words": info,
+               "pos": pos_counts,
+               "notes": [f"{len(page)} on the page, {len(overflow)} overflow; "
+                         + ", ".join(f"{n} {p}" for p, n in pos_counts.items() if n)]}
+
+    # Things the placer fixes silently are notes, not failures.
+    if promoted:
+        summary["notes"].append(f"promoted from the overflow: {', '.join(promoted)}")
+    if framed:
+        summary["notes"].append(f"frame words dropped: {', '.join(sorted(set(framed)))}")
+    if resolved:
+        summary["notes"].append(f"resolved to the vocabulary: {', '.join(resolved[:8])}")
+    if dupes:
+        summary["notes"].append(f"duplicates dropped: {', '.join(sorted(set(dupes))[:8])}")
+
+    issues = []
+    if bad_class:
+        issues.append(f"new word(s) with an unknown wordClass: {', '.join(bad_class[:8])}")
+    if phrases:
+        issues.append(f"phrase tile(s): {', '.join(phrases[:8])}")
+    if len(words) > prompts.TOPIC_MAX:
+        issues.append(f"{len(words)} words, over {prompts.TOPIC_MAX}")
+    if len(page) < (n := expect.get("min_words", 15)):
+        issues.append(f"{len(page)} words on the page, under {n}")
+    on_page = set(page)
+    for w in expect.get("must_include_keys", []):
+        options = w if isinstance(w, list) else [w]
+        if not any(_matches(o, on_page) for o in options):
+            where = " (in the overflow)" if any(_matches(o, set(overflow)) for o in options) else ""
+            issues.append(f"missing {' / '.join(options)!r}{where}")
+    return summary, issues

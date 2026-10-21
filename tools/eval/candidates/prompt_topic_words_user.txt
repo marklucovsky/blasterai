@@ -1,0 +1,4 @@
+{{scene_context}}Topic: {{description}}
+
+Available vocabulary by category:
+{{vocab_block}}{{exclude_rule}}

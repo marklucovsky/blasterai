@@ -1,0 +1,19 @@
+{
+  "name": "2026-10-21-1414-merged-topic-models-rejudge",
+  "label": "topic-models-rejudge",
+  "model": "merged",
+  "effort": null,
+  "judge": "gpt-6-astra",
+  "judge_effort": "low",
+  "judge_n": 1,
+  "samples": 1,
+  "commit": "d1d0f5c+dirty",
+  "prompt_rev": "5705c5eb09",
+  "rubric_rev": "19aa1baaa0",
+  "rejudged_from": "docs/eval/runs/2026-10-20-2354-merged-topic-models",
+  "started": "2026-10-21T14:14:55",
+  "seconds": 136.9,
+  "outputs": 102,
+  "subject_cost": 0.43764573,
+  "judge_cost": 2.8413075
+}

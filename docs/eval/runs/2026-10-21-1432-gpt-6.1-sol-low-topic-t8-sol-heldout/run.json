@@ -1,0 +1,19 @@
+{
+  "name": "2026-10-21-1432-gpt-6.1-sol-low-topic-t8-sol-heldout",
+  "label": "topic-t8-sol-heldout",
+  "model": "gpt-6.1-sol",
+  "effort": "low",
+  "judge": "gpt-6-astra",
+  "judge_effort": "low",
+  "judge_n": 1,
+  "samples": 3,
+  "commit": "d1d0f5c+dirty",
+  "prompt_rev": "b2394f7c5d",
+  "rubric_rev": "19aa1baaa0",
+  "rejudged_from": null,
+  "started": "2026-10-21T14:32:02",
+  "seconds": 118.0,
+  "outputs": 36,
+  "subject_cost": 0.31630210000000003,
+  "judge_cost": 1.0405675
+}

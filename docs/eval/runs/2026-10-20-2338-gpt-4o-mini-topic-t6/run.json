@@ -1,0 +1,19 @@
+{
+  "name": "2026-10-20-2338-gpt-4o-mini-topic-t6",
+  "label": "topic-t6",
+  "model": "gpt-4o-mini",
+  "effort": null,
+  "judge": "gpt-6.1-sol",
+  "judge_effort": "low",
+  "judge_n": 1,
+  "samples": 3,
+  "commit": "d1d0f5c+dirty",
+  "prompt_rev": "c9066f898f",
+  "rubric_rev": "8f550b6a15",
+  "rejudged_from": null,
+  "started": "2026-10-20T23:38:20",
+  "seconds": 212.5,
+  "outputs": 102,
+  "subject_cost": 0.05660655,
+  "judge_cost": 0.431238
+}

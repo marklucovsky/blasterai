@@ -1,0 +1,19 @@
+{
+  "name": "2026-10-21-0948-gpt-6-luna-medium-topic-t6-luna-medium",
+  "label": "topic-t6-luna-medium",
+  "model": "gpt-6-luna",
+  "effort": "medium",
+  "judge": "gpt-6-astra",
+  "judge_effort": "low",
+  "judge_n": 1,
+  "samples": 3,
+  "commit": "d1d0f5c+dirty",
+  "prompt_rev": "5705c5eb09",
+  "rubric_rev": "8f550b6a15",
+  "rejudged_from": null,
+  "started": "2026-10-21T09:48:32",
+  "seconds": 428.4,
+  "outputs": 102,
+  "subject_cost": 0.105424455,
+  "judge_cost": 2.21285
+}

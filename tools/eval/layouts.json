@@ -1,0 +1,27 @@
+{
+ "_doc": "Scenes for tools/eval/build_layouts.py. A page is either {run, case} — sample 0 of a saved topic_words run — or {describe} — generated now with the plan-of-record model and cached in the output folder. A scene is one home page plus N linked leaf pages.",
+ "runs": {
+  "t8": "2026-10-21-1425-gpt-6.1-sol-low-topic-t8-sol",
+  "held": "2026-10-21-1432-gpt-6.1-sol-low-topic-t8-sol-heldout"
+ },
+ "scenes": [
+  {"name": "Holidays", "home": {"run": "t8", "case": "holidays"},
+   "leaves": [
+    {"name": "Birthday", "describe": "My birthday party: cake, candles, presents and friends."},
+    {"name": "Halloween", "describe": "Halloween: costumes, trick-or-treating and pumpkins."},
+    {"name": "Thanksgiving", "describe": "Thanksgiving dinner with the whole family."},
+    {"name": "Winter holidays", "run": "t8", "case": "leaf_winter_holidays"},
+    {"name": "Fourth of July", "describe": "The Fourth of July: the parade, a picnic and fireworks at night."}
+   ]},
+  {"name": "Going to the dentist", "home": {"run": "t8", "case": "dentist"}},
+  {"name": "Bluey", "home": {"run": "t8", "case": "favorite_show"}},
+  {"name": "Paw Patrol", "home": {"run": "held", "case": "ho_paw_patrol"}},
+  {"name": "McDonald's", "home": {"run": "t8", "case": "fast_food"}},
+  {"name": "Old MacDonald", "home": {"run": "held", "case": "ho_old_macdonald"}},
+  {"name": "Soccer practice", "home": {"run": "held", "case": "ho_soccer"}},
+  {"name": "Getting a haircut", "home": {"run": "held", "case": "ho_haircut"}},
+  {"name": "Yellowstone", "home": {"run": "t8", "case": "national_park"}},
+  {"name": "Weather (leaf page)", "leaf_only": true, "home": {"run": "held", "case": "ho_leaf_weather"}},
+  {"name": "Feelings (leaf page)", "leaf_only": true, "home": {"run": "t8", "case": "leaf_feelings"}}
+ ]
+}
