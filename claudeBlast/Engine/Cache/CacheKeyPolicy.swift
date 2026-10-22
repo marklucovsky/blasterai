@@ -57,7 +57,14 @@ enum CacheKeyPolicy {
     // vehicle with a place made a trip (2026-10-20). As `social`, "school, i,
     // bus" opened like a greeting — "School, I ride the bus." — and "i, park,
     // bus" became "I want the bus to the park"; both are cached under v5.
-    nonisolated static let promptVersion = 6
+    //
+    // v7: the word-class rule carries its own exceptions (2026-10-21, prompt l5,
+    // tuned for GPT-6 Luna). "no (social)" and "her (people)" obeyed the class
+    // literally — "No, I want the bed.", "Her, can I go to the pool?" — and bed
+    // is now a routine, stop with a thing turns it off, and a pronoun with a
+    // place says where that person is. Escalation rungs keep the first
+    // sentence's own words.
+    nonisolated static let promptVersion = 7
 
     /// Stamped onto each cache entry (`SentenceCache.keyVersion`) and embedded in
     /// the key. Excludes stage + word class on purpose — those are legitimate

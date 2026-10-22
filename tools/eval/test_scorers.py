@@ -351,5 +351,13 @@ class TopicWords(unittest.TestCase):
         self.assertEqual(leaks, [])
 
 
+class TypographicQuotes(unittest.TestCase):
+    def test_a_curly_apostrophe_still_negates(self):
+        tiles = [{"value": "no", "wordClass": "social"}, {"value": "home", "wordClass": "places"}]
+        expect = {"must_not_match": r"(?<!n't )(?<!not )\bwant to go (home|to the house)"}
+        self.assertEqual(S.score_sentence("No, I don’t want to go home.", tiles, "IV+", expect), [])
+        self.assertTrue(S.score_sentence("No, I want to go home.", tiles, "IV+", expect))
+
+
 if __name__ == "__main__":
     unittest.main()
