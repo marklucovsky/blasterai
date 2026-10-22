@@ -73,9 +73,31 @@ within noise), so it ships now on gpt-4o-mini and is the base for Luna.
 `CacheKeyPolicy.promptVersion` 6 → 7 so sentences cached under p4 are
 regenerated; prompt fixtures re-recorded (parity 14/14).
 
+## Prompt l6 (2026-10-21, after Mark's labels)
+
+New case from Mark: "i, iced tea, all done" → both models said "I am all done.
+Can I have iced tea?" (10/10). l6 adds: all done with a thing means finished
+with it (gpt-4o-mini needed the close example "i, juice, all done" → "I'm all
+done with my juice.", not "… Can I have juice?" — the rule alone got 3/10);
+a feeling with the routine it calls for; no + an action refuses doing it; a
+thing and where it is (in, on, under) is a statement; the every-tile check
+says a chosen action is the verb. A first draft said "(not replaced by play)"
+and gpt-4o-mini wrote "I don't want to play with milk." — naming a word in a
+prohibition can plant it; removed.
+
+| | Sentences (of 355) | Ladders | Latency p50 / p95 |
+|---|---|---|---|
+| gpt-4o-mini l6 | **351** (l5 338/350) | **65/65** | 0.81 s / 1.17 s |
+| Luna none l6 | 342 Tier-1; judge pass within noise of l5 | 58/65 (l5 49) | 1.07 s / 1.99 s |
+
+Luna's labelled misses: no + wash, dog + in + car, iced tea fixed (5/5);
+tired + bed 4/5. Still open on Luna: find + ball ("I want to play ball", 0/5),
+stop + tv ("Stop watching TV."), bowl as an action (2/5 "can I have a bowl").
+`CacheKeyPolicy.promptVersion` 7 → 8.
+
 ## Next
 
-- l6: Luna's five sentence misses above, judged on those cases, not the total.
+- Luna polish before the switch: find + ball, stop + tv, bowl (actions).
 - The Luna switch itself: per-model capability table (GPT-6 rejects
   `temperature`; `reasoning_effort: none`), and the app's price table needs
   GPT-6 cache-write pricing — a first-seen prompt is billed as a cache write

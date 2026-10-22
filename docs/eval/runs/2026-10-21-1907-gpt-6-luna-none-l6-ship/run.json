@@ -1,0 +1,19 @@
+{
+  "name": "2026-10-21-1907-gpt-6-luna-none-l6-ship",
+  "label": "l6-ship",
+  "model": "gpt-6-luna",
+  "effort": "none",
+  "judge": "gpt-6.1-sol",
+  "judge_effort": "low",
+  "judge_n": 3,
+  "samples": 5,
+  "commit": "007f674+dirty",
+  "prompt_rev": "cd9854217d",
+  "rubric_rev": "fc770a3add",
+  "rejudged_from": null,
+  "started": "2026-10-21T19:07:15",
+  "seconds": 1040.1,
+  "outputs": 420,
+  "subject_cost": 0.06377214,
+  "judge_cost": 2.131137
+}
