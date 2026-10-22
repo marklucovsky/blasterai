@@ -51,7 +51,7 @@ struct UsageAccountingTests {
     /// micro-dollars, is exactly `N × rate`. 700 × $0.15/M = 105 micros.
     @Test func chatCostIsTokensTimesRate() {
         let cost = ModelPricing.costMicros(
-            model: ModelID.sentence,
+            model: "gpt-4o-mini",
             promptTokens: 700,
             completionTokens: 20
         )
@@ -63,9 +63,9 @@ struct UsageAccountingTests {
     /// must not ALSO be charged at the full input rate.
     @Test func cachedPromptTokensAreDiscountedNotDoubleCharged() {
         let allFresh = ModelPricing.costMicros(
-            model: ModelID.sentence, promptTokens: 1000, completionTokens: 0)
+            model: "gpt-4o-mini", promptTokens: 1000, completionTokens: 0)
         let halfCached = ModelPricing.costMicros(
-            model: ModelID.sentence, promptTokens: 1000,
+            model: "gpt-4o-mini", promptTokens: 1000,
             cachedPromptTokens: 500, completionTokens: 0)
 
         #expect(allFresh == 150)        // 1000 × 0.15
@@ -122,7 +122,7 @@ struct UsageAccountingTests {
         #expect(ModelPricing.costMicros(model: dated, promptTokens: 700, completionTokens: 20) == 117)
         // Same answer as the undated alias — that's the whole point.
         #expect(ModelPricing.costMicros(model: dated, promptTokens: 700, completionTokens: 20)
-                == ModelPricing.costMicros(model: ModelID.sentence, promptTokens: 700, completionTokens: 20))
+                == ModelPricing.costMicros(model: "gpt-4o-mini", promptTokens: 700, completionTokens: 20))
     }
 
     /// Prefix resolution must take the LONGEST match, or a future `gpt-4o` entry

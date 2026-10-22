@@ -14,7 +14,7 @@ struct PageGeneratorService {
 
     // MARK: - Prompt configuration
 
-    private let model = "gpt-4o-mini"
+    /// The model is `ModelID.sceneAuthoring` — page generation is scene authoring.
     private let temperature = 0.4
     private let maxTokens = 800
 
@@ -110,15 +110,10 @@ struct PageGeneratorService {
     }
 
     private func body(system: String, user: String) -> [String: Any] {
-        [
-            "model": model,
-            "temperature": temperature,
-            "max_tokens": maxTokens,
-            "messages": [
-                ["role": "system", "content": system],
-                ["role": "user",   "content": user]
-            ]
-        ]
+        ChatRequest.body(model: ModelID.sceneAuthoring,
+                         messages: [["role": "system", "content": system],
+                                    ["role": "user", "content": user]],
+                         temperature: temperature, maxTokens: maxTokens)
     }
 
     // MARK: - Prompt builders

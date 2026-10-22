@@ -160,6 +160,7 @@ enum OpenAIClient {
             model: model,
             promptTokens: parsed.promptTokens,
             cachedPromptTokens: parsed.cachedPromptTokens,
+            cacheWriteTokens: parsed.cacheWriteTokens,
             imageInputTokens: parsed.imageInputTokens,
             completionTokens: parsed.completionTokens
         )
@@ -171,6 +172,7 @@ enum OpenAIClient {
             detail: ctx?.detail ?? "",
             promptTokens: parsed.promptTokens,
             cachedPromptTokens: parsed.cachedPromptTokens,
+            cacheWriteTokens: parsed.cacheWriteTokens,
             imageInputTokens: parsed.imageInputTokens,
             completionTokens: parsed.completionTokens,
             imageCount: parsed.imageCount,
@@ -186,6 +188,7 @@ enum OpenAIClient {
         var model = ""
         var promptTokens = 0
         var cachedPromptTokens = 0
+        var cacheWriteTokens = 0
         var imageInputTokens = 0
         var completionTokens = 0
         var imageCount = 0
@@ -221,6 +224,8 @@ enum OpenAIClient {
 
         if let details = usage["prompt_tokens_details"] as? [String: Any] {
             out.cachedPromptTokens = details["cached_tokens"] as? Int ?? 0
+            // GPT-6 only: a first-seen prompt is billed as a cache write.
+            out.cacheWriteTokens = details["cache_write_tokens"] as? Int ?? 0
         }
         if let details = usage["input_tokens_details"] as? [String: Any] {
             out.imageInputTokens = details["image_tokens"] as? Int ?? 0
@@ -238,7 +243,12 @@ enum OpenAIClient {
         case .wordAuditScreen: return ModelID.moderation
         case .keyValidation:   return ""
         case .tileImageGenerate, .tileImageRefine: return ModelID.image
-        default: return ModelID.authoring
+        case .sentenceGenerate, .sentenceEscalate, .sentenceRefine: return ModelID.sentence
+        case .sceneGenerate, .sceneRefine, .pageGenerate, .pageRefine: return ModelID.sceneAuthoring
+        case .tileSuggest: return ModelID.tileSuggest
+        case .wordAuditRubric: return ModelID.wordAudit
+        case .tileArtClassify: return ModelID.skinCheck
+        default: return ""
         }
     }
 }

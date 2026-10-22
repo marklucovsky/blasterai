@@ -59,15 +59,10 @@ struct TileSuggestionService {
         ])
         let userMessage = PromptTemplate.render("tile_suggest_user", ["goal": goal, "vocab_block": vocabBlock])
 
-        return [
-            "model": "gpt-4o-mini",
-            "temperature": 0.4,
-            "max_tokens": 700,
-            "messages": [
-                ["role": "system", "content": systemMessage],
-                ["role": "user",   "content": userMessage]
-            ]
-        ]
+        return ChatRequest.body(model: ModelID.tileSuggest,
+                                messages: [["role": "system", "content": systemMessage],
+                                           ["role": "user", "content": userMessage]],
+                                temperature: 0.4, maxTokens: 700)
     }
 
     // MARK: - Helpers

@@ -102,6 +102,7 @@ struct UsageDetailView: View {
     private func tokenBreakdown(_ event: APIUsageEvent) -> String {
         var parts: [String] = ["in \(event.promptTokens)"]
         if event.cachedPromptTokens > 0 { parts.append("cached \(event.cachedPromptTokens)") }
+        if event.cacheWriteTokens > 0 { parts.append("cache-write \(event.cacheWriteTokens)") }
         if event.imageInputTokens > 0 { parts.append("img-in \(event.imageInputTokens)") }
         parts.append("out \(event.completionTokens)")
         if event.imageCount > 0 { parts.append("\(event.imageCount) image\(event.imageCount == 1 ? "" : "s")") }

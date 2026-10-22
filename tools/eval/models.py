@@ -4,9 +4,10 @@
 
 The app's requests are written for gpt-4o-mini. Other models take different
 parameters, so `adapt` rewrites a production request for the model under test
-and records what it changed. The same table is what the Luna PR has to build
-into the app: every GPT-6 model rejects `temperature` (only the default, 1, is
-allowed), and every service sends one.
+and records what it changed. The app builds the same rules in
+`claudeBlast/Services/OpenAI/ChatRequest.swift` — keep the two in step. Every
+GPT-6 model rejects `temperature` (only the default, 1, is allowed), and every
+service states one.
 
 Probed against the live API on 2026-10-19:
 - GPT-6 (luna, sol, 6.1-sol, astra): `temperature` other than 1 → 400.
