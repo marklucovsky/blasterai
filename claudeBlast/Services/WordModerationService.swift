@@ -203,14 +203,10 @@ struct WordModerationService {
     /// The exact chat-completions body the rubric sends. Pure, so the prompt
     /// fixtures (`PromptFixtureTests`) can pin it without a network call.
     nonisolated static func rubricRequestBody(words: [String]) -> [String: Any] {
-        [
-            "model": "gpt-4o-mini",
-            "temperature": 0,
-            "messages": [
-                ["role": "system", "content": PromptTemplate.raw("moderation_rubric_system")],
-                ["role": "user", "content": words.joined(separator: ", ")],
-            ],
-        ]
+        ChatRequest.body(model: ModelID.wordAudit,
+                         messages: [["role": "system", "content": PromptTemplate.raw("moderation_rubric_system")],
+                                    ["role": "user", "content": words.joined(separator: ", ")]],
+                         temperature: 0)
     }
 
     /// Parse the rubric's `{"ratings": {...}}` payload. `nonisolated static` + pure

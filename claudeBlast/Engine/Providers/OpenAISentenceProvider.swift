@@ -89,16 +89,13 @@ struct OpenAISentenceProvider: SentenceProvider {
             messages[messages.count - 1] = ["role": "user", "content": userPrompt]
         }
 
-        return [
-            // Single source of truth: the same constant seeds the cache version
-            // token, so the request model and cache identity can't diverge.
-            "model": CacheKeyPolicy.modelID,
-            "messages": messages,
-            "max_tokens": 500,
-            // Lower temperature so the model is more obedient to the word-class
-            // annotation rule rather than drifting to a word's common meaning.
-            "temperature": 0.3,
-        ]
+        // Single source of truth: the same constant seeds the cache version
+        // token, so the request model and cache identity can't diverge. Lower
+        // temperature so gpt-4o-mini is more obedient to the word-class
+        // annotation rule rather than drifting to a word's common meaning
+        // (GPT-6 takes none; `ChatRequest` drops it).
+        return ChatRequest.body(model: CacheKeyPolicy.modelID, messages: messages,
+                                temperature: 0.3, maxTokens: 500)
     }
 
     private func parseResponse(data: Data) throws -> SentenceResult {

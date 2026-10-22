@@ -16,8 +16,8 @@ struct SceneGeneratorService {
     // MARK: - Prompt configuration
     // These constants are intentionally separate so prompt engineering is easy.
 
-    /// Model and sampling settings.
-    private let model = "gpt-4o-mini"
+    /// Sampling settings. The model is `ModelID.sceneAuthoring`; `ChatRequest`
+    /// drops the temperature for a model that rejects it.
     private let temperature = 0.5
     /// Rich world-inference scenes run 40–50 tiles across several pages; 2000
     /// truncated the JSON.
@@ -59,15 +59,10 @@ struct SceneGeneratorService {
         let vocabBlock = buildVocabBlock(allTiles: allTiles)
         let system = buildSystemPrompt(tileCount: allTiles.count)
         let user = buildUserPrompt(description: description, vocabBlock: vocabBlock)
-        return [
-            "model": model,
-            "temperature": temperature,
-            "max_tokens": maxTokens,
-            "messages": [
-                ["role": "system", "content": system],
-                ["role": "user",   "content": user]
-            ]
-        ]
+        return ChatRequest.body(model: ModelID.sceneAuthoring,
+                                messages: [["role": "system", "content": system],
+                                           ["role": "user", "content": user]],
+                                temperature: temperature, maxTokens: maxTokens)
     }
 
     /// Pull `usage.total_tokens` from a chat-completions response, if present.

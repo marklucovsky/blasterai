@@ -606,6 +606,7 @@ enum MetricCompactor {
                 survivor.count += other.count
                 survivor.promptTokens += other.promptTokens
                 survivor.cachedPromptTokens += other.cachedPromptTokens
+                survivor.cacheWriteTokens += other.cacheWriteTokens
                 survivor.imageInputTokens += other.imageInputTokens
                 survivor.completionTokens += other.completionTokens
                 survivor.imageCount += other.imageCount

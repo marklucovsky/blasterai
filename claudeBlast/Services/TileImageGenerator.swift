@@ -369,9 +369,9 @@ enum TileImageGenerator {
     /// skin tone, while a transformed object is a different picture altogether.
     private static func depictsSkin(_ image: UIImage, apiKey: String) async -> Bool {
         guard let png = image.pngData() else { return false }
-        let body: [String: Any] = [
-            "model": ModelID.authoring,
-            "messages": [[
+        let body = ChatRequest.body(
+            model: ModelID.skinCheck,
+            messages: [[
                 "role": "user",
                 "content": [
                     ["type": "text", "text": classifyPrompt],
@@ -380,9 +380,7 @@ enum TileImageGenerator {
                                    "detail": "low"]],
                 ],
             ]],
-            "max_tokens": 3,
-            "temperature": 0,
-        ]
+            temperature: 0, maxTokens: 3)
         guard let data = try? JSONSerialization.data(withJSONObject: body) else { return false }
 
         var request = URLRequest(url: URL(string: "https://api.openai.com/v1/chat/completions")!)

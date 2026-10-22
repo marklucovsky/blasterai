@@ -10,20 +10,37 @@
 import Foundation
 import os
 
-/// Every OpenAI model this app calls. Declared here so the price table and the
-/// request bodies can never name different models — the failure mode that makes
-/// a cost report quietly wrong rather than obviously broken.
+/// The model each job calls — one entry per job, and the only place a service
+/// finds its model. Declared here so the price table and the request bodies can
+/// never name different models — the failure mode that makes a cost report
+/// quietly wrong rather than obviously broken.
+///
+/// **One entry per job, not per kind of work.** There used to be a single
+/// `authoring` covering scene writing, tile suggestions, the word audit and the
+/// skin check, and five services named "gpt-4o-mini" themselves besides. GPT-6
+/// splits those jobs across models (eval, 2026-10-21: Sol writes scene pages,
+/// Luna writes sentences), so one shared setting would have moved the word
+/// audit to Sol along with the scenes. Switching a job is now one line here;
+/// `ChatRequest` adapts the body to whatever model the line names.
 enum ModelID {
-    /// Sentence generation. `CacheKeyPolicy.modelID` reads this, so the cache
-    /// key and the request model stay coupled.
-    static let sentence = "gpt-4o-mini"
-    /// Scene/page/tile authoring and the word-audit rubric.
-    static let authoring = "gpt-4o-mini"
+    /// Sentence generation and escalation. `CacheKeyPolicy.modelID` reads this,
+    /// so the cache key and the request model stay coupled.
+    nonisolated static let sentence = "gpt-4o-mini"
+    /// Scene and page generation and refinement.
+    nonisolated static let sceneAuthoring = "gpt-4o-mini"
+    /// Tile suggestions for a goal.
+    nonisolated static let tileSuggest = "gpt-4o-mini"
+    /// The word audit's age-appropriateness rubric (`WordModerationService`
+    /// tier 3) — the primary gate on a new word.
+    nonisolated static let wordAudit = "gpt-4o-mini"
+    /// "Does this tile show skin?" before a tone transform — an image input, so
+    /// the model must accept images (gpt-6-luna does, checked 2026-10-21).
+    nonisolated static let skinCheck = "gpt-4o-mini"
     /// `/v1/moderations` policy screen — free.
-    static let moderation = "omni-moderation-latest"
+    nonisolated static let moderation = "omni-moderation-latest"
     /// Tile art generation and refinement. gpt-image-1 shuts down 2026-10-23;
     /// gpt-image-2 is OpenAI's documented replacement.
-    static let image = "gpt-image-2"
+    nonisolated static let image = "gpt-image-2"
 }
 
 /// Per-million-token rates for one model, in US dollars.
@@ -31,11 +48,17 @@ enum ModelID {
 /// Roles rather than endpoints: a chat model prices `textInput` / `cachedInput` /
 /// `output`, an image model prices `textInput` / `imageInput` / `output` (where
 /// output is the generated image). A model simply leaves unused roles at zero.
+///
+/// `cacheWritePerM` is GPT-6's: a prompt it has not seen is billed as a **cache
+/// write** at 1.25× input, not as plain input — on the 2026-10-21 bill, Luna's
+/// day was 1.84M cache-write tokens against 11,625 plain input tokens. Left at
+/// zero, a GPT-6 call would price its whole first-seen prompt at the input rate.
 struct ModelRates: Sendable {
     let textInputPerM: Double
     let cachedInputPerM: Double
     let imageInputPerM: Double
     let outputPerM: Double
+    var cacheWritePerM: Double = 0
 
     static let free = ModelRates(textInputPerM: 0, cachedInputPerM: 0,
                                  imageInputPerM: 0, outputPerM: 0)
@@ -92,17 +115,28 @@ enum ModelPricing {
     /// Source: https://developers.openai.com/api/docs/pricing
     static let asOf: Date = {
         var c = DateComponents()
-        c.year = 2026; c.month = 10; c.day = 8
+        c.year = 2026; c.month = 10; c.day = 21
         return Calendar(identifier: .gregorian).date(from: c) ?? .distantPast
     }()
 
-    /// US dollars per 1M tokens, verified against the pricing page on `asOf`.
+    /// US dollars per 1M tokens, verified against the pricing page on `asOf`;
+    /// the GPT-6 rates also against the 2026-10-21 billing export, which the
+    /// eval harness's own accounting matched to the cent.
+    ///
+    /// **Keyed by model name, never by `ModelID` job.** Keyed by job, moving
+    /// `ModelID.sentence` to another model would have taken gpt-4o-mini's entry
+    /// with it while other jobs still called gpt-4o-mini — every one of their
+    /// rows unpriced.
     static let rates: [String: ModelRates] = [
-        ModelID.sentence: ModelRates(textInputPerM: 0.15, cachedInputPerM: 0.075,
-                                     imageInputPerM: 0, outputPerM: 0.60),
-        ModelID.image: ModelRates(textInputPerM: 5.00, cachedInputPerM: 0,
+        "gpt-4o-mini": ModelRates(textInputPerM: 0.15, cachedInputPerM: 0.075,
+                                  imageInputPerM: 0, outputPerM: 0.60),
+        "gpt-6-luna": ModelRates(textInputPerM: 0.10, cachedInputPerM: 0.01,
+                                 imageInputPerM: 0, outputPerM: 0.50, cacheWritePerM: 0.125),
+        "gpt-6.1-sol": ModelRates(textInputPerM: 2.00, cachedInputPerM: 0.10,
+                                  imageInputPerM: 0, outputPerM: 10.00, cacheWritePerM: 2.50),
+        "gpt-image-2": ModelRates(textInputPerM: 5.00, cachedInputPerM: 0,
                                   imageInputPerM: 8.00, outputPerM: 30.00),
-        ModelID.moderation: .free,
+        "omni-moderation-latest": .free,
     ]
 
     /// Cost in integer micro-dollars (1_000_000 = $1).
@@ -119,18 +153,21 @@ enum ModelPricing {
     static func costMicros(model: String,
                            promptTokens: Int,
                            cachedPromptTokens: Int = 0,
+                           cacheWriteTokens: Int = 0,
                            imageInputTokens: Int = 0,
                            completionTokens: Int) -> Int? {
         guard let r = resolveRates(for: model) else {
             logger.warning("No price entry for model \(model, privacy: .public) — recording usage at zero cost")
             return nil
         }
-        // Prompt tokens partition into three differently-priced buckets; plain
-        // text input is whatever the cached and image portions don't claim.
-        let plainTextTokens = max(0, promptTokens - cachedPromptTokens - imageInputTokens)
+        // Prompt tokens partition into four differently-priced buckets; plain
+        // text input is whatever the cached, cache-written and image portions
+        // don't claim.
+        let plainTextTokens = max(0, promptTokens - cachedPromptTokens - cacheWriteTokens - imageInputTokens)
         let dollarsPerMillion =
             Double(plainTextTokens) * r.textInputPerM
             + Double(cachedPromptTokens) * r.cachedInputPerM
+            + Double(cacheWriteTokens) * r.cacheWritePerM
             + Double(imageInputTokens) * r.imageInputPerM
             + Double(completionTokens) * r.outputPerM
         return Int((dollarsPerMillion).rounded())
@@ -170,7 +207,7 @@ enum ModelPricing {
     /// confusion this accounting exists to prevent, so the UI distinguishes them.
     static func isFree(_ model: String) -> Bool {
         guard let r = resolveRates(for: model) else { return false }
-        return r.textInputPerM == 0 && r.cachedInputPerM == 0
+        return r.textInputPerM == 0 && r.cachedInputPerM == 0 && r.cacheWritePerM == 0
             && r.imageInputPerM == 0 && r.outputPerM == 0
     }
 

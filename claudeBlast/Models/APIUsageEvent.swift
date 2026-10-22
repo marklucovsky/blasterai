@@ -176,6 +176,10 @@ final class APIUsageEvent {
     /// Portion of `promptTokens` served from OpenAI's prompt cache at a discount.
     /// Chat only; 0 for images.
     var cachedPromptTokens: Int = 0
+    /// Portion of `promptTokens` GPT-6 billed as a **cache write** — a prompt it
+    /// had not seen, at 1.25× input. Chat on GPT-6 only; 0 for gpt-4o-mini, which
+    /// bills a first-seen prompt as plain input.
+    var cacheWriteTokens: Int = 0
     /// Portion of `promptTokens` that is image input (a higher rate than text).
     /// Images only; 0 for chat.
     var imageInputTokens: Int = 0
@@ -218,7 +222,7 @@ final class APIUsageEvent {
     // correct after old rows compact.
     //
     // - **Summed:** `count`, `promptTokens`, `cachedPromptTokens`,
-    //   `imageInputTokens`, `completionTokens`, `imageCount`, `costMicros`.
+    //   `cacheWriteTokens`, `imageInputTokens`, `completionTokens`, `imageCount`, `costMicros`.
     // - **Fold key** (rows may only fold when ALL of these are equal, since a
     //   sum across differing values would be meaningless):
     //   `causeRaw`, `model`, `endpoint`, `detail`, `childID`, `priceTableAsOf`.
@@ -286,6 +290,7 @@ final class APIUsageEvent {
          detail: String = "",
          promptTokens: Int = 0,
          cachedPromptTokens: Int = 0,
+         cacheWriteTokens: Int = 0,
          imageInputTokens: Int = 0,
          completionTokens: Int = 0,
          imageCount: Int = 0,
@@ -301,6 +306,7 @@ final class APIUsageEvent {
         self.detail = detail
         self.promptTokens = promptTokens
         self.cachedPromptTokens = cachedPromptTokens
+        self.cacheWriteTokens = cacheWriteTokens
         self.imageInputTokens = imageInputTokens
         self.completionTokens = completionTokens
         self.imageCount = imageCount

@@ -17,7 +17,7 @@ import Foundation
 struct SceneRefinerService {
     let apiKey: String
 
-    private let model = "gpt-4o-mini"
+    /// The model is `ModelID.sceneAuthoring`.
     private let temperature = 0.5
     private let maxTokens = 3000
 
@@ -74,15 +74,10 @@ struct SceneRefinerService {
                      allTiles: [TileModel]) -> [String: Any] {
         let system = buildSystemPrompt(currentTopical: currentTopical)
         let user = buildUserPrompt(instruction: instruction, vocabBlock: buildVocabBlock(allTiles: allTiles))
-        return [
-            "model": model,
-            "temperature": temperature,
-            "max_tokens": maxTokens,
-            "messages": [
-                ["role": "system", "content": system],
-                ["role": "user",   "content": user]
-            ]
-        ]
+        return ChatRequest.body(model: ModelID.sceneAuthoring,
+                                messages: [["role": "system", "content": system],
+                                           ["role": "user", "content": user]],
+                                temperature: temperature, maxTokens: maxTokens)
     }
 
     // MARK: - Prompt builders
