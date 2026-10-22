@@ -1,0 +1,572 @@
+{
+ "sentence/gpt-4o-mini/dad_park_slide#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/dad_park_slide#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/mom_cookie#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/mom_cookie#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/mom_outside#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/mom_outside#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/me_want_juice#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/me_want_juice#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/him_hit_me#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/him_hit_me#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/her_pool#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/her_pool#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/pizza_eat_mom_scrambled#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/pizza_eat_mom_scrambled#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/juice_more#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/juice_more#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/tv_stop#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/tv_stop#0": {
+  "verdict": "approve",
+  "note": "Better than gpt-4o-mini's 'Stop the TV!'."
+ },
+ "sentence/gpt-4o-mini/grandma_book#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/grandma_book#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/yes_no#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/yes_no#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/i_bus_school#0": {
+  "verdict": "reject",
+  "cause": "grammar",
+  "note": "'I want the bus to school.'"
+ },
+ "sentence/gpt-6-luna-none/i_bus_school#0": {
+  "verdict": "approve",
+  "note": "Correct; gpt-4o-mini's answer to the identical request flipped this afternoon."
+ },
+ "sentence/gpt-4o-mini/i_school_bus_scrambled#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/i_school_bus_scrambled#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/i_park_bus#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/i_park_bus#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/she_pool#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/she_pool#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/he_find_raptor#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/he_find_raptor#0": {
+  "verdict": "approve",
+  "note": "Approve, though 'He found a raptor' would be more natural."
+ },
+ "sentence/gpt-4o-mini/they_play_ball#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/they_play_ball#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/we_go_park#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/we_go_park#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/you_help_me#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/you_help_me#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/dad_eat_pizza#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/dad_eat_pizza#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/we_park#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/we_park#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/they_ball#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/they_ball#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/he_raptor#0": {
+  "verdict": "reject",
+  "cause": "meaning",
+  "note": "'He is a raptor.'"
+ },
+ "sentence/gpt-6-luna-none/he_raptor#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/i_school#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/i_school#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/she_pizza#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/she_pizza#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/teacher_tired#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/teacher_tired#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/mom_want_eat_pizza#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/mom_want_eat_pizza#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/go_potty#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/go_potty#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/find_ball#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/find_ball#0": {
+  "verdict": "reject",
+  "cause": "dropped-tile",
+  "note": "Drops find: 'I want to play ball.'"
+ },
+ "sentence/gpt-4o-mini/take_bus#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/take_bus#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/stop_hit#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/stop_hit#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/i_like_dog#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/i_like_dog#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/see_cat#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/see_cat#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/i_am_tired#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/i_am_tired#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/they_are_happy#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/they_are_happy#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/i_was_scared#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/i_was_scared#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/not_want_milk#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/not_want_milk#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/no_bed#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/no_bed#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/no_house#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/no_house#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/no_bed_no#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/no_bed_no#0": {
+  "verdict": "approve",
+  "note": "Approve: 'No! No!' is the child's doubled no; the 3-sentence count is too strict here."
+ },
+ "sentence/gpt-4o-mini/no_bath#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/no_bath#0": {
+  "verdict": "reject",
+  "cause": "meaning",
+  "note": "'No! Don't wash!' orders someone else; the child is refusing a wash."
+ },
+ "sentence/gpt-4o-mini/where_mom#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/where_mom#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/where_dad#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/where_dad#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/what_eat#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/what_eat#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/when_go_park#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/when_go_park#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/tomorrow_pool#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/tomorrow_pool#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/yesterday_park_play#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/yesterday_park_play#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/later_tv#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/later_tv#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/dog_in_car#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/dog_in_car#0": {
+  "verdict": "reject",
+  "cause": "meaning",
+  "note": "A report became a want: 'I want a dog in the car.'"
+ },
+ "sentence/gpt-4o-mini/all_done_mom#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/all_done_mom#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/again_swing#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/again_swing#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/tired_bed_II-III#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/tired_bed_II-III#0": {
+  "verdict": "reject",
+  "cause": "meaning",
+  "note": "'I want the bed' — bed is going to bed."
+ },
+ "sentence/gpt-4o-mini/tired_bed_IV#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/tired_bed_IV#0": {
+  "verdict": "reject",
+  "cause": "meaning",
+  "note": "'I want the bed' — bed is going to bed."
+ },
+ "sentence/gpt-4o-mini/mom_hungry_IV#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/mom_hungry_IV#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/go_outside_play_IV#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/go_outside_play_IV#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/she_pool_IV#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/she_pool_IV#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/yesterday_park_play_IV#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/yesterday_park_play_IV#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/hurt_stomach#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/hurt_stomach#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/he_hit_me#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/he_hit_me#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/dog_bite_me#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/dog_bite_me#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/dad_scared#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/dad_scared#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/mom_head_hurt#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/mom_head_hurt#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/teacher_sick#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/teacher_sick#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/history_more#0": {
+  "verdict": "reject",
+  "cause": "history",
+  "note": "Doesn't name the juice from the conversation."
+ },
+ "sentence/gpt-6-luna-none/history_more#0": {
+  "verdict": "reject",
+  "cause": "history",
+  "note": "Doesn't name the juice from the conversation."
+ },
+ "sentence/gpt-4o-mini/history_unrelated#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/history_unrelated#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/snack_bar_food#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/snack_bar_food#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/orange_food#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/orange_food#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/bowl_actions#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/bowl_actions#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/refine_question#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/refine_question#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-4o-mini/refine_shorter#0": {
+  "verdict": "approve",
+  "note": ""
+ },
+ "sentence/gpt-6-luna-none/refine_shorter#0": {
+  "verdict": "reject",
+  "cause": "refine",
+  "note": "Asked to shorten; still 12 words."
+ }
+}

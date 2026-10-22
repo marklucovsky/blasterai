@@ -1,0 +1,19 @@
+{
+  "name": "2026-10-21-1730-gpt-4o-mini-l5",
+  "label": "l5",
+  "model": "gpt-4o-mini",
+  "effort": null,
+  "judge": "gpt-6.1-sol",
+  "judge_effort": "low",
+  "judge_n": 3,
+  "samples": 5,
+  "commit": "660c8d0+dirty",
+  "prompt_rev": "e41fa53658",
+  "rubric_rev": "fc770a3add",
+  "rejudged_from": null,
+  "started": "2026-10-21T17:30:23",
+  "seconds": 1086.0,
+  "outputs": 415,
+  "subject_cost": 0.13378365,
+  "judge_cost": 2.0333217
+}

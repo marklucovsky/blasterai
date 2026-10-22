@@ -1,0 +1,19 @@
+{
+  "name": "2026-10-21-1639-gpt-4o-mini-baseline-current-rejudge",
+  "label": "baseline-current-rejudge",
+  "model": "gpt-4o-mini",
+  "effort": null,
+  "judge": null,
+  "judge_effort": "low",
+  "judge_n": 1,
+  "samples": 5,
+  "commit": "660c8d0+dirty",
+  "prompt_rev": "9382d07e6c",
+  "rubric_rev": "fc770a3add",
+  "rejudged_from": "docs/eval/runs/2026-10-21-1550-gpt-4o-mini-baseline-current",
+  "started": "2026-10-21T16:39:19",
+  "seconds": 0.1,
+  "outputs": 415,
+  "subject_cost": 0.1094496,
+  "judge_cost": 2.1948875
+}

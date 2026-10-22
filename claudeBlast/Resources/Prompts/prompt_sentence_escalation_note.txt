@@ -1,1 +1,1 @@
-(Same tiles again — repeat #{{count}}. Escalate from your last sentence.)
+(Same tiles again — repeat #{{count}}. Climb exactly ONE step from your last sentence: this is step {{count}} of the ladder, not the top unless {{count}} is 3.)

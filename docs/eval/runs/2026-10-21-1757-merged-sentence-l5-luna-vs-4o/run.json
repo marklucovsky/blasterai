@@ -1,0 +1,18 @@
+{
+ "name": "2026-10-21-1757-merged-sentence-l5-luna-vs-4o",
+ "label": "sentence-l5-luna-vs-4o",
+ "merged_from": [
+  {
+   "run": "2026-10-21-1730-gpt-6-luna-none-l5",
+   "tag": "gpt-6-luna-none",
+   "judge": "gpt-6.1-sol"
+  },
+  {
+   "run": "2026-10-21-1730-gpt-4o-mini-l5",
+   "tag": "gpt-4o-mini",
+   "judge": "gpt-6.1-sol"
+  }
+ ],
+ "samples": 1,
+ "outputs": 140
+}

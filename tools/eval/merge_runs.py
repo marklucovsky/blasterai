@@ -33,6 +33,7 @@ def main() -> int:
     ap.add_argument("runs", nargs="+")
     ap.add_argument("--label", required=True)
     ap.add_argument("--samples", type=int, default=1, help="samples kept per case per run")
+    ap.add_argument("--surface", help="keep only this surface (e.g. sentence)")
     args = ap.parse_args()
 
     merged, sources = [], []
@@ -42,7 +43,7 @@ def main() -> int:
         sources.append({"run": meta["name"], "tag": tag(meta), "judge": meta.get("judge")})
         for line in (run / "results.jsonl").read_text().splitlines():
             r = json.loads(line)
-            if r["sample"] < args.samples:
+            if r["sample"] < args.samples and (not args.surface or r["surface"] == args.surface):
                 merged.append({**r, "surface": f"{r['surface']}/{tag(meta)}"})
     order = {c: n for n, c in enumerate(dict.fromkeys(r["case"] for r in merged))}
     merged.sort(key=lambda r: (order[r["case"]], r["surface"], r["sample"]))

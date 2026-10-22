@@ -90,9 +90,17 @@ def pronoun_as_address(text: str) -> str | None:
     return m.group(1).lower() if m else None
 
 
+def plain_quotes(text: str) -> str:
+    """GPT-6 writes typographic apostrophes ("don’t"); every check here is
+    written with the plain one, so "No, I don’t want to go home" read as a
+    request to go home (2026-10-21, Luna)."""
+    return text.replace("’", "'").replace("‘", "'").replace("“", '"').replace("”", '"')
+
+
 def score_sentence(text: str, tiles: list[dict], stage: str, expect: dict | None = None,
                    escalating: bool = False) -> list[str]:
     expect = expect or {}
+    text = plain_quotes(text)
     values = [t["value"] for t in tiles]
     issues = []
     if empty_or_degenerate(text):
@@ -185,6 +193,7 @@ def score_escalation(ladder: list[str], tiles: list[dict], stage: str,
                      expect: dict | None = None) -> tuple[list[int], list[str]]:
     """`expect` holds on every rung — a refusal must still refuse at the top."""
     issues = []
+    ladder = [plain_quotes(t) for t in ladder]
     levels = [intensity(t) for t in ladder]
     for i, text in enumerate(ladder):
         if rung := score_sentence(text, tiles, stage, expect, escalating=i > 0):
