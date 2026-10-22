@@ -64,7 +64,13 @@ enum CacheKeyPolicy {
     // is now a routine, stop with a thing turns it off, and a pronoun with a
     // place says where that person is. Escalation rungs keep the first
     // sentence's own words.
-    nonisolated static let promptVersion = 7
+    //
+    // v8: prompt l6 (2026-10-21). "i, iced tea, all done" was "I'm all done. Can
+    // I have iced tea?" on both models — all done with a thing now means
+    // finished with it. Also: no + an action refuses doing it ("No! Don't
+    // wash!" was an order), a thing and where it is is a statement ("I want a
+    // dog in the car"), a feeling with the routine it calls for.
+    nonisolated static let promptVersion = 8
 
     /// Stamped onto each cache entry (`SentenceCache.keyVersion`) and embedded in
     /// the key. Excludes stage + word class on purpose — those are legitimate
