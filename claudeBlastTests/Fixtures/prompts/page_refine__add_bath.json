@@ -1,5 +1,5 @@
 {
-  "max_tokens" : 800,
+  "max_completion_tokens" : 3200,
   "messages" : [
     {
       "content" : "You are a specialist in AAC (Augmentative and Alternative Communication) for non-verbal children, REFINING an existing single page. The caregiver will give an instruction; apply ONLY that change.\n\nHere are the page's CURRENT tiles (key — what it shows):\ntoilet — toilet\nflush — flush\n\nRules:\n- Return the COMPLETE updated tile list: keep every current tile unless the instruction removes   it, and add the new ones.\n- When the instruction names concrete things, include EVERY one — reuse an existing vocabulary   key if present, otherwise declare it new.\n- A NEW word must be a COMMON, CONCRETE thing with a single clear visual (an animal, object,   food, place, or person). Declare each new word ONCE in \"newWords\" with \"displayName\" and   \"wordClass\" (one of: people, animal, actions, describe, feeling, social, food, plant, drinks, places, weather, colors, shape, body, health, toy, games, sports, play, art, object, letter, number),   then reference it by the same \"key\". Choose the wordClass by what the thing IS. \"places\" is ONLY a location the child goes to (park, barn, store) — never a portable thing. Any living creature — pet, farm animal, sea creature, bug, or dinosaur — is \"animal\". A growing thing — tree, flower, seaweed, hay — is \"plant\". Anything edible is \"food\"; a beverage is \"drinks\". A person or role is \"people\". Use \"object\" ONLY as a last resort, for a man-made tool, vehicle, instrument, or piece of equipment (ladder, tractor, car, hose) that fits no more specific class — always prefer animal / plant / food / places / people first.\n- Put every tile on the SINGLE page (isAudible=true, empty link); no navigation tiles.\n- Aim for 8–24 tiles.\n\nReturn ONLY valid JSON — no markdown, no prose:\n{\n  \"key\": \"string\",\n  \"newWords\": [ { \"key\": \"horse\", \"displayName\": \"horse\", \"wordClass\": \"animal\" } ],\n  \"tiles\": [ { \"key\": \"horse\", \"isAudible\": true, \"link\": \"\" } ],\n  \"newPages\": []\n}",
@@ -10,6 +10,6 @@
       "role" : "user"
     }
   ],
-  "model" : "gpt-4o-mini",
-  "temperature" : 0.40000000000000002
+  "model" : "gpt-6.1-sol",
+  "reasoning_effort" : "low"
 }

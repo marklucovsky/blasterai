@@ -1,0 +1,19 @@
+{
+  "name": "2026-10-23-1203-gpt-6.1-sol-low-switch-sol",
+  "label": "switch-sol",
+  "model": "gpt-6.1-sol",
+  "effort": "low",
+  "judge": "gpt-6-astra",
+  "judge_effort": "low",
+  "judge_n": 3,
+  "samples": 3,
+  "commit": "2915942",
+  "prompt_rev": "cd9854217d",
+  "rubric_rev": "fc770a3add",
+  "rejudged_from": null,
+  "started": "2026-10-23T12:03:10",
+  "seconds": 643.7,
+  "outputs": 105,
+  "subject_cost": 0.8195188,
+  "judge_cost": 5.68976
+}

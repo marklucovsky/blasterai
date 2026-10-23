@@ -22,20 +22,31 @@ import os
 /// Luna writes sentences), so one shared setting would have moved the word
 /// audit to Sol along with the scenes. Switching a job is now one line here;
 /// `ChatRequest` adapts the body to whatever model the line names.
+///
+/// **Build 9 (2026-10-23) moved every chat job off gpt-4o-mini**, which retires
+/// 2027-01-14. Per-job numbers are in `docs/eval/gpt6-switch.md`.
 enum ModelID {
     /// Sentence generation and escalation. `CacheKeyPolicy.modelID` reads this,
-    /// so the cache key and the request model stay coupled.
-    nonisolated static let sentence = "gpt-4o-mini"
-    /// Scene and page generation and refinement.
-    nonisolated static let sceneAuthoring = "gpt-4o-mini"
-    /// Tile suggestions for a goal.
-    nonisolated static let tileSuggest = "gpt-4o-mini"
+    /// so the cache key and the request model stay coupled — the switch retires
+    /// gpt-4o-mini's cached sentences rather than serving them. Luna, not Sol:
+    /// Sol's sentences were better but ~1.5 s at p50, and this is the child's
+    /// real-time path.
+    nonisolated static let sentence = "gpt-6-luna"
+    /// Scene and page generation and refinement. Sol: far better pages, at
+    /// ~16 s for a whole scene (gpt-4o-mini ~6 s).
+    nonisolated static let sceneAuthoring = "gpt-6.1-sol"
+    /// Tile suggestions for a goal. Sol: 6 of 24 outputs weak against Luna's 17,
+    /// at ~5 s; it is authoring, not the child's path.
+    nonisolated static let tileSuggest = "gpt-6.1-sol"
     /// The word audit's age-appropriateness rubric (`WordModerationService`
-    /// tier 3) — the primary gate on a new word.
-    nonisolated static let wordAudit = "gpt-4o-mini"
+    /// tier 3) — the primary gate on a new word. Luna is more lenient than
+    /// gpt-4o-mini: report-harm words (fight, blood, hate) and mild insults are
+    /// flagged for the caregiver rather than blocked, as decided 2026-10-19.
+    nonisolated static let wordAudit = "gpt-6-luna"
     /// "Does this tile show skin?" before a tone transform — an image input, so
-    /// the model must accept images (gpt-6-luna does, checked 2026-10-21).
-    nonisolated static let skinCheck = "gpt-4o-mini"
+    /// the model must accept images. Luna matches the recorded Classic answers
+    /// (`tools/eval/probe_skin_check.py`) once its token limit fits the answer.
+    nonisolated static let skinCheck = "gpt-6-luna"
     /// `/v1/moderations` policy screen — free.
     nonisolated static let moderation = "omni-moderation-latest"
     /// Tile art generation and refinement. gpt-image-1 shuts down 2026-10-23;

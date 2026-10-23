@@ -24,6 +24,23 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import prompts as P  # noqa: E402
+import models  # noqa: E402
+
+
+def job(name: str) -> str:
+    """Which `ModelID` job a fixture's request belongs to."""
+    if name.startswith("sentence__"):
+        return "sentence"
+    if name.startswith("tile_suggest__"):
+        return "tile_suggest"
+    if name.startswith("moderation_rubric__"):
+        return "word_audit"
+    return "scene_authoring"
+
+
+def shipped(name: str, body: dict) -> dict:
+    """The body as the app sends it: adapted to the job's model, as ChatRequest does."""
+    return models.adapt(body, P.APP_MODELS[job(name)])[0]
 
 # Inputs mirrored from PromptFixtureTests.swift — keep the two in step.
 MOM_EAT_PIZZA = [{"value": "mom", "wordClass": "people"}, {"value": "eat", "wordClass": "actions"},
@@ -91,7 +108,7 @@ def main() -> int:
             print(f"MISSING  {name}: no fixture — record PromptFixtureTests")
             failures += 1
             continue
-        diff = first_difference(CASES[name](), json.loads(path.read_text(encoding="utf-8")))
+        diff = first_difference(shipped(name, CASES[name]()),json.loads(path.read_text(encoding="utf-8")))
         if diff:
             failures += 1
             print(f"DIFFERS  {name}\n  {diff}")

@@ -1,0 +1,19 @@
+{
+  "name": "2026-10-23-1203-gpt-6-luna-none-switch-luna",
+  "label": "switch-luna",
+  "model": "gpt-6-luna",
+  "effort": "none",
+  "judge": "gpt-6.1-sol",
+  "judge_effort": "low",
+  "judge_n": 3,
+  "samples": 3,
+  "commit": "2915942",
+  "prompt_rev": "cd9854217d",
+  "rubric_rev": "fc770a3add",
+  "rejudged_from": null,
+  "started": "2026-10-23T12:03:10",
+  "seconds": 488.1,
+  "outputs": 117,
+  "subject_cost": 0.03475242,
+  "judge_cost": 1.15757
+}

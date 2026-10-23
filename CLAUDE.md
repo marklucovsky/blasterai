@@ -145,7 +145,7 @@ Lives in `Engine/SentenceEngine.swift`. Injected as environment object.
 - `sessionNotes: String` — free-text notes, long-press any tile to append
 
 Provider abstraction: `SentenceProvider` protocol. Implementations:
-- `OpenAISentenceProvider` — gpt-4o-mini, returns text only
+- `OpenAISentenceProvider` — `ModelID.sentence` (gpt-6-luna from build 9), returns text only
 - `MockSentenceProvider` — instant fake response, no API key needed
 
 Audio: `SpeechSynthesizer.swift` wraps `AVSpeechSynthesizer` for all TTS (sentences + tile preview). Audio session configured with `.playback` + `.spokenAudio` at launch so speech plays regardless of the silent switch. Voice selected in AdminView, persisted in `speechVoiceIdentifier` UserDefaults key.

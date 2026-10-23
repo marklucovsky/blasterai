@@ -380,7 +380,11 @@ enum TileImageGenerator {
                                    "detail": "low"]],
                 ],
             ]],
-            temperature: 0, maxTokens: 3)
+            // 16, not 3: gpt-6-luna spends 4 completion tokens on "yes", and a
+            // truncated answer comes back EMPTY — which reads as "no", so every
+            // person would silently keep the default skin tone (probe 2026-10-23,
+            // tools/eval/probe_skin_check.py: 20/40 at 3, all the misses empty).
+            temperature: 0, maxTokens: 16)
         guard let data = try? JSONSerialization.data(withJSONObject: body) else { return false }
 
         var request = URLRequest(url: URL(string: "https://api.openai.com/v1/chat/completions")!)

@@ -9,6 +9,6 @@
       "role" : "user"
     }
   ],
-  "model" : "gpt-4o-mini",
-  "temperature" : 0
+  "model" : "gpt-6-luna",
+  "reasoning_effort" : "none"
 }
