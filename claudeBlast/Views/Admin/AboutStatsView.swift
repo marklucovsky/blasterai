@@ -35,6 +35,10 @@ struct AboutStatsView: View {
 
     var body: some View {
         List {
+            Section("BlasterAI") {
+                LabeledContent("Version", value: AppVersion.display)
+                    .textSelection(.enabled)
+            }
             Section("Vocabulary") {
                 LabeledContent("Words", value: "\(words.count)")
                 let custom = words.filter { !$0.isSystem }.count

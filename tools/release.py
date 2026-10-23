@@ -5,12 +5,17 @@
 
     Usage, and the recommended sequence is two commands rather than one:
 
-        python3 tools/release.py --bump build      # archive + export, no upload
+        python3 tools/release.py                   # archive + export, no upload
         # read the entitlement lines it prints, then:
         python3 tools/release.py --no-bump --upload --skip-preflight
 
-        python3 tools/release.py --bump build --upload   # both at once
+        python3 tools/release.py --upload          # both at once
         python3 tools/release.py --version 1.0.0 --bump build
+
+    The build number is bumped at the START of the first session after an
+    upload, so main already carries the next number. With no `--bump`, the
+    script keeps the number unless its tag exists (it was spent) and only then
+    bumps — so the default is right whether or not the early bump happened.
 
     Splitting buys a look at the shipped entitlements before a build number is
     spent, and a number is spent permanently — App Store Connect will not accept
@@ -376,8 +381,9 @@ def upload(ipa: Path, key_id: str, issuer: str) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Produce a TestFlight build.")
-    ap.add_argument("--bump", choices=["build", "patch", "minor"], default="build",
-                    help="what to increment (default: %(default)s)")
+    ap.add_argument("--bump", choices=["build", "patch", "minor"],
+                    help="what to increment. Default: keep the number if it is "
+                         "unspent (no tag yet), else bump the build")
     ap.add_argument("--no-bump", action="store_true",
                     help="re-archive the current version, e.g. after a failed export")
     ap.add_argument("--version", help="set the marketing version explicitly")
@@ -391,9 +397,12 @@ def main() -> int:
         preflight()
 
     marketing, build = read_versions()
-    if args.no_bump:
+    spent = run(["git", "rev-parse", "-q", "--verify",
+                 f"refs/tags/{release_tag(marketing, build)}"]).returncode == 0
+    if args.no_bump or (args.bump is None and not args.version and not spent):
         print(f"▸ version   {marketing} ({build}), unchanged")
     else:
+        args.bump = args.bump or "build"
         marketing, build = bumped(marketing, build, args.bump, args.version)
         write_versions(marketing, build)
         print(f"▸ version   {marketing} ({build})")

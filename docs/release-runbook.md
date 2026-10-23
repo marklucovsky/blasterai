@@ -6,8 +6,8 @@ than a memory, and so someone who is not Mark can produce one.
 **Status:** scripted end to end. `tools/preflight_release.py` checks, then
 `tools/release.py` bumps, archives, exports and (opt-in) uploads.
 
-    python3 tools/release.py --bump build            # bump, archive, export
-    python3 tools/release.py --bump build --upload   # …and send it
+    python3 tools/release.py              # archive, export (bumps only if the number is spent)
+    python3 tools/release.py --upload     # …and send it
 
 Upload is opt-in on purpose: archive and export are repeatable, but a build
 number is spent permanently — App Store Connect will not take the same
@@ -112,18 +112,31 @@ Rules App Store Connect enforces:
 Bump the **Release** pair of the app target. Missing that is the failure mode,
 because a Debug-only bump looks right in Xcode and ships the old number.
 
+### Bump at the start, not at the upload
+
+**The first session after an upload bumps the build number**, in its first PR
+(build 9's bump rode with the About & Stats version line). From then on,
+everything merged to main accrues to the next build, and a Debug build says so
+in Admin › Device › About & Stats.
+
+So at release time the number is usually already right. `release.py` with no
+`--bump` keeps it when its tag `v<version>-<build>` does not exist yet (the
+number is unspent) and bumps the build only when the tag exists — the default
+is correct either way. Passing `--bump build` explicitly always increments,
+which on an early-bumped main skips a number; don't, unless that is the point.
+
 ---
 
 ## 4. Archive, export, upload
 
 **Two commands, not one.** This is the recommended sequence:
 
-    python3 tools/release.py --bump build                    # archive + export, no upload
+    python3 tools/release.py                                 # archive + export, no upload
     # read the entitlement lines it prints
     python3 tools/release.py --no-bump --upload --skip-preflight
     git push origin main v0.9.0-6                            # the command it prints
 
-Leave the bump uncommitted between the two runs. The upload run commits it and
+If the first run bumped, leave the bump uncommitted between the two runs. The upload run commits it and
 tags the commit — see [Every upload is tagged](#every-upload-is-tagged).
 
 ### Why split it
