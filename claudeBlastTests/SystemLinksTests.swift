@@ -79,6 +79,78 @@ struct SystemLinksTests {
         #expect(SystemLinks.displayName(of: "animals") == "Animals")
     }
 
+    // MARK: - One dial for both boards
+
+    /// A zoo scene with `levels` levels whose home links to the core board's
+    /// Actions, and a core board with 5: Actions holds a word per level, and a
+    /// Groups page nothing links to.
+    private func boards(levels: Int, linked: Bool = true) -> (BlasterScene, BlasterScene) {
+        TestStore.reset()
+        let context = TestStore.container.mainContext
+        let system = BlasterScene(name: "BlasterAI 60", descriptionText: "", homePageKey: "home")
+        system.isDefault = true
+        system.pages = [
+            PageSpec(key: "home", tiles: [TileEntry(key: "actions", link: "actions", isAudible: false)]),
+            PageSpec(key: "actions", tiles: (1...5).map { TileEntry(key: "verb\($0)", revealLevel: $0) }),
+            PageSpec(key: "groups", tiles: [TileEntry(key: "animal", revealLevel: 1)]),
+        ]
+        system.setRevealLevelCount(5)
+        let zoo = BlasterScene(name: "Zoo", descriptionText: "", homePageKey: sceneHome)
+        zoo.pages = [PageSpec(key: sceneHome, tiles: [
+            TileEntry(key: "lion", revealLevel: 1),
+            TileEntry(key: "roar", revealLevel: 2),
+            TileEntry(key: "actions", link: linked ? "<system>:actions" : "", isAudible: false),
+        ])]
+        zoo.setRevealLevelCount(levels)
+        context.insert(system)
+        context.insert(zoo)
+        return (zoo, system)
+    }
+
+    @Test func theDialSpansTheWiderBoard() {
+        let (zoo, system) = boards(levels: 2)
+        let levels = BoardLevels(scene: zoo, system: system)
+        #expect(levels.count == 5)
+        levels.setLevel(4)
+        #expect(levels.level == 4)
+        // The zoo's own pages are at their top; the core board is at 4.
+        #expect(zoo.visiblePages[0].tiles.allSatisfy { !$0.isConcealed })
+        let actions = levels.systemPages.first { $0.key == "actions" }!
+        #expect(actions.tiles.map(\.isConcealed) == [false, false, false, false, true])
+    }
+
+    @Test func aLowBoardOpensOntoALowCorePage() {
+        let (zoo, system) = boards(levels: 2)
+        let levels = BoardLevels(scene: zoo, system: system)
+        levels.setLevel(1)
+        #expect(zoo.visiblePages[0].tiles.map(\.isConcealed) == [false, true, false])
+        let actions = levels.systemPages.first { $0.key == "actions" }!
+        #expect(actions.tiles.count { !$0.isConcealed } == 1)
+    }
+
+    @Test func aBoardWithoutLevelsOpensAtTheTop() {
+        let (zoo, system) = boards(levels: 0)
+        let levels = BoardLevels(scene: zoo, system: system)
+        #expect(levels.count == 5)
+        #expect(levels.level == 5)
+        #expect(levels.systemPages.flatMap(\.tiles).allSatisfy { !$0.isConcealed })
+    }
+
+    @Test func aBoardThatNeverLinksKeepsItsOwnDial() {
+        let (zoo, system) = boards(levels: 2, linked: false)
+        #expect(BoardLevels(scene: zoo, system: system).count == 2)
+        #expect(BoardLevels(scene: zoo, system: system).systemPages.isEmpty)
+        // The core board's own dial is its own.
+        #expect(BoardLevels(scene: system, system: system).count == 5)
+    }
+
+    @Test func theWordCountIncludesOnlyCorePagesTheBoardReaches() {
+        let (zoo, system) = boards(levels: 2)
+        // Level 3: lion + roar + the Actions folder, and verb1–3. Groups is
+        // unreachable, so its word does not count.
+        #expect(BoardLevels(scene: zoo, system: system).visibleTileCount(atLevel: 3) == 6)
+    }
+
     // MARK: - Away from the board
 
     @Test func aScriptMayNavigateIntoTheSystemScene() {

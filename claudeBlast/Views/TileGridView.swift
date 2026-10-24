@@ -159,8 +159,9 @@ struct TileGridView: View {
         guard let scene = activeScene else { return nil }
         let key = coordinator.currentPageKey ?? scene.homePageKey
         // The board at its level: words above it draw as concealed cells.
+        // A core-board page follows the same dial (`BoardLevels`).
         return SystemLinks.page(forKey: key, scenePages: scene.visiblePages,
-                                systemPages: systemScene?.pages ?? [])
+                                systemPages: BoardLevels(scene: scene, system: systemScene).systemPages)
     }
 
     // MARK: - Tray
@@ -798,7 +799,7 @@ struct TileGridView: View {
                 // The level dial stays open after a step on purpose: the board
                 // redraws under the popover, which is how a caregiver finds the
                 // level that fits — step, look, step again.
-                if let scene = activeScene, scene.revealLevelCount > 0 {
+                if let scene = activeScene, BoardLevels(scene: scene, system: systemScene).count > 0 {
                     RevealLevelControl(scene: scene, compact: true)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 10)

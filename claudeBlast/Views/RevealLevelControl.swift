@@ -18,29 +18,35 @@ struct RevealLevelControl: View {
     var compact = false
 
     @Environment(\.modelContext) private var modelContext
+    /// BlasterAI 60: a board that links into it steps its pages too.
+    @Query(filter: #Predicate<BlasterScene> { $0.isDefault })
+    private var systemScenes: [BlasterScene]
+
+    private var levels: BoardLevels { BoardLevels(scene: scene, system: systemScenes.first) }
 
     var body: some View {
-        if let level = scene.effectiveRevealLevel {
+        let levels = levels
+        if let level = levels.level {
             HStack(spacing: 12) {
                 stepButton("minus", enabled: level > 1) { set(level - 1) }
                 VStack(spacing: 1) {
-                    Text("Level \(level) of \(scene.revealLevelCount)")
+                    Text("Level \(level) of \(levels.count)")
                         .font(compact ? .subheadline.weight(.semibold) : .headline)
                         .monospacedDigit()
-                    let count = scene.visibleTileCount(atLevel: level)
+                    let count = levels.visibleTileCount(atLevel: level)
                     Text("\(count) visible word\(count == 1 ? "" : "s")")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
                 }
                 .frame(minWidth: 120)
-                stepButton("plus", enabled: level < scene.revealLevelCount) { set(level + 1) }
+                stepButton("plus", enabled: level < levels.count) { set(level + 1) }
             }
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Board level \(level) of \(scene.revealLevelCount)")
+            .accessibilityLabel("Board level \(level) of \(levels.count)")
             .accessibilityAdjustableAction { direction in
                 switch direction {
-                case .increment where level < scene.revealLevelCount: set(level + 1)
+                case .increment where level < levels.count: set(level + 1)
                 case .decrement where level > 1: set(level - 1)
                 default: break
                 }
@@ -61,7 +67,7 @@ struct RevealLevelControl: View {
 
     /// Writes the synced dial. Every device on this account follows it.
     private func set(_ level: Int) {
-        scene.setRevealLevel(level)
+        levels.setLevel(level)
         try? modelContext.save()
     }
 }
