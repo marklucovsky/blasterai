@@ -840,7 +840,7 @@ enum BoardPDFRenderer {
                 .withAlphaComponent(0.92).setFill()
             UIBezierPath(rect: strip).fill()
 
-            let text = "→ " + PageNaming.displayName(target)
+            let text = "→ " + SystemLinks.displayName(of: target)
             let size = max(5, stripHeight * 0.55)
             let attrs: [NSAttributedString.Key: Any] = [
                 .font: UIFont.systemFont(ofSize: size, weight: .semibold),

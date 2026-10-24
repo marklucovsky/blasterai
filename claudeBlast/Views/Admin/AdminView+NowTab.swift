@@ -230,7 +230,8 @@ extension AdminView {
                     .buttonStyle(.plain)
                 }
             }
-            if let active = scenes.first(where: \.isActive), active.revealLevelCount > 0 {
+            if let active = scenes.first(where: \.isActive),
+               BoardLevels(scene: active, system: scenes.first(where: \.isDefault)).count > 0 {
                 Section {
                     RevealLevelControl(scene: active)
                         .frame(maxWidth: .infinity)
