@@ -36,3 +36,20 @@ Tile Images
   over it. Exports say so: an .obz reports Apache-2.0 for bundled art and
   attributes caregiver-generated art to its author without claiming a
   license on their behalf.
+
+Wordbank Data
+  tools/data/wordbank/english_american_ws_aoa.csv is derived from Wordbank
+  (Stanford University), licensed under CC BY 4.0
+  (https://creativecommons.org/licenses/by/4.0/). It is the English
+  (American) Words & Sentences slice of Wordbank's age-of-acquisition table,
+  Redivis dataset datapages.wordbank v3.4 (doi:10.57761/t38b-5y26), reduced
+  to five columns. It is a development tool's input and does not ship in the
+  app.
+
+  Frank, M. C., Braginsky, M., Yurovsky, D., & Marchman, V. A. (2017).
+  Wordbank: An open repository for developmental vocabulary data. Journal of
+  Child Language, 44(3), 677–694.
+
+  Wordbank's data was collected with the MacArthur-Bates Communicative
+  Development Inventories, which are copyrighted by the CDI Advisory Board
+  and are not reproduced here.

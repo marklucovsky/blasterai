@@ -77,20 +77,40 @@ Unchanged from the last plan.
 - **Ship to TestFlight** at the end of the session: for a BYOK app with no
   server, that is the gradual rollout.
 
-### Session 14 — testers' round, vocabulary gaps, level map
+### Session 14 — the vocabulary round: double the board, give it folders
 
-- **Read build 8 feedback** — levels, quick actions, Find Word, and what
-  testers found missing.
-- **Vocabulary PR** from `docs/vocabulary-gaps-2026-10-19.md`, merged with
-  what testers report. Days of the week (drawn in code, like the other day
-  strips), the small words (of, from, if, did, could…), feelings, "I need a
-  break". Small words may want the code-rendered treatment too.
-- **Level map with Brandi** — finer early steps? some folders before the rest
-  of Home? If BlasterAI 60 follows Vocal Flair's map, credit OpenAAC/CoughDrop
-  (CC BY) in NOTICE and the scene description.
-- **Submit the Luna build** to App Review once TestFlight has soaked — aim for
-  mid-November, mid-December at the latest, so App Review and the holidays
-  can't squeeze January 14.
+Sessions 12 and 13 ran as one (#142, #143: build 9 on GPT-6), so this is the
+next session. Brandi (2026-10-23): the board is too small to be taken
+seriously, or to show it grows with the child. The draft is
+`docs/vocab-expansion-2026-10-23.md`, checked against Wordbank's CDI data
+(`tools/wordbank_coverage.py`) and Avaz's folder tree. It is intrusive and
+large — most pages change — which is why it gets a session, not a PR on the
+side.
+
+- **Brandi reviews the draft first**; her answers to its six questions set the
+  word list.
+- **Verb links** like eat/drink: I → a new "I" page, go/come → Places,
+  feel → Feelings.
+- **Static subcategory folders** on every crowded page (Places, Actions,
+  Describe, Food, Groups) — the bulk of the page for top words, folders in
+  the right columns for the rest. Link targets are fixed pages, never
+  generated from what was pressed.
+- **~130+ new words with art**, mostly the concrete nouns the CDI says we
+  lack (household, animals, clothing, outside, furniture, sounds). Folded in:
+  `docs/vocabulary-gaps-2026-10-19.md` (days of the week drawn in code, the
+  small words, feelings, "I need a break") and build 8/9 tester reports.
+- **Link colours**: audible links keep their Fitzgerald colour by default,
+  settable independently of folder links. Today `alwaysWayfinding` paints
+  eat/drink blue (`TileColorResolver.linkColor`).
+- **Level map with Brandi** — redo it over the new board: finer early steps?
+  some folders before the rest of Home? If BlasterAI 60 follows Vocal Flair's
+  map, credit OpenAAC/CoughDrop (CC BY) in NOTICE and the scene description.
+- **Not in scope:** phrase tiles (a separate discussion — "it's
+  complicated"), and the grammar bubble (came / comes / coming), which waits
+  behind a grammar flag.
+- **Submit the GPT-6 build** to App Review once TestFlight has soaked — aim
+  for mid-November, mid-December at the latest, so App Review and the
+  holidays can't squeeze January 14.
 
 ### Session 15 — sharing boards: URL install, plus the import bugfixes
 
@@ -114,9 +134,7 @@ Unchanged from the last plan.
 - Pilot testers want specialised scenes (a child with a brain injury; a
   14-year-old who struggles with his device): hand-authoring has to get easier.
 
-Whether 12 and 13 stay separate sessions is decided at session 12's close.
-Sessions 15 and 16 can swap; 14's vocabulary work can slide later if
-testers' feedback points somewhere more urgent.
+Sessions 12 and 13 merged into one. Sessions 15 and 16 can swap.
 
 ## Later, not time-bound
 

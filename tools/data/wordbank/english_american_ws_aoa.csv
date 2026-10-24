@@ -1,0 +1,681 @@
+item_id,item_definition,category,aoa_produces,aoa_understands
+item_1,baa baa,sounds,,
+item_2,choo choo,sounds,20,
+item_3,cockadoodledoo,sounds,27,
+item_4,grrr,sounds,,
+item_5,meow,sounds,17,
+item_6,moo,sounds,,
+item_7,ouch,sounds,18,
+item_8,quack quack,sounds,18,
+item_9,uh oh,sounds,,
+item_10,vroom,sounds,18,25
+item_11,woof woof,sounds,,
+item_12,yum yum,sounds,17,
+item_13,alligator,animals,27,30
+item_14,animal,animals,26,
+item_15,ant,animals,27,26
+item_16,bear,animals,21,
+item_17,bee,animals,22,28
+item_18,bird,animals,18,
+item_19,bug,animals,23,
+item_20,bunny,animals,22,
+item_21,butterfly,animals,24,
+item_22,cat,animals,18,
+item_23,chicken (animal),animals,24,
+item_24,cow,animals,21,
+item_25,deer,animals,29,24
+item_26,dog,animals,,
+item_27,donkey,animals,31,
+item_28,duck,animals,18,
+item_29,elephant,animals,23,
+item_30,fish (animal),animals,20,
+item_31,frog,animals,23,
+item_32,giraffe,animals,25,
+item_33,goose,animals,30,
+item_34,hen,animals,33,
+item_35,horse,animals,22,
+item_36,kitty,animals,20,33
+item_37,lamb,animals,29,24
+item_38,lion,animals,24,
+item_39,monkey,animals,22,
+item_40,moose,animals,32,24
+item_41,mouse,animals,25,
+item_42,owl,animals,25,
+item_43,penguin,animals,27,
+item_44,pig,animals,22,25
+item_45,pony,animals,30,
+item_46,puppy,animals,22,
+item_47,rooster,animals,30,24
+item_48,sheep,animals,25,
+item_49,squirrel,animals,26,
+item_50,teddybear,animals,25,
+item_51,tiger,animals,25,
+item_52,turkey,animals,29,
+item_53,turtle,animals,24,
+item_54,wolf,animals,30,
+item_55,zebra,animals,26,
+item_56,airplane,vehicles,21,
+item_57,bicycle,vehicles,23,
+item_58,boat,vehicles,22,
+item_59,bus,vehicles,22,
+item_60,car,vehicles,18,
+item_61,firetruck,vehicles,25,
+item_62,helicopter,vehicles,26,
+item_63,motorcycle,vehicles,27,
+item_64,sled,vehicles,33,
+item_65,stroller,vehicles,26,
+item_66,tractor,vehicles,27,
+item_67,train,vehicles,22,
+item_68,tricycle,vehicles,32,
+item_69,truck,vehicles,20,
+item_70,ball,toys,,
+item_71,balloon,toys,19,
+item_72,bat,toys,28,
+item_73,block,toys,23,
+item_74,book,toys,,
+item_75,bubbles,toys,19,
+item_76,chalk,toys,29,
+item_77,crayon,toys,24,
+item_78,doll,toys,24,
+item_79,game,toys,27,
+item_80,glue,toys,31,29
+item_81,pen,toys,26,
+item_82,pencil,toys,27,25
+item_83,play dough,toys,28,
+item_84,present,toys,27,25
+item_85,puzzle,toys,25,
+item_86,story,toys,26,
+item_87,toy (object),toys,23,
+item_88,apple,food_drink,19,
+item_89,applesauce,food_drink,27,24
+item_90,banana,food_drink,,
+item_91,beans,food_drink,27,
+item_92,bread,food_drink,23,
+item_93,butter,food_drink,27,
+item_94,cake,food_drink,23,
+item_95,candy,food_drink,24,
+item_96,carrots,food_drink,25,
+item_97,cereal,food_drink,24,
+item_98,cheerios,food_drink,25,
+item_99,cheese,food_drink,19,
+item_100,chicken (food),food_drink,24,
+item_101,chocolate,food_drink,26,
+item_102,coffee,food_drink,26,
+item_103,coke,food_drink,33,32
+item_104,cookie,food_drink,19,
+item_105,corn,food_drink,25,
+item_106,cracker,food_drink,21,
+item_107,donut,food_drink,28,
+item_108,drink (beverage),food_drink,23,
+item_109,egg,food_drink,23,
+item_110,fish (food),food_drink,24,
+item_111,food,food_drink,25,
+item_112,french fries,food_drink,25,24
+item_113,grapes,food_drink,23,
+item_114,green beans,food_drink,30,34
+item_115,gum,food_drink,30,
+item_116,hamburger,food_drink,27,
+item_117,ice,food_drink,25,29
+item_118,ice cream,food_drink,23,
+item_119,jello,food_drink,31,
+item_120,jelly,food_drink,29,
+item_121,juice,food_drink,19,
+item_122,lollipop,food_drink,29,
+item_123,meat,food_drink,28,
+item_124,melon,food_drink,30,
+item_125,milk,food_drink,19,
+item_126,muffin,food_drink,27,
+item_127,noodles,food_drink,26,
+item_128,nuts,food_drink,29,25
+item_129,orange (food),food_drink,24,
+item_130,pancake,food_drink,25,
+item_131,peas,food_drink,26,
+item_132,peanut butter,food_drink,26,
+item_133,pickle,food_drink,28,
+item_134,pizza,food_drink,22,
+item_135,popcorn,food_drink,26,28
+item_136,popsicle,food_drink,28,32
+item_137,potato chip,food_drink,26,28
+item_138,potato,food_drink,27,
+item_139,pretzel,food_drink,28,
+item_140,pudding,food_drink,32,
+item_141,pumpkin,food_drink,27,
+item_142,raisin,food_drink,26,
+item_143,salt,food_drink,30,
+item_144,sandwich,food_drink,26,
+item_145,sauce,food_drink,29,26
+item_146,soda/pop,food_drink,31,
+item_147,soup,food_drink,26,
+item_148,spaghetti,food_drink,26,
+item_149,strawberry,food_drink,25,25
+item_150,toast,food_drink,25,
+item_151,tuna,food_drink,33,
+item_152,vanilla,food_drink,33,
+item_153,vitamins,food_drink,30,24
+item_154,water (beverage),food_drink,20,
+item_155,yogurt,food_drink,24,
+item_156,beads,clothing,33,
+item_157,belt,clothing,29,27
+item_158,bib,clothing,26,
+item_159,boots,clothing,23,
+item_160,button,clothing,24,
+item_161,coat,clothing,25,
+item_162,diaper,clothing,21,
+item_163,dress (object),clothing,27,
+item_164,gloves,clothing,28,
+item_165,hat,clothing,19,
+item_166,jacket,clothing,25,
+item_167,jeans,clothing,29,
+item_168,mittens,clothing,29,
+item_169,necklace,clothing,28,
+item_170,pajamas,clothing,24,
+item_171,pants,clothing,23,
+item_172,scarf,clothing,33,29
+item_173,shirt,clothing,23,
+item_174,shoe,clothing,,
+item_175,shorts,clothing,26,28
+item_176,slipper,clothing,29,
+item_177,sneaker,clothing,32,
+item_178,snowsuit,clothing,35,
+item_179,sock,clothing,21,
+item_180,sweater,clothing,27,
+item_181,tights,clothing,34,
+item_182,underpants,clothing,29,
+item_183,zipper,clothing,26,
+item_184,ankle,body_parts,32,
+item_185,arm,body_parts,23,
+item_186,belly button,body_parts,22,
+item_187,buttocks/bottom*,body_parts,24,
+item_188,cheek,body_parts,25,
+item_189,chin,body_parts,25,
+item_190,ear,body_parts,19,
+item_191,eye,body_parts,18,
+item_192,face,body_parts,25,
+item_193,finger,body_parts,23,
+item_194,foot,body_parts,22,
+item_195,hair,body_parts,21,
+item_196,hand,body_parts,22,
+item_197,head,body_parts,22,
+item_198,knee,body_parts,24,
+item_199,leg,body_parts,24,
+item_200,lips,body_parts,27,26
+item_201,mouth,body_parts,21,
+item_202,nose,body_parts,18,
+item_203,owie/boo boo,body_parts,20,
+item_204,penis*,body_parts,28,26
+item_205,shoulder,body_parts,28,
+item_206,toe,body_parts,22,
+item_207,tongue,body_parts,25,
+item_208,tooth,body_parts,23,
+item_209,tummy,body_parts,22,
+item_210,vagina*,body_parts,33,
+item_211,basket,household,27,
+item_212,blanket,household,22,
+item_213,bottle,household,21,
+item_214,bowl,household,24,
+item_215,box,household,24,
+item_216,broom,household,26,
+item_217,brush,household,23,
+item_218,bucket,household,28,
+item_219,camera,household,27,
+item_220,can (object),household,30,32
+item_221,clock,household,25,
+item_222,comb,household,27,
+item_223,cup,household,21,
+item_224,dish,household,29,
+item_225,fork,household,23,
+item_226,garbage,household,27,
+item_227,glass,household,27,
+item_228,glasses,household,25,
+item_229,hammer,household,28,29
+item_230,jar,household,32,
+item_231,keys,household,22,
+item_232,knife,household,27,
+item_233,lamp,household,30,
+item_234,light,household,22,
+item_235,medicine,household,26,
+item_236,money,household,26,
+item_237,mop,household,32,
+item_238,nail,household,30,28
+item_239,napkin,household,26,
+item_240,paper,household,24,
+item_241,penny,household,30,
+item_242,picture,household,25,
+item_243,pillow,household,24,
+item_244,plant,household,28,
+item_245,plate,household,25,
+item_246,purse,household,27,24
+item_247,radio,household,30,30
+item_248,scissors,household,27,
+item_249,soap,household,24,25
+item_250,spoon,household,21,
+item_251,tape,household,28,
+item_252,telephone,household,22,
+item_253,tissue/kleenex,household,26,
+item_254,toothbrush,household,23,
+item_255,towel,household,25,
+item_256,trash,household,27,
+item_257,tray,household,34,24
+item_258,vacuum,household,26,
+item_259,walker,household,,
+item_260,watch (object),household,27,
+item_261,basement,furniture_rooms,36,24
+item_262,bathroom,furniture_rooms,25,
+item_263,bathtub,furniture_rooms,24,
+item_264,bed,furniture_rooms,22,
+item_265,bedroom,furniture_rooms,26,
+item_266,bench,furniture_rooms,32,
+item_267,chair,furniture_rooms,22,
+item_268,closet,furniture_rooms,28,
+item_269,couch,furniture_rooms,26,
+item_270,crib,furniture_rooms,27,
+item_271,door,furniture_rooms,22,
+item_272,drawer,furniture_rooms,29,
+item_273,dryer,furniture_rooms,30,24
+item_274,garage,furniture_rooms,28,24
+item_275,high chair,furniture_rooms,28,
+item_276,kitchen,furniture_rooms,25,
+item_277,living room,furniture_rooms,29,28
+item_278,oven,furniture_rooms,28,
+item_279,play pen,furniture_rooms,36,
+item_280,porch,furniture_rooms,33,24
+item_281,potty,furniture_rooms,23,
+item_282,rocking chair,furniture_rooms,29,
+item_283,refrigerator,furniture_rooms,27,
+item_284,room,furniture_rooms,26,
+item_285,shower,furniture_rooms,25,
+item_286,sink,furniture_rooms,27,
+item_287,sofa,furniture_rooms,31,
+item_288,stairs,furniture_rooms,26,
+item_289,stove,furniture_rooms,29,
+item_290,table,furniture_rooms,25,
+item_291,TV,furniture_rooms,23,
+item_292,window,furniture_rooms,26,
+item_293,washing machine,furniture_rooms,28,
+item_294,backyard,outside,29,
+item_295,cloud,outside,26,26
+item_296,flag,outside,28,
+item_297,flower,outside,22,
+item_298,garden,outside,30,
+item_299,grass,outside,25,
+item_300,hose,outside,29,32
+item_301,ladder,outside,29,
+item_302,lawn mower,outside,30,
+item_303,moon,outside,22,
+item_304,pool,outside,25,
+item_305,rain,outside,23,
+item_306,rock,outside,24,
+item_307,roof,outside,31,26
+item_308,sandbox,outside,29,24
+item_309,shovel,outside,27,
+item_310,sidewalk,outside,29,25
+item_311,sky,outside,25,
+item_312,slide (object),outside,25,
+item_313,snow,outside,26,
+item_314,snowman,outside,28,
+item_315,sprinkler,outside,31,
+item_316,star,outside,23,
+item_317,stick,outside,26,
+item_318,stone,outside,32,
+item_319,street,outside,27,
+item_320,sun,outside,24,
+item_321,swing (object),outside,24,
+item_322,tree,outside,21,
+item_323,water (not beverage),outside,21,
+item_324,wind,outside,27,
+item_325,beach,places,28,
+item_326,camping,places,34,
+item_327,church*,places,30,31
+item_328,circus,places,34,24
+item_329,country,places,,
+item_330,downtown,places,36,
+item_331,farm,places,29,
+item_332,gas station,places,31,
+item_333,home,places,23,
+item_334,house,places,24,
+item_335,movie,places,29,
+item_336,outside,places,21,
+item_337,park,places,24,
+item_338,party,places,27,
+item_339,picnic,places,30,
+item_340,playground,places,28,
+item_341,school,places,25,
+item_342,store,places,26,
+item_343,woods,places,34,
+item_344,work (place),places,26,
+item_345,yard,places,30,
+item_346,zoo,places,28,
+item_347,aunt,people,27,
+item_348,baby,people,,
+item_349,babysitter,people,34,
+item_350,babysitter's name,people,29,
+item_351,boy,people,25,
+item_352,brother,people,29,
+item_353,child,people,33,25
+item_354,clown,people,31,32
+item_355,cowboy,people,33,
+item_356,daddy*,people,,
+item_357,doctor,people,26,
+item_358,fireman,people,29,
+item_359,friend,people,28,
+item_360,girl,people,26,
+item_361,grandma*,people,18,
+item_362,grandpa*,people,19,
+item_363,lady,people,30,
+item_364,mailman,people,31,
+item_365,man,people,27,
+item_366,mommy*,people,,
+item_367,nurse,people,34,
+item_368,child's own name,people,21,
+item_369,people,people,29,
+item_370,person,people,34,35
+item_371,pet's name,people,23,24
+item_372,police,people,30,30
+item_373,sister,people,28,
+item_374,teacher,people,29,32
+item_375,uncle,people,28,28
+item_376,bath,games_routines,19,
+item_377,breakfast,games_routines,25,
+item_378,bye,games_routines,,
+item_379,call (on phone),games_routines,25,
+item_380,dinner,games_routines,26,
+item_381,give me five!,games_routines,26,
+item_382,gonna get you!,games_routines,26,
+item_383,go potty,games_routines,24,
+item_384,hello,games_routines,19,
+item_385,hi,games_routines,,
+item_386,lunch,games_routines,26,
+item_387,nap,games_routines,24,
+item_388,night night,games_routines,19,
+item_389,no,games_routines,,
+item_390,pattycake,games_routines,29,24
+item_391,peekaboo,games_routines,20,
+item_392,please,games_routines,20,
+item_393,shh/shush/hush,games_routines,19,
+item_394,shopping,games_routines,28,
+item_395,snack,games_routines,25,28
+item_396,so big!,games_routines,28,
+item_397,thank you,games_routines,19,
+item_398,this little piggy,games_routines,29,
+item_399,turn around,games_routines,27,
+item_400,yes,games_routines,19,
+item_401,bite,action_words,24,
+item_402,blow,action_words,26,
+item_403,break,action_words,26,
+item_404,bring,action_words,28,
+item_405,build,action_words,28,
+item_406,bump,action_words,28,
+item_407,buy,action_words,29,
+item_408,carry,action_words,27,
+item_409,catch,action_words,27,
+item_410,chase,action_words,29,
+item_411,clap,action_words,25,
+item_412,clean (action),action_words,25,
+item_413,climb,action_words,27,
+item_414,close,action_words,26,
+item_415,cook,action_words,27,
+item_416,cover,action_words,30,
+item_417,cry,action_words,24,
+item_418,cut,action_words,28,
+item_419,dance,action_words,24,
+item_420,draw,action_words,27,
+item_421,drink (action),action_words,23,
+item_422,drive,action_words,27,
+item_423,drop,action_words,28,
+item_424,dry (action),action_words,28,
+item_425,dump,action_words,31,
+item_426,eat,action_words,21,
+item_427,fall,action_words,25,
+item_428,feed,action_words,28,
+item_429,find,action_words,27,
+item_430,finish,action_words,29,
+item_431,fit,action_words,30,
+item_432,fix,action_words,26,
+item_433,get,action_words,25,
+item_434,give,action_words,27,
+item_435,go,action_words,20,
+item_436,hate,action_words,36,36
+item_437,have,action_words,27,
+item_438,hear,action_words,28,
+item_439,help,action_words,24,
+item_440,hide,action_words,27,
+item_441,hit,action_words,26,
+item_442,hold,action_words,27,
+item_443,hug,action_words,23,
+item_444,hurry,action_words,29,32
+item_445,jump,action_words,24,
+item_446,kick,action_words,26,
+item_447,kiss,action_words,22,
+item_448,knock,action_words,27,
+item_449,lick,action_words,29,27
+item_450,like,action_words,27,
+item_451,listen,action_words,29,
+item_452,look,action_words,25,
+item_453,love,action_words,24,
+item_454,make,action_words,28,
+item_455,open,action_words,23,
+item_456,paint,action_words,27,25
+item_457,pick,action_words,29,25
+item_458,play,action_words,24,
+item_459,pour,action_words,30,
+item_460,pretend,action_words,32,24
+item_461,pull,action_words,28,
+item_462,push,action_words,26,25
+item_463,put,action_words,28,
+item_464,read,action_words,24,
+item_465,ride,action_words,26,
+item_466,rip,action_words,32,
+item_467,run,action_words,25,
+item_468,say,action_words,28,
+item_469,see,action_words,24,
+item_470,shake,action_words,29,
+item_471,share,action_words,28,
+item_472,show,action_words,29,
+item_473,sing,action_words,26,
+item_474,sit,action_words,23,
+item_475,skate,action_words,33,
+item_476,sleep,action_words,24,
+item_477,slide (action),action_words,26,
+item_478,smile,action_words,28,
+item_479,spill,action_words,28,
+item_480,splash,action_words,27,
+item_481,stand,action_words,28,
+item_482,stay,action_words,28,
+item_483,stop,action_words,24,
+item_484,sweep,action_words,28,
+item_485,swim,action_words,26,
+item_486,swing (action),action_words,25,
+item_487,take,action_words,28,
+item_488,talk,action_words,27,
+item_489,taste,action_words,29,
+item_490,tear,action_words,32,
+item_491,think,action_words,31,30
+item_492,throw,action_words,26,
+item_493,tickle,action_words,25,
+item_494,touch,action_words,27,
+item_495,wait,action_words,27,
+item_496,wake,action_words,28,
+item_497,walk,action_words,24,
+item_498,wash,action_words,25,
+item_499,watch (action),action_words,27,
+item_500,wipe,action_words,27,
+item_501,wish,action_words,34,
+item_502,work (action),action_words,27,
+item_503,write,action_words,29,
+item_504,all gone,descriptive_words,20,
+item_505,asleep,descriptive_words,26,
+item_506,awake,descriptive_words,27,27
+item_507,bad,descriptive_words,26,
+item_508,better,descriptive_words,29,
+item_509,big,descriptive_words,24,
+item_510,black,descriptive_words,27,28
+item_511,blue,descriptive_words,24,26
+item_512,broken,descriptive_words,25,
+item_513,brown,descriptive_words,28,28
+item_514,careful,descriptive_words,27,26
+item_515,clean (description),descriptive_words,25,
+item_516,cold,descriptive_words,22,
+item_517,cute,descriptive_words,28,
+item_518,dark,descriptive_words,27,
+item_519,dirty,descriptive_words,24,
+item_520,dry (description),descriptive_words,28,
+item_521,empty,descriptive_words,28,
+item_522,fast,descriptive_words,27,
+item_523,fine,descriptive_words,32,27
+item_524,first,descriptive_words,30,27
+item_525,full,descriptive_words,28,26
+item_526,gentle,descriptive_words,29,
+item_527,good,descriptive_words,25,
+item_528,green,descriptive_words,25,26
+item_529,happy,descriptive_words,25,
+item_530,hard,descriptive_words,29,
+item_531,heavy,descriptive_words,26,
+item_532,high,descriptive_words,28,
+item_533,hot,descriptive_words,19,
+item_534,hungry,descriptive_words,26,
+item_535,hurt,descriptive_words,26,
+item_536,last,descriptive_words,33,31
+item_537,little (description),descriptive_words,27,
+item_538,long,descriptive_words,31,26
+item_539,loud,descriptive_words,27,
+item_540,mad,descriptive_words,29,32
+item_541,naughty,descriptive_words,35,32
+item_542,new,descriptive_words,29,
+item_543,nice,descriptive_words,27,
+item_544,noisy,descriptive_words,30,
+item_545,old,descriptive_words,31,
+item_546,orange (description),descriptive_words,25,27
+item_547,poor,descriptive_words,35,
+item_548,pretty,descriptive_words,27,
+item_549,quiet,descriptive_words,28,
+item_550,red,descriptive_words,25,26
+item_551,sad,descriptive_words,27,
+item_552,scared,descriptive_words,28,26
+item_553,sick,descriptive_words,28,
+item_554,sleepy,descriptive_words,27,28
+item_555,slow,descriptive_words,30,28
+item_556,soft,descriptive_words,28,28
+item_557,sticky,descriptive_words,28,27
+item_558,stuck,descriptive_words,27,
+item_559,thirsty,descriptive_words,27,
+item_560,tiny,descriptive_words,32,
+item_561,tired,descriptive_words,27,
+item_562,wet,descriptive_words,24,
+item_563,white,descriptive_words,27,28
+item_564,windy,descriptive_words,28,
+item_565,yellow,descriptive_words,25,25
+item_566,yucky,descriptive_words,24,
+item_567,after,time_words,31,
+item_568,before,time_words,33,24
+item_569,day,time_words,30,25
+item_570,later,time_words,29,
+item_571,morning,time_words,28,
+item_572,night,time_words,26,
+item_573,now,time_words,27,
+item_574,time,time_words,33,
+item_575,today,time_words,30,
+item_576,tomorrow,time_words,30,
+item_577,tonight,time_words,32,32
+item_578,yesterday,time_words,34,26
+item_579,he,pronouns,29,
+item_580,her,pronouns,31,
+item_581,hers,pronouns,33,29
+item_582,him,pronouns,31,28
+item_583,his,pronouns,32,
+item_584,I,pronouns,25,
+item_585,it,pronouns,28,
+item_586,me,pronouns,23,
+item_587,mine,pronouns,21,
+item_588,my,pronouns,26,
+item_589,myself,pronouns,32,29
+item_590,our,pronouns,33,
+item_591,she,pronouns,30,
+item_592,that,pronouns,26,25
+item_593,their,pronouns,34,32
+item_594,them,pronouns,33,25
+item_595,these,pronouns,31,25
+item_596,they,pronouns,32,
+item_597,this,pronouns,26,
+item_598,those,pronouns,32,29
+item_599,us,pronouns,34,28
+item_600,we,pronouns,31,
+item_601,you,pronouns,25,
+item_602,your,pronouns,30,
+item_603,yourself,pronouns,36,29
+item_604,how,question_words,31,
+item_605,what,question_words,25,
+item_606,when,question_words,32,
+item_607,where,question_words,26,
+item_608,which,question_words,35,
+item_609,who,question_words,29,
+item_610,why,question_words,29,
+item_611,about,locations,35,30
+item_612,above,locations,35,24
+item_613,around,locations,31,28
+item_614,at,locations,30,
+item_615,away,locations,28,
+item_616,back,locations,28,
+item_617,behind,locations,30,
+item_618,beside,locations,35,
+item_619,by,locations,31,
+item_620,down,locations,21,
+item_621,for,locations,30,
+item_622,here,locations,26,
+item_623,inside/in,locations,25,
+item_624,into,locations,33,
+item_625,next to,locations,32,
+item_626,of,locations,34,
+item_627,off,locations,23,
+item_628,on,locations,24,
+item_629,on top of,locations,30,25
+item_630,out,locations,24,
+item_631,over,locations,29,
+item_632,there,locations,27,
+item_633,to,locations,29,
+item_634,under,locations,28,
+item_635,up,locations,20,
+item_636,with,locations,29,
+item_637,a,quantifiers,28,26
+item_638,all,quantifiers,28,28
+item_639,a lot,quantifiers,30,
+item_640,an,quantifiers,36,
+item_641,another,quantifiers,30,
+item_642,any,quantifiers,32,
+item_643,each,quantifiers,36,
+item_644,every,quantifiers,33,28
+item_645,more,quantifiers,21,
+item_646,much,quantifiers,32,25
+item_647,none,quantifiers,32,28
+item_648,not,quantifiers,29,
+item_649,other,quantifiers,31,24
+item_650,same,quantifiers,31,
+item_651,some,quantifiers,28,
+item_652,the,quantifiers,29,26
+item_653,too,quantifiers,27,
+item_654,am,helping_verbs,30,30
+item_655,are,helping_verbs,31,32
+item_656,be,helping_verbs,32,33
+item_657,can (auxiliary),helping_verbs,29,28
+item_658,could,helping_verbs,35,32
+item_659,did/did ya,helping_verbs,30,30
+item_660,do,helping_verbs,26,27
+item_661,does,helping_verbs,33,32
+item_662,don't,helping_verbs,28,30
+item_663,gonna/going to,helping_verbs,29,30
+item_664,gotta/got to,helping_verbs,32,35
+item_665,hafta/have to,helping_verbs,31,30
+item_666,is,helping_verbs,29,30
+item_667,lemme/let me,helping_verbs,28,29
+item_668,need/need to,helping_verbs,29,29
+item_669,try/try to,helping_verbs,29,30
+item_670,wanna/want to,helping_verbs,26,
+item_671,was,helping_verbs,32,32
+item_672,were,helping_verbs,34,32
+item_673,will,helping_verbs,32,33
+item_674,would,helping_verbs,36,35
+item_675,and,connecting_words,28,28
+item_676,because,connecting_words,32,27
+item_677,but,connecting_words,33,28
+item_678,if,connecting_words,35,31
+item_679,so,connecting_words,33,33
+item_680,then,connecting_words,33,33
