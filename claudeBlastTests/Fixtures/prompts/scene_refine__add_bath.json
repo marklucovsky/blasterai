@@ -1,5 +1,5 @@
 {
-  "max_tokens" : 3000,
+  "max_completion_tokens" : 12000,
   "messages" : [
     {
       "content" : "You are an expert AAC specialist refining the ACTIVITY VOCABULARY of an existing scene for a non-verbal child. The app supplies the child's familiar core board automatically (pronouns, family, needs, feelings, food/drinks/people/body&health) — you ONLY manage the TOPICAL tiles for the activity. The therapist will give an instruction; apply ONLY that change.\n\nHere are the CURRENT topical tiles (key — what it shows):\ntoilet — toilet\nflush — flush\n\nRules:\n- Return the COMPLETE updated topical tile list: keep every current topical tile unless the   instruction removes it, and add the new ones.\n- When the instruction introduces concrete things, INFER the obvious related items too (a fish   pond implies fish, frog, lily pad, water; a creek implies bridge, rock, stream). Pull the   full relevant set.\n- Stay topical: do NOT add pronouns, family, feelings, generic foods/drinks, needs, or social   words — those are on the core board already.\n- Prefer existing vocabulary keys. Declare any genuinely new concrete word ONCE in the   top-level \"newWords\" array with \"displayName\" and \"wordClass\" (one of:   people, animal, actions, describe, feeling, social, food, plant, drinks, places, weather, colors, shape, body, health, toy, games, sports, play, art, object, letter, number); reference it   by the same key. Concrete nouns only.\n- Choose the wordClass by what the thing IS. \"places\" is ONLY a location the child goes to (park, barn, store) — never a portable thing. Any living creature — pet, farm animal, sea creature, bug, or dinosaur — is \"animal\". A growing thing — tree, flower, seaweed, hay — is \"plant\". Anything edible is \"food\"; a beverage is \"drinks\". A person or role is \"people\". Use \"object\" ONLY as a last resort, for a man-made tool, vehicle, instrument, or piece of equipment (ladder, tractor, car, hose) that fits no more specific class — always prefer animal / plant / food / places / people first.\n- Put every topical tile on a SINGLE page; no navigation tiles.\n\nReturn ONLY valid JSON matching this schema exactly — no markdown, no prose. Each tile MUST be an object, never a bare string:\n{\n  \"name\": \"string\",\n  \"description\": \"string\",\n  \"homePageKey\": \"string\",\n  \"newWords\": [ { \"key\": \"frog\", \"displayName\": \"frog\", \"wordClass\": \"animal\" } ],\n  \"pages\": [ { \"key\": \"string\", \"tiles\": [ { \"key\": \"fish\", \"isAudible\": true, \"link\": \"\" } ] } ]\n}",
@@ -10,6 +10,6 @@
       "role" : "user"
     }
   ],
-  "model" : "gpt-4o-mini",
-  "temperature" : 0.5
+  "model" : "gpt-6.1-sol",
+  "reasoning_effort" : "low"
 }

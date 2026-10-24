@@ -274,7 +274,7 @@ def summarize(results: list[dict], meta: dict) -> str:
     for r in worth[:60]:
         out = r["output"] if isinstance(r["output"], str) else " → ".join(r["output"])
         if r["surface"] in WORD_LISTS or r["surface"] == "moderation":
-            out = f"({len(r.get('summary', {}).get('keys', []))} tiles)" if r["surface"] in WORD_LISTS else ""
+            out = f"({len((r.get('summary') or {}).get('keys', []))} tiles)" if r["surface"] in WORD_LISTS else ""
         why = r["tier1"]["issues"] + [f"{d}={v}" for d, v in r.get("judge", {}).get("scores", {}).items() if v <= 3]
         lines.append(f"- **{r['surface']}/{r['case']}** #{r['sample']}: {out[:200]}  \n  {'; '.join(why)[:300]}")
     return "\n".join(lines) + "\n"

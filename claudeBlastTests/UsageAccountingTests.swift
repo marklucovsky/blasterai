@@ -17,7 +17,7 @@ extension SerialTests {
 struct UsageAccountingTests {
 
     /// Every cause needs a label and an honest free/paid answer. The art check
-    /// is a real gpt-4o-mini vision call — cheap, but not free, and reporting it
+    /// is a real vision call (`ModelID.skinCheck`) — cheap, but not free, and reporting it
     /// as free would make the art total quietly miss its own gate.
     @Test func everyCauseIsLabelledAndPricedHonestly() {
         for cause in UsageCause.allCases {

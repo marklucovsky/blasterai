@@ -39,6 +39,18 @@ RESOURCES = ROOT / "claudeBlast/Resources"
 FIXTURES = ROOT / "claudeBlastTests/Fixtures/prompts"
 CANDIDATES = Path(__file__).resolve().parent / "candidates"
 
+# The model each job ships with — mirrors `ModelID` in ModelPricing.swift. The
+# `*_body` functions still render the gpt-4o-mini shape (temperature,
+# max_tokens), which is what `run.py` adapts to any `--model`; check_prompt_parity
+# adapts it to the job's own model, which is what the app sends, and compares
+# that with the fixtures — so a ModelID change on one side only fails it.
+APP_MODELS = {
+    "sentence": "gpt-6-luna",
+    "scene_authoring": "gpt-6.1-sol",
+    "tile_suggest": "gpt-6.1-sol",
+    "word_audit": "gpt-6-luna",
+}
+
 
 # MARK: - Templates (mirrors PromptTemplate.swift)
 

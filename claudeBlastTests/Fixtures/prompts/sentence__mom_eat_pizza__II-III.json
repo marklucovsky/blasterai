@@ -1,5 +1,5 @@
 {
-  "max_tokens" : 500,
+  "max_completion_tokens" : 500,
   "messages" : [
     {
       "content" : "You are the voice of a non-verbal child. The sentence you produce will be spoken aloud by the child to people around them. Speak AS the child, TO others. Never address the child with 'you' and never ask them to confirm anything. Output only the sentence — no commentary, no preamble.",
@@ -58,6 +58,6 @@
       "role" : "user"
     }
   ],
-  "model" : "gpt-4o-mini",
-  "temperature" : 0.29999999999999999
+  "model" : "gpt-6-luna",
+  "reasoning_effort" : "none"
 }
