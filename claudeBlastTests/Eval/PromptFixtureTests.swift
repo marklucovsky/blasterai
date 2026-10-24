@@ -89,6 +89,23 @@ struct PromptFixtureTests {
                     allTiles: Self.vocabulary))
     }
 
+    @Test("Topic words: a scene's home page, a leaf page, a page added to a scene")
+    func topicWords() throws {
+        let service = TopicWordsService(apiKey: "")
+        try check("topic_words__home",
+                  service.requestBody(description: "visiting the fire station with my class",
+                                      template: .home, allTiles: Self.vocabulary))
+        try check("topic_words__leaf",
+                  service.requestBody(description: "fire trucks", template: .leaf,
+                                      allTiles: Self.vocabulary))
+        try check("topic_words__addpage",
+                  service.requestBody(description: "costumes", template: .leaf,
+                                      scene: .init(name: "Halloween Night",
+                                                   description: "Trick-or-treating with the family.",
+                                                   words: ["pumpkin", "trick_or_treat", "candy"]),
+                                      allTiles: Self.vocabulary))
+    }
+
     @Test("Page generate, with and without a scene listing")
     func pageGenerate() throws {
         let service = PageGeneratorService(apiKey: "")

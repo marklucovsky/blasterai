@@ -69,6 +69,11 @@ CASES = {
     "page_generate__vehicles_from_home": lambda: P.page_generate_body(
         "the vehicles from the home page", "vehicles", SCENE_PAGES, "home"),
     "page_refine__add_bath": lambda: P.page_refine_body("add bath time", "potty", TOPICAL, SCENE_PAGES, "home"),
+    "topic_words__home": lambda: P.topic_words_body("visiting the fire station with my class", "home"),
+    "topic_words__leaf": lambda: P.topic_words_body("fire trucks", "leaf"),
+    "topic_words__addpage": lambda: P.topic_words_body(
+        "costumes", "leaf", {"name": "Halloween Night", "description": "Trick-or-treating with the family.",
+                             "words": ["pumpkin", "trick_or_treat", "candy"]}),
     "tile_suggest__dentist": lambda: P.tile_suggest_body("a visit to the dentist"),
     "moderation_rubric__mixed": lambda: P.moderation_rubric_body(["puppy", "poop", "beer", "toy gun"]),
 }

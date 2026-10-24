@@ -8,6 +8,7 @@
 //  [PageSpec]. Inserts the scene in a single transaction.
 //
 
+import Foundation
 import SwiftData
 
 enum SceneBuilder {
@@ -70,13 +71,15 @@ enum SceneBuilder {
                 }
             }
 
-            scene.pages = generated.pages.map { genPage in
-                let tiles = genPage.tiles.compactMap { genTile -> TileEntry? in
-                    guard lookup[genTile.key] != nil else { return nil }
-                    return TileEntry(key: genTile.key, link: genTile.link, isAudible: genTile.isAudible)
+            // A templated home page is laid into the scheme on BlasterAI 60's
+            // home; its spacers and system links have no vocabulary tile.
+            scene.pages = generated.placedPages(systemHome: systemHome(in: context), lookup: lookup)
+                .map { page in
+                    var page = page
+                    page.tiles = page.tiles.filter { $0.isSpacer || lookup[$0.key] != nil }
+                    return page
                 }
-                return PageSpec(key: genPage.key, displayName: genPage.displayName, tiles: tiles)
-            }
+            if generated.template != nil { scene.designedFor = PageTemplate.designedFor }
 
             scene.ensureIdentity(authorID: DeviceProfileStore.ensureAuthorID(context: context),
                                  authorName: DeviceProfileStore.authorName(context: context))
@@ -84,6 +87,14 @@ enum SceneBuilder {
         }
 
         return scene
+    }
+
+    /// BlasterAI 60's home page, which a templated page takes its system row
+    /// and core frame from.
+    static func systemHome(in context: ModelContext) -> PageSpec? {
+        let system = try? context.fetch(FetchDescriptor<BlasterScene>(
+            predicate: #Predicate { $0.isDefault })).first
+        return system.flatMap { $0.page(withKey: $0.homePageKey) }
     }
 
     /// Apply a (re-scaffolded) GeneratedScene to an EXISTING scene in place —

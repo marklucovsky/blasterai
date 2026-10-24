@@ -453,12 +453,20 @@ struct SceneGeneratorSheet: View {
         guard !apiKey.isEmpty else { return }
         isGenerating = true
         generationError = nil
-        let service = SceneGeneratorService(apiKey: apiKey)
+        // The words come from the topic prompt; the page is laid out by code on
+        // the page scheme, around BlasterAI 60's frame (`PagePlacer`).
+        let service = TopicWordsService(apiKey: apiKey)
         let tiles = allTiles
+        let systemHome = SceneBuilder.systemHome(in: modelContext)
         Task {
             do {
-                let result = try await service.generate(description: desc, allTiles: tiles)
+                let response = try await service.generate(description: desc, template: .home,
+                                                          allTiles: tiles)
+                let result = try TopicWordsService.scene(from: response, systemHome: systemHome,
+                                                         allTiles: tiles)
                 await MainActor.run { show(result, brief: [desc]) }
+            } catch let refusal as TopicWordsService.Refusal {
+                await MainActor.run { generationError = refusal.errorDescription }
             } catch {
                 await MainActor.run { generationError = OpenAIFailure.caregiverMessage(for: error) }
             }
@@ -679,10 +687,25 @@ struct ScenePreviewView: View {
             p.tiles.removeAll { $0.key == key }
             return p
         }
-        working = GeneratedScene(name: working.name, description: working.description,
-                                 homePageKey: working.homePageKey, pages: newPages,
-                                 newWords: working.newWords, tokenUsage: working.tokenUsage,
-                                 rawContent: working.rawContent)
+        var updated = working
+        updated.pages = newPages
+        working = updated
+    }
+
+    /// BlasterAI 60, whose home a templated page is laid out around.
+    @Query(filter: #Predicate<BlasterScene> { $0.isDefault })
+    private var systemScenes: [BlasterScene]
+
+    private var systemHome: PageSpec? {
+        systemScenes.first.flatMap { $0.page(withKey: $0.homePageKey) }
+    }
+
+    /// The current page as it will be built, when it is laid out on the page
+    /// scheme; nil for a flat page.
+    private var placedPage: PageSpec? {
+        guard working.template != nil, currentPage.key == working.homePageKey else { return nil }
+        return working.placedPages(systemHome: systemHome, lookup: tileLookup)
+            .first { $0.key == currentPage.key }
     }
 
     var body: some View {
@@ -759,24 +782,17 @@ struct ScenePreviewView: View {
 
             // Tile grid
             ScrollView {
-                LazyVGrid(columns: columns, spacing: 10) {
-                    ForEach(currentPage.tiles, id: \.key) { genTile in
-                        if let tile = tileLookup[genTile.key] {
-                            GeneratedTileCell(key: tile.bundleImage, displayName: tile.displayName,
-                                              wordClass: tile.wordClass, link: genTile.link,
-                                              imageData: previewImages[genTile.key])
-                        } else if let name = genTile.displayName, let wc = genTile.wordClass {
-                            GeneratedTileCell(key: genTile.key, displayName: name,
-                                              wordClass: wc, link: genTile.link, isNew: true,
-                                              imageData: previewImages[genTile.key])
-                                .overlay(alignment: .bottomTrailing) {
-                                    NewWordReviewBadge(key: genTile.key, review: review)
-                                }
+                if let placedPage {
+                    boardGrid(placedPage)
+                } else {
+                    LazyVGrid(columns: columns, spacing: 10) {
+                        ForEach(currentPage.tiles, id: \.key) { genTile in
+                            cell(genTile)
                         }
                     }
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 12)
                 }
-                .padding(.horizontal, 12)
-                .padding(.bottom, 12)
             }
             .task(id: presentNewKeys) { await review.analyze(newWordEntries, apiKey: apiKey) }
 
@@ -803,6 +819,51 @@ struct ScenePreviewView: View {
                 showRefineSheet = false
             }
         }
+    }
+
+    @ViewBuilder
+    private func cell(_ genTile: GeneratedTile) -> some View {
+        if let tile = tileLookup[genTile.key] {
+            GeneratedTileCell(key: tile.bundleImage, displayName: tile.displayName,
+                              wordClass: tile.wordClass, link: genTile.link,
+                              imageData: previewImages[genTile.key])
+        } else if let name = genTile.displayName, let wc = genTile.wordClass {
+            GeneratedTileCell(key: genTile.key, displayName: name,
+                              wordClass: wc, link: genTile.link, isNew: true,
+                              imageData: previewImages[genTile.key])
+                .overlay(alignment: .bottomTrailing) {
+                    NewWordReviewBadge(key: genTile.key, review: review)
+                }
+        }
+    }
+
+    /// The page on the board's own 12 × 5 grid, Home in cell 0, so the
+    /// caregiver sees each word where the child will find it.
+    private func boardGrid(_ page: PageSpec) -> some View {
+        let byKey = Dictionary(currentPage.tiles.map { ($0.key, $0) },
+                               uniquingKeysWith: { first, _ in first })
+        let cells = page.tiles + Array(repeating: TileEntry.spacer(),
+                                       count: max(0, PageTemplate.cols * PageTemplate.rows - 1
+                                                  - page.tiles.count))
+        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4),
+                                        count: PageTemplate.cols), spacing: 6) {
+            Image(systemName: "house.fill")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+                .aspectRatio(1, contentMode: .fit)
+                .background(RoundedRectangle(cornerRadius: 8).fill(Color.secondary.opacity(0.15)))
+            ForEach(Array(cells.enumerated()), id: \.offset) { _, entry in
+                if entry.isSpacer {
+                    Color.clear.aspectRatio(1, contentMode: .fit)
+                } else {
+                    cell(byKey[entry.key]
+                         ?? GeneratedTile(key: entry.key, isAudible: entry.isAudible, link: entry.link))
+                }
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.bottom, 12)
     }
 
     /// Cancel/Back on the left, then the stage's forward move. Refine only
@@ -871,8 +932,12 @@ struct ScenePreviewView: View {
         let tiles = allTiles
         Task {
             do {
-                let result = try await service.refine(instruction: text, currentTopical: currentTopical, allTiles: tiles)
+                var result = try await service.refine(instruction: text, currentTopical: currentTopical, allTiles: tiles)
                 await MainActor.run {
+                    if let template = working.template {
+                        result = Self.reselected(result, template: template,
+                                                 systemHome: systemHome, lookup: tileLookup)
+                    }
                     working = result
                     selectedPageIndex = 0
                     onRefined(text)
@@ -882,6 +947,23 @@ struct ScenePreviewView: View {
             }
             await MainActor.run { isRefining = false }
         }
+    }
+}
+
+extension ScenePreviewView {
+    /// A refine of a templated scene, back on the template: its home page's
+    /// words deduped against the frame and system row and cut at the budget,
+    /// as a fresh generation's are. The refiner knows nothing of the scheme.
+    static func reselected(_ refined: GeneratedScene, template: PageTemplate.Kind,
+                           systemHome: PageSpec?, lookup: [String: TileModel]) -> GeneratedScene {
+        var scene = refined
+        scene.template = template
+        let taken = PageFrame(systemHome: systemHome, kind: template).keys
+            .union(template.frameKeys)
+        let home = SceneNavigation.topicalTiles(of: refined)
+        let page = TopicWordMatcher.select(home, excluding: taken, lookup: lookup).page
+        scene.pages = [GeneratedPage(key: scene.homePageKey, tiles: page)]
+        return scene
     }
 }
 

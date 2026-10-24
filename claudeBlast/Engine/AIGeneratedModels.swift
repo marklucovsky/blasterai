@@ -23,6 +23,10 @@ struct GeneratedTile: Codable {
     var displayName: String? = nil
     /// Word class for a proposed NEW word (one of VocabularyClasses).
     var wordClass: String? = nil
+    /// A folder's colour slot, when it was chosen rather than worked out — a
+    /// link into BlasterAI 60 keeps the colour that board gives it. Not part of
+    /// the model's JSON.
+    var linkColor: String? = nil
 
     /// A proposed new word carries both `displayName` and `wordClass`.
     var isProposedNew: Bool { displayName != nil && wordClass != nil }
@@ -163,6 +167,38 @@ struct GeneratedScene: Codable {
     /// can re-apply a different chrome bundle to the same content with no extra
     /// API call. nil on cached-starter scenes.
     var rawContent: String? = nil
+    /// Set when the home page is a ranked word list for the page scheme
+    /// (`PagePlacer`), laid out when it is shown and when it is built. Nil is
+    /// a flat page, placed in list order — cached starters, older flows.
+    var template: PageTemplate.Kind? = nil
+}
+
+extension GeneratedScene {
+    /// The pages as they will be built. A templated home page is laid into the
+    /// scheme: the system row and core frame from `systemHome` (BlasterAI 60's
+    /// home), its words in bands, its links in the link slots. Every other
+    /// page is its tiles in order.
+    ///
+    /// Pure, and run on every render of the preview as well as at build: the
+    /// list is what the caregiver edits (remove a word, refine), and placing
+    /// once up front would leave holes or shift cells when they did.
+    func placedPages(systemHome: PageSpec?, lookup: [String: TileModel]) -> [PageSpec] {
+        pages.map { page in
+            guard let template, page.key == homePageKey else {
+                return PageSpec(key: page.key, displayName: page.displayName,
+                                tiles: page.tiles.map {
+                                    TileEntry(key: $0.key, link: $0.link, isAudible: $0.isAudible)
+                                })
+            }
+            let frame = PageFrame(systemHome: systemHome, kind: template)
+            let taken = frame.keys
+            let words = page.tiles.filter { $0.link.isEmpty && !taken.contains($0.key) }
+            let links = page.tiles.filter { !$0.link.isEmpty }
+            return PageSpec(key: page.key, displayName: page.displayName,
+                            tiles: PagePlacer.place(words: words, links: links, kind: template,
+                                                    frame: frame, lookup: lookup))
+        }
+    }
 }
 
 extension GeneratedScene {
