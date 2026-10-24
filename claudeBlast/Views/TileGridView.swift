@@ -18,6 +18,9 @@ struct TileGridView: View {
     var activeScenes: [BlasterScene]
     /// Every scene, for the Caregiver Menu's scene switcher.
     @Query(sort: \BlasterScene.name) private var allScenes: [BlasterScene]
+    /// BlasterAI 60, whose pages a `<system>:` link opens from any scene.
+    @Query(filter: #Predicate<BlasterScene> { $0.isDefault })
+    private var systemScenes: [BlasterScene]
 
     /// All vocabulary tiles. Used to resolve a TileEntry.key back to the
     /// underlying TileModel for display (image, label, wordClass).
@@ -131,6 +134,7 @@ struct TileGridView: View {
     }
 
     private var activeScene: BlasterScene? { activeScenes.first }
+    private var systemScene: BlasterScene? { systemScenes.first }
 
     /// All tile keys reachable anywhere in the active scene.
     private var sceneKeySet: Set<String> {
@@ -155,7 +159,8 @@ struct TileGridView: View {
         guard let scene = activeScene else { return nil }
         let key = coordinator.currentPageKey ?? scene.homePageKey
         // The board at its level: words above it draw as concealed cells.
-        return scene.visiblePages.first { $0.key == key }
+        return SystemLinks.page(forKey: key, scenePages: scene.visiblePages,
+                                systemPages: systemScene?.pages ?? [])
     }
 
     // MARK: - Tray
@@ -402,7 +407,8 @@ struct TileGridView: View {
         .onChange(of: activeScene?.pages.map(\.key)) { _, pageNames in
             // If the current page was deleted or renamed, navigate home
             guard let pageNames, let key = coordinator.currentPageKey else { return }
-            if !pageNames.contains(key) {
+            // A system page belongs to BlasterAI 60, not to this scene.
+            if TileToken.systemPageKey(key) == nil, !pageNames.contains(key) {
                 coordinator.navigateHome(homePageKey: activeScene?.homePageKey ?? "")
                 currentDisplayPage = 0
             }
@@ -986,9 +992,11 @@ struct TileGridView: View {
         // Resolve the symbolic "<home>" link to the active scene's homePageKey
         // at navigation time (Step J). Tiles store "<home>" literally so a
         // runtime change of homePageKey is honored without rebuilding pages.
-        let resolvedLink = entry.link == "<home>"
-            ? (activeScene?.homePageKey ?? "home")
-            : entry.link
+        // A folder on a system page stays in the system scene.
+        let resolvedLink = entry.link.isEmpty ? "" : SystemLinks.destination(
+            of: entry.link, fromPage: identityPageKey,
+            homePageKey: activeScene?.homePageKey ?? "home",
+            systemHomePageKey: systemScene?.homePageKey)
         // An "audible nav tile" is a single gesture that both adds a tile to the active group
         // AND navigates. We treat it as such in recordings only when the tile key matches the
         // link key (the conventional case for nav tiles like <drinks isAudible=t/>).

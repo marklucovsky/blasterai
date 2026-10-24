@@ -53,7 +53,10 @@ enum TileScriptValidator {
         }
 
         let target = resolveScene(script.scene, in: scenes)
-        let pageKeys = Set((target?.pages.map(\.key) ?? []) + ["home"])
+        // A trip into BlasterAI 60 records the `<system>:` key it navigated to.
+        let systemKeys = (scenes.first { $0.isDefault }?.pages ?? [])
+            .map { TileToken.systemLink(to: $0.key) }
+        let pageKeys = Set((target?.pages.map(\.key) ?? []) + ["home"] + systemKeys)
 
         var missingTiles = Set<String>()
         var missingPages = Set<String>()
