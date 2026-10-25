@@ -118,9 +118,34 @@ enum WordPlaces {
             .mapValues { path in path.compactMap { byKey[$0]?.title } }
     }
 
+    /// Where a page sits in the hierarchy, as titles from home: `Home ›
+    /// Describe › How much`. Folders first, so a page a doorway also opens is
+    /// placed under its category; a page only a doorway reaches comes next, and
+    /// a page nothing reaches is just its own title.
+    static func trail(to key: String, pages: [PageSpec], homeKey: String) -> [String] {
+        let byKey = Dictionary(pages.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
+        let home = byKey[homeKey]?.title ?? PageNaming.displayName(homeKey)
+        return [home] + trailKeys(to: key, pages: pages, homeKey: homeKey)
+            .map { byKey[$0]?.title ?? PageNaming.displayName($0) }
+    }
+
+    /// `trail` as page keys, home left out: the pages whose tiles the board
+    /// marks "you are here" (the last) and "on the way here" (the rest).
+    static func trailKeys(to key: String, pages: [PageSpec], homeKey: String) -> [String] {
+        let path = pathsFromHome(pages: pages, homeKey: homeKey, followDoorways: false)[key]
+            ?? pathsFromHome(pages: pages, homeKey: homeKey)[key]
+            ?? [key]
+        return path.filter { $0 != homeKey }
+    }
+
     /// `routesFromHome` as page keys rather than titles — the pages to open, in
     /// order, to reach each page. Find Word walks these.
-    static func pathsFromHome(pages: [PageSpec], homeKey: String) -> [String: [String]] {
+    ///
+    /// `followDoorways: false` walks folders only, leaving out words that also
+    /// open a page (*wear* → Clothes from Actions): the route the hierarchy
+    /// gives, not a shortcut into it.
+    static func pathsFromHome(pages: [PageSpec], homeKey: String,
+                              followDoorways: Bool = true) -> [String: [String]] {
         let byKey = Dictionary(pages.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
         guard byKey[homeKey] != nil else { return [:] }
         var paths: [String: [String]] = [homeKey: []]
@@ -129,7 +154,8 @@ enum WordPlaces {
             let key = queue.removeFirst()
             guard let page = byKey[key], let here = paths[key] else { continue }
             // A concealed folder is not a way in: the child sees an empty cell.
-            for entry in page.tiles where !entry.link.isEmpty && !entry.isEmptyCell {
+            for entry in page.tiles where !entry.link.isEmpty && !entry.isEmptyCell
+                && (followDoorways || !entry.isAudible) {
                 let target = entry.link == TileToken.home ? homeKey : entry.link
                 guard paths[target] == nil, byKey[target] != nil else { continue }
                 paths[target] = here + [target]

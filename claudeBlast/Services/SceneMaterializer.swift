@@ -94,7 +94,7 @@ enum SceneMaterializer {
                                  vocabulary: vocabulary,
                                  keySet: keySet, classSet: classSet)
             }
-            materializedPages.append(PageSpec(key: page.key, tiles: tiles))
+            materializedPages.append(PageSpec(key: page.key, displayName: page.name ?? "", tiles: tiles))
         }
 
         guard materializedPages.contains(where: { $0.key == scene.homePageKey }) else {

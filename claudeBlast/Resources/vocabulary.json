@@ -952,7 +952,8 @@
   },
   {
     "key": "groups",
-    "wordClass": "object"
+    "wordClass": "object",
+    "label": "Things"
   },
   {
     "key": "guess",
@@ -2137,7 +2138,8 @@
   },
   {
     "key": "things",
-    "wordClass": "object"
+    "wordClass": "object",
+    "label": "House things"
   },
   {
     "key": "think",
@@ -2506,5 +2508,100 @@
   {
     "key": "zoo",
     "wordClass": "places"
+  },
+  {
+    "key": "folder_small_words",
+    "wordClass": "navigation",
+    "label": "Small words"
+  },
+  {
+    "key": "folder_moving",
+    "wordClass": "navigation",
+    "label": "Moving"
+  },
+  {
+    "key": "folder_taking_care",
+    "wordClass": "navigation",
+    "label": "Taking care"
+  },
+  {
+    "key": "folder_talking",
+    "wordClass": "navigation",
+    "label": "Talking"
+  },
+  {
+    "key": "folder_thinking",
+    "wordClass": "navigation",
+    "label": "Thinking"
+  },
+  {
+    "key": "folder_playing",
+    "wordClass": "navigation",
+    "label": "Playing"
+  },
+  {
+    "key": "folder_cooking",
+    "wordClass": "navigation",
+    "label": "Cooking & eating"
+  },
+  {
+    "key": "folder_senses",
+    "wordClass": "navigation",
+    "label": "Senses"
+  },
+  {
+    "key": "folder_doing",
+    "wordClass": "navigation",
+    "label": "Doing"
+  },
+  {
+    "key": "folder_size",
+    "wordClass": "navigation",
+    "label": "Size"
+  },
+  {
+    "key": "folder_how_it_feels",
+    "wordClass": "navigation",
+    "label": "How it feels"
+  },
+  {
+    "key": "folder_opinions",
+    "wordClass": "navigation",
+    "label": "Opinions"
+  },
+  {
+    "key": "folder_where",
+    "wordClass": "navigation",
+    "label": "Where"
+  },
+  {
+    "key": "folder_how_much",
+    "wordClass": "navigation",
+    "label": "How much"
+  },
+  {
+    "key": "folder_what_its_like",
+    "wordClass": "navigation",
+    "label": "What it's like"
+  },
+  {
+    "key": "folder_house",
+    "wordClass": "navigation",
+    "label": "House"
+  },
+  {
+    "key": "folder_school",
+    "wordClass": "navigation",
+    "label": "School"
+  },
+  {
+    "key": "folder_fun_places",
+    "wordClass": "navigation",
+    "label": "Fun places"
+  },
+  {
+    "key": "folder_out_and_about",
+    "wordClass": "navigation",
+    "label": "Out & about"
   }
 ]

@@ -1,0 +1,1026 @@
+{
+  "_doc": "BlasterAI 60's hierarchy, as data. tools/build_core_board.py turns this into core_first.json; read that tool's docstring before editing. Words are vocabulary keys, so homographs keep their suffix (hot_, right_, home_).",
+  "systemRow": [
+    {
+      "key": "people",
+      "to": "people"
+    },
+    {
+      "key": "question",
+      "to": "questions"
+    },
+    {
+      "key": "actions",
+      "to": "actions"
+    },
+    {
+      "key": "places",
+      "to": "places"
+    },
+    {
+      "key": "social",
+      "to": "social"
+    },
+    {
+      "key": "time",
+      "to": "time_when"
+    },
+    {
+      "key": "describe",
+      "to": "describe"
+    },
+    {
+      "key": "groups",
+      "to": "groups"
+    },
+    {
+      "key": "feelings",
+      "to": "feelings"
+    },
+    {
+      "key": "folder_small_words",
+      "to": "small_words"
+    },
+    {
+      "key": "keyboard",
+      "to": "keyboard"
+    }
+  ],
+  "doorways": {
+    "i": "i_page",
+    "go": "places",
+    "come": "places",
+    "eat": "food",
+    "drink": "drinks",
+    "play": "play_activities",
+    "feel": "feelings",
+    "wear": "clothes",
+    "ride": "vehicles",
+    "drive": "vehicles",
+    "hungry": "food",
+    "thirsty": "drinks",
+    "who": "people",
+    "where": "places",
+    "when": "time_when"
+  },
+  "_systemRowExempt": "Pages that would overflow one screen with the row on top. Each leaves this list when it is split into folders.",
+  "systemRowExempt": [
+    "food"
+  ],
+  "_pageNames": "A page's name where the key's title case is wrong for it. Folder pages are named after their folder tile.",
+  "pageNames": {
+    "groups": "Things",
+    "things": "House things",
+    "i_page": "I",
+    "small_words": "Small words",
+    "time_when": "Time",
+    "play_activities": "Play",
+    "body_health": "Body & health",
+    "colors_shapes": "Colors & shapes"
+  },
+  "pages": {
+    "home": {
+      "rows": [
+        [
+          "i",
+          "me",
+          "my",
+          "come",
+          "go",
+          "eat",
+          "drink",
+          "to",
+          "some",
+          "more",
+          "all",
+          "don't"
+        ],
+        [
+          "he",
+          "she",
+          "it",
+          "get",
+          "want",
+          "do",
+          "can",
+          "for",
+          "and",
+          "a",
+          "the",
+          "stop"
+        ],
+        [
+          "you",
+          "your",
+          "that",
+          "help",
+          "like",
+          "read",
+          "put",
+          "here",
+          "in",
+          "on",
+          "up",
+          "not"
+        ],
+        [
+          "yes",
+          "all_done",
+          "no",
+          "open",
+          "watch",
+          "play",
+          "is",
+          "with",
+          "out",
+          "off",
+          "down",
+          "feel"
+        ]
+      ],
+      "levels": [
+        {
+          "level": 1,
+          "words": [
+            "i",
+            "you",
+            "want",
+            "more",
+            "help",
+            "stop",
+            "go",
+            "yes",
+            "no",
+            "all_done",
+            "eat",
+            "drink",
+            "play"
+          ]
+        },
+        {
+          "level": 2,
+          "words": [
+            "me",
+            "my",
+            "come",
+            "to",
+            "some",
+            "all",
+            "don't",
+            "he",
+            "she",
+            "it",
+            "get",
+            "do",
+            "can",
+            "for",
+            "and",
+            "a",
+            "the",
+            "your",
+            "that",
+            "like",
+            "read",
+            "put",
+            "here",
+            "in",
+            "on",
+            "up",
+            "not",
+            "open",
+            "watch",
+            "is",
+            "with",
+            "out",
+            "off",
+            "down",
+            "feel"
+          ]
+        },
+        {
+          "level": 3,
+          "words": [
+            "people",
+            "question",
+            "actions",
+            "places",
+            "social",
+            "time",
+            "describe",
+            "feelings",
+            "folder_small_words"
+          ]
+        },
+        {
+          "level": 4,
+          "rest": true
+        }
+      ]
+    },
+    "i_page": {
+      "parent": "home",
+      "words": [
+        "am",
+        "want",
+        "need",
+        "like",
+        "love",
+        "feel",
+        "see",
+        "have",
+        "can",
+        "don't",
+        "will",
+        "was",
+        "think",
+        "know",
+        "go",
+        "help"
+      ]
+    },
+    "small_words": {
+      "parent": "home",
+      "words": [
+        "a",
+        "the",
+        "to",
+        "and",
+        "for",
+        "on",
+        "in",
+        "up",
+        "out",
+        "off",
+        "down",
+        "with",
+        "that",
+        "it",
+        "is",
+        "some",
+        "all",
+        "not",
+        "more",
+        "here",
+        "or",
+        "but",
+        "because",
+        "there",
+        "at",
+        "this",
+        "again",
+        "now",
+        "later",
+        "will"
+      ]
+    },
+    "actions": {
+      "parent": "home",
+      "words": [
+        [
+          "need",
+          "have"
+        ],
+        [
+          "give",
+          "take"
+        ],
+        [
+          "find",
+          "lose"
+        ],
+        [
+          "come",
+          "go"
+        ],
+        [
+          "eat",
+          "drink"
+        ],
+        [
+          "get",
+          "want",
+          "do"
+        ],
+        [
+          "help",
+          "like",
+          "read",
+          "put"
+        ],
+        [
+          "close",
+          "open"
+        ],
+        [
+          "watch",
+          "play"
+        ],
+        "stop",
+        "make",
+        [
+          "look",
+          "see"
+        ],
+        [
+          "wait",
+          "finish"
+        ],
+        "try",
+        [
+          "write",
+          "draw"
+        ],
+        "work",
+        [
+          "am",
+          "are",
+          "was"
+        ],
+        [
+          "sit",
+          "stand"
+        ],
+        "sleep",
+        [
+          "walk",
+          "run",
+          "jump"
+        ]
+      ],
+      "folders": [
+        {
+          "key": "folder_moving",
+          "page": "actions_moving",
+          "words": [
+            [
+              "walk",
+              "run",
+              "jump"
+            ],
+            [
+              "sit",
+              "stand"
+            ],
+            [
+              "come",
+              "go"
+            ],
+            "climb",
+            "dance",
+            [
+              "ride",
+              "drive"
+            ],
+            "fly",
+            "fall",
+            [
+              "push",
+              "pull"
+            ],
+            "turn",
+            "swim",
+            "move",
+            "leave"
+          ]
+        },
+        {
+          "key": "folder_taking_care",
+          "page": "actions_taking_care",
+          "words": [
+            [
+              "wash",
+              "wash_hands",
+              "wash_hair"
+            ],
+            "bathe",
+            "shower",
+            [
+              "brush",
+              "brush_teeth"
+            ],
+            "dry",
+            "dress_up",
+            "wear",
+            "polish_nails",
+            "clean",
+            [
+              "sleep",
+              "nap"
+            ]
+          ]
+        },
+        {
+          "key": "folder_talking",
+          "page": "actions_talking",
+          "words": [
+            [
+              "tell",
+              "listen"
+            ],
+            [
+              "talk",
+              "say",
+              "ask",
+              "answer",
+              "speak"
+            ],
+            "call",
+            "email",
+            "meet",
+            "show"
+          ]
+        },
+        {
+          "key": "folder_thinking",
+          "page": "actions_thinking",
+          "words": [
+            [
+              "know",
+              "think",
+              "remember",
+              "forget",
+              "understand"
+            ],
+            "learn",
+            "feel",
+            [
+              "love",
+              "hate"
+            ],
+            [
+              "hope",
+              "wish"
+            ],
+            "guess",
+            "pray",
+            "cry",
+            "hurt",
+            "blush",
+            "kiss",
+            "hug"
+          ]
+        },
+        {
+          "key": "folder_playing",
+          "page": "actions_playing",
+          "words": [
+            "play",
+            [
+              "catch",
+              "throw",
+              "kick"
+            ],
+            "build",
+            "hide",
+            "share",
+            "blow",
+            "bowl",
+            [
+              "draw",
+              "color",
+              "paint"
+            ],
+            "sing",
+            "clap"
+          ]
+        },
+        {
+          "key": "folder_cooking",
+          "page": "actions_cooking",
+          "words": [
+            [
+              "eat",
+              "drink"
+            ],
+            [
+              "bite",
+              "chew"
+            ],
+            "cut",
+            "pour",
+            "cook"
+          ]
+        },
+        {
+          "key": "folder_senses",
+          "page": "actions_senses",
+          "words": [
+            [
+              "look",
+              "see"
+            ],
+            "watch",
+            "hear",
+            "smell"
+          ]
+        },
+        {
+          "key": "folder_doing",
+          "page": "actions_doing",
+          "words": [
+            [
+              "give",
+              "take"
+            ],
+            [
+              "find",
+              "lose"
+            ],
+            "get",
+            "make",
+            "use",
+            "try",
+            [
+              "wait",
+              "finish"
+            ],
+            "work",
+            [
+              "buy",
+              "shop"
+            ],
+            "hit",
+            "line_up",
+            "lets",
+            "live",
+            "put",
+            [
+              "close",
+              "open"
+            ]
+          ]
+        }
+      ]
+    },
+    "describe": {
+      "parent": "home",
+      "words": [
+        [
+          "big",
+          "little"
+        ],
+        [
+          "good",
+          "bad"
+        ],
+        [
+          "hot_",
+          "cold__"
+        ],
+        [
+          "loud",
+          "quiet"
+        ],
+        [
+          "fast",
+          "slow"
+        ],
+        [
+          "new",
+          "old"
+        ],
+        [
+          "clean_",
+          "dirty"
+        ],
+        [
+          "wet",
+          "dry_"
+        ],
+        [
+          "full",
+          "empty"
+        ],
+        [
+          "easy",
+          "hard"
+        ],
+        [
+          "yummy",
+          "yucky"
+        ],
+        [
+          "fun",
+          "boring"
+        ],
+        [
+          "nice",
+          "mean"
+        ],
+        [
+          "same",
+          "different"
+        ],
+        [
+          "pretty",
+          "ugly"
+        ],
+        "busy",
+        "broken",
+        "smart",
+        "soft",
+        "maybe",
+        "funny_",
+        "closed"
+      ],
+      "folders": [
+        {
+          "key": "folder_size",
+          "page": "describe_size",
+          "words": [
+            [
+              "big",
+              "little"
+            ],
+            [
+              "long",
+              "short"
+            ],
+            [
+              "fat",
+              "thin"
+            ],
+            [
+              "high",
+              "low"
+            ],
+            [
+              "heavy",
+              "light"
+            ]
+          ]
+        },
+        {
+          "key": "folder_how_it_feels",
+          "page": "describe_how_it_feels",
+          "words": [
+            [
+              "hot_",
+              "cold__"
+            ],
+            [
+              "wet",
+              "dry_"
+            ],
+            [
+              "soft",
+              "hard"
+            ],
+            [
+              "sticky",
+              "sharp"
+            ],
+            [
+              "smelly",
+              "stinky"
+            ],
+            "uncomfortable"
+          ]
+        },
+        {
+          "key": "folder_opinions",
+          "page": "describe_opinions",
+          "words": [
+            [
+              "good",
+              "bad"
+            ],
+            [
+              "fun",
+              "boring"
+            ],
+            [
+              "nice",
+              "mean"
+            ],
+            [
+              "pretty",
+              "ugly"
+            ],
+            "cute",
+            [
+              "excellent",
+              "terrific"
+            ],
+            "fine",
+            "terrible",
+            "exciting",
+            "smart",
+            "dumb",
+            "crazy",
+            "funny_"
+          ]
+        },
+        {
+          "key": "folder_where",
+          "page": "describe_where",
+          "words": [
+            [
+              "top",
+              "bottom",
+              "front",
+              "behind"
+            ],
+            [
+              "over",
+              "under"
+            ],
+            [
+              "near",
+              "far"
+            ],
+            [
+              "left",
+              "right_"
+            ],
+            [
+              "middle",
+              "between"
+            ],
+            "around",
+            "through",
+            "away",
+            "back_",
+            "there",
+            [
+              "together",
+              "apart"
+            ],
+            "alone"
+          ]
+        },
+        {
+          "key": "folder_how_much",
+          "page": "describe_how_much",
+          "words": [
+            "more",
+            [
+              "many",
+              "few"
+            ],
+            "one",
+            [
+              "better",
+              "best",
+              "worse",
+              "worst"
+            ]
+          ]
+        },
+        {
+          "key": "folder_what_its_like",
+          "page": "describe_what_its_like",
+          "words": [
+            [
+              "new",
+              "old",
+              "young"
+            ],
+            [
+              "true",
+              "maybe",
+              "false"
+            ],
+            [
+              "same",
+              "different"
+            ],
+            [
+              "broken",
+              "fixed"
+            ],
+            "quick",
+            [
+              "cheap",
+              "expensive"
+            ],
+            "messy",
+            "busy",
+            "asleep",
+            "closed",
+            "dark"
+          ]
+        },
+        {
+          "key": "colors",
+          "page": "colors_shapes",
+          "words": [
+            ["red", "orange_", "yellow", "green", "blue", "purple", "pink", "brown", "black", "white"],
+            ["grey", "tan", "gold", "silver"],
+            ["shape", "circle", "square", "triangle", "rectangle", "oval", "star", "heart", "diamond", "octagon"]
+          ]
+        }
+      ],
+      "at": {
+        "r5c1": [
+          "right",
+          "okay_",
+          "wrong"
+        ]
+      }
+    },
+    "places": {
+      "parent": "home",
+      "words": [
+        "home_",
+        "house",
+        "school",
+        "park",
+        "playground",
+        "store",
+        "restaurant",
+        "doctor",
+        "outside",
+        "bathroom",
+        "bedroom",
+        "kitchen",
+        "church",
+        "library",
+        "pool",
+        "beach",
+        "zoo",
+        "farm",
+        "therapy",
+        "speech",
+        "class",
+        "movie",
+        "mall",
+        "grocery_store",
+        "lunch",
+        [
+          "car",
+          "bus",
+          "train"
+        ],
+        [
+          "bicycle",
+          "airplane",
+          "boat"
+        ]
+      ],
+      "folders": [
+        {
+          "key": "folder_house",
+          "page": "places_house",
+          "words": [
+            "house",
+            "home_",
+            "bedroom",
+            "kitchen",
+            "bathroom",
+            "living_room",
+            "dining_room",
+            "backyard",
+            "closet",
+            "laundry",
+            "toilet"
+          ]
+        },
+        {
+          "key": "folder_school",
+          "page": "places_school",
+          "words": [
+            "school",
+            "class",
+            "playground",
+            "library",
+            "speech",
+            "therapy"
+          ]
+        },
+        {
+          "key": "folder_fun_places",
+          "page": "places_fun",
+          "words": [
+            "park",
+            "zoo",
+            "beach",
+            "pool",
+            "lake",
+            "ocean",
+            "farm",
+            "camp",
+            "movie",
+            "bowling_alley"
+          ]
+        },
+        {
+          "key": "folder_out_and_about",
+          "page": "places_out_and_about",
+          "words": [
+            "store",
+            "grocery_store",
+            "mall",
+            "doctor",
+            "church",
+            "airport",
+            "building",
+            "restaurant",
+            "outside"
+          ]
+        }
+      ]
+    },
+    "things": {
+      "parent": "groups",
+      "words": [
+        "bed",
+        "blanket",
+        "book",
+        "phone",
+        "tv",
+        "music",
+        "toothbrush",
+        "cup",
+        "plate",
+        "spoon",
+        "fork",
+        "door",
+        "window"
+      ]
+    }
+  },
+  "_newTiles": "Vocabulary entries the spec needs that vocabulary.json may not have yet. build_core_board.py --write adds any that are missing; it never edits an existing entry except to set a label listed in relabel.",
+  "newTiles": [
+    {
+      "key": "folder_small_words",
+      "label": "Small words"
+    },
+    {
+      "key": "folder_moving",
+      "label": "Moving"
+    },
+    {
+      "key": "folder_taking_care",
+      "label": "Taking care"
+    },
+    {
+      "key": "folder_talking",
+      "label": "Talking"
+    },
+    {
+      "key": "folder_thinking",
+      "label": "Thinking"
+    },
+    {
+      "key": "folder_playing",
+      "label": "Playing"
+    },
+    {
+      "key": "folder_cooking",
+      "label": "Cooking & eating"
+    },
+    {
+      "key": "folder_senses",
+      "label": "Senses"
+    },
+    {
+      "key": "folder_doing",
+      "label": "Doing"
+    },
+    {
+      "key": "folder_size",
+      "label": "Size"
+    },
+    {
+      "key": "folder_how_it_feels",
+      "label": "How it feels"
+    },
+    {
+      "key": "folder_opinions",
+      "label": "Opinions"
+    },
+    {
+      "key": "folder_where",
+      "label": "Where"
+    },
+    {
+      "key": "folder_how_much",
+      "label": "How much"
+    },
+    {
+      "key": "folder_what_its_like",
+      "label": "What it's like"
+    },
+    {
+      "key": "folder_house",
+      "label": "House"
+    },
+    {
+      "key": "folder_school",
+      "label": "School"
+    },
+    {
+      "key": "folder_fun_places",
+      "label": "Fun places"
+    },
+    {
+      "key": "folder_out_and_about",
+      "label": "Out & about"
+    }
+  ],
+  "relabel": {
+    "groups": "Things",
+    "things": "House things"
+  }
+}

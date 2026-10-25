@@ -8,7 +8,7 @@
   "templates": {
     "home": {
       "frame": ["i", "you", "want", "more", "go", "stop", "help", "yes", "no", "all_done"],
-      "frameLinks": { "go": "places" },
+      "frameLinks": {},
       "cluster": ["don't", "stop", "not"],
       "displaceable": ["not", "don't"],
       "wordColumns": [1, 10],

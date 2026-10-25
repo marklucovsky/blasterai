@@ -178,7 +178,9 @@ struct claudeBlastTests {
         // folders that came off the home page to pay for them.
         #expect(result.scene.pages.count == result.pages.count)
         // 17 -> 21: Animals, Clothes, Things and Vehicles, on Groups (session 8).
-        #expect(result.scene.pages.count == 21)
+        // 21 -> 41: the I and Small words pages, and Actions, Describe and
+        // Places split into folders (session 14, tools/board_spec/blasterai60.json).
+        #expect(result.scene.pages.count == 41)
         // The bundled scene is tagged as system-defined, which now also means
         // immutable — caregivers edit a clone instead.
         #expect(result.scene.systemSceneKey == "core_first")

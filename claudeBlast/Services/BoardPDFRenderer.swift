@@ -750,7 +750,7 @@ enum BoardPDFRenderer {
         let radius = max(3, card.width * 0.09)
         let border = max(1.0, card.width * 0.028)
         let accent = navigates
-            ? UIColor(TileColorResolver.linkColor(slotRawValue: entry.linkColor))
+            ? UIColor(TileColorResolver.linkColor(slotRawValue: entry.linkColor, isAudible: entry.isAudible))
             : UIColor(TileColorResolver.color(for: tile))
 
         let cardPath = UIBezierPath(roundedRect: card, cornerRadius: radius)
@@ -836,7 +836,7 @@ enum BoardPDFRenderer {
             let stripHeight = max(7, card.width * 0.19)
             let strip = CGRect(x: card.minX, y: card.maxY - stripHeight,
                                width: card.width, height: stripHeight)
-            UIColor(TileColorResolver.linkColor(slotRawValue: entry.linkColor))
+            UIColor(TileColorResolver.linkColor(slotRawValue: entry.linkColor, isAudible: entry.isAudible))
                 .withAlphaComponent(0.92).setFill()
             UIBezierPath(rect: strip).fill()
 

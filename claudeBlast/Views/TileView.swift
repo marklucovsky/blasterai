@@ -8,6 +8,62 @@
 import SwiftUI
 import SwiftData
 
+/// Where a tile's link sits on the path to the page showing.
+///
+/// A folder page keeps its own tile in the cell its parent shows it in, and that
+/// tile is "here": a child who cannot read sees the tile they just pressed,
+/// where they pressed it. The row-1 folder the path started from is "on the
+/// way". Both carry a two-tone striped ring that nothing else on the board uses.
+/// "Here" adds a red dot and a veil over its picture: it is a label, not a
+/// button, and it should look it next to the live folder above it.
+///
+/// Black and yellow, the hazard stripe: a pattern rather than a hue, because
+/// every hue on the board already means a part of speech, and the strongest
+/// light/dark pair there is, so it survives High Contrast and colour blindness.
+/// (Blue/green read as too subtle on the iPad, Mark 2026-10-25.)
+enum WayMark {
+    case here, onTheWay
+
+    static let stripes = (Color.black, Color(red: 1.0, green: 0.84, blue: 0.0))
+    static let dot = Color(red: 0.90, green: 0.15, blue: 0.17)
+    static let veil = Color.white.opacity(0.45)
+}
+
+/// The ring and dot, on the square picture card only: a frame in the card's
+/// margin around the white plate, two tones in alternating segments. It stops
+/// at the label band, so the word underneath keeps its colour and its room.
+private struct WayMarkOverlay: ViewModifier {
+    let mark: WayMark?
+
+    func body(content: Content) -> some View {
+        content
+            .overlay {
+                if mark != nil {
+                    ZStack {
+                        if mark == .here {
+                            RoundedRectangle(cornerRadius: 6).fill(WayMark.veil).padding(6)
+                        }
+                        RoundedRectangle(cornerRadius: 8).strokeBorder(WayMark.stripes.0, lineWidth: 6)
+                        RoundedRectangle(cornerRadius: 8)
+                            .strokeBorder(WayMark.stripes.1, style: StrokeStyle(lineWidth: 6, dash: [7, 7]))
+                    }
+                    .padding(1)
+                    .allowsHitTesting(false)
+                }
+            }
+            .overlay(alignment: .topLeading) {
+                if mark == .here {
+                    Circle()
+                        .fill(WayMark.dot)
+                        .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                        .frame(width: 14, height: 14)
+                        .padding(3)
+                        .allowsHitTesting(false)
+                }
+            }
+    }
+}
+
 struct TileView: View {
     let tile: TileModel
     var link: String = ""
@@ -23,6 +79,7 @@ struct TileView: View {
     var scriptPulseCount: Int = 0
     /// Find Word's target: the tile breathes until the caregiver taps anywhere.
     var isHighlighted: Bool = false
+    var wayMark: WayMark? = nil
     let onTap: () -> Void
 
     private var isNavigation: Bool { !link.isEmpty }
@@ -105,6 +162,9 @@ struct TileView: View {
         // press-vs-scroll arbitration the system already does — and as a bonus
         // it cancels the press when a scroll begins, which a raw drag does not.
         .buttonStyle(PressReportingButtonStyle(isPressed: $isPressed))
+        // "Here" is a label, not a button: it leads to the page already showing.
+        .allowsHitTesting(wayMark != .here)
+        .accessibilityHint(wayMark == .here ? "You are here" : "")
         // Find Word: the press's own ring and glow, held and breathing, so the
         // found word reads as "this one" in the board's existing language.
         .overlay(
@@ -196,7 +256,7 @@ struct TileView: View {
     /// which is wayfinding rather than vocabulary.
     private var accent: Color {
         isNavigation
-            ? TileColorResolver.linkColor(slotRawValue: linkColor)
+            ? TileColorResolver.linkColor(slotRawValue: linkColor, isAudible: isAudible)
             : TileColorResolver.color(for: tile)
     }
 
@@ -235,7 +295,7 @@ struct TileView: View {
                 .aspectRatio(1, contentMode: .fit)
                 .padding(9)
 
-            if isNavigation {
+            if isNavigation && wayMark != .here {
                 // Drawn against the tile's own color rather than in a fixed
                 // blue. See `TileColorResolver.marker(on:)`: this badge stopped
                 // being decoration the moment folders stopped all being blue.
@@ -246,6 +306,7 @@ struct TileView: View {
                     .padding(4)
             }
         }
+        .modifier(WayMarkOverlay(mark: wayMark))
         // No clip, no ring, no shadow here any more — the enclosing VStack owns
         // all of it, so the rounding and the glow follow the outside of the
         // whole tile instead of cutting between the picture and the word.

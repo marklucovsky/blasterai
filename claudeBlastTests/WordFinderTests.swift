@@ -59,10 +59,11 @@ struct WordFinderTests {
         let (scene, lookup) = bundled()
         let dog = WordFinder.find("dog", in: scene, lookup: lookup).first
         #expect(dog?.isAvailable == true)
-        #expect(dog?.route == ["Groups", "Animals"])
+        // The `groups` hub is named Things since session 14.
+        #expect(dog?.route == ["Things", "Animals"])
         #expect(dog?.path.count == 2)
         #expect(dog?.path.last == dog?.pageKey, "the last page opened is the word's page")
-        #expect(dog?.place == "Groups › Animals")
+        #expect(dog?.place == "Things › Animals")
     }
 
     @Test func aHomeWordOpensNothing() {
@@ -155,6 +156,18 @@ struct WordFinderTests {
         coordinator.show(path: [], homePageKey: "home")
         #expect(coordinator.navigationPath == ["home"])
         #expect(coordinator.currentPageKey == nil)
+    }
+
+    /// The path badge: where a page sits, through folders rather than doorways.
+    /// *wear* opens Clothes from Actions, but Clothes lives under Things.
+    @Test func aTrailFollowsFoldersNotDoorways() {
+        let (scene, _) = bundled()
+        let pages = scene.visiblePages
+        let home = scene.homePageKey
+        #expect(WordPlaces.trail(to: "describe_how_much", pages: pages, homeKey: home)
+                == ["Home", "Describe", "How much"])
+        #expect(WordPlaces.trail(to: "clothes", pages: pages, homeKey: home).dropFirst().first == "Things")
+        #expect(WordPlaces.trail(to: home, pages: pages, homeKey: home) == ["Home"])
     }
 
     @Test func keyPathsMatchTheTitledRoutes() {

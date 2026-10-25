@@ -143,7 +143,7 @@ struct ScenePreviewBoardView: View {
             // used to check the one thing a preview is for — whether the board
             // reads correctly before a child ever sees it.
             let accent = isLink
-                ? TileColorResolver.linkColor(slotRawValue: entry.linkColor)
+                ? TileColorResolver.linkColor(slotRawValue: entry.linkColor, isAudible: entry.isAudible)
                 : TileColorResolver.color(for: tile)
             VStack(spacing: 0) {
                 // Badge bottom-right, as on the board. A preview exists to be

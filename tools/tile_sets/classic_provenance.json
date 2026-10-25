@@ -2513,6 +2513,82 @@
     "zoo": {
       "source": "prompts.json",
       "subject": "prompts.json"
+    },
+    "folder_cooking": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_doing": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_fun_places": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_house": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_how_it_feels": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_how_much": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_moving": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_opinions": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_out_and_about": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_playing": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_school": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_senses": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_size": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_small_words": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_taking_care": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_talking": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_thinking": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_what_its_like": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_where": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
     }
   },
   "special": {

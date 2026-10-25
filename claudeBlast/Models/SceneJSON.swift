@@ -37,6 +37,10 @@ struct SceneJSON: Codable {
 struct PageJSON: Codable {
     let key: String
     let tiles: [PageBuildCommand]
+    /// What the page is called, when the key's title case is wrong for it:
+    /// `actions_moving` is "Moving", `groups` is "Things". Becomes the page's
+    /// `displayName`, so Find Word reads "BlasterAI 60 › Actions › Moving".
+    var name: String? = nil
 }
 
 /// Sum type of DSL commands applied to a page's working tile list. Each
