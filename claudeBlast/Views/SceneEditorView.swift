@@ -756,6 +756,22 @@ private struct PageGeneratorSheet: View {
     /// All scenes — source list for the "Copy from another scene" picker.
     @Query private var allScenes: [BlasterScene]
 
+    /// A scene built on the page scheme gets its new pages on the leaf
+    /// template: the system row, then the words in bands.
+    private var isTemplated: Bool {
+        PageTemplate.isTemplated(scene.pages, homePageKey: scene.homePageKey)
+    }
+
+    /// BlasterAI 60's home, whose system row a templated page opens with.
+    private var systemHome: PageSpec? { SceneBuilder.systemHome(in: modelContext) }
+
+    /// `page` laid out on the leaf template, when this scene is templated and
+    /// the words fit; nil means the page stays a flat list.
+    private func leafTiles(_ page: GeneratedPage, lookup: [String: TileModel]) -> [TileEntry]? {
+        guard isTemplated else { return nil }
+        return page.placed(on: .leaf, systemHome: systemHome, lookup: lookup)
+    }
+
     /// Featured "Build with AI" examples. Tapping fills the vetted goal; Generate
     /// with it unchanged serves the cached answer (0 tokens), editing runs real AI.
     private let aiExamples: [AIPageExample] = [
@@ -819,6 +835,10 @@ private struct PageGeneratorSheet: View {
                     apiKey: apiKey,
                     provenance: previewProvenance,
                     allowEdit: isLivePreview,
+                    placed: isTemplated ? { page in
+                        leafTiles(page, lookup: currentTileLookup())
+                            .map { PageSpec(key: page.key, tiles: $0) }
+                    } : nil,
                     onAccept: { if let p = self.preview { buildAndAccept(p, editMode: false) } },
                     onEdit:   { if let p = self.preview { buildAndAccept(p, editMode: true) } },
                     onRetry:  { cachedPack = nil; cachedAIExample = nil; cachedCopy = nil; cachedClassQuery = nil; self.preview = nil; runGeneration() },
@@ -832,7 +852,7 @@ private struct PageGeneratorSheet: View {
                                          currentTiles: preview?.primaryPage.tiles ?? [],
                                          allTiles: allTiles, apiKey: apiKey,
                                          scenePages: scene.pages, homePageKey: scene.homePageKey) { refined in
-                        self.preview = refined
+                        self.preview = isTemplated ? reselected(refined) : refined
                     }
                 }
             } else {
@@ -1085,6 +1105,10 @@ private struct PageGeneratorSheet: View {
         guard !goal.isEmpty, !name.isEmpty, !apiKey.isEmpty else { return }
         isGenerating = true
         generationError = nil
+        if isTemplated {
+            runTopicGeneration(goal: goal, key: name)
+            return
+        }
         let service = PageGeneratorService(apiKey: apiKey)
         let tiles = allTiles
         let pages = scene.pages
@@ -1099,6 +1123,41 @@ private struct PageGeneratorSheet: View {
             }
             await MainActor.run { isGenerating = false }
         }
+    }
+
+    /// A templated scene's page: the topic prompt with the scene as context
+    /// (a short page topic — "costumes" — takes the rest from the scene), laid
+    /// out by code on the leaf template.
+    private func runTopicGeneration(goal: String, key: String) {
+        let service = TopicWordsService(apiKey: apiKey)
+        let tiles = allTiles
+        let context = TopicWordsService.SceneContext(scene)
+        let home = systemHome
+        Task {
+            do {
+                let response = try await service.generate(description: goal, template: .leaf,
+                                                          scene: context, allTiles: tiles)
+                let result = try TopicWordsService.page(from: response, key: key,
+                                                        systemHome: home, allTiles: tiles)
+                await MainActor.run { preview = result }
+            } catch let refusal as TopicWordsService.Refusal {
+                await MainActor.run { generationError = refusal.errorDescription }
+            } catch {
+                await MainActor.run { generationError = OpenAIFailure.caregiverMessage(for: error) }
+            }
+            await MainActor.run { isGenerating = false }
+        }
+    }
+
+    /// A refine of a templated page, back on the template: the refiner knows
+    /// nothing of the scheme, so its words are deduped against the system row
+    /// and cut at the budget as a fresh generation's are; sub-pages dropped.
+    private func reselected(_ refined: GeneratedPageResult) -> GeneratedPageResult {
+        let taken = PageFrame(systemHome: systemHome, kind: .leaf).keys
+        let words = TopicWordMatcher.select(refined.primaryPage.tiles.filter { $0.link.isEmpty },
+                                            excluding: taken, lookup: currentTileLookup()).page
+        return GeneratedPageResult(primaryPage: GeneratedPage(key: refined.primaryPage.key, tiles: words),
+                                   subPages: [])
     }
 
     private func buildAndAccept(_ result: GeneratedPageResult, editMode: Bool) {
@@ -1170,10 +1229,10 @@ private struct PageGeneratorSheet: View {
             // Accept path: append the AI-generated page (and any sub-pages)
             // to the scene's inline pages array.
             var pages = scene.pages
-            let primaryTiles: [TileEntry] = result.primaryPage.tiles.compactMap { gen in
-                guard lookup[gen.key] != nil else { return nil }
-                return TileEntry(key: gen.key, link: gen.link, isAudible: gen.isAudible)
-            }
+            let primary = GeneratedPage(key: key,
+                                        tiles: result.primaryPage.tiles.filter { lookup[$0.key] != nil })
+            let primaryTiles = leafTiles(primary, lookup: lookup)
+                ?? primary.tiles.map { TileEntry(key: $0.key, link: $0.link, isAudible: $0.isAudible) }
             pages.append(PageSpec(key: key, tiles: primaryTiles))
             for genSub in result.subPages {
                 let subTiles: [TileEntry] = genSub.tiles.compactMap { gen in
@@ -1241,7 +1300,10 @@ private struct PageGeneratorSheet: View {
     private func commitBuilt(_ built: CollectionSource.Built, lookup: [String: TileModel]) {
         let pageKey = uniquePageKey(built.baseKey)
         var pages = scene.pages
-        pages.append(PageSpec(key: pageKey, tiles: built.tiles))
+        let words = GeneratedPage(key: pageKey, tiles: built.tiles.map {
+            GeneratedTile(key: $0.key, isAudible: $0.isAudible, link: $0.link)
+        })
+        pages.append(PageSpec(key: pageKey, tiles: leafTiles(words, lookup: lookup) ?? built.tiles))
         scene.pages = pages
         if scene.homePageKey.isEmpty { scene.homePageKey = pageKey }
         switch built.cover {
@@ -1374,6 +1436,9 @@ private struct PagePreviewView: View {
     var previewImages: [String: Data] = [:]
     var provenance: String? = nil
     var allowEdit: Bool = true
+    /// Lays a page out on the leaf template; nil, or a nil result, shows the
+    /// page as a list.
+    var placed: ((GeneratedPage) -> PageSpec?)? = nil
     let onAccept: () -> Void
     let onEdit: () -> Void
     let onRetry: () -> Void
@@ -1488,18 +1553,26 @@ private struct PagePreviewView: View {
             .padding(.horizontal, 14)
             .padding(.bottom, 6)
 
-            // Editable like the page editor (prune / reorder / bulk-delete before
-            // Accept), minus the add-tile cell — you refine the generated set here.
-            TileGridEditor(
-                tiles: currentSectionBinding,
-                isSelecting: $isSelecting,
-                wordClassOf: { key in tileLookup[key]?.wordClass ?? currentTiles.first { $0.key == key }?.wordClass },
-                minTile: 60,
-                maxTile: 76,
-                showAddCell: false,
-                cell: { entry in generatedCell(entry.key) }
-            )
-            .onChange(of: selectedSection) { _, _ in isSelecting = false }
+            // A templated page shows where each word will sit; Select switches
+            // to the list to prune it, and the board re-lays out from the list.
+            if !isSelecting, sectionIndex == 0, let board = placed?(allSections[0]) {
+                ScrollView {
+                    TemplateBoardGrid(page: board) { entry in boardCell(entry) }
+                }
+            } else {
+                // Editable like the page editor (prune / reorder / bulk-delete before
+                // Accept), minus the add-tile cell — you refine the generated set here.
+                TileGridEditor(
+                    tiles: currentSectionBinding,
+                    isSelecting: $isSelecting,
+                    wordClassOf: { key in tileLookup[key]?.wordClass ?? currentTiles.first { $0.key == key }?.wordClass },
+                    minTile: 60,
+                    maxTile: 76,
+                    showAddCell: false,
+                    cell: { entry in generatedCell(entry.key) }
+                )
+                .onChange(of: selectedSection) { _, _ in isSelecting = false }
+            }
 
             Divider()
 
@@ -1529,6 +1602,21 @@ private struct PagePreviewView: View {
         }
         // Moderation runs here, in the open — not silently at image-gen time.
         .task(id: presentNewKeys) { await review.analyze(newWords, apiKey: apiKey) }
+    }
+
+    /// One cell of the board: the page's own word, or a tile the template
+    /// put there (the system row's folders). Never empty — an empty view
+    /// would shift every later cell.
+    @ViewBuilder
+    private func boardCell(_ entry: TileEntry) -> some View {
+        if currentTiles.contains(where: { $0.key == entry.key }) {
+            generatedCell(entry.key)
+        } else if let tile = tileLookup[entry.key] {
+            GeneratedTileCell(key: tile.bundleImage, displayName: tile.displayName,
+                              wordClass: tile.wordClass, link: entry.link)
+        } else {
+            Color.clear.aspectRatio(1, contentMode: .fit)
+        }
     }
 
     /// Renders one preview tile by key — an existing tile via its art, or a

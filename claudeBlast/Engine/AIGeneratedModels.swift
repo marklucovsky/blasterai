@@ -174,30 +174,43 @@ struct GeneratedScene: Codable {
 }
 
 extension GeneratedScene {
-    /// The pages as they will be built. A templated home page is laid into the
-    /// scheme: the system row and core frame from `systemHome` (BlasterAI 60's
-    /// home), its words in bands, its links in the link slots. Every other
-    /// page is its tiles in order.
+    /// The pages as they will be built. On a templated scene the home page is
+    /// laid into the scheme — the system row and core frame from `systemHome`
+    /// (BlasterAI 60's home), its words in bands, its links in the link slots —
+    /// and every other page onto the leaf template when its words fit
+    /// (`PageTemplate.leafCapacity`). Anything else is its tiles in order.
     ///
     /// Pure, and run on every render of the preview as well as at build: the
     /// list is what the caregiver edits (remove a word, refine), and placing
     /// once up front would leave holes or shift cells when they did.
     func placedPages(systemHome: PageSpec?, lookup: [String: TileModel]) -> [PageSpec] {
         pages.map { page in
-            guard let template, page.key == homePageKey else {
+            let kind: PageTemplate.Kind? = template == nil ? nil
+                : page.key == homePageKey ? template : .leaf
+            guard let kind,
+                  let tiles = page.placed(on: kind, systemHome: systemHome, lookup: lookup) else {
                 return PageSpec(key: page.key, displayName: page.displayName,
                                 tiles: page.tiles.map {
                                     TileEntry(key: $0.key, link: $0.link, isAudible: $0.isAudible)
                                 })
             }
-            let frame = PageFrame(systemHome: systemHome, kind: template)
-            let taken = frame.keys
-            let words = page.tiles.filter { $0.link.isEmpty && !taken.contains($0.key) }
-            let links = page.tiles.filter { !$0.link.isEmpty }
-            return PageSpec(key: page.key, displayName: page.displayName,
-                            tiles: PagePlacer.place(words: words, links: links, kind: template,
-                                                    frame: frame, lookup: lookup))
+            return PageSpec(key: page.key, displayName: page.displayName, tiles: tiles)
         }
+    }
+}
+
+extension GeneratedPage {
+    /// This page's words and links laid out on `kind`, or nil when a leaf
+    /// page has more words than the template holds and stays flat.
+    func placed(on kind: PageTemplate.Kind, systemHome: PageSpec?,
+                lookup: [String: TileModel]) -> [TileEntry]? {
+        let frame = PageFrame(systemHome: systemHome, kind: kind)
+        let taken = frame.keys
+        let words = tiles.filter { $0.link.isEmpty && !taken.contains($0.key) }
+        let links = tiles.filter { !$0.link.isEmpty }
+        if kind == .leaf, words.count > PageTemplate.leafCapacity { return nil }
+        return PagePlacer.place(words: words, links: links, kind: kind,
+                                frame: frame, lookup: lookup)
     }
 }
 

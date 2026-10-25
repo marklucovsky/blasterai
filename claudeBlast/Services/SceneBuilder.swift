@@ -71,12 +71,17 @@ enum SceneBuilder {
                 }
             }
 
-            // A templated home page is laid into the scheme on BlasterAI 60's
-            // home; its spacers and system links have no vocabulary tile.
+            // A templated scene's pages are laid into the scheme on BlasterAI
+            // 60's home. A tile with no vocabulary entry is dropped from a flat
+            // page, and becomes a gap on a placed one so no later cell moves.
             scene.pages = generated.placedPages(systemHome: systemHome(in: context), lookup: lookup)
                 .map { page in
                     var page = page
-                    page.tiles = page.tiles.filter { $0.isSpacer || lookup[$0.key] != nil }
+                    let placed = PageTemplate.kind(of: page, homePageKey: generated.homePageKey) != nil
+                    page.tiles = page.tiles.compactMap { entry in
+                        if entry.isSpacer || lookup[entry.key] != nil { return entry }
+                        return placed ? .spacer() : nil
+                    }
                     return page
                 }
             if generated.template != nil { scene.designedFor = PageTemplate.designedFor }

@@ -115,7 +115,14 @@ struct PageLinkPlacementSheet: View {
         var pages = scene.pages
         for i in pages.indices where selectedPages.contains(pages[i].key) {
             guard !pages[i].tiles.contains(where: { $0.key == linkKey }) else { continue }
-            pages[i].tiles.append(TileEntry(key: linkKey, link: target.pageKey, isAudible: false))
+            let link = TileEntry(key: linkKey, link: target.pageKey, isAudible: false)
+            // A page on the page scheme takes the link in its next link slot;
+            // a flat page gets it at the end.
+            if let kind = PageTemplate.kind(of: pages[i], homePageKey: scene.homePageKey) {
+                pages[i].tiles = PagePlacer.insertLink(link, into: pages[i].tiles, kind: kind)
+            } else {
+                pages[i].tiles.append(link)
+            }
         }
         // A folder made here has no color yet, and an unresolved color draws as
         // wayfinding blue — which looks exactly like a folder someone decided
