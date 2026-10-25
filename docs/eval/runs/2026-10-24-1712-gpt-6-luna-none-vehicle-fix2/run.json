@@ -1,0 +1,19 @@
+{
+  "name": "2026-10-24-1712-gpt-6-luna-none-vehicle-fix2",
+  "label": "vehicle-fix2",
+  "model": "gpt-6-luna",
+  "effort": "none",
+  "judge": null,
+  "judge_effort": "low",
+  "judge_n": 1,
+  "samples": 3,
+  "commit": "b8c48a8+dirty",
+  "prompt_rev": "e0f770abe9",
+  "rubric_rev": "fc770a3add",
+  "rejudged_from": null,
+  "started": "2026-10-24T17:12:24",
+  "seconds": 4.7,
+  "outputs": 21,
+  "subject_cost": 0.0009238400000000001,
+  "judge_cost": 0
+}
