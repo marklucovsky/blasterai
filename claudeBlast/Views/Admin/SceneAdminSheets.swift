@@ -703,9 +703,11 @@ struct ScenePreviewView: View {
     /// The current page as it will be built, when it is laid out on the page
     /// scheme; nil for a flat page.
     private var placedPage: PageSpec? {
-        guard working.template != nil, currentPage.key == working.homePageKey else { return nil }
-        return working.placedPages(systemHome: systemHome, lookup: tileLookup)
-            .first { $0.key == currentPage.key }
+        guard working.template != nil,
+              let page = working.placedPages(systemHome: systemHome, lookup: tileLookup)
+                .first(where: { $0.key == currentPage.key }),
+              PageTemplate.kind(of: page, homePageKey: working.homePageKey) != nil else { return nil }
+        return page
     }
 
     var body: some View {
@@ -842,28 +844,10 @@ struct ScenePreviewView: View {
     private func boardGrid(_ page: PageSpec) -> some View {
         let byKey = Dictionary(currentPage.tiles.map { ($0.key, $0) },
                                uniquingKeysWith: { first, _ in first })
-        let cells = page.tiles + Array(repeating: TileEntry.spacer(),
-                                       count: max(0, PageTemplate.cols * PageTemplate.rows - 1
-                                                  - page.tiles.count))
-        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4),
-                                        count: PageTemplate.cols), spacing: 6) {
-            Image(systemName: "house.fill")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity)
-                .aspectRatio(1, contentMode: .fit)
-                .background(RoundedRectangle(cornerRadius: 8).fill(Color.secondary.opacity(0.15)))
-            ForEach(Array(cells.enumerated()), id: \.offset) { _, entry in
-                if entry.isSpacer {
-                    Color.clear.aspectRatio(1, contentMode: .fit)
-                } else {
-                    cell(byKey[entry.key]
-                         ?? GeneratedTile(key: entry.key, isAudible: entry.isAudible, link: entry.link))
-                }
-            }
+        return TemplateBoardGrid(page: page) { entry in
+            cell(byKey[entry.key]
+                 ?? GeneratedTile(key: entry.key, isAudible: entry.isAudible, link: entry.link))
         }
-        .padding(.horizontal, 8)
-        .padding(.bottom, 12)
     }
 
     /// Cancel/Back on the left, then the stage's forward move. Refine only

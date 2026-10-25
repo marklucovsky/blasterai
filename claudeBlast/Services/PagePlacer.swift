@@ -80,6 +80,31 @@ enum PageTemplate {
         (0..<10).flatMap { col in (1..<rows).map { cell(row: $0, col: col) } }
             .filter { !taken.contains($0) }
     }
+
+    /// Where a link goes once the link slots are full: any empty cell below
+    /// row 1, rightmost column first so it sits near the link columns.
+    static let spareLinkCells: [Int] = (0..<cols).reversed().flatMap { col in
+        (1..<rows).map { cell(row: $0, col: col) }
+    }
+
+    /// Most words a leaf page lays out: columns 1–10. A longer list (a big
+    /// pack, every word of a class) stays a flat page the grid pages through.
+    static let leafCapacity = 10 * (rows - 1)
+
+    /// The template `page` was laid out on, read from the page itself: a
+    /// templated page opens with the system row, so cell 1 is a `<system>:`
+    /// link. Nil for a flat page — BlasterAI 60's own, an older scene's, a
+    /// pack page too long to place.
+    static func kind(of page: PageSpec, homePageKey: String) -> Kind? {
+        guard let first = page.tiles.first, TileToken.systemPageKey(first.link) != nil,
+              !first.isAudible else { return nil }
+        return page.key == homePageKey ? .home : .leaf
+    }
+
+    /// Whether `scene`'s pages are built on the scheme: its home page is.
+    static func isTemplated(_ pages: [PageSpec], homePageKey: String) -> Bool {
+        pages.first { $0.key == homePageKey }.flatMap { kind(of: $0, homePageKey: homePageKey) } == .home
+    }
 }
 
 /// What a templated page takes from BlasterAI 60's home.
@@ -160,22 +185,11 @@ enum PagePlacer {
         var grid: [Int: TileEntry] = frame.fixed
         grid.merge(frame.rowOne) { _, row in row }
 
-        // Links: the template's slots, then the displaceable cluster cells,
-        // then (rarely) any free word cell from the end.
-        var slots = PageTemplate.linkSlots(kind)
-        if kind == .home {
-            slots += PageTemplate.displaceable.compactMap { key in
-                frame.fixed.first { $0.value.key == key }?.key
-            }
-        }
+        // Links take the template's slots first; any more wait for the words.
         var pendingLinks = links[...]
-        for slot in slots {
+        for slot in PageTemplate.linkSlots(kind) {
             guard let link = pendingLinks.popFirst() else { break }
             grid[slot] = entry(link)
-        }
-        var spare = PageTemplate.wordCells(excluding: Set(grid.keys))
-        while let link = pendingLinks.popFirst(), let cell = spare.popLast() {
-            grid[cell] = entry(link)
         }
 
         // Words, grouped into bands; a stable sort keeps the model's rank.
@@ -194,8 +208,50 @@ enum PagePlacer {
             for (cell, word) in zip(rest, ordered.dropFirst(cells.count)) { grid[cell] = entry(word) }
         }
 
-        guard let last = grid.keys.max() else { return [] }
-        return (1...last).map { grid[$0] ?? .spacer() }
+        // Links past the slots: an empty cell, then (on a scene's home) not's
+        // cell, then don't's. A core word goes only when the page is full.
+        var spare = PageTemplate.spareLinkCells.filter { grid[$0] == nil }
+        if kind == .home {
+            spare += PageTemplate.displaceable.compactMap { key in
+                frame.fixed.first { $0.value.key == key }?.key
+            }
+        }
+        for cell in spare {
+            guard let link = pendingLinks.popFirst() else { break }
+            grid[cell] = entry(link)
+        }
+        // A link is never lost: with no cell left it starts a second screen.
+        let overflow = pendingLinks.map(entry)
+
+        guard let last = grid.keys.max() else { return overflow }
+        return (1...last).map { grid[$0] ?? .spacer() } + overflow
+    }
+
+    /// Add `link` to a page already laid out on `kind`, the way `place` would
+    /// have: the first free link slot, then any empty cell below row 1, then
+    /// (on a scene's home) `not`'s cell, then `don't`'s. Only a full page sends
+    /// it to the end, onto a second screen, so a link is never lost. `tiles` is
+    /// cells 1…n, as `place` returns them.
+    static func insertLink(_ link: TileEntry, into tiles: [TileEntry],
+                           kind: PageTemplate.Kind) -> [TileEntry] {
+        var cells = tiles
+        let isFree = { (cell: Int) in cell > cells.count || cells[cell - 1].isSpacer }
+        var target = PageTemplate.linkSlots(kind).first(where: isFree)
+            ?? PageTemplate.spareLinkCells.first(where: isFree)
+        if target == nil, kind == .home {
+            target = PageTemplate.displaceable.lazy.compactMap { key in
+                cells.indices.first {
+                    cells[$0].key == key && cells[$0].link.isEmpty
+                        && ($0 + 1) % PageTemplate.cols == PageTemplate.cols - 1
+                }.map { $0 + 1 }
+            }.first
+        }
+        guard let cell = target else { return cells + [link] }
+        if cell > cells.count {
+            cells += Array(repeating: TileEntry.spacer(), count: cell - cells.count)
+        }
+        cells[cell - 1] = link
+        return cells
     }
 
     /// A leaf page has no frame, so its bands can breathe: each band starts a

@@ -150,13 +150,19 @@ struct PageSchemeTests {
     @Test func linksFillTheSlotsAndStopIsNeverDisplaced() throws {
         let b = board()
         let links = (1...7).map { GeneratedTile(key: "page_p\($0)", isAudible: false, link: "p\($0)") }
-        let grid = cells(try placedHome(Self.bluey, links: links, b))
-        let slots = [Self.cell(1, 10), Self.cell(2, 10), Self.cell(3, 10), Self.cell(4, 10),
-                     Self.cell(4, 11), Self.cell(3, 11), Self.cell(1, 11)]
+        let home = try placedHome(Self.bluey, links: links, b)
+        let grid = cells(home)
+        let slots = [Self.cell(1, 10), Self.cell(2, 10), Self.cell(3, 10), Self.cell(4, 10), Self.cell(4, 11)]
         for (n, slot) in slots.enumerated() {
             #expect(grid[slot]?.link == "p\(n + 1)", "link \(n + 1) goes to cell \(slot)")
         }
+        // Past the slots, links take empty cells; the cluster keeps its words.
+        let rest = home.tiles.filter { ["p6", "p7"].contains($0.link) }
+        #expect(rest.count == 2)
+        #expect(home.tiles.count < PageTemplate.cols * PageTemplate.rows)
+        #expect(grid[Self.cell(1, 11)]?.key == "don't")
         #expect(grid[Self.cell(2, 11)]?.key == "stop")
+        #expect(grid[Self.cell(3, 11)]?.key == "not")
     }
 
     @Test func aFewLinksLeaveTheClusterAlone() throws {
@@ -202,6 +208,97 @@ struct PageSchemeTests {
         // The model's verb first, then the system's in order; "see" is already on the page.
         #expect(verbs == ["read", "look", "like", "play", "feel"])
         #expect(page.count == TopicWordsService.budget)
+    }
+
+    // MARK: - Adding a page
+
+    @Test func aNewPageLinkTakesTheNextFreeSlot() throws {
+        let b = board()
+        var home = try placedHome(Self.bluey, b).tiles
+        let link = { (n: Int) in TileEntry(key: "page_p\(n)", link: "p\(n)", isAudible: false) }
+        home = PagePlacer.insertLink(link(1), into: home, kind: .home)
+        #expect(cells(PageSpec(key: "home", tiles: home))[Self.cell(1, 10)]?.link == "p1")
+        // Five slots full, the next links take empty cells, nearest the link
+        // columns, and the cluster keeps its words.
+        for n in 2...6 { home = PagePlacer.insertLink(link(n), into: home, kind: .home) }
+        var grid = cells(PageSpec(key: "home", tiles: home))
+        let empty = PageTemplate.spareLinkCells.first { grid[$0] == nil || grid[$0]?.isSpacer == true }
+        let target = try #require(empty)
+        home = PagePlacer.insertLink(link(7), into: home, kind: .home)
+        grid = cells(PageSpec(key: "home", tiles: home))
+        #expect(grid[target]?.link == "p7")
+        #expect(grid[Self.cell(1, 11)]?.key == "don't")
+        #expect(grid[Self.cell(3, 11)]?.key == "not")
+        // Out of empty cells: not's cell goes, then don't's; stop stays.
+        var n = 100
+        while PageTemplate.spareLinkCells.contains(where: { $0 > home.count || home[$0 - 1].isSpacer }) {
+            n += 1
+            home = PagePlacer.insertLink(link(n), into: home, kind: .home)
+        }
+        home = PagePlacer.insertLink(link(8), into: home, kind: .home)
+        home = PagePlacer.insertLink(link(9), into: home, kind: .home)
+        grid = cells(PageSpec(key: "home", tiles: home))
+        #expect(grid[Self.cell(3, 11)]?.link == "p8")
+        #expect(grid[Self.cell(1, 11)]?.link == "p9")
+        #expect(grid[Self.cell(2, 11)]?.key == "stop")
+        // A full page: the link still lands, at the end.
+        home = PagePlacer.insertLink(link(10), into: home, kind: .home)
+        #expect(home.last?.link == "p10")
+    }
+
+    @Test func onlyAPageOnTheSchemeIsTemplated() throws {
+        let b = board()
+        let home = try placedHome(Self.bluey, b)
+        #expect(PageTemplate.kind(of: home, homePageKey: "home") == .home)
+        #expect(PageTemplate.kind(of: try #require(b.home), homePageKey: b.system.homePageKey) == nil)
+        #expect(PageTemplate.isTemplated([home], homePageKey: "home"))
+    }
+
+    @Test func aTemplatedScenesOtherPagesAreLeafPages() throws {
+        let b = board()
+        var scene = try TopicWordsService.scene(from: try TopicWordsService.parse(content: Self.bluey),
+                                                systemHome: b.home, allTiles: b.tiles)
+        let words = b.tiles.filter { $0.wordClass == "food" && !$0.isStructuralChrome }
+        let few = words.prefix(12).map { GeneratedTile(key: $0.key, isAudible: true, link: "") }
+        let many = words.prefix(PageTemplate.leafCapacity + 1)
+            .map { GeneratedTile(key: $0.key, isAudible: true, link: "") }
+        try #require(many.count > PageTemplate.leafCapacity)
+        scene.pages += [GeneratedPage(key: "few", tiles: few), GeneratedPage(key: "many", tiles: many)]
+        let placed = scene.placedPages(systemHome: b.home, lookup: b.lookup)
+        #expect(PageTemplate.kind(of: placed[1], homePageKey: "home") == .leaf)
+        #expect(PageTemplate.kind(of: placed[2], homePageKey: "home") == nil)
+        #expect(placed[2].tiles.count == many.count)
+        // A link added to the leaf page goes to column 12, top.
+        let leaf = PagePlacer.insertLink(TileEntry(key: "page_x", link: "x", isAudible: false),
+                                         into: placed[1].tiles, kind: .leaf)
+        #expect(cells(PageSpec(key: "few", tiles: leaf))[Self.cell(1, 11)]?.link == "x")
+    }
+
+    @Test func anAddedPageLeavesOutTheSystemRow() throws {
+        let b = board()
+        let response = try TopicWordsService.parse(content: """
+            {"refused": false, "name": "Playground", "description": "",
+             "words": [{"word": "slide"}, {"word": "people"}, {"word": "swing"}]}
+            """)
+        let page = try TopicWordsService.page(from: response, key: "playground",
+                                              systemHome: b.home, allTiles: b.tiles).primaryPage
+        #expect(page.key == "playground")
+        #expect(!page.tiles.contains { $0.key == "people" })
+        #expect(page.tiles.contains { $0.key == "slide" })
+    }
+
+    @Test func theSceneContextIsTheHomePagesWords() throws {
+        let b = board()
+        let context = TestStore.container.mainContext
+        let generated = try TopicWordsService.scene(
+            from: try TopicWordsService.parse(content: Self.bluey),
+            systemHome: b.home, allTiles: b.tiles)
+        let built = try SceneBuilder.build(from: generated, tileLookup: b.lookup, context: context)
+        let words = TopicWordsService.SceneContext(built).words
+        #expect(words.contains("bluey"))
+        #expect(words.contains("want"))
+        #expect(!words.contains { $0.hasPrefix(TileToken.spacerPrefix) })
+        #expect(!words.contains("people"))
     }
 
     // MARK: - Matching

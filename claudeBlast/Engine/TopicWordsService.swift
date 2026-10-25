@@ -34,6 +34,20 @@ struct TopicWordsService {
         var name: String
         var description: String
         var words: [String]
+
+        /// `scene` as the prompt sees it: its home page's words, not its
+        /// links, gaps or folders.
+        init(name: String, description: String, words: [String]) {
+            self.name = name
+            self.description = description
+            self.words = words
+        }
+
+        init(_ scene: BlasterScene) {
+            let home = scene.page(withKey: scene.homePageKey)?.tiles ?? []
+            self.init(name: scene.name, description: scene.descriptionText,
+                      words: home.filter { $0.link.isEmpty && !$0.isSpacer }.map(\.key))
+        }
     }
 
     /// What the model returned, before matching to the vocabulary.
@@ -175,6 +189,20 @@ struct TopicWordsService {
                               homePageKey: "home",
                               pages: [GeneratedPage(key: "home", tiles: selection.page)],
                               tokenUsage: response.tokenUsage, template: .home)
+    }
+
+    /// A page added to a scene, from `response`'s words: laid out on the leaf
+    /// template when it is shown and built, so words the system row already
+    /// has are left out, and the rest cut at the budget.
+    static func page(from response: Response, key: String, systemHome: PageSpec?,
+                     allTiles: [TileModel]) throws -> GeneratedPageResult {
+        let taken = PageFrame(systemHome: systemHome, kind: .leaf).keys
+        let selection = TopicWordMatcher.select(response.words, excluding: taken, allTiles: allTiles)
+        guard !selection.page.isEmpty else {
+            throw OpenAIError.decodingError("No words came back for this page")
+        }
+        return GeneratedPageResult(primaryPage: GeneratedPage(key: key, tiles: selection.page),
+                                   subPages: [])
     }
 
     // MARK: - Prompt pieces
