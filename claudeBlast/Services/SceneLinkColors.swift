@@ -49,6 +49,10 @@ enum SceneLinkColors {
             for tileIndex in pages[pageIndex].tiles.indices {
                 let tile = pages[pageIndex].tiles[tileIndex]
                 guard !tile.link.isEmpty, tile.linkColorIsAuto else { continue }
+                // A link into BlasterAI 60 describes a page this scene does not
+                // have, so there is nothing here to re-resolve it against. Its
+                // color was resolved against the core board when it was made.
+                guard TileToken.systemPageKey(tile.link) == nil else { continue }
                 // `<home>` resolves at navigation time and names no page here.
                 // A nil destination is not an error: an audible link is colored
                 // by its own word regardless, and a silent one with nowhere to

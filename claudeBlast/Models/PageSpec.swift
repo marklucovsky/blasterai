@@ -96,6 +96,32 @@ enum TileToken {
     static func newSpacerKey() -> String {
         spacerPrefix + UUID().uuidString.prefix(8).lowercased()
     }
+
+    /// Prefix for a link into the **system scene** (BlasterAI 60, the
+    /// `isDefault` scene): `<system>:actions` opens BlasterAI 60's own Actions
+    /// page from inside any scene.
+    ///
+    /// Why a link and not a copy (Mark, 2026-10-23): every page carries a row
+    /// of blue system links — people, actions, places… — and a scene that
+    /// copied those pages in would freeze them at the day it was made. A link
+    /// keeps one source of truth, so when the core board grows, every scene
+    /// that points at it grows too.
+    ///
+    /// The prefix travels with the navigation: a folder on a system page opens
+    /// the system scene's page of that name, so Actions → its subfolders stays
+    /// inside BlasterAI 60. Home still returns to the *active* scene's home.
+    static let systemPrefix = "<system>:"
+
+    /// The link that opens `pageKey` of the system scene.
+    static func systemLink(to pageKey: String) -> String {
+        systemPrefix + pageKey
+    }
+
+    /// The system scene's page a link or page key names, or nil when it is an
+    /// ordinary page of the scene itself.
+    static func systemPageKey(_ link: String) -> String? {
+        link.hasPrefix(systemPrefix) ? String(link.dropFirst(systemPrefix.count)) : nil
+    }
 }
 
 /// A single tile placement on a page. The vocabulary key identifies the
@@ -106,6 +132,7 @@ enum TileToken {
 ///   - a page key → navigate to that page within the same scene
 ///   - `TileToken.home` → magic link; resolves to the active scene's
 ///     homePageKey at navigation time
+///   - `TileToken.systemLink(to:)` → a page of the system scene (BlasterAI 60)
 struct TileEntry: Codable, Hashable, Identifiable {
     var id: String { key }
     var key: String

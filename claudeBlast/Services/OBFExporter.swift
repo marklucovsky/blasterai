@@ -133,6 +133,13 @@ enum OBFExporter {
                     order.append(nil)
                     continue
                 }
+                // A silent link into BlasterAI 60 has nowhere to go in a file
+                // that carries only this scene: a gap, not a dead button. One
+                // that also speaks is still a word, and exports as one.
+                if TileToken.systemPageKey(entry.link) != nil, !entry.isAudible {
+                    order.append(nil)
+                    continue
+                }
                 guard let tile = tileLookup[entry.key] else { continue }
                 let buttonID = entry.key
 

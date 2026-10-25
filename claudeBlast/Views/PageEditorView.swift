@@ -612,6 +612,9 @@ struct TilePropertiesSheet: View {
     let tileKey: String
     var onRemove: (() -> Void)? = nil
     @Query(sort: \TileModel.key) private var allTiles: [TileModel]
+    /// BlasterAI 60, whose pages any scene can link to (`TileToken.systemPrefix`).
+    @Query(filter: #Predicate<BlasterScene> { $0.isDefault })
+    private var systemScenes: [BlasterScene]
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(TileImageResolver.self) private var resolver
@@ -721,14 +724,9 @@ struct TilePropertiesSheet: View {
                     pages[p].tiles[t].linkColor = nil
                     pages[p].tiles[t].linkColorIsAuto = true
                 } else if pages[p].tiles[t].linkColorIsAuto {
-                    pages[p].tiles[t].linkColor = SceneLinkColors.slot(
-                        forLinkTo: newValue,
-                        spokenAs: tileKey,
-                        isAudible: pages[p].tiles[t].isAudible,
-                        in: pages,
-                        vocabulary: allTiles.map(\.key),
-                        partOfSpeech: { PartOfSpeechIndex.partOfSpeech(for: $0) }
-                    ).rawValue
+                    pages[p].tiles[t].linkColor = automaticSlot(
+                        forLinkTo: newValue, isAudible: pages[p].tiles[t].isAudible,
+                        in: pages).rawValue
                 }
                 scene.pages = pages
             }
@@ -798,14 +796,9 @@ struct TilePropertiesSheet: View {
                     pages[p].tiles[t].linkColorIsAuto = false
                 } else {
                     pages[p].tiles[t].linkColorIsAuto = true
-                    pages[p].tiles[t].linkColor = SceneLinkColors.slot(
+                    pages[p].tiles[t].linkColor = automaticSlot(
                         forLinkTo: pages[p].tiles[t].link,
-                        spokenAs: tileKey,
-                        isAudible: pages[p].tiles[t].isAudible,
-                        in: pages,
-                        vocabulary: allTiles.map(\.key),
-                        partOfSpeech: { PartOfSpeechIndex.partOfSpeech(for: $0) }
-                    ).rawValue
+                        isAudible: pages[p].tiles[t].isAudible, in: pages).rawValue
                 }
                 scene.pages = pages
             }
@@ -815,11 +808,19 @@ struct TilePropertiesSheet: View {
     /// What "Automatic" would pick for this link right now.
     private var automaticLinkSlot: TileColorSlot? {
         guard let entry, !entry.link.isEmpty else { return nil }
+        return automaticSlot(forLinkTo: entry.link, isAudible: entry.isAudible, in: scene.pages)
+    }
+
+    /// The color a link to `link` resolves to on its own. A BlasterAI 60 page
+    /// is resolved against the core board, where that page lives.
+    private func automaticSlot(forLinkTo link: String, isAudible: Bool,
+                               in pages: [PageSpec]) -> TileColorSlot {
+        let systemKey = TileToken.systemPageKey(link)
         return SceneLinkColors.slot(
-            forLinkTo: entry.link,
-            spokenAs: entry.key,
-            isAudible: entry.isAudible,
-            in: scene.pages,
+            forLinkTo: systemKey ?? link,
+            spokenAs: tileKey,
+            isAudible: isAudible,
+            in: systemKey == nil ? pages : (systemScenes.first?.pages ?? []),
             vocabulary: allTiles.map(\.key),
             partOfSpeech: { PartOfSpeechIndex.partOfSpeech(for: $0) })
     }
@@ -906,10 +907,22 @@ struct TilePropertiesSheet: View {
                         ForEach(scene.pages, id: \.key) { page in
                             Text(page.title).tag(page.key)
                         }
+                        // The core board's own pages. Not offered on the core
+                        // board itself, where they are already the list above.
+                        // Each label names the board: a menu-style picker does
+                        // not draw a Section header, so a heading would not say
+                        // whose Actions page this is.
+                        if let system = systemScenes.first, system.id != scene.id {
+                            Divider()
+                            ForEach(system.pages, id: \.key) { page in
+                                let link = TileToken.systemLink(to: page.key)
+                                Text(SystemLinks.displayName(of: link)).tag(link)
+                            }
+                        }
                     }
                     let currentLink = entry?.link ?? ""
                     if !currentLink.isEmpty {
-                        Text("Tapping this tile navigates to \"\(currentLink)\".")
+                        Text("Tapping this tile navigates to \"\(SystemLinks.displayName(of: currentLink))\".")
                             .font(.caption)
                             .foregroundStyle(.secondary)
 
