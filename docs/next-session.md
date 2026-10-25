@@ -80,15 +80,21 @@ Unchanged from the last plan.
 ### Session 14 — the vocabulary round: double the board, give it folders
 
 Sessions 12 and 13 ran as one (#142, #143: build 9 on GPT-6), so this is the
-next session. Brandi (2026-10-23): the board is too small to be taken
+next session. That session closed 2026-10-25 with the page scheme too:
+#145 system links, #146 scene creation on the template, #147 sentence prompt
+v9, #148 add page on the template, #149 templates as data
+(`Resources/page_templates.json`) and chrome that keeps BlasterAI 60's levels. Brandi (2026-10-23): the board is too small to be taken
 seriously, or to show it grows with the child. The draft is
 `docs/vocab-expansion-2026-10-23.md`, checked against Wordbank's CDI data
 (`tools/wordbank_coverage.py`) and Avaz's folder tree. It is intrusive and
 large — most pages change — which is why it gets a session, not a PR on the
 side.
 
-- **Brandi reviews the draft first**; her answers to its six questions set the
-  word list.
+- **We make the first pass ourselves** (Mark, 2026-10-25): Brandi is looking
+  to us for an expansion that shows we are serious, not a toy, and won't
+  review a draft first. The Avaz structure and the Wordbank/CDI scoring set
+  the word list; name the judgement calls for her rather than block on the
+  draft's six questions. **Vocab comes first in the session.**
 - **Verb links** like eat/drink: I → a new "I" page, go/come → Places,
   feel → Feelings.
 - **Static subcategory folders** on every crowded page (Places, Actions,
@@ -99,15 +105,26 @@ side.
   lack (household, animals, clothing, outside, furniture, sounds). Folded in:
   `docs/vocabulary-gaps-2026-10-19.md` (days of the week drawn in code, the
   small words, feelings, "I need a break") and build 8/9 tester reports.
-- **Link colours**: audible links keep their Fitzgerald colour by default,
-  settable independently of folder links. Today `alwaysWayfinding` paints
-  eat/drink blue (`TileColorResolver.linkColor`).
+- **Link colours** (Mark, 2026-10-25): an audible link is coloured as a
+  regular tile, by its own part of speech, not as a link. A silent link is
+  blue, or takes the colour of the page it opens. Today `alwaysWayfinding`
+  paints eat/drink blue (`TileColorResolver.linkColor`), and the scheme's
+  `go` is hard-coded verb (`PageFrame`).
 - **Level map with Brandi** — redo it over the new board: finer early steps?
   some folders before the rest of Home? If BlasterAI 60 follows Vocal Flair's
   map, credit OpenAAC/CoughDrop (CC BY) in NOTICE and the scene description.
 - **Not in scope:** phrase tiles (a separate discussion — "it's
   complicated"), and the grammar bubble (came / comes / coming), which waits
   behind a grammar flag.
+- **Then templates and chrome** — once the vocab is in good shape, decide
+  whether to finish here or split it into its own session:
+  - BlasterAI 60's home onto the page scheme.
+  - Live system chrome: pin the template's cells, re-apply the current
+    template at load when a scene's stored fingerprint matches, Repair/Reset
+    in the editor when it doesn't.
+  - Canned starter scenes and scenes built from collections still skip the
+    template and the system links; every creation path goes through the
+    placer.
 - **Submit the GPT-6 build** to App Review once TestFlight has soaked — aim
   for mid-November, mid-December at the latest, so App Review and the
   holidays can't squeeze January 14.
