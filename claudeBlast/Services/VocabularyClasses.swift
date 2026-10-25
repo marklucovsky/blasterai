@@ -300,8 +300,16 @@ enum TileColorResolver {
     /// The child's `LinkColorMode` is applied here rather than at each call
     /// site, so a surface cannot forget it. The mode only changes which color is
     /// looked up; nothing it does reaches stored data.
-    static func linkColor(slotRawValue: String?) -> Color {
-        guard activeLinkColorMode == .perTile,
+    ///
+    /// - Parameter isAudible: a doorway — a word that speaks *and* opens a page,
+    ///   like `go` → Places. **It is a word first, so it keeps its own color in
+    ///   every mode**, with the corner badge saying it also navigates; the mode
+    ///   governs silent folders only (Mark, 2026-10-25, after Avaz: a green `go`
+    ///   with an arrow, white folder tabs). Its stored slot is already its own
+    ///   part of speech — `LinkColorResolver.slot(for:)` gives an audible link
+    ///   that — so honoring the slot is enough.
+    static func linkColor(slotRawValue: String?, isAudible: Bool = false) -> Color {
+        guard activeLinkColorMode == .perTile || isAudible,
               let raw = slotRawValue,
               let slot = TileColorSlot(rawValue: raw)
         else { return navigation }

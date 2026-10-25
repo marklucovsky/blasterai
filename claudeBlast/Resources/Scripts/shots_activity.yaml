@@ -20,15 +20,15 @@ script:
   # entirely. (Learned by seeding it the naive way and getting 5 rows instead
   # of 15.)
   - tiles:
-    - mom, <body_health>, tired
+    - mom, <health>, tired
     - <food>, pizza
-    - <home>, mom, <body_health>, tired
+    - <home>, mom, <health>, tired
     - <drinks>, water
-    - <home>, mom, <body_health>, tired
+    - <home>, mom, <health>, tired
     - <food>, cookie
-    - <home>, mom, <body_health>, tired
+    - <home>, mom, <health>, tired
     - <food>, pizza
-    - <home>, mom, <body_health>, tired
+    - <home>, mom, <health>, tired
     - <drinks>, water
     - <food>, pizza
     - <social>, please

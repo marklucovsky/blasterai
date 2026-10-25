@@ -175,7 +175,7 @@ enum OBFExporter {
                                        license: license(for: tile, scene: scene)))
 
                 let accent = loadBoard != nil
-                    ? TileColorResolver.linkColor(slotRawValue: entry.linkColor)
+                    ? TileColorResolver.linkColor(slotRawValue: entry.linkColor, isAudible: entry.isAudible)
                     : TileColorResolver.color(for: tile)
                 buttons.append(OBFButton(
                     id: buttonID,

@@ -21,15 +21,22 @@ struct WordPlacesTests {
 
     private static let ipad = (cols: 12, rows: 5)
 
-    private func places(hidden: Set<String> = []) -> [String: [WordPlace]] {
+    /// The iPhone's 4 × 5: since session 14 every BlasterAI 60 page fits one
+    /// iPad screen, so screens are only exercised on a phone.
+    private static let phone = (cols: 4, rows: 5)
+
+    private func places(hidden: Set<String> = [],
+                        grid: (cols: Int, rows: Int) = ipad) -> [String: [WordPlace]] {
         let scene = BootstrapLoader.loadDefaultVocabulary(context: TestStore.freshContainer().mainContext).scene
-        return WordPlaces.index(scene: scene, hidden: hidden, grid: Self.ipad)
+        return WordPlaces.index(scene: scene, hidden: hidden, grid: grid)
     }
 
     @Test func aFolderWordIsReachedThroughItsFolders() {
-        let dog = places()["dog"] ?? []
-        #expect(dog.first?.route == ["Groups", "Animals"])
-        #expect(dog.first?.label == "BlasterAI 60 › Groups › Animals")
+        // `horse`: `dog` is on Things itself since session 14.
+        let horse = places()["horse"] ?? []
+        // The `groups` hub is named Things (session 14, after Avaz).
+        #expect(horse.first?.route == ["Things", "Animals"])
+        #expect(horse.first?.label == "BlasterAI 60 › Things › Animals")
     }
 
     @Test func aHomeWordSaysHome() {
@@ -39,26 +46,30 @@ struct WordPlacesTests {
     }
 
     /// Every home, not just one: `hurt` is on Feelings, Body & Health and
-    /// Actions since the session-8 placement pass.
+    /// Actions since the session-8 placement pass — on Actions' Thinking folder,
+    /// and on Health once Body & health split, since session 14.
     @Test func everyPlaceIsListed() {
         let pages = Set((places()["hurt"] ?? []).compactMap(\.route.last))
-        #expect(pages.isSuperset(of: ["Feelings", "Body Health", "Actions"]), "\(pages)")
+        #expect(pages.isSuperset(of: ["Feelings", "Health", "Thinking"]), "\(pages)")
     }
 
-    /// Actions page 2 starts at word 59 on a 12×5 grid (Home is cell 0), and a
-    /// hidden word earlier on the page pulls it back — the board reflows
-    /// around hidden words, so the places must too.
+    /// On a 4 × 5 phone grid Actions' screen 2 starts at its 20th tile (Home is
+    /// cell 0), and a hidden word earlier on the page pulls it back — the board
+    /// reflows around hidden words, so the places must too.
     @Test func screensFollowTheGridAndHiddenWords() {
-        let climb = (places()["climb"] ?? []).first { $0.route.last == "Actions" }
-        #expect(climb?.screen == 2)
-        #expect(climb?.label.hasSuffix("· screen 2") == true)
-
-        // `am` is the first word of screen 2, so hiding one word before it
-        // pulls it back onto screen 1.
-        let am = (places()["am"] ?? []).first { $0.route.last == "Actions" }
-        #expect(am?.screen == 2)
-        let reflowed = (places(hidden: ["eat"])["am"] ?? []).first { $0.route.last == "Actions" }
-        #expect(reflowed?.screen == 1)
+        let onActions = { (places: [String: [WordPlace]], word: String) in
+            (places[word] ?? []).first { $0.route.last == "Actions" }
+        }
+        let phone = places(grid: Self.phone)
+        // `take` is the first word of screen 2, after the system row and need ·
+        // have · stop · come · go · eat · drink · give.
+        #expect(onActions(phone, "take")?.screen == 2)
+        #expect(onActions(phone, "take")?.label.hasSuffix("· screen 2") == true)
+        #expect(onActions(phone, "give")?.screen == 1)
+        let reflowed = places(hidden: ["need"], grid: Self.phone)
+        #expect(onActions(reflowed, "take")?.screen == 1)
+        // On the iPad every page is one screen.
+        #expect(onActions(places(), "take")?.screen == 1)
     }
 
     /// Shortest route wins, and a page no folder reaches is reported as such

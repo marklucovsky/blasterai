@@ -17,12 +17,15 @@ extension SerialTests {
 @Suite(.serialized)
 struct PartOfSpeechTests {
 
+    /// The words, not the chrome: folder tiles (`folder_moving`…, wordClass
+    /// `navigation`) carry no part of speech by design (`chromeIsExcluded`), and
+    /// session 14 added thirty of them.
     private var vocabularyKeys: [String] {
         guard let url = Bundle.main.url(forResource: "vocabulary", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let tiles = try? JSONDecoder().decode([TileModelCodable].self, from: data)
         else { return [] }
-        return tiles.map(\.key)
+        return tiles.filter { $0.wordClass != "navigation" }.map(\.key)
     }
 
     @Test("The index loads and covers nearly all of the vocabulary")

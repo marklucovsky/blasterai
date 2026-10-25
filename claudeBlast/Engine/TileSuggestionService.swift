@@ -70,6 +70,10 @@ struct TileSuggestionService {
     private func buildVocabBlock(allTiles: [TileModel]) -> String {
         var byClass: [String: [String]] = [:]
         for tile in allTiles {
+            // Navigation and page-link tiles are not words to suggest — the
+            // folder tiles (`folder_moving`…) would otherwise read as vocabulary.
+            // Same rule as `SceneGeneratorService.vocabBlock`.
+            guard !tile.isStructuralChrome else { continue }
             byClass[tile.wordClass, default: []].append(tile.key)
         }
         return byClass.keys.sorted().map { wc in

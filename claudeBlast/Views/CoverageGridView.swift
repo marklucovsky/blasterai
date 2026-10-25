@@ -187,7 +187,7 @@ struct CoverageGridView: View {
         let tile = lookup[entry.key]
         let isLink = !entry.link.isEmpty
         let accent = isLink
-            ? TileColorResolver.linkColor(slotRawValue: entry.linkColor)
+            ? TileColorResolver.linkColor(slotRawValue: entry.linkColor, isAudible: entry.isAudible)
             : TileColorResolver.color(for: tile)
         // Drawn the way the board draws it — art on white, the word in a
         // band of its Fitzgerald color, folders badged — because that is the

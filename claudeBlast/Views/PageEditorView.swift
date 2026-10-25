@@ -214,6 +214,7 @@ struct PageEditorView: View {
                             } else if let tile = lookup[entry.key] {
                                 PageTileCell(tile: tile, link: entry.link,
                                              linkColor: entry.linkColor,
+                                             isAudible: entry.isAudible,
                                              isConcealed: entry.isConcealed,
                                              revealLevel: scene.revealLevelCount > 0 ? entry.revealLevel : 0,
                                              isAbovePreview: previewLevel > 0
@@ -493,6 +494,8 @@ struct PageTileCell: View {
     var link: String = ""
     /// The slot this link is colored as. Nil on a word tile.
     var linkColor: String? = nil
+    /// A doorway (speaks and opens a page) keeps its own color in every mode.
+    var isAudible: Bool = true
     /// Concealed on this page: still drawn, deliberately muted, and badged.
     var isConcealed: Bool = false
     /// The level this placement appears from, badged when above 1. 0 hides
@@ -514,7 +517,7 @@ struct PageTileCell: View {
     private var accent: Color {
         link.isEmpty
             ? TileColorResolver.color(for: tile)
-            : TileColorResolver.linkColor(slotRawValue: linkColor)
+            : TileColorResolver.linkColor(slotRawValue: linkColor, isAudible: isAudible)
     }
 
     var body: some View {

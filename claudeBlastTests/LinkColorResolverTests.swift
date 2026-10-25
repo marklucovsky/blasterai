@@ -471,6 +471,42 @@ struct LinkColorResolverTests {
                 == TileColorResolver.fitzgerald(.verb))
     }
 
+    /// A doorway — `go` speaks and opens Places — is a word first, so it keeps
+    /// its own color when the child's mode paints every folder blue. Only silent
+    /// folders follow the mode.
+    @Test("A doorway keeps its color under always-wayfinding")
+    func doorwayKeepsItsColorUnderAlwaysWayfinding() {
+        let profile = ChildProfile(displayName: "Test")
+        profile.linkColorMode = .alwaysWayfinding
+        TileColorResolver.refreshActiveMap(from: profile)
+        defer { TileColorResolver.refreshActiveMap(from: nil) }
+
+        #expect(TileColorResolver.linkColor(slotRawValue: "verb", isAudible: true)
+                == TileColorResolver.fitzgerald(.verb))
+        #expect(TileColorResolver.linkColor(slotRawValue: "verb", isAudible: false)
+                == TileColorResolver.navigation)
+    }
+
+    /// The system row and a folder page's sibling column are navigation chrome:
+    /// counting them made the 8-word Questions page "mostly links" and painted
+    /// its folder blue once every page carried the row.
+    @Test("Chrome links do not make a page of words wayfinding")
+    func chromeLinksAreNotContent() {
+        let row = (0..<(PageTemplate.cols - 1)).map {
+            TileEntry(key: "row\($0)", link: "page\($0)", isAudible: false)
+        }
+        let page = row + Self.words(["he", "she", "they", "we"])
+        #expect(LinkColorResolver.slot(forDestination: page, partOfSpeech: Self.part,
+                                       background: Self.background)
+                == .partOfSpeech(.pronoun))
+        // The same links below row 1, in the word columns, are content: a hub.
+        let hub = [TileEntry.spacer()] + Self.words(["he", "she", "they", "we"])
+            + Array(repeating: TileEntry.spacer(), count: PageTemplate.cols - 6) + row
+        #expect(LinkColorResolver.slot(forDestination: hub, partOfSpeech: Self.part,
+                                       background: Self.background)
+                == .wayfinding)
+    }
+
     /// A link with no stored color draws as wayfinding — what every link did
     /// before folders could carry one.
     @Test("A colorless link draws as wayfinding")

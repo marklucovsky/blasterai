@@ -18,8 +18,8 @@
 //    The keyboard is pinned to column 12, with a gap before it.
 //  - A scene's home page keeps the core words where BlasterAI 60 has them —
 //    a child who knows where "want" is finds it in the same place on every
-//    board — and the don't / stop / not cluster in column 12. "go" also
-//    opens BlasterAI 60's Places, as eat opens Food (`frameLinks`).
+//    board — and the don't / stop / not cluster in column 12. A frame word
+//    that is a doorway there ("go" → Places, "I" → the I page) is one here too.
 //  - The page's own links fill L1–L4, then L5; a sixth takes `not`, a seventh
 //    `don't`. `stop` is never displaced.
 //  - Words fill columns 1–10, top to bottom, in Fitzgerald bands left to
@@ -46,7 +46,9 @@ struct PageScheme: Decodable {
     struct Template: Decodable {
         /// Core words the page keeps where BlasterAI 60 has them.
         var frame: [String]
-        /// Frame words that also open a BlasterAI 60 page.
+        /// Frame words that also open a BlasterAI 60 page, beyond the doorways
+        /// BlasterAI 60's home already gives them. Empty since `go` became a
+        /// doorway there; kept so a layout experiment can add one.
         var frameLinks: [String: String]
         /// Column 12's don't / stop / not, read from BlasterAI 60 like the frame.
         var cluster: [String]
@@ -234,11 +236,20 @@ struct PageFrame {
         // List index i is cell i + 1: Home is cell 0 and not in the list.
         // Both keep BlasterAI 60's levels, so the chrome grows the way the
         // core board does; a scene that wants none turns levels off.
+        //
+        // A frame word that is a doorway on BlasterAI 60 (`go` → Places, `I` →
+        // the I page) stays one here, opening the core board's page: a doorway
+        // belongs to the word, so it works on every board the word is on. This
+        // used to skip any frame word with a link, which was right while only
+        // folders had them and would have dropped `go` and `I` from every new
+        // scene once they became doorways.
         for (index, entry) in tiles.enumerated()
-        where wanted.contains(entry.key) && entry.link.isEmpty && index + 1 > PageTemplate.cols - 1 {
-            var word = template.frameLinks[entry.key].map {
+        where wanted.contains(entry.key) && (entry.link.isEmpty || entry.isAudible)
+            && index + 1 > PageTemplate.cols - 1 {
+            let opens = entry.link.isEmpty ? template.frameLinks[entry.key] : entry.link
+            var word = opens.map {
                 TileEntry(key: entry.key, link: TileToken.systemLink(to: $0), isAudible: true,
-                          linkColor: "verb", linkColorIsAuto: false)
+                          linkColor: entry.linkColor ?? "verb", linkColorIsAuto: false)
             } ?? TileEntry(key: entry.key, link: "", isAudible: true)
             word.revealLevel = entry.revealLevel
             fixed[index + 1] = word

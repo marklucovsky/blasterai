@@ -56,6 +56,9 @@ struct TileGridView: View {
     /// adjacent cell. LazyVGrid ignores zIndex set inside the cell's subtree, so
     /// it has to live on the cell view itself.
     @State private var lastTappedKey: String?
+    /// Navigation keys from the path's first folder to the page showing; see
+    /// `WayMark`. Worked out once per page, not once per tile.
+    @State private var wayTrail: [String] = []
     @AppStorage(AppSettingsKey.demoMode) private var demoMode = false
     @AppStorage(AppSettingsKey.quickActionsEnabled) private var quickActionsEnabled = true
     @AppStorage(AppSettingsKey.imageSet) private var imageSetRaw: String = ImageSetID.defaultSet.rawValue
@@ -433,6 +436,7 @@ struct TileGridView: View {
             // navigation is a view concern, and this is the single fact the
             // engine needs out of it.
             engine.currentPageKey = key
+            wayTrail = computeWayTrail()
         }
         .alert("Add Note", isPresented: $showNoteAlert) {
             TextField("Note", text: $pendingNote)
@@ -497,9 +501,9 @@ struct TileGridView: View {
             }
             #if DEBUG
             .overlay(alignment: .centerLastTextBaseline) {
-                // Hidden in demo mode so the geometry/density badge isn't recorded.
+                // Hidden in demo mode so the path badge isn't recorded.
                 if !demoMode {
-                    gridDebugBadge(spec: spec, tileCount: visible.count)
+                    pathBadge
                 }
             }
             #endif
@@ -561,20 +565,29 @@ struct TileGridView: View {
     }
 
     #if DEBUG
+    /// Where the child is in the hierarchy: `Home › Describe › How much`.
+    /// A trial in debug builds (it replaced the grid-geometry badge); if it
+    /// helps, it comes forward as a breadcrumb the child sees.
     @ViewBuilder
-    private func gridDebugBadge(spec: GridLayoutSpec, tileCount: Int) -> some View {
-        // Home takes cell 0 of every page, so a page holds perPage - 1 words —
-        // the same chunking the board itself uses. Dividing by perPage said a
-        // 60-word page fit on one screen of 60 when it needs two.
-        let pages = max(1, Int(ceil(Double(tileCount) / Double(max(1, spec.perPage - 1)))))
-        Text("\(spec.cols)×\(spec.rows) · \(spec.perPage)/pg · \(tileCount)t/\(pages)p · \(Int(spec.tileSize))pt")
-            .font(.system(size: 9, weight: .medium, design: .monospaced))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 3)
-            .background(.black.opacity(0.55), in: Capsule())
-            .padding(6)
-            .allowsHitTesting(false)
+    private var pathBadge: some View {
+        if let scene = activeScene {
+            let key = coordinator.currentPageKey ?? scene.homePageKey
+            let trail: [String] = {
+                if let systemKey = TileToken.systemPageKey(key), let system = systemScene {
+                    let pages = BoardLevels(scene: scene, system: system).systemPages
+                    return WordPlaces.trail(to: systemKey, pages: pages, homeKey: system.homePageKey)
+                }
+                return WordPlaces.trail(to: key, pages: scene.visiblePages, homeKey: scene.homePageKey)
+            }()
+            Text(trail.joined(separator: " › "))
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(.black.opacity(0.55), in: Capsule())
+                .padding(6)
+                .allowsHitTesting(false)
+        }
     }
     #endif
 
@@ -681,6 +694,35 @@ struct TileGridView: View {
         coordinator.currentPageKey ?? activeScene?.homePageKey ?? "home"
     }
 
+    /// The hierarchy route to the page showing, as navigation keys, so a
+    /// scene's `<system>:describe` matches BlasterAI 60's Describe.
+    private func computeWayTrail() -> [String] {
+        guard let scene = activeScene else { return [] }
+        let key = identityPageKey
+        if let systemKey = TileToken.systemPageKey(key) {
+            guard let system = systemScene else { return [key] }
+            let pages = BoardLevels(scene: scene, system: system).systemPages
+            return WordPlaces.trailKeys(to: systemKey, pages: pages, homeKey: system.homePageKey)
+                .map(TileToken.systemLink(to:))
+        }
+        return WordPlaces.trailKeys(to: key, pages: scene.visiblePages, homeKey: scene.homePageKey)
+    }
+
+    /// Where a tap on `entry` would go, from the page showing.
+    private func destination(of entry: TileEntry) -> String {
+        entry.link.isEmpty ? "" : SystemLinks.destination(
+            of: entry.link, fromPage: identityPageKey,
+            homePageKey: activeScene?.homePageKey ?? "home",
+            systemHomePageKey: systemScene?.homePageKey)
+    }
+
+    private func wayMark(for entry: TileEntry) -> WayMark? {
+        guard !entry.link.isEmpty, !entry.isAudible else { return nil }
+        let to = destination(of: entry)
+        if to == identityPageKey && wayTrail.last == to { return .here }
+        return wayTrail.dropLast().contains(to) ? .onTheWay : nil
+    }
+
     @ViewBuilder
     private func tileCellView(for entry: TileEntry, labelFontSize: CGFloat,
                               lookup: [String: TileModel]) -> some View {
@@ -707,7 +749,8 @@ struct TileGridView: View {
                 labelFontSize: labelFontSize,
                 scriptPulseKey: scriptRunner.tapPulseKey,
                 scriptPulseCount: scriptRunner.tapPulseCount,
-                isHighlighted: isFindTarget(entry)
+                isHighlighted: isFindTarget(entry),
+                wayMark: wayMark(for: entry)
             ) {
                 lastTappedKey = entry.key
                 handleTileTap(entry)
@@ -994,10 +1037,7 @@ struct TileGridView: View {
         // at navigation time (Step J). Tiles store "<home>" literally so a
         // runtime change of homePageKey is honored without rebuilding pages.
         // A folder on a system page stays in the system scene.
-        let resolvedLink = entry.link.isEmpty ? "" : SystemLinks.destination(
-            of: entry.link, fromPage: identityPageKey,
-            homePageKey: activeScene?.homePageKey ?? "home",
-            systemHomePageKey: systemScene?.homePageKey)
+        let resolvedLink = destination(of: entry)
         // An "audible nav tile" is a single gesture that both adds a tile to the active group
         // AND navigates. We treat it as such in recordings only when the tile key matches the
         // link key (the conventional case for nav tiles like <drinks isAudible=t/>).

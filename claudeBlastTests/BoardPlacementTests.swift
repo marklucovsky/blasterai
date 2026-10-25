@@ -16,6 +16,13 @@ extension SerialTests {
 /// contents before; these pin the session-8 placement audit
 /// (`tools/audit_page_placement.py`), so a later edit to a class selector
 /// cannot quietly take a word back off a page it was placed on by hand.
+///
+/// Session 14 rebuilt BlasterAI 60 from `tools/board_spec/blasterai60.json`
+/// (`tools/build_core_board.py`): a system row on every page, folders in
+/// columns 11–12, and a word on a page and its folder in the same cell. The
+/// session-8 decisions survive it. Opposites still sit side by side, answer
+/// rows still line up, and Home's verbs keep their Home cells, now across the
+/// folders a page was split into rather than across one long page.
 @MainActor
 @Suite(.serialized)
 struct BoardPlacementTests {
@@ -30,11 +37,33 @@ struct BoardPlacementTests {
 
     private func keys(_ tiles: [TileEntry]?) -> [String] { (tiles ?? []).map(\.key) }
 
+    /// Row 1, the same eleven folders on every page.
+    private static let rowLength = PageTemplate.cols - 1
+
+    /// A page's words and folders below the system row, gaps left out.
+    private func body(_ tiles: [TileEntry]?) -> [String] {
+        (tiles ?? []).dropFirst(Self.rowLength).filter { !$0.isSpacer }.map(\.key)
+    }
+
+    /// The pages a category was split into, the category first.
+    private func family(_ b: [String: [TileEntry]], _ category: String) -> [[String]] {
+        let pages = [category] + b.keys.filter { $0.hasPrefix(category + "_") }.sorted()
+        return pages.map { keys(b[$0]) }
+    }
+
+    /// True when `run` sits side by side, in order, on some page of `pages`.
+    private func isRun(_ run: [String], in pages: [[String]]) -> Bool {
+        pages.contains { words in
+            guard let start = words.firstIndex(of: run[0]) else { return false }
+            return run.indices.allSatisfy { start + $0 < words.count && words[start + $0] == run[$0] }
+        }
+    }
+
     /// Words a child reaches for from more than one place.
     @Test func secondHomes() {
         let b = board()
         for (page, words) in [
-            ("body_health", ["sick", "hurt", "tired", "feel", "uncomfortable", "doctor", "bathroom", "toilet"]),
+            ("health", ["sick", "hurt", "tired", "feel", "uncomfortable", "doctor", "bathroom", "toilet"]),
             ("feelings", ["sick", "lonely", "surprised", "okay_", "hurt", "feel"]),
             ("places", ["bus", "bathroom"]),
         ] {
@@ -46,33 +75,38 @@ struct BoardPlacementTests {
 
     /// No folder from Food to Drinks or back. The silent Drinks folder inside a
     /// page reached by the audible "eat" made <eat> <drinks> <chocolate milk>
-    /// read "eat chocolate milk".
+    /// read "eat chocolate milk". Food's own folders (Breakfast, Fruit…) are
+    /// fine: they lead to food. The system row holds neither page.
     @Test func foodAndDrinksHaveNoInteriorFolders() {
         let b = board()
-        #expect(b["food"]?.contains { !$0.link.isEmpty } == false)
-        #expect(b["drinks"]?.contains { !$0.link.isEmpty } == false)
+        #expect(b["food"]?.contains { $0.link == "drinks" && !$0.isAudible } == false)
+        #expect(b["drinks"]?.contains { $0.link == "food" && !$0.isAudible } == false)
+        let folders = (b["food"] ?? []).filter { !$0.link.isEmpty && !$0.isAudible }.map(\.link)
+        #expect(folders.contains { $0.hasPrefix("food_") }, "Food opens its folders")
     }
 
-    /// Food still fits one 12×5 page with Home in cell 0 — which is why
-    /// `meals`, a category word, left it.
+    /// Food fits one 12×5 page with its system row since it split into
+    /// folders (session 14), so it left `systemRowExempt`. `meals`, a category
+    /// word, lives in Lunch & dinner.
     @Test func foodFitsOnePage() {
         let b = board()
         let food = keys(b["food"])
-        #expect(Array(food.prefix(2)) == ["hungry", "more"])
-        #expect(!food.contains("meals"))
         #expect(food.count <= 12 * 5 - 1, "Food is \(food.count) words")
-        #expect(Array(keys(b["drinks"]).prefix(2)) == ["thirsty", "more"])
+        #expect(food.prefix(Self.rowLength).contains("people"), "Food opens with the system row")
+        #expect(body(b["food"]).contains("hungry") && body(b["food"]).contains("more"))
+        #expect(!food.contains("meals"))
+        #expect(keys(b["food_lunch_dinner"]).contains("meals"))
+        #expect(Array(body(b["drinks"]).prefix(2)) == ["thirsty", "more"])
     }
 
     /// Answer rows, at the same reach on every page that has one.
     ///
     /// Home answers yes / all done / no at the start of its bottom row (cell
-    /// 48). Food, being full, answers yummy / all done / yucky in the same
-    /// cells. The shorter pages put theirs at the start of the row after their
-    /// words (cell 24) — on Drinks right under the drinks, so a phone does not
-    /// have to page past empty rows to reach it. Describe stacks three such rows
-    /// on its first page, the top one on that same cell 24 and the bottom one
-    /// under Home's answers. Cell 0 is Home, so cell N is the page's word N−1.
+    /// 48), and Describe puts right / okay / wrong in the same cells. Food,
+    /// being full, answers yummy / all done / yucky there too. The shorter pages
+    /// put theirs at the start of the row after their words: cell 36 since the
+    /// system row moved those pages down one row (cell 24 before). Cell 0 is
+    /// Home, so cell N is the page's tile N−1.
     @Test func answerRowsSitAtTheSameReach() {
         let b = board()
         func cells(_ page: String, _ cell: Int) -> [String] {
@@ -80,13 +114,13 @@ struct BoardPlacementTests {
             return Array(words[(cell - 1)..<min(cell + 2, words.count)])
         }
         #expect(cells("home", 48) == ["yes", "all_done", "no"])
-        #expect(cells("food", 48) == ["yummy", "all_done", "yucky"])
-        #expect(cells("drinks", 24) == ["yummy", "all_done", "yucky"])
-        #expect(cells("social", 24) == ["yes", "i_dont_know", "no"])
-        #expect(cells("time_when", 24) == ["always", "sometimes", "never"])
-        #expect(cells("describe", 24) == ["true", "maybe", "false"])
-        #expect(cells("describe", 36) == ["always", "sometimes", "never"])
         #expect(cells("describe", 48) == ["right", "okay_", "wrong"])
+        #expect(cells("food", 48) == ["yummy", "all_done", "yucky"])
+        #expect(cells("drinks", 36) == ["yummy", "all_done", "yucky"])
+        #expect(cells("social", 36) == ["yes", "i_dont_know", "no"])
+        #expect(cells("time_when", 36) == ["always", "sometimes", "never"])
+        // true · maybe · false moved to What it's like, still a row.
+        #expect(isRun(["true", "maybe", "false"], in: [keys(b["describe_what_its_like"])]))
     }
 
     /// Words beside each other that mean opposite things in one dimension take
@@ -114,112 +148,137 @@ struct BoardPlacementTests {
     }
 
     /// Describe is laid out by hand: opposites side by side, in the same column
-    /// pairs on every row of page 1, and themed rows on page 2. A class
-    /// selector put them in alphabetical order, which scattered every pair.
+    /// pairs on every row, and the rest in its folders. A class selector put them
+    /// in alphabetical order, which scattered every pair.
     @Test func describeKeepsItsClusters() {
-        let describe = keys(board()["describe"])
-        let index = { (k: String) in describe.firstIndex(of: k) ?? -100 }
+        let b = board()
+        let pages = family(b, "describe")
         for run in [["big", "little"], ["hot_", "cold__"], ["fast", "slow"], ["wet", "dry_"],
-                    ["fat", "thin"], ["clean_", "dirty"], ["full", "empty"], ["young", "old"],
-                    ["first", "next", "last"], ["better", "best", "worse", "worst"],
+                    ["fat", "thin"], ["clean_", "dirty"], ["full", "empty"], ["new", "old"],
+                    ["old", "young"], ["better", "best", "worse", "worst"],
                     ["top", "bottom", "front", "behind"]] {
-            let start = index(run[0])
-            #expect(run.indices.allSatisfy { index(run[$0]) == start + $0 }, "\(run)")
+            #expect(isRun(run, in: pages), "\(run)")
         }
-        // The everyday pairs are on the first screen (cells 1–59).
+        // The everyday pairs are on Describe itself, one screen.
+        let describe = keys(b["describe"])
         for word in ["big", "good", "hot_", "wet", "full", "yummy", "same", "smart"] {
-            #expect(index(word) < 59, "\(word) on page 1")
+            #expect(describe.contains(word), "\(word) on Describe")
         }
+        #expect(describe.count <= 12 * 5 - 1)
     }
 
-    /// A verb that is on Home keeps its Home cell on Actions — eat, drink and
-    /// play in cells 3–5, come / go in 15–16, want in 28 — so the reach learned
-    /// on Home works on Actions. The page's clusters form around those points.
+    /// A verb that is on Home keeps its Home cell on Actions — eat and drink in
+    /// cells 17–18, come / go in 15–16, want in 28 — so the reach learned on
+    /// Home works on Actions. A Home word in columns 11–12 (`stop`) is the
+    /// exception: there those columns hold Actions' folders.
     @Test func actionsKeepsHomesVerbsInTheirHomeCells() {
         let b = board()
         let home = keys(b["home"]), actions = keys(b["actions"])
-        let firstScreen = Array(actions.prefix(59))
-        let shared = home.enumerated().filter { firstScreen.contains($0.element) }
-        #expect(shared.count >= 18, "\(shared.count) of Home's words on Actions page 1")
-        for (cell, word) in shared {
-            #expect(firstScreen.firstIndex(of: word) == cell, "\(word)")
+        let cols = PageTemplate.cols
+        let shared = home.enumerated().filter { index, word in
+            index >= Self.rowLength && (index + 1) % cols < cols - 2 && actions.contains(word)
         }
+        #expect(shared.count >= 12, "\(shared.count) of Home's words on Actions")
+        for (index, word) in shared {
+            #expect(actions.firstIndex(of: word) == index, "\(word)")
+        }
+    }
+
+    /// The same rule one level down: a word on Actions and on one of its folders
+    /// sits in the same cell on both (Avaz; *teacher* on People and School people).
+    @Test func aFolderKeepsItsParentsCells() {
+        let b = board()
+        let actions = keys(b["actions"])
+        var checked = 0
+        for (folder, tiles) in b where folder.hasPrefix("actions_") {
+            for (index, tile) in tiles.enumerated() where index >= Self.rowLength && tile.link.isEmpty {
+                guard let cell = actions.firstIndex(of: tile.key) else { continue }
+                #expect(cell == index, "\(folder)/\(tile.key)")
+                checked += 1
+            }
+        }
+        #expect(checked >= 20, "only \(checked) shared words checked")
     }
 
     @Test func actionsKeepsItsClusters() {
-        let actions = keys(board()["actions"])
-        let index = { (k: String) in actions.firstIndex(of: k) ?? -100 }
-        for run in [["catch", "throw", "kick"], ["walk", "run", "swim"], ["come", "go"],
+        let pages = family(board(), "actions")
+        for run in [["catch", "throw", "kick"], ["walk", "run", "jump"], ["come", "go"],
                     ["give", "take"], ["find", "lose"], ["sit", "stand"], ["close", "open"],
-                    ["talk", "say", "ask", "answer", "speak"], ["write", "draw", "color", "paint"],
-                    ["know", "think", "remember", "forget"], ["wash", "wash_hands", "wash_hair"]] {
-            let start = index(run[0])
-            #expect(run.indices.allSatisfy { index(run[$0]) == start + $0 }, "\(run)")
+                    ["talk", "say", "ask", "answer", "speak"], ["draw", "color", "paint"],
+                    ["know", "think", "remember", "forget"], ["wash", "wash_hands", "wash_hair"],
+                    ["am", "are", "was"], ["bite", "chew"]] {
+            #expect(isRun(run, in: pages), "\(run)")
         }
     }
 
-    /// Groups opens four noun folders added in session 8, each page holding its
-    /// words, and the everyday vehicles also sit on Places with `home_`.
+    /// Things (the `groups` hub) opens the noun folders added in session 8, each
+    /// page holding its words, and the everyday vehicles also sit on Places with
+    /// `home_`. Door and window joined House things from Places in session 14.
+    ///
+    /// Since the second session-14 round Things is Avaz's shape: the everyday
+    /// word of each folder up front (dog, shoes, car, bed…), in the cell its
+    /// folder keeps it in, so the folders hold the same words in a new order.
+    /// Body & health split into Body and Health.
     @Test func groupsOpensTheNounFolders() {
         let b = board()
         let links = (b["groups"] ?? []).map(\.link)
+        let things = Set(body(b["groups"]))
+        for word in ["dog", "shoes", "car", "bed"] {
+            #expect(things.contains(word), "\(word) on Things")
+        }
         for (page, words) in [
             ("animals", ["dog", "cat", "bird", "fish", "horse", "cow", "pig", "duck", "chicken", "sheep"]),
             ("clothes", ["shoes", "socks", "shirt", "pants", "coat", "hat", "pajamas"]),
-            ("things", ["bed", "blanket", "book", "phone", "tv", "music", "toothbrush", "cup", "plate", "spoon", "fork"]),
+            ("things", ["bed", "blanket", "book", "phone", "tv", "music", "toothbrush", "cup", "plate", "spoon",
+                        "fork", "bowl", "door", "window"]),
             ("vehicles", ["car", "bus", "truck", "train", "bicycle", "airplane", "boat", "helicopter",
                           "fire_truck", "ambulance", "police_car"]),
         ] {
             #expect(links.contains(page), "groups → \(page)")
-            #expect(keys(b[page]) == words, "\(page)")
+            #expect(Set(body(b[page])) == Set(words + [page]), "\(page) holds its words and its own tile")
         }
+        #expect(links.contains("body") && links.contains("health") && b["body_health"] == nil)
         for word in ["home_", "car", "train", "bicycle", "airplane", "boat"] {
             #expect(keys(b["places"]).contains(word), "\(word) on places")
         }
     }
 
-    /// Body & Health is laid out by hand: head to toe on row 1, then the
-    /// toileting words together, then how it feels, then who helps.
+    /// Body & Health was laid out by hand: head to toe, then the toileting
+    /// words together, then how it feels, then who helps. It split into Body
+    /// and Health in session 14 with the clusters kept.
     @Test func bodyHealthKeepsItsClusters() {
-        let body = keys(board()["body_health"])
-        let index = { (k: String) in body.firstIndex(of: k) ?? -100 }
-        #expect(Array(body.prefix(11)) == ["head", "hair", "face", "eye", "ear", "nose",
-                                           "mouth", "tooth", "arm", "hand", "finger"])
-        for run in [["leg", "knee", "foot"], ["potty", "pee", "poop", "bathroom", "toilet"],
-                    ["sick", "hurt", "tired"], ["medicine", "bandaid", "doctor"]] {
-            let start = index(run[0])
-            #expect(run.indices.allSatisfy { index(run[$0]) == start + $0 }, "\(run)")
-        }
-    }
-
-    /// Session 8's new verbs join the Actions clusters on page 2, and the core
-    /// connecting words (`or because but`, `will`, `one`) sit on Describe — not
-    /// on a page of their own.
-    @Test func newWordsJoinTheirClusters() {
         let b = board()
-        let actions = keys(b["actions"]), describe = keys(b["describe"])
-        func isRun(_ words: [String], _ run: [String]) -> Bool {
-            guard let start = words.firstIndex(of: run[0]) else { return false }
-            return run.indices.allSatisfy { start + $0 < words.count && words[start + $0] == run[$0] }
+        let body = self.body(b["body"]), health = self.body(b["health"])
+        #expect(Array(body.prefix(10)) == ["head", "hair", "face", "eye", "ear", "nose",
+                                           "mouth", "tooth", "arm", "hand"])
+        #expect(isRun(["leg", "knee", "foot"], in: [body]))
+        for run in [["potty", "pee", "poop", "bathroom", "toilet"],
+                    ["sick", "hurt", "tired"], ["medicine", "bandaid", "doctor"]] {
+            #expect(isRun(run, in: [health]), "\(run)")
         }
-        for run in [["jump", "climb"], ["build", "hide", "share", "hug"], ["chew", "bite"], ["cook", "line_up", "lets"]] {
-            #expect(isRun(actions, run), "actions \(run)")
-            #expect(actions.firstIndex(of: run[0]).map { $0 >= 59 } == true, "\(run) on page 2")
-        }
-        for run in [["or", "because", "but"], ["soon", "will"], ["few", "one"], ["sticky", "sharp", "closed"]] {
-            #expect(isRun(describe, run), "describe \(run)")
-        }
-        #expect(!describe.contains("not"))
     }
 
-    /// The two "right"s sit with their opposites on Describe: the direction
-    /// next to `left`, the correct one in a row with `wrong`.
+    /// The connecting words (`or because but`) and `will` came off Describe,
+    /// where session 8 had put them for want of a page, onto Small words, one tap
+    /// from every page. `will` is on the I page too.
+    @Test func smallWordsHoldTheConnectingWords() {
+        let b = board()
+        let small = keys(b["small_words"]), describe = keys(b["describe"])
+        for word in ["or", "because", "but", "will", "a", "the", "to", "and"] {
+            #expect(small.contains(word), "\(word) on Small words")
+        }
+        for word in ["or", "because", "but", "not"] {
+            #expect(!describe.contains(word), "\(word) on Describe")
+        }
+        #expect(keys(b["i_page"]).contains("will"))
+    }
+
+    /// The two "right"s sit with their opposites: the direction next to `left`
+    /// on Where, the correct one in a row with `wrong` on Describe.
     @Test func eachRightSitsBesideItsOpposite() {
-        let describe = keys(board()["describe"])
-        let index = { (k: String) in describe.firstIndex(of: k) ?? -100 }
-        #expect(index("right_") == index("left") + 1)
-        // The correct sense is in Describe's answer stack: right · okay · wrong.
-        #expect(index("right") + 2 == index("wrong"))
+        let b = board()
+        #expect(isRun(["left", "right_"], in: [keys(b["describe_where"])]))
+        #expect(isRun(["right", "okay_", "wrong"], in: [keys(b["describe"])]))
     }
 }
 }

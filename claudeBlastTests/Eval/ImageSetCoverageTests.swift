@@ -52,7 +52,27 @@ struct ImageSetCoverageTests {
     /// vocabulary. It's excluded from the coverage bar entirely rather than
     /// allowlisted. The map stays for any future shippable set that needs a
     /// temporary tracked-gap window; the test fails on any NEW gap.
-    private static let knownIncompleteShippable: [String: Set<String>] = [:]
+    ///
+    /// **Open window, session 14:** BlasterAI 60's new folder tiles have Classic
+    /// art only, so the structure could be judged before every style was drawn
+    /// (Mark's call). The other sets fall back to Classic's picture for them.
+    /// They close in the word pass, when the other four styles are drawn.
+    private static let folderTiles: Set<String> = [
+        "folder_small_words", "folder_moving", "folder_taking_care", "folder_talking",
+        "folder_thinking", "folder_playing", "folder_cooking", "folder_senses", "folder_doing",
+        "folder_size", "folder_how_it_feels", "folder_opinions", "folder_where", "folder_how_much",
+        "folder_what_its_like", "folder_house", "folder_school", "folder_fun_places",
+        "folder_out_and_about",
+        "folder_breakfast", "folder_lunch_dinner", "folder_fruit", "folder_veggies", "folder_snacks",
+        "folder_family", "folder_toys", "folder_art", "folder_games", "folder_sports",
+        "folder_outside_play",
+    ]
+    private static let knownIncompleteShippable: [String: Set<String>] = [
+        "classic_medium": folderTiles,
+        "classic_medium_dark": folderTiles,
+        "playful_3d": folderTiles,
+        "high_contrast": folderTiles,
+    ]
 
     /// Every distinct tile key introduced by a bundled pack/starter scene
     /// (starter_*.json, pack_*.json). These are the "extension" words beyond core

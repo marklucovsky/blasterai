@@ -60,6 +60,12 @@ SCENES = Path("claudeBlast/Resources/scenes")
 
 MIN_SHARE = 0.15
 MIN_WORDS = 4
+COLS = 12
+
+
+def is_chrome_cell(cell):
+    """Row 1, or columns 11-12 below it."""
+    return cell < COLS or cell % COLS >= COLS - 2
 WAYFINDING = "wayfinding"
 
 
@@ -76,7 +82,22 @@ def page_tiles(page, vocab_by_class, vocab_order):
     because both change the count.
     """
     words, links = [], []
+    # Navigation chrome is not content: silent links in row 1 or in columns
+    # 11-12 (the system row, and the folder column a folder page repeats) are
+    # left out, or the 8-word Questions page reads as "mostly links". Placement
+    # n is cell n + 1, because Home is cell 0. Mirror of `isChromeCell` in
+    # `LinkColorResolver.swift`.
+    placed = 0
     for cmd in page["tiles"]:
+        if "link" in cmd and is_chrome_cell(placed + 1) and not cmd.get("audible") \
+                and cmd["link"] not in words and cmd["link"] not in links:
+            placed += 1
+            continue
+        if "space" in cmd:
+            n = cmd["space"]
+            placed += n if isinstance(n, int) and not isinstance(n, bool) else 1
+        elif "link" in cmd and cmd["link"] not in words and cmd["link"] not in links:
+            placed += 1
         if "class" in cmd:
             classes = cmd["class"]
             if isinstance(classes, str):
@@ -91,10 +112,12 @@ def page_tiles(page, vocab_by_class, vocab_order):
             for key in matched:
                 if key not in words and key not in links:
                     words.append(key)
+                    placed += 1
         elif "keys" in cmd:
             for key in cmd["keys"]:
                 if key not in words and key not in links:
                     words.append(key)
+                    placed += 1
         elif "link" in cmd:
             key = cmd["link"]
             if key in words:

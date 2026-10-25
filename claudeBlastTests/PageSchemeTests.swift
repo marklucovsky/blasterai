@@ -109,15 +109,100 @@ struct PageSchemeTests {
         #expect(grid[Self.cell(2, 4)]?.link.isEmpty == true)
     }
 
+    /// A doorway belongs to the word, so a scene's frame carries BlasterAI 60's:
+    /// "I" opens the I page and "go" opens Places on every new board. The frame
+    /// used to skip any word with a link, which would have dropped both.
+    @Test func theFrameCarriesBlasterAI60sDoorways() throws {
+        let b = board()
+        let grid = cells(try placedHome(Self.bluey, b))
+        let i = try #require(grid[Self.cell(1, 0)])
+        #expect(i.key == "i" && i.isAudible && i.link == TileToken.systemLink(to: "i_page"))
+        #expect(i.linkColor == "pronoun")
+        let go = try #require(grid[Self.cell(1, 4)])
+        #expect(go.linkColor == "verb")
+    }
+
+    // MARK: - BlasterAI 60's hierarchy (tools/board_spec/blasterai60.json)
+
+    /// Pages that would overflow one screen with the row on top, from the spec's
+    /// `systemRowExempt`. Each leaves the list when it is split into folders.
+    private static let systemRowExempt: Set<String> = ["food"]
+
+    /// Avaz's bottom bar, on top: every page opens with the same folders, so a
+    /// child can reach any category from anywhere.
+    @Test func everyCorePageOpensWithTheSystemRow() throws {
+        let b = board()
+        let home = try #require(b.home)
+        let row = Array(home.tiles.prefix(PageTemplate.cols - 1))
+        #expect(row.allSatisfy { !$0.link.isEmpty && !$0.isAudible })
+        #expect(row.last?.key == "keyboard")
+        var checked = 0
+        for page in b.system.pages where !Self.systemRowExempt.contains(page.key) {
+            #expect(Array(page.tiles.prefix(row.count)).map(\.key) == row.map(\.key),
+                    "\(page.key) does not open with the system row")
+            #expect(page.tiles.count <= PageTemplate.rows * PageTemplate.cols - 1,
+                    "\(page.key) overflows one screen")
+            checked += 1
+        }
+        #expect(checked > 30, "only \(checked) pages checked")
+    }
+
+    /// A doorway is a word that also opens a page; on the page it opens it is
+    /// just the word.
+    @Test func noDoorwayOpensItsOwnPage() {
+        let b = board()
+        var doorways = 0
+        for page in b.system.pages {
+            for tile in page.tiles where tile.isAudible && !tile.link.isEmpty {
+                #expect(tile.link != page.key, "\(page.key)/\(tile.key) opens its own page")
+                doorways += 1
+            }
+        }
+        #expect(doorways > 20, "only \(doorways) doorways")
+    }
+
+    /// Folders extend the path one level down; they are not a topic toolbar.
+    /// Describe › How much once repeated Size, Where, Opinions… in its own
+    /// columns 11–12, and following them made deep, confusing chains (Mark,
+    /// session 14). A folder page links only to pages below it — and keeps its
+    /// own tile, in the cell Describe shows it in, for the board to mark "you
+    /// are here" (`WayMark`).
+    @Test func aFolderPageDoesNotRepeatItsSiblings() {
+        let b = board()
+        let pages = Dictionary(b.system.pages.map { ($0.key, $0) }, uniquingKeysWith: { a, _ in a })
+        let describe = pages["describe"]?.tiles ?? []
+        let folders = describe.filter { $0.link.hasPrefix("describe_") }.map(\.link)
+        #expect(folders.count >= 6, "Describe's folders: \(folders)")
+        for folder in folders {
+            let tiles = pages[folder]?.tiles ?? []
+            let siblings = tiles.filter { folders.contains($0.link) && $0.link != folder }.map(\.key)
+            #expect(siblings.isEmpty, "\(folder) links to its siblings \(siblings)")
+            #expect(tiles.firstIndex { $0.link == folder } == describe.firstIndex { $0.link == folder },
+                    "\(folder) does not keep its own tile in Describe's cell")
+        }
+    }
+
+    /// The marks follow the hierarchy: on How much, Describe is on the way and
+    /// How much is here.
+    @Test func theWayHereEndsAtThePageShowing() {
+        let b = board()
+        let keys = WordPlaces.trailKeys(to: "describe_how_much", pages: b.system.pages,
+                                        homeKey: b.system.homePageKey)
+        #expect(keys == ["describe", "describe_how_much"])
+        #expect(WordPlaces.trailKeys(to: b.system.homePageKey, pages: b.system.pages,
+                                     homeKey: b.system.homePageKey).isEmpty)
+    }
+
     @Test func rowOneIsTheCoreBoardsFolders() throws {
         let b = board()
         let grid = cells(try placedHome(Self.bluey, b))
         let row = (1..<PageTemplate.cols).compactMap { grid[$0] }.filter { !$0.isSpacer }
         #expect(!row.isEmpty)
         #expect(row.allSatisfy { TileToken.systemPageKey($0.link) != nil && !$0.isAudible })
-        // The keyboard is pinned to column 12, with a visible gap before it.
+        // The keyboard is pinned to column 12. The row is full since Feelings
+        // and Small words joined it (session 14): there is no gap before it.
         #expect(grid[PageTemplate.cols - 1]?.link == TileToken.systemLink(to: "keyboard"))
-        #expect(grid[PageTemplate.cols - 2]?.isSpacer == true)
+        #expect(grid[PageTemplate.cols - 2]?.link == TileToken.systemLink(to: "small_words"))
         // Eat, drink and play speak as well as open a page: words, not row 1.
         #expect(!row.contains { $0.key == "eat" })
         #expect(row.allSatisfy { !$0.linkColorIsAuto })
