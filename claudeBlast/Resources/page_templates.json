@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "designedFor": "ipad-12x5",
+  "cols": 12,
+  "rows": 5,
+  "keyboard": "r1c12",
+  "bands": ["pronoun", "people", "verb", "adjective", "social", "noun"],
+  "templates": {
+    "home": {
+      "frame": ["i", "you", "want", "more", "go", "stop", "help", "yes", "no", "all_done"],
+      "frameLinks": { "go": "places" },
+      "cluster": ["don't", "stop", "not"],
+      "displaceable": ["not", "don't"],
+      "wordColumns": [1, 10],
+      "linkSlots": ["r2c11", "r3c11", "r4c11", "r5c11", "r5c12"],
+      "spreadBands": false
+    },
+    "leaf": {
+      "frame": [],
+      "frameLinks": {},
+      "cluster": [],
+      "displaceable": [],
+      "wordColumns": [1, 10],
+      "linkSlots": ["r2c12", "r3c12", "r4c12", "r5c12", "r2c11", "r3c11", "r4c11", "r5c11"],
+      "spreadBands": true
+    }
+  }
+}

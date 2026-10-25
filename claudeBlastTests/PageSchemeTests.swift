@@ -130,7 +130,7 @@ struct PageSchemeTests {
         for row in 1..<PageTemplate.rows {
             #expect(grid[Self.cell(row, 10)]?.isSpacer ?? true, "column 11 holds only links")
         }
-        let frame = Set(PageTemplate.homeFrame + PageTemplate.cluster)
+        let frame = Set(PageTemplate.homeFrame + PageTemplate.scheme.template(.home).cluster)
         let words = page.tiles.filter { !$0.isSpacer && $0.link.isEmpty && !frame.contains($0.key) }
         #expect(words.count == TopicWordsService.budget)
     }
@@ -172,6 +172,36 @@ struct PageSchemeTests {
         #expect(grid[Self.cell(1, 10)]?.link == "p1")
         #expect(grid[Self.cell(1, 11)]?.key == "don't")
         #expect(grid[Self.cell(3, 11)]?.key == "not")
+    }
+
+    // MARK: - The scheme file
+
+    /// Experiments edit `page_templates.json`; these stay put whatever it says.
+    /// A child finds want, go and stop by where they are, on every board.
+    @Test func theAnchorsArePinned() throws {
+        let home = PageTemplate.scheme.template(.home)
+        for anchor in ["i", "you", "want", "go", "more", "help", "yes", "no", "all_done", "stop"] {
+            #expect(home.frame.contains(anchor), "\(anchor) is in the home frame")
+        }
+        #expect(home.cluster.contains("stop"))
+        #expect(!home.displaceable.contains("stop"), "stop is never displaced")
+        #expect(PageTemplate.keyboardCell == PageTemplate.cols - 1, "keyboard ends row 1")
+        #expect(PageTemplate.designedFor == "ipad-12x5")
+    }
+
+    @Test func aBadSchemeIsRejected() throws {
+        let url = try #require(Bundle.main.url(forResource: "page_templates", withExtension: "json"))
+        let good = try String(contentsOf: url, encoding: .utf8)
+        #expect(throws: Never.self) { try PageScheme.load(Data(good.utf8)) }
+        for (bad, replacement) in [("\"r5c12\"]", "\"r6c12\"]"),               // off the grid
+                                   ("\"noun\"]", "\"nouns\"]"),                // unknown band
+                                   ("\"wordColumns\": [1, 10]", "\"wordColumns\": [1, 13]"),
+                                   ("\"displaceable\": [\"not\"", "\"displaceable\": [\"maybe\""),
+                                   ("\"home\": {", "\"house\": {")] {          // no home template
+            let text = good.replacingOccurrences(of: bad, with: replacement)
+            try #require(text != good, "\(bad) is in the file")
+            #expect(throws: PageScheme.Invalid.self, "\(replacement)") { try PageScheme.load(Data(text.utf8)) }
+        }
     }
 
     // MARK: - The leaf template
@@ -343,6 +373,31 @@ struct PageSchemeTests {
         #expect(cells(home)[Self.cell(2, 4)]?.key == "want")
         // New words were materialized, so none was dropped.
         #expect(home.tiles.contains { $0.key == "bluey" })
+    }
+
+    @Test func theChromeKeepsBlasterAI60sLevels() throws {
+        let b = board()
+        try #require(b.system.revealLevelCount > 0, "BlasterAI 60 has levels")
+        let systemLevels = Dictionary((b.home?.tiles ?? []).map { ($0.key, $0.revealLevel) },
+                                      uniquingKeysWith: { a, _ in a })
+        try #require(systemLevels.values.contains { $0 > 1 }, "some core words reveal later")
+        let context = TestStore.container.mainContext
+        let generated = try TopicWordsService.scene(
+            from: try TopicWordsService.parse(content: Self.bluey),
+            systemHome: b.home, allTiles: b.tiles)
+        let built = try SceneBuilder.build(from: generated, tileLookup: b.lookup, context: context)
+        #expect(built.revealLevelCount == b.system.revealLevelCount)
+        #expect(built.revealLevel == b.system.revealLevel)
+        let home = try #require(built.page(withKey: built.homePageKey))
+        let chrome = home.tiles.filter {
+            TileToken.systemPageKey($0.link) != nil || PageTemplate.homeFrame.contains($0.key)
+        }
+        try #require(!chrome.isEmpty)
+        for entry in chrome {
+            #expect(entry.revealLevel == systemLevels[entry.key], "\(entry.key) keeps its level")
+        }
+        // The scene's own words show at every level.
+        #expect(home.tiles.first { $0.key == "bluey" }?.revealLevel == 0)
     }
 
     @Test func aBlasterAI60PageIsLinkedNotCopied() throws {
