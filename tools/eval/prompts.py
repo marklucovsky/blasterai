@@ -221,10 +221,12 @@ def moderation_rubric_body(words: list[str]) -> dict:
 # MARK: - Topic words (TopicWordsService)
 
 # One prompt for every page (Mark, 2026-10-20): the words are the same kind
-# for a scene's home page and a leaf page; the template differs, and is code.
+# for a scene's home page and a leaf page; the template differs, and is data.
 # The home template's frame (docs/eval/scenes.md) is BlasterAI 60's level-1
 # words minus the three that are folders on its home; a leaf page has none.
-FRAMES = {"home": ["i", "you", "want", "more", "go", "stop", "help", "yes", "no", "all_done"], "leaf": []}
+# Read from the app's own scheme file so the two can't drift.
+FRAMES = {kind: t["frame"] for kind, t in
+          json.loads((RESOURCES / "page_templates.json").read_text())["templates"].items()}
 TOPIC_BUDGET = 25
 TOPIC_MAX = 32
 

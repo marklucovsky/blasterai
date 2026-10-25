@@ -74,7 +74,9 @@ enum SceneBuilder {
             // A templated scene's pages are laid into the scheme on BlasterAI
             // 60's home. A tile with no vocabulary entry is dropped from a flat
             // page, and becomes a gap on a placed one so no later cell moves.
-            scene.pages = generated.placedPages(systemHome: systemHome(in: context), lookup: lookup)
+            let system = systemScene(in: context)
+            scene.pages = generated.placedPages(systemHome: system.flatMap { $0.page(withKey: $0.homePageKey) },
+                                                lookup: lookup)
                 .map { page in
                     var page = page
                     let placed = PageTemplate.kind(of: page, homePageKey: generated.homePageKey) != nil
@@ -84,7 +86,16 @@ enum SceneBuilder {
                     }
                     return page
                 }
-            if generated.template != nil { scene.designedFor = PageTemplate.designedFor }
+            if generated.template != nil {
+                scene.designedFor = PageTemplate.designedFor
+                // The system row and core words carry BlasterAI 60's levels, so
+                // the scene starts with its levels, at its level. The scene's
+                // own words are level 0 and show at every level.
+                if let system, system.revealLevelCount > 0 {
+                    scene.setRevealLevelCount(system.revealLevelCount)
+                    scene.setRevealLevel(system.revealLevel)
+                }
+            }
 
             scene.ensureIdentity(authorID: DeviceProfileStore.ensureAuthorID(context: context),
                                  authorName: DeviceProfileStore.authorName(context: context))
@@ -97,9 +108,12 @@ enum SceneBuilder {
     /// BlasterAI 60's home page, which a templated page takes its system row
     /// and core frame from.
     static func systemHome(in context: ModelContext) -> PageSpec? {
-        let system = try? context.fetch(FetchDescriptor<BlasterScene>(
-            predicate: #Predicate { $0.isDefault })).first
-        return system.flatMap { $0.page(withKey: $0.homePageKey) }
+        systemScene(in: context).flatMap { $0.page(withKey: $0.homePageKey) }
+    }
+
+    /// BlasterAI 60 itself.
+    static func systemScene(in context: ModelContext) -> BlasterScene? {
+        (try? context.fetch(FetchDescriptor<BlasterScene>(predicate: #Predicate { $0.isDefault })))?.first
     }
 
     /// Apply a (re-scaffolded) GeneratedScene to an EXISTING scene in place —
