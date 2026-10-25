@@ -2589,6 +2589,50 @@
     "folder_where": {
       "source": "prompts.json",
       "subject": "prompts.json"
+    },
+    "folder_art": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_breakfast": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_family": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_fruit": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_games": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_lunch_dinner": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_outside_play": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_snacks": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_sports": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_toys": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_veggies": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
     }
   },
   "special": {

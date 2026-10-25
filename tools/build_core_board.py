@@ -411,6 +411,9 @@ class Board:
         vocab_by_class = {t["key"]: t["wordClass"] for t in self.vocab}
         vocab_order = [t["key"] for t in self.vocab]
         out = copy.deepcopy(self.scene)
+        # A page a split replaced (Body & health → Body, Health) leaves the scene.
+        retired = set(self.spec.get("retiredPages", []))
+        out["pages"] = [p for p in out["pages"] if p["key"] not in retired]
         existing = [p["key"] for p in out["pages"]]
         new_pages = []
         for p in out["pages"]:
@@ -457,7 +460,9 @@ class Board:
                     if c["audible"] and c["to"] == p["key"]:
                         self.errors.append(f"{p['key']}: doorway {c['link']} opens its own page")
         strip = lambda s: s.lstrip("→")
-        lost = {strip(w) for w in before} - {strip(w) for w in after}
+        # A retired page's own folder tile goes with it.
+        lost = ({strip(w) for w in before} - {strip(w) for w in after}
+                - set(self.spec.get("retiredPages", [])))
         if lost:
             self.errors.append(f"words no longer on any page: {sorted(lost)}")
 

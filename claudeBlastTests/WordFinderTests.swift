@@ -57,13 +57,15 @@ struct WordFinderTests {
 
     @Test func aFolderWordGivesThePagesToOpen() {
         let (scene, lookup) = bundled()
-        let dog = WordFinder.find("dog", in: scene, lookup: lookup).first
-        #expect(dog?.isAvailable == true)
+        // `horse`, not `dog`: since session 14 Things shows the everyday words
+        // of each folder up front, dog among them, so dog is one page away.
+        let horse = WordFinder.find("horse", in: scene, lookup: lookup).first
+        #expect(horse?.isAvailable == true)
         // The `groups` hub is named Things since session 14.
-        #expect(dog?.route == ["Things", "Animals"])
-        #expect(dog?.path.count == 2)
-        #expect(dog?.path.last == dog?.pageKey, "the last page opened is the word's page")
-        #expect(dog?.place == "Things › Animals")
+        #expect(horse?.route == ["Things", "Animals"])
+        #expect(horse?.path.count == 2)
+        #expect(horse?.path.last == horse?.pageKey, "the last page opened is the word's page")
+        #expect(horse?.place == "Things › Animals")
     }
 
     @Test func aHomeWordOpensNothing() {

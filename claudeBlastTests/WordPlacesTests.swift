@@ -32,10 +32,11 @@ struct WordPlacesTests {
     }
 
     @Test func aFolderWordIsReachedThroughItsFolders() {
-        let dog = places()["dog"] ?? []
+        // `horse`: `dog` is on Things itself since session 14.
+        let horse = places()["horse"] ?? []
         // The `groups` hub is named Things (session 14, after Avaz).
-        #expect(dog.first?.route == ["Things", "Animals"])
-        #expect(dog.first?.label == "BlasterAI 60 › Things › Animals")
+        #expect(horse.first?.route == ["Things", "Animals"])
+        #expect(horse.first?.label == "BlasterAI 60 › Things › Animals")
     }
 
     @Test func aHomeWordSaysHome() {
@@ -45,11 +46,11 @@ struct WordPlacesTests {
     }
 
     /// Every home, not just one: `hurt` is on Feelings, Body & Health and
-    /// Actions since the session-8 placement pass — on Actions' Thinking folder
-    /// since session 14.
+    /// Actions since the session-8 placement pass — on Actions' Thinking folder,
+    /// and on Health once Body & health split, since session 14.
     @Test func everyPlaceIsListed() {
         let pages = Set((places()["hurt"] ?? []).compactMap(\.route.last))
-        #expect(pages.isSuperset(of: ["Feelings", "Body & health", "Thinking"]), "\(pages)")
+        #expect(pages.isSuperset(of: ["Feelings", "Health", "Thinking"]), "\(pages)")
     }
 
     /// On a 4 × 5 phone grid Actions' screen 2 starts at its 20th tile (Home is

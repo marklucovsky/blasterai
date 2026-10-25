@@ -2603,5 +2603,60 @@
     "key": "folder_out_and_about",
     "wordClass": "navigation",
     "label": "Out & about"
+  },
+  {
+    "key": "folder_breakfast",
+    "wordClass": "navigation",
+    "label": "Breakfast"
+  },
+  {
+    "key": "folder_lunch_dinner",
+    "wordClass": "navigation",
+    "label": "Lunch & dinner"
+  },
+  {
+    "key": "folder_fruit",
+    "wordClass": "navigation",
+    "label": "Fruit"
+  },
+  {
+    "key": "folder_veggies",
+    "wordClass": "navigation",
+    "label": "Veggies"
+  },
+  {
+    "key": "folder_snacks",
+    "wordClass": "navigation",
+    "label": "Snacks & treats"
+  },
+  {
+    "key": "folder_family",
+    "wordClass": "navigation",
+    "label": "Family"
+  },
+  {
+    "key": "folder_toys",
+    "wordClass": "navigation",
+    "label": "Toys"
+  },
+  {
+    "key": "folder_art",
+    "wordClass": "navigation",
+    "label": "Art"
+  },
+  {
+    "key": "folder_games",
+    "wordClass": "navigation",
+    "label": "Games"
+  },
+  {
+    "key": "folder_sports",
+    "wordClass": "navigation",
+    "label": "Sports"
+  },
+  {
+    "key": "folder_outside_play",
+    "wordClass": "navigation",
+    "label": "Outside play"
   }
 ]

@@ -63,7 +63,7 @@ struct BoardPlacementTests {
     @Test func secondHomes() {
         let b = board()
         for (page, words) in [
-            ("body_health", ["sick", "hurt", "tired", "feel", "uncomfortable", "doctor", "bathroom", "toilet"]),
+            ("health", ["sick", "hurt", "tired", "feel", "uncomfortable", "doctor", "bathroom", "toilet"]),
             ("feelings", ["sick", "lonely", "surprised", "okay_", "hurt", "feel"]),
             ("places", ["bus", "bathroom"]),
         ] {
@@ -75,24 +75,27 @@ struct BoardPlacementTests {
 
     /// No folder from Food to Drinks or back. The silent Drinks folder inside a
     /// page reached by the audible "eat" made <eat> <drinks> <chocolate milk>
-    /// read "eat chocolate milk". The system row is not such a folder: it holds
-    /// neither page.
+    /// read "eat chocolate milk". Food's own folders (Breakfast, Fruit…) are
+    /// fine: they lead to food. The system row holds neither page.
     @Test func foodAndDrinksHaveNoInteriorFolders() {
         let b = board()
         #expect(b["food"]?.contains { $0.link == "drinks" && !$0.isAudible } == false)
         #expect(b["drinks"]?.contains { $0.link == "food" && !$0.isAudible } == false)
-        #expect(b["food"]?.contains { !$0.link.isEmpty && !$0.isAudible } == false)
+        let folders = (b["food"] ?? []).filter { !$0.link.isEmpty && !$0.isAudible }.map(\.link)
+        #expect(folders.contains { $0.hasPrefix("food_") }, "Food opens its folders")
     }
 
-    /// Food still fits one 12×5 page with Home in cell 0 — which is why
-    /// `meals`, a category word, left it. It is also why Food has no system row
-    /// yet (`systemRowExempt`): the row would push it onto a second screen.
+    /// Food fits one 12×5 page with its system row since it split into
+    /// folders (session 14), so it left `systemRowExempt`. `meals`, a category
+    /// word, lives in Lunch & dinner.
     @Test func foodFitsOnePage() {
         let b = board()
         let food = keys(b["food"])
-        #expect(Array(food.prefix(2)) == ["hungry", "more"])
-        #expect(!food.contains("meals"))
         #expect(food.count <= 12 * 5 - 1, "Food is \(food.count) words")
+        #expect(food.prefix(Self.rowLength).contains("people"), "Food opens with the system row")
+        #expect(body(b["food"]).contains("hungry") && body(b["food"]).contains("more"))
+        #expect(!food.contains("meals"))
+        #expect(keys(b["food_lunch_dinner"]).contains("meals"))
         #expect(Array(body(b["drinks"]).prefix(2)) == ["thirsty", "more"])
     }
 
@@ -211,35 +214,47 @@ struct BoardPlacementTests {
     /// Things (the `groups` hub) opens the noun folders added in session 8, each
     /// page holding its words, and the everyday vehicles also sit on Places with
     /// `home_`. Door and window joined House things from Places in session 14.
+    ///
+    /// Since the second session-14 round Things is Avaz's shape: the everyday
+    /// word of each folder up front (dog, shoes, car, bed…), in the cell its
+    /// folder keeps it in, so the folders hold the same words in a new order.
+    /// Body & health split into Body and Health.
     @Test func groupsOpensTheNounFolders() {
         let b = board()
         let links = (b["groups"] ?? []).map(\.link)
+        let things = Set(body(b["groups"]))
+        for word in ["dog", "shoes", "car", "bed"] {
+            #expect(things.contains(word), "\(word) on Things")
+        }
         for (page, words) in [
             ("animals", ["dog", "cat", "bird", "fish", "horse", "cow", "pig", "duck", "chicken", "sheep"]),
             ("clothes", ["shoes", "socks", "shirt", "pants", "coat", "hat", "pajamas"]),
             ("things", ["bed", "blanket", "book", "phone", "tv", "music", "toothbrush", "cup", "plate", "spoon",
-                        "fork", "door", "window"]),
+                        "fork", "bowl", "door", "window"]),
             ("vehicles", ["car", "bus", "truck", "train", "bicycle", "airplane", "boat", "helicopter",
                           "fire_truck", "ambulance", "police_car"]),
         ] {
             #expect(links.contains(page), "groups → \(page)")
-            #expect(body(b[page]) == words, "\(page)")
+            #expect(Set(body(b[page])) == Set(words + [page]), "\(page) holds its words and its own tile")
         }
+        #expect(links.contains("body") && links.contains("health") && b["body_health"] == nil)
         for word in ["home_", "car", "train", "bicycle", "airplane", "boat"] {
             #expect(keys(b["places"]).contains(word), "\(word) on places")
         }
     }
 
-    /// Body & Health is laid out by hand: head to toe on row 1, then the
-    /// toileting words together, then how it feels, then who helps. The system
-    /// row moved it down a row intact.
+    /// Body & Health was laid out by hand: head to toe, then the toileting
+    /// words together, then how it feels, then who helps. It split into Body
+    /// and Health in session 14 with the clusters kept.
     @Test func bodyHealthKeepsItsClusters() {
-        let body = self.body(board()["body_health"])
-        #expect(Array(body.prefix(11)) == ["head", "hair", "face", "eye", "ear", "nose",
-                                           "mouth", "tooth", "arm", "hand", "finger"])
-        for run in [["leg", "knee", "foot"], ["potty", "pee", "poop", "bathroom", "toilet"],
+        let b = board()
+        let body = self.body(b["body"]), health = self.body(b["health"])
+        #expect(Array(body.prefix(10)) == ["head", "hair", "face", "eye", "ear", "nose",
+                                           "mouth", "tooth", "arm", "hand"])
+        #expect(isRun(["leg", "knee", "foot"], in: [body]))
+        for run in [["potty", "pee", "poop", "bathroom", "toilet"],
                     ["sick", "hurt", "tired"], ["medicine", "bandaid", "doctor"]] {
-            #expect(isRun(run, in: [body]), "\(run)")
+            #expect(isRun(run, in: [health]), "\(run)")
         }
     }
 

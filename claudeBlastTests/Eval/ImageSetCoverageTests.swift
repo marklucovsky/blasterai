@@ -63,6 +63,9 @@ struct ImageSetCoverageTests {
         "folder_size", "folder_how_it_feels", "folder_opinions", "folder_where", "folder_how_much",
         "folder_what_its_like", "folder_house", "folder_school", "folder_fun_places",
         "folder_out_and_about",
+        "folder_breakfast", "folder_lunch_dinner", "folder_fruit", "folder_veggies", "folder_snacks",
+        "folder_family", "folder_toys", "folder_art", "folder_games", "folder_sports",
+        "folder_outside_play",
     ]
     private static let knownIncompleteShippable: [String: Set<String>] = [
         "classic_medium": folderTiles,
