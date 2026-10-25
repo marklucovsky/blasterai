@@ -56,7 +56,7 @@ struct SceneGeneratorService {
     /// The exact chat-completions body `generate` sends. Pure, so the prompt
     /// fixtures (`PromptFixtureTests`) can pin it without a network call.
     func requestBody(description: String, allTiles: [TileModel]) -> [String: Any] {
-        let vocabBlock = buildVocabBlock(allTiles: allTiles)
+        let vocabBlock = Self.vocabBlock(allTiles: allTiles)
         let system = buildSystemPrompt(tileCount: allTiles.count)
         let user = buildUserPrompt(description: description, vocabBlock: vocabBlock)
         return ChatRequest.body(model: ModelID.sceneAuthoring,
@@ -89,7 +89,8 @@ struct SceneGeneratorService {
 
     // MARK: - Vocab formatting
 
-    private func buildVocabBlock(allTiles: [TileModel]) -> String {
+    /// `wordClass: key, key, …` per class. Shared with `TopicWordsService`.
+    static func vocabBlock(allTiles: [TileModel]) -> String {
         var byClass: [String: [String]] = [:]
         for tile in allTiles {
             // Hide structural navigation + page_link tiles (next_page, page_home,

@@ -202,8 +202,8 @@ included, come later.
 
 ## How we evaluate it
 
-Surface `topic_words` (harness only — `tools/eval/candidates/`, not in the
-app). One prompt for every page, per Mark: the words are the same kind for a
+Surface `topic_words` (`TopicWordsService` in the app since the page-scheme
+PR; its prompts are in `claudeBlast/Resources/Prompts/`). One prompt for every page, per Mark: the words are the same kind for a
 scene's home page and a leaf page; only the template differs, and the
 template is code. Cases `cases/topic_words.json`: the 14 old scene
 descriptions, Yak Back-shaped topics weighted like their library (shows,
@@ -382,7 +382,7 @@ scenes sync and are shared). The scene does carry the model's own summary
 Test (`group addpage` vs `addpage_bare`, run
 `runs/2026-10-21-1514-gpt-6.1-sol-low-topic-t8-sol-addpage`): eight short page
 topics inside real Sol scenes, with the scene's name, summary and home-page
-words (`candidates/prompt_topic_scene_context.txt`) and without.
+words (`prompt_topic_scene_context.txt`) and without.
 
 | Page | With scene context | Without |
 |---|---|---|

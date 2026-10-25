@@ -35,6 +35,9 @@ struct SceneStructurePicker: View {
     /// so the picker can say "already on this scene" rather than quietly making
     /// a second copy.
     let existingPageKeys: Set<String>
+    /// False on a scene laid out on the page scheme, whose home already has the
+    /// core words in their cells: a strip of them appended would repeat them.
+    var offersCoreWords = true
 
     @State private var expandedScenes: Set<String> = []
     // Collapsed by default except core words: four open sections is a lot of
@@ -49,7 +52,7 @@ struct SceneStructurePicker: View {
     /// Collections" can put a scene-name field above the same picker.
     var body: some View {
         Group {
-            coreWordsSection
+            if offersCoreWords { coreWordsSection }
             packsSection
             classesSection
             donorScenesSection
@@ -168,7 +171,9 @@ struct SceneStructurePicker: View {
                         let token = SceneStructurePlan.donorToken(sceneID: donor.sceneID,
                                                                   pageKey: page.key)
                         row(title: page.title,
-                            subtitle: "\(page.tiles.count) tiles",
+                            subtitle: donor.isDefault && page.key != donor.homePageKey
+                                ? "Opens BlasterAI 60's page"
+                                : "\(page.tiles.count) tiles",
                             alreadyThere: existingPageKeys.contains(page.key),
                             isOn: plan.donorPages.contains(token)) {
                             toggle(token, in: &plan.donorPages)
@@ -184,7 +189,7 @@ struct SceneStructurePicker: View {
             }
             // In the content rather than a footer: the collapsible Section has no
             // footer slot, and a note about copying belongs with the copying.
-            Text("Copies the words. Navigation links inside a copied page are dropped, because they point at pages that scene has and this one may not.")
+            Text("Copies the words. Navigation links inside a copied page are dropped, because they point at pages that scene has and this one may not. BlasterAI 60's pages are linked instead, so they stay up to date.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         } header: {
@@ -464,7 +469,8 @@ struct SceneStructureStep: View {
                                      allTiles: allTiles,
                                      packs: PackCatalog.available(in: modelContext),
                                      donorScenes: donors,
-                                     existingPageKeys: existingPageKeys)
+                                     existingPageKeys: existingPageKeys,
+                                     offersCoreWords: scene.template == nil)
             }
         }
             .animation(.snappy, value: plan)

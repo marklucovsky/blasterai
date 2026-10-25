@@ -180,12 +180,19 @@ enum SceneStructure {
             add(.wordClass(classes: [cls.name]))
         }
 
-        // 3. Pages copied from other scenes.
+        // 3. Pages from other scenes: BlasterAI 60's are linked, everyone
+        //    else's copied. A link opens the core board's own page, so it stays
+        //    current as that board changes; another scene can be edited or
+        //    deleted under us, so its page is copied.
         for donor in donorScenes {
             for page in donor.pages
             where plan.donorPages.contains(SceneStructurePlan.donorToken(sceneID: donor.sceneID,
                                                                          pageKey: page.key)) {
-                add(.copyPage(page))
+                if donor.isDefault, let folder = systemFolder(for: page.key, in: donor) {
+                    navLinks.append(folder)
+                } else {
+                    add(.copyPage(page))
+                }
             }
         }
 
@@ -250,6 +257,10 @@ enum SceneStructure {
                     guard let tile = allTiles.first(where: { $0.key == entry.key }) else { return false }
                     return !tile.isRetired && !tile.isStructuralChrome
                 }
+                if donor.isDefault, systemFolder(for: page.key, in: donor) != nil {
+                    outline.homeLinks.append(SystemLinks.displayName(of: TileToken.systemLink(to: page.key)))
+                    continue
+                }
                 // Not `page.title` — a copy is named from its key, the way
                 // `CollectionSource.copyPage` names it.
                 add(title: page.key.replacingOccurrences(of: "_", with: " ").capitalized,
@@ -263,6 +274,18 @@ enum SceneStructure {
             present.insert(key)
         }
         return outline
+    }
+
+    /// A folder that opens `pageKey` on the system scene: the tile and colour
+    /// that board itself uses to reach it. Nil for its home, which is Home,
+    /// and for a page nothing on that board opens.
+    static func systemFolder(for pageKey: String, in system: BlasterScene) -> TileEntry? {
+        guard pageKey != system.homePageKey else { return nil }
+        let opener = system.pages.lazy.flatMap(\.tiles).first { $0.link == pageKey && !$0.isSpacer }
+        return opener.map {
+            TileEntry(key: $0.key, link: TileToken.systemLink(to: pageKey), isAudible: false,
+                      linkColor: $0.linkColor, linkColorIsAuto: $0.linkColor == nil)
+        }
     }
 
     // MARK: - Private
@@ -313,7 +336,8 @@ extension GeneratedScene {
             : (pages.first?.key ?? "")
         if let homeIndex = updated.firstIndex(where: { $0.key == home }) {
             updated[homeIndex].tiles += result.homeAdditions.map {
-                GeneratedTile(key: $0.key, isAudible: $0.isAudible, link: $0.link)
+                GeneratedTile(key: $0.key, isAudible: $0.isAudible, link: $0.link,
+                              linkColor: $0.linkColorIsAuto ? nil : $0.linkColor)
             }
         }
         updated += result.pages.map { page in

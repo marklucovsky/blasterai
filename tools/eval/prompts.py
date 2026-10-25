@@ -23,11 +23,13 @@ Each `*_body` function mirrors one Swift `requestBody`:
     tile_suggest_body      TileSuggestionService.requestBody
     moderation_rubric_body WordModerationService.rubricRequestBody
 
-and one that mirrors nothing yet — a candidate the app doesn't ship:
+    topic_words_body       TopicWordsService.requestBody — ranked words for
+                           any page: a scene's home page (with the frame) or
+                           a leaf page (without); docs/eval/scenes.md
 
-    topic_words_body       ranked words for any page — a scene's home page
-                           (with the frame) or a leaf page (without);
-                           docs/eval/scenes.md, prompts in tools/eval/candidates/
+and one the app doesn't ship, in tools/eval/candidates/:
+
+    topic_review_body      a second pass over a topic page's first draft
 """
 import json
 from functools import cache
@@ -216,7 +218,7 @@ def moderation_rubric_body(words: list[str]) -> dict:
     return _chat("gpt-4o-mini", 0, _two(raw("moderation_rubric_system"), ", ".join(words)), None)
 
 
-# MARK: - Candidates (not in the app)
+# MARK: - Topic words (TopicWordsService)
 
 # One prompt for every page (Mark, 2026-10-20): the words are the same kind
 # for a scene's home page and a leaf page; the template differs, and is code.
@@ -236,7 +238,7 @@ def scene_context(scene: dict | None) -> str:
         return ""
     words = ", ".join(w.replace("_", " ") for w in scene.get("words", []))
     return render("topic_scene_context", {"scene_name": scene["name"], "scene_description": scene["description"],
-                                          "scene_words": words}, CANDIDATES)
+                                          "scene_words": words})
 
 
 def topic_words_body(description: str, template: str = "home", scene: dict | None = None) -> dict:
@@ -245,11 +247,13 @@ def topic_words_body(description: str, template: str = "home", scene: dict | Non
                + ", ".join(w.replace("_", " ") for w in frame) + ".") if frame else ""
     system = render("topic_words_system", {
         "budget": str(TOPIC_BUDGET), "max_words": str(TOPIC_MAX),
-        "class_list": app_inputs()["class_list"]}, CANDIDATES)
+        "class_list": app_inputs()["class_list"]})
     user = render("topic_words_user", {"description": description, "vocab_block": app_inputs()["vocab_block"],
-                                       "exclude_rule": exclude, "scene_context": scene_context(scene)}, CANDIDATES)
+                                       "exclude_rule": exclude, "scene_context": scene_context(scene)})
     return _chat("gpt-4o-mini", 0.5, _two(system, user), 3000)
 
+
+# MARK: - Candidates (not in the app)
 
 def topic_review_body(first: dict, draft_text: str, description: str) -> dict:
     """A second pass over the first draft (`first` is the first request):
