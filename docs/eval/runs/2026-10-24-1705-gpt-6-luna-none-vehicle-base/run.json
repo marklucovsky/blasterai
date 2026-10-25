@@ -1,0 +1,19 @@
+{
+  "name": "2026-10-24-1705-gpt-6-luna-none-vehicle-base",
+  "label": "vehicle-base",
+  "model": "gpt-6-luna",
+  "effort": "none",
+  "judge": "gpt-6.1-sol",
+  "judge_effort": "low",
+  "judge_n": 1,
+  "samples": 3,
+  "commit": "b8c48a8+dirty",
+  "prompt_rev": "31e268342b",
+  "rubric_rev": "fc770a3add",
+  "rejudged_from": null,
+  "started": "2026-10-24T17:05:43",
+  "seconds": 162.9,
+  "outputs": 234,
+  "subject_cost": 0.00794191,
+  "judge_cost": 0.6149879
+}

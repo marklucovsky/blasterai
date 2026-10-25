@@ -70,7 +70,12 @@ enum CacheKeyPolicy {
     // finished with it. Also: no + an action refuses doing it ("No! Don't
     // wash!" was an order), a thing and where it is is a statement ("I want a
     // dog in the car"), a feeling with the routine it calls for.
-    nonisolated static let promptVersion = 8
+    //
+    // v9: vehicles are ridden (2026-10-24). "i, police car, police officer" was
+    // "Officer, can I have a police car?" — (object) meant a thing to be given,
+    // and the vehicle rule only covered a vehicle with a place. A vehicle is
+    // now ridden or seen, with a person the child rides with.
+    nonisolated static let promptVersion = 9
 
     /// Stamped onto each cache entry (`SentenceCache.keyVersion`) and embedded in
     /// the key. Excludes stage + word class on purpose — those are legitimate

@@ -95,6 +95,27 @@ tired + bed 4/5. Still open on Luna: find + ball ("I want to play ball", 0/5),
 stop + tv ("Stop watching TV."), bowl as an action (2/5 "can I have a bowl").
 `CacheKeyPolicy.promptVersion` 7 → 8.
 
+## Vehicles (2026-10-24, prompt v9)
+
+Mark's fire-station scene: "i, police car, police officer" → "Officer, can I
+have a police car?". (object) said "things that can be given", and the vehicle
+rule only covered a vehicle with a place, so Luna asked for the vehicle. Seven
+`vehicle` cases; Luna none, 3 samples each:
+
+| Run | Vehicle cases | Rest of sentences, Tier-1 | ≤3 on any (rest) |
+|---|---|---|---|
+| `vehicle-base` (v8) | 6/21 under the final regexes | 204/213 | 21 |
+| `vehicle-fix` (rule widened where it was) | unchanged | — | — |
+| `vehicle-fix3` (rule inside (object)) | **21/21** | 205/213 | 12 |
+
+The first fix sat in the "requests or statements" paragraph and moved nothing:
+the class annotation is declared authoritative, so a rule has to live in the
+class's own definition to beat it. Now: "i, police car, police officer" →
+"Can I ride in the police car with you?", "i, boat" → "I want to ride in the
+boat.", "see, fire truck" stays "I see a fire truck!", "i, ambulance" → "I see
+an ambulance." Escalation 37/39. Not done: the scene's description as sentence
+context (would steer toward ride/visit in a scene about a trip).
+
 ## Next
 
 - Luna polish before the switch: find + ball, stop + tv, bowl (actions).
