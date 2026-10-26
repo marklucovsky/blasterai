@@ -182,7 +182,11 @@ struct claudeBlastTests {
         // Places split into folders (session 14, tools/board_spec/blasterai60.json).
         // 41 -> 54: Food (5), People (2), Play (5) and Body & health (into Body
         // and Health, so +1) split into folders, the same session.
-        #expect(result.scene.pages.count == 54)
+        // 54 -> 66: the word pass's folders: Helpers & jobs, Sounds, Days, My
+        // day, Clock, Seasons & months, Outside & nature, School & tech, and one
+        // level deeper, Joining words and Which ones (Small words), Kitchen and
+        // Bathroom (House things).
+        #expect(result.scene.pages.count == 66)
         // The bundled scene is tagged as system-defined, which now also means
         // immutable — caregivers edit a clone instead.
         #expect(result.scene.systemSceneKey == "core_first")
