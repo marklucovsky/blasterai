@@ -96,7 +96,11 @@ struct BoardPlacementTests {
         #expect(body(b["food"]).contains("hungry") && body(b["food"]).contains("more"))
         #expect(!food.contains("meals"))
         #expect(keys(b["food_lunch_dinner"]).contains("meals"))
-        #expect(Array(body(b["drinks"]).prefix(2)) == ["thirsty", "more"])
+        // Drinks asks the way Food does: thirsty · more in Food's hungry · more
+        // cells (`more` keeps its Home cell on both) since the word pass.
+        let foodTiles = b["food"] ?? [], drinks = b["drinks"] ?? []
+        #expect(drinks.firstIndex { $0.key == "thirsty" } == foodTiles.firstIndex { $0.key == "hungry" })
+        #expect(drinks.firstIndex { $0.key == "more" } == foodTiles.firstIndex { $0.key == "more" })
     }
 
     /// Answer rows, at the same reach on every page that has one.
@@ -235,7 +239,8 @@ struct BoardPlacementTests {
                           "fire_truck", "ambulance", "police_car"]),
         ] {
             #expect(links.contains(page), "groups → \(page)")
-            #expect(Set(body(b[page])) == Set(words + [page]), "\(page) holds its words and its own tile")
+            // A superset since the word pass grew each folder.
+            #expect(Set(body(b[page])).isSuperset(of: words + [page]), "\(page) holds its words and its own tile")
         }
         #expect(links.contains("body") && links.contains("health") && b["body_health"] == nil)
         for word in ["home_", "car", "train", "bicycle", "airplane", "boat"] {

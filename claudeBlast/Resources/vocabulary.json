@@ -2658,5 +2658,1711 @@
     "key": "folder_outside_play",
     "wordClass": "navigation",
     "label": "Outside play"
+  },
+  {
+    "key": "cant",
+    "wordClass": "actions",
+    "label": "can't"
+  },
+  {
+    "key": "gonna",
+    "wordClass": "actions"
+  },
+  {
+    "key": "wanna",
+    "wordClass": "actions"
+  },
+  {
+    "key": "have_to",
+    "wordClass": "actions"
+  },
+  {
+    "key": "let_me",
+    "wordClass": "actions"
+  },
+  {
+    "key": "could",
+    "wordClass": "actions"
+  },
+  {
+    "key": "would",
+    "wordClass": "actions"
+  },
+  {
+    "key": "kid",
+    "wordClass": "people"
+  },
+  {
+    "key": "man",
+    "wordClass": "people"
+  },
+  {
+    "key": "woman",
+    "wordClass": "people"
+  },
+  {
+    "key": "person",
+    "wordClass": "people"
+  },
+  {
+    "key": "parent",
+    "wordClass": "people"
+  },
+  {
+    "key": "aunt",
+    "wordClass": "people"
+  },
+  {
+    "key": "uncle",
+    "wordClass": "people"
+  },
+  {
+    "key": "cousin",
+    "wordClass": "people"
+  },
+  {
+    "key": "son",
+    "wordClass": "people"
+  },
+  {
+    "key": "daughter",
+    "wordClass": "people"
+  },
+  {
+    "key": "stepmom",
+    "wordClass": "people"
+  },
+  {
+    "key": "stepdad",
+    "wordClass": "people"
+  },
+  {
+    "key": "classmate",
+    "wordClass": "people"
+  },
+  {
+    "key": "principal",
+    "wordClass": "people"
+  },
+  {
+    "key": "aide",
+    "wordClass": "people"
+  },
+  {
+    "key": "bus_driver",
+    "wordClass": "people"
+  },
+  {
+    "key": "therapist",
+    "wordClass": "people"
+  },
+  {
+    "key": "coach",
+    "wordClass": "people"
+  },
+  {
+    "key": "dentist",
+    "wordClass": "people"
+  },
+  {
+    "key": "police",
+    "wordClass": "people"
+  },
+  {
+    "key": "firefighter",
+    "wordClass": "people"
+  },
+  {
+    "key": "mail_carrier",
+    "wordClass": "people"
+  },
+  {
+    "key": "cashier",
+    "wordClass": "people"
+  },
+  {
+    "key": "waiter",
+    "wordClass": "people"
+  },
+  {
+    "key": "babysitter",
+    "wordClass": "people"
+  },
+  {
+    "key": "how_many",
+    "wordClass": "question"
+  },
+  {
+    "key": "how_much",
+    "wordClass": "question"
+  },
+  {
+    "key": "whose",
+    "wordClass": "question"
+  },
+  {
+    "key": "what_time",
+    "wordClass": "question"
+  },
+  {
+    "key": "can_i",
+    "wordClass": "question",
+    "label": "can I"
+  },
+  {
+    "key": "is_it",
+    "wordClass": "question"
+  },
+  {
+    "key": "an",
+    "wordClass": "core"
+  },
+  {
+    "key": "of",
+    "wordClass": "core"
+  },
+  {
+    "key": "from",
+    "wordClass": "core"
+  },
+  {
+    "key": "by",
+    "wordClass": "core"
+  },
+  {
+    "key": "so",
+    "wordClass": "core"
+  },
+  {
+    "key": "too",
+    "wordClass": "core"
+  },
+  {
+    "key": "very",
+    "wordClass": "core"
+  },
+  {
+    "key": "just",
+    "wordClass": "core"
+  },
+  {
+    "key": "only",
+    "wordClass": "core"
+  },
+  {
+    "key": "then",
+    "wordClass": "core"
+  },
+  {
+    "key": "until",
+    "wordClass": "core"
+  },
+  {
+    "key": "than",
+    "wordClass": "core"
+  },
+  {
+    "key": "except",
+    "wordClass": "core"
+  },
+  {
+    "key": "these",
+    "wordClass": "core"
+  },
+  {
+    "key": "those",
+    "wordClass": "core"
+  },
+  {
+    "key": "any",
+    "wordClass": "core"
+  },
+  {
+    "key": "every",
+    "wordClass": "core"
+  },
+  {
+    "key": "much",
+    "wordClass": "core"
+  },
+  {
+    "key": "other",
+    "wordClass": "core"
+  },
+  {
+    "key": "another",
+    "wordClass": "core"
+  },
+  {
+    "key": "me_too",
+    "wordClass": "social"
+  },
+  {
+    "key": "my_turn",
+    "wordClass": "social"
+  },
+  {
+    "key": "your_turn",
+    "wordClass": "social"
+  },
+  {
+    "key": "see_you_later",
+    "wordClass": "social"
+  },
+  {
+    "key": "never_mind",
+    "wordClass": "social"
+  },
+  {
+    "key": "really",
+    "wordClass": "social"
+  },
+  {
+    "key": "sounds_good",
+    "wordClass": "social"
+  },
+  {
+    "key": "oh",
+    "wordClass": "social"
+  },
+  {
+    "key": "night_night",
+    "wordClass": "social"
+  },
+  {
+    "key": "give_me_five",
+    "wordClass": "social"
+  },
+  {
+    "key": "ouch",
+    "wordClass": "social"
+  },
+  {
+    "key": "shh",
+    "wordClass": "social"
+  },
+  {
+    "key": "wow",
+    "wordClass": "social"
+  },
+  {
+    "key": "yay",
+    "wordClass": "social"
+  },
+  {
+    "key": "oops",
+    "wordClass": "social"
+  },
+  {
+    "key": "peekaboo",
+    "wordClass": "social"
+  },
+  {
+    "key": "yum_yum",
+    "wordClass": "social"
+  },
+  {
+    "key": "meow",
+    "wordClass": "social"
+  },
+  {
+    "key": "woof",
+    "wordClass": "social"
+  },
+  {
+    "key": "moo",
+    "wordClass": "social"
+  },
+  {
+    "key": "quack",
+    "wordClass": "social"
+  },
+  {
+    "key": "oink",
+    "wordClass": "social"
+  },
+  {
+    "key": "baa",
+    "wordClass": "social"
+  },
+  {
+    "key": "neigh",
+    "wordClass": "social"
+  },
+  {
+    "key": "cockadoodledoo",
+    "wordClass": "social",
+    "label": "cock-a-doodle-doo"
+  },
+  {
+    "key": "vroom",
+    "wordClass": "social"
+  },
+  {
+    "key": "choo_choo",
+    "wordClass": "social"
+  },
+  {
+    "key": "beep",
+    "wordClass": "social"
+  },
+  {
+    "key": "hurry",
+    "wordClass": "actions"
+  },
+  {
+    "key": "chase",
+    "wordClass": "actions"
+  },
+  {
+    "key": "carry",
+    "wordClass": "actions"
+  },
+  {
+    "key": "hold",
+    "wordClass": "actions"
+  },
+  {
+    "key": "drop",
+    "wordClass": "actions"
+  },
+  {
+    "key": "bump",
+    "wordClass": "actions"
+  },
+  {
+    "key": "turn_around",
+    "wordClass": "actions"
+  },
+  {
+    "key": "wipe",
+    "wordClass": "actions"
+  },
+  {
+    "key": "sweep",
+    "wordClass": "actions"
+  },
+  {
+    "key": "wake_up",
+    "wordClass": "actions"
+  },
+  {
+    "key": "feed",
+    "wordClass": "actions"
+  },
+  {
+    "key": "fix",
+    "wordClass": "actions"
+  },
+  {
+    "key": "vacuum",
+    "wordClass": "actions"
+  },
+  {
+    "key": "knock",
+    "wordClass": "actions"
+  },
+  {
+    "key": "bring",
+    "wordClass": "actions"
+  },
+  {
+    "key": "visit",
+    "wordClass": "actions"
+  },
+  {
+    "key": "smile",
+    "wordClass": "actions"
+  },
+  {
+    "key": "laugh",
+    "wordClass": "actions"
+  },
+  {
+    "key": "change",
+    "wordClass": "actions"
+  },
+  {
+    "key": "tickle",
+    "wordClass": "actions"
+  },
+  {
+    "key": "splash",
+    "wordClass": "actions"
+  },
+  {
+    "key": "pretend",
+    "wordClass": "actions"
+  },
+  {
+    "key": "pick",
+    "wordClass": "actions"
+  },
+  {
+    "key": "taste",
+    "wordClass": "actions"
+  },
+  {
+    "key": "lick",
+    "wordClass": "actions"
+  },
+  {
+    "key": "spill",
+    "wordClass": "actions"
+  },
+  {
+    "key": "bake",
+    "wordClass": "actions"
+  },
+  {
+    "key": "mix",
+    "wordClass": "actions"
+  },
+  {
+    "key": "touch",
+    "wordClass": "actions"
+  },
+  {
+    "key": "shopping",
+    "wordClass": "actions"
+  },
+  {
+    "key": "tall",
+    "wordClass": "describe"
+  },
+  {
+    "key": "huge",
+    "wordClass": "describe"
+  },
+  {
+    "key": "tiny",
+    "wordClass": "describe"
+  },
+  {
+    "key": "medium",
+    "wordClass": "describe"
+  },
+  {
+    "key": "gentle",
+    "wordClass": "describe"
+  },
+  {
+    "key": "rough",
+    "wordClass": "describe"
+  },
+  {
+    "key": "smooth",
+    "wordClass": "describe"
+  },
+  {
+    "key": "bumpy",
+    "wordClass": "describe"
+  },
+  {
+    "key": "slippery",
+    "wordClass": "describe"
+  },
+  {
+    "key": "favorite",
+    "wordClass": "describe"
+  },
+  {
+    "key": "weird",
+    "wordClass": "describe"
+  },
+  {
+    "key": "gross",
+    "wordClass": "describe"
+  },
+  {
+    "key": "real",
+    "wordClass": "describe"
+  },
+  {
+    "key": "fake",
+    "wordClass": "describe"
+  },
+  {
+    "key": "above",
+    "wordClass": "describe"
+  },
+  {
+    "key": "below",
+    "wordClass": "describe"
+  },
+  {
+    "key": "next_to",
+    "wordClass": "describe"
+  },
+  {
+    "key": "on_top_of",
+    "wordClass": "describe"
+  },
+  {
+    "key": "inside",
+    "wordClass": "describe"
+  },
+  {
+    "key": "a_lot",
+    "wordClass": "describe"
+  },
+  {
+    "key": "both",
+    "wordClass": "describe"
+  },
+  {
+    "key": "each",
+    "wordClass": "describe"
+  },
+  {
+    "key": "almost",
+    "wordClass": "describe"
+  },
+  {
+    "key": "sleepy",
+    "wordClass": "describe"
+  },
+  {
+    "key": "stuck",
+    "wordClass": "describe"
+  },
+  {
+    "key": "careful",
+    "wordClass": "describe"
+  },
+  {
+    "key": "awake",
+    "wordClass": "describe"
+  },
+  {
+    "key": "noisy",
+    "wordClass": "describe"
+  },
+  {
+    "key": "mad",
+    "wordClass": "feeling"
+  },
+  {
+    "key": "nervous",
+    "wordClass": "feeling"
+  },
+  {
+    "key": "confused",
+    "wordClass": "feeling"
+  },
+  {
+    "key": "embarrassed",
+    "wordClass": "feeling"
+  },
+  {
+    "key": "shy",
+    "wordClass": "feeling"
+  },
+  {
+    "key": "disappointed",
+    "wordClass": "feeling"
+  },
+  {
+    "key": "curious",
+    "wordClass": "feeling"
+  },
+  {
+    "key": "brave",
+    "wordClass": "feeling"
+  },
+  {
+    "key": "grumpy",
+    "wordClass": "feeling"
+  },
+  {
+    "key": "safe",
+    "wordClass": "feeling"
+  },
+  {
+    "key": "jealous",
+    "wordClass": "feeling"
+  },
+  {
+    "key": "strong",
+    "wordClass": "feeling"
+  },
+  {
+    "key": "weak",
+    "wordClass": "feeling"
+  },
+  {
+    "key": "dizzy",
+    "wordClass": "feeling"
+  },
+  {
+    "key": "a_little",
+    "wordClass": "feeling"
+  },
+  {
+    "key": "kind_of",
+    "wordClass": "feeling"
+  },
+  {
+    "key": "garage",
+    "wordClass": "places"
+  },
+  {
+    "key": "basement",
+    "wordClass": "places"
+  },
+  {
+    "key": "stairs",
+    "wordClass": "places"
+  },
+  {
+    "key": "porch",
+    "wordClass": "places"
+  },
+  {
+    "key": "yard",
+    "wordClass": "places"
+  },
+  {
+    "key": "grandmas_house",
+    "wordClass": "places",
+    "label": "grandma's house"
+  },
+  {
+    "key": "friends_house",
+    "wordClass": "places",
+    "label": "friend's house"
+  },
+  {
+    "key": "gym",
+    "wordClass": "places"
+  },
+  {
+    "key": "cafeteria",
+    "wordClass": "places"
+  },
+  {
+    "key": "office",
+    "wordClass": "places"
+  },
+  {
+    "key": "bus_stop",
+    "wordClass": "places"
+  },
+  {
+    "key": "party",
+    "wordClass": "places"
+  },
+  {
+    "key": "picnic",
+    "wordClass": "places"
+  },
+  {
+    "key": "circus",
+    "wordClass": "places"
+  },
+  {
+    "key": "museum",
+    "wordClass": "places"
+  },
+  {
+    "key": "garden",
+    "wordClass": "places"
+  },
+  {
+    "key": "hospital",
+    "wordClass": "places"
+  },
+  {
+    "key": "gas_station",
+    "wordClass": "places"
+  },
+  {
+    "key": "bank",
+    "wordClass": "places"
+  },
+  {
+    "key": "pizza_place",
+    "wordClass": "places"
+  },
+  {
+    "key": "ice_cream_shop",
+    "wordClass": "places"
+  },
+  {
+    "key": "haircut",
+    "wordClass": "places"
+  },
+  {
+    "key": "pharmacy",
+    "wordClass": "places"
+  },
+  {
+    "key": "already",
+    "wordClass": "describe"
+  },
+  {
+    "key": "hail",
+    "wordClass": "weather"
+  },
+  {
+    "key": "windy",
+    "wordClass": "weather"
+  },
+  {
+    "key": "monday",
+    "wordClass": "object",
+    "label": "Monday"
+  },
+  {
+    "key": "tuesday",
+    "wordClass": "object",
+    "label": "Tuesday"
+  },
+  {
+    "key": "wednesday",
+    "wordClass": "object",
+    "label": "Wednesday"
+  },
+  {
+    "key": "thursday",
+    "wordClass": "object",
+    "label": "Thursday"
+  },
+  {
+    "key": "friday",
+    "wordClass": "object",
+    "label": "Friday"
+  },
+  {
+    "key": "saturday",
+    "wordClass": "object",
+    "label": "Saturday"
+  },
+  {
+    "key": "sunday",
+    "wordClass": "object",
+    "label": "Sunday"
+  },
+  {
+    "key": "breakfast",
+    "wordClass": "object"
+  },
+  {
+    "key": "dinner",
+    "wordClass": "object"
+  },
+  {
+    "key": "bath",
+    "wordClass": "object"
+  },
+  {
+    "key": "bath_time",
+    "wordClass": "object"
+  },
+  {
+    "key": "bedtime",
+    "wordClass": "object"
+  },
+  {
+    "key": "school_day",
+    "wordClass": "object"
+  },
+  {
+    "key": "early",
+    "wordClass": "describe"
+  },
+  {
+    "key": "late",
+    "wordClass": "describe"
+  },
+  {
+    "key": "schedule",
+    "wordClass": "object"
+  },
+  {
+    "key": "clock",
+    "wordClass": "object"
+  },
+  {
+    "key": "hour",
+    "wordClass": "object"
+  },
+  {
+    "key": "minute",
+    "wordClass": "object"
+  },
+  {
+    "key": "oclock",
+    "wordClass": "object",
+    "label": "o'clock"
+  },
+  {
+    "key": "half_past",
+    "wordClass": "object"
+  },
+  {
+    "key": "timer",
+    "wordClass": "object"
+  },
+  {
+    "key": "spring",
+    "wordClass": "object"
+  },
+  {
+    "key": "summer",
+    "wordClass": "object"
+  },
+  {
+    "key": "fall_",
+    "wordClass": "object"
+  },
+  {
+    "key": "winter",
+    "wordClass": "object"
+  },
+  {
+    "key": "january",
+    "wordClass": "object",
+    "label": "January"
+  },
+  {
+    "key": "february",
+    "wordClass": "object",
+    "label": "February"
+  },
+  {
+    "key": "march_",
+    "wordClass": "object",
+    "label": "March"
+  },
+  {
+    "key": "april",
+    "wordClass": "object",
+    "label": "April"
+  },
+  {
+    "key": "may_",
+    "wordClass": "object",
+    "label": "May"
+  },
+  {
+    "key": "june",
+    "wordClass": "object",
+    "label": "June"
+  },
+  {
+    "key": "july",
+    "wordClass": "object",
+    "label": "July"
+  },
+  {
+    "key": "august",
+    "wordClass": "object",
+    "label": "August"
+  },
+  {
+    "key": "september",
+    "wordClass": "object",
+    "label": "September"
+  },
+  {
+    "key": "october",
+    "wordClass": "object",
+    "label": "October"
+  },
+  {
+    "key": "november",
+    "wordClass": "object",
+    "label": "November"
+  },
+  {
+    "key": "december",
+    "wordClass": "object",
+    "label": "December"
+  },
+  {
+    "key": "birthday",
+    "wordClass": "object"
+  },
+  {
+    "key": "holiday",
+    "wordClass": "object"
+  },
+  {
+    "key": "bread",
+    "wordClass": "food"
+  },
+  {
+    "key": "ice_cream",
+    "wordClass": "food"
+  },
+  {
+    "key": "muffin",
+    "wordClass": "food"
+  },
+  {
+    "key": "donut",
+    "wordClass": "food"
+  },
+  {
+    "key": "butter",
+    "wordClass": "food"
+  },
+  {
+    "key": "noodles",
+    "wordClass": "food"
+  },
+  {
+    "key": "spaghetti",
+    "wordClass": "food"
+  },
+  {
+    "key": "meat",
+    "wordClass": "food"
+  },
+  {
+    "key": "rice",
+    "wordClass": "food"
+  },
+  {
+    "key": "sauce",
+    "wordClass": "food"
+  },
+  {
+    "key": "beans",
+    "wordClass": "food"
+  },
+  {
+    "key": "raisins",
+    "wordClass": "food"
+  },
+  {
+    "key": "melon",
+    "wordClass": "food"
+  },
+  {
+    "key": "peas",
+    "wordClass": "food"
+  },
+  {
+    "key": "pickle",
+    "wordClass": "food"
+  },
+  {
+    "key": "pumpkin",
+    "wordClass": "food"
+  },
+  {
+    "key": "candy",
+    "wordClass": "food"
+  },
+  {
+    "key": "cake",
+    "wordClass": "food"
+  },
+  {
+    "key": "lollipop",
+    "wordClass": "food"
+  },
+  {
+    "key": "gum",
+    "wordClass": "food"
+  },
+  {
+    "key": "nuts",
+    "wordClass": "food"
+  },
+  {
+    "key": "hot_chocolate",
+    "wordClass": "drinks"
+  },
+  {
+    "key": "smoothie",
+    "wordClass": "drinks"
+  },
+  {
+    "key": "coffee",
+    "wordClass": "drinks"
+  },
+  {
+    "key": "straw",
+    "wordClass": "drinks"
+  },
+  {
+    "key": "bottle",
+    "wordClass": "drinks"
+  },
+  {
+    "key": "ice",
+    "wordClass": "drinks"
+  },
+  {
+    "key": "balloon",
+    "wordClass": "toy"
+  },
+  {
+    "key": "teddy_bear",
+    "wordClass": "toy"
+  },
+  {
+    "key": "stuffed_animal",
+    "wordClass": "toy"
+  },
+  {
+    "key": "train_set",
+    "wordClass": "toy"
+  },
+  {
+    "key": "dinosaur",
+    "wordClass": "toy"
+  },
+  {
+    "key": "robot",
+    "wordClass": "toy"
+  },
+  {
+    "key": "slime",
+    "wordClass": "toy"
+  },
+  {
+    "key": "kinetic_sand",
+    "wordClass": "toy"
+  },
+  {
+    "key": "fidget",
+    "wordClass": "toy"
+  },
+  {
+    "key": "squishy",
+    "wordClass": "toy"
+  },
+  {
+    "key": "spinner",
+    "wordClass": "toy"
+  },
+  {
+    "key": "chalk",
+    "wordClass": "art"
+  },
+  {
+    "key": "stickers",
+    "wordClass": "art"
+  },
+  {
+    "key": "glitter",
+    "wordClass": "art"
+  },
+  {
+    "key": "beads",
+    "wordClass": "art"
+  },
+  {
+    "key": "coloring_book",
+    "wordClass": "art"
+  },
+  {
+    "key": "hide_and_seek",
+    "wordClass": "games"
+  },
+  {
+    "key": "tag",
+    "wordClass": "games"
+  },
+  {
+    "key": "board_game",
+    "wordClass": "games"
+  },
+  {
+    "key": "simon_says",
+    "wordClass": "games",
+    "label": "Simon says"
+  },
+  {
+    "key": "pattycake",
+    "wordClass": "games"
+  },
+  {
+    "key": "bike",
+    "wordClass": "sports"
+  },
+  {
+    "key": "scooter",
+    "wordClass": "sports"
+  },
+  {
+    "key": "skate",
+    "wordClass": "sports"
+  },
+  {
+    "key": "golf",
+    "wordClass": "sports"
+  },
+  {
+    "key": "hockey",
+    "wordClass": "sports"
+  },
+  {
+    "key": "gymnastics",
+    "wordClass": "sports"
+  },
+  {
+    "key": "sandbox",
+    "wordClass": "play"
+  },
+  {
+    "key": "sand",
+    "wordClass": "play"
+  },
+  {
+    "key": "sprinkler",
+    "wordClass": "play"
+  },
+  {
+    "key": "jump_rope",
+    "wordClass": "play"
+  },
+  {
+    "key": "monkey_bars",
+    "wordClass": "play"
+  },
+  {
+    "key": "seesaw",
+    "wordClass": "play"
+  },
+  {
+    "key": "kite",
+    "wordClass": "play"
+  },
+  {
+    "key": "kitty",
+    "wordClass": "animal"
+  },
+  {
+    "key": "puppy",
+    "wordClass": "animal"
+  },
+  {
+    "key": "bunny",
+    "wordClass": "animal"
+  },
+  {
+    "key": "bear",
+    "wordClass": "animal"
+  },
+  {
+    "key": "monkey",
+    "wordClass": "animal"
+  },
+  {
+    "key": "elephant",
+    "wordClass": "animal"
+  },
+  {
+    "key": "lion",
+    "wordClass": "animal"
+  },
+  {
+    "key": "tiger",
+    "wordClass": "animal"
+  },
+  {
+    "key": "giraffe",
+    "wordClass": "animal"
+  },
+  {
+    "key": "zebra",
+    "wordClass": "animal"
+  },
+  {
+    "key": "frog",
+    "wordClass": "animal"
+  },
+  {
+    "key": "turtle",
+    "wordClass": "animal"
+  },
+  {
+    "key": "mouse",
+    "wordClass": "animal"
+  },
+  {
+    "key": "squirrel",
+    "wordClass": "animal"
+  },
+  {
+    "key": "owl",
+    "wordClass": "animal"
+  },
+  {
+    "key": "penguin",
+    "wordClass": "animal"
+  },
+  {
+    "key": "shark",
+    "wordClass": "animal"
+  },
+  {
+    "key": "alligator",
+    "wordClass": "animal"
+  },
+  {
+    "key": "bug",
+    "wordClass": "animal"
+  },
+  {
+    "key": "bee",
+    "wordClass": "animal"
+  },
+  {
+    "key": "ant",
+    "wordClass": "animal"
+  },
+  {
+    "key": "butterfly",
+    "wordClass": "animal"
+  },
+  {
+    "key": "deer",
+    "wordClass": "animal"
+  },
+  {
+    "key": "diaper",
+    "wordClass": "object"
+  },
+  {
+    "key": "underwear",
+    "wordClass": "object"
+  },
+  {
+    "key": "shorts",
+    "wordClass": "object"
+  },
+  {
+    "key": "jeans",
+    "wordClass": "object"
+  },
+  {
+    "key": "dress",
+    "wordClass": "object"
+  },
+  {
+    "key": "jacket",
+    "wordClass": "object"
+  },
+  {
+    "key": "sweater",
+    "wordClass": "object"
+  },
+  {
+    "key": "boots",
+    "wordClass": "object"
+  },
+  {
+    "key": "slippers",
+    "wordClass": "object"
+  },
+  {
+    "key": "gloves",
+    "wordClass": "object"
+  },
+  {
+    "key": "mittens",
+    "wordClass": "object"
+  },
+  {
+    "key": "swimsuit",
+    "wordClass": "object"
+  },
+  {
+    "key": "belt",
+    "wordClass": "object"
+  },
+  {
+    "key": "zipper",
+    "wordClass": "object"
+  },
+  {
+    "key": "button",
+    "wordClass": "object"
+  },
+  {
+    "key": "toe",
+    "wordClass": "body"
+  },
+  {
+    "key": "belly_button",
+    "wordClass": "body"
+  },
+  {
+    "key": "cheek",
+    "wordClass": "body"
+  },
+  {
+    "key": "chin",
+    "wordClass": "body"
+  },
+  {
+    "key": "tongue",
+    "wordClass": "body"
+  },
+  {
+    "key": "lips",
+    "wordClass": "body"
+  },
+  {
+    "key": "shoulder",
+    "wordClass": "body"
+  },
+  {
+    "key": "elbow",
+    "wordClass": "body"
+  },
+  {
+    "key": "neck",
+    "wordClass": "body"
+  },
+  {
+    "key": "owie",
+    "wordClass": "health"
+  },
+  {
+    "key": "sore",
+    "wordClass": "health"
+  },
+  {
+    "key": "throw_up",
+    "wordClass": "health"
+  },
+  {
+    "key": "allergy",
+    "wordClass": "health"
+  },
+  {
+    "key": "shot",
+    "wordClass": "health"
+  },
+  {
+    "key": "school_bus",
+    "wordClass": "object"
+  },
+  {
+    "key": "tractor",
+    "wordClass": "object"
+  },
+  {
+    "key": "motorcycle",
+    "wordClass": "object"
+  },
+  {
+    "key": "taxi",
+    "wordClass": "object"
+  },
+  {
+    "key": "rocket",
+    "wordClass": "object"
+  },
+  {
+    "key": "wagon",
+    "wordClass": "object"
+  },
+  {
+    "key": "stroller",
+    "wordClass": "object"
+  },
+  {
+    "key": "chair",
+    "wordClass": "object"
+  },
+  {
+    "key": "table",
+    "wordClass": "object"
+  },
+  {
+    "key": "couch",
+    "wordClass": "object"
+  },
+  {
+    "key": "pillow",
+    "wordClass": "object"
+  },
+  {
+    "key": "lamp",
+    "wordClass": "object"
+  },
+  {
+    "key": "box",
+    "wordClass": "object"
+  },
+  {
+    "key": "keys",
+    "wordClass": "object"
+  },
+  {
+    "key": "picture",
+    "wordClass": "object"
+  },
+  {
+    "key": "trash",
+    "wordClass": "object"
+  },
+  {
+    "key": "crib",
+    "wordClass": "object"
+  },
+  {
+    "key": "bag",
+    "wordClass": "object"
+  },
+  {
+    "key": "basket",
+    "wordClass": "object"
+  },
+  {
+    "key": "present",
+    "wordClass": "object"
+  },
+  {
+    "key": "money",
+    "wordClass": "object"
+  },
+  {
+    "key": "camera",
+    "wordClass": "object"
+  },
+  {
+    "key": "broom",
+    "wordClass": "object"
+  },
+  {
+    "key": "washing_machine",
+    "wordClass": "object"
+  },
+  {
+    "key": "fridge",
+    "wordClass": "object"
+  },
+  {
+    "key": "oven",
+    "wordClass": "object"
+  },
+  {
+    "key": "stove",
+    "wordClass": "object"
+  },
+  {
+    "key": "sink",
+    "wordClass": "object"
+  },
+  {
+    "key": "dish",
+    "wordClass": "object"
+  },
+  {
+    "key": "knife",
+    "wordClass": "object"
+  },
+  {
+    "key": "napkin",
+    "wordClass": "object"
+  },
+  {
+    "key": "bib",
+    "wordClass": "object"
+  },
+  {
+    "key": "soap",
+    "wordClass": "object"
+  },
+  {
+    "key": "towel",
+    "wordClass": "object"
+  },
+  {
+    "key": "bathtub",
+    "wordClass": "object"
+  },
+  {
+    "key": "toothpaste",
+    "wordClass": "object"
+  },
+  {
+    "key": "tissue",
+    "wordClass": "object"
+  },
+  {
+    "key": "tree",
+    "wordClass": "object"
+  },
+  {
+    "key": "flower",
+    "wordClass": "object"
+  },
+  {
+    "key": "plant",
+    "wordClass": "object"
+  },
+  {
+    "key": "leaf",
+    "wordClass": "object"
+  },
+  {
+    "key": "grass",
+    "wordClass": "object"
+  },
+  {
+    "key": "rock",
+    "wordClass": "object"
+  },
+  {
+    "key": "stick",
+    "wordClass": "object"
+  },
+  {
+    "key": "dirt",
+    "wordClass": "object"
+  },
+  {
+    "key": "mud",
+    "wordClass": "object"
+  },
+  {
+    "key": "puddle",
+    "wordClass": "object"
+  },
+  {
+    "key": "hill",
+    "wordClass": "object"
+  },
+  {
+    "key": "sky",
+    "wordClass": "object"
+  },
+  {
+    "key": "moon",
+    "wordClass": "object"
+  },
+  {
+    "key": "street",
+    "wordClass": "object"
+  },
+  {
+    "key": "sidewalk",
+    "wordClass": "object"
+  },
+  {
+    "key": "shovel",
+    "wordClass": "object"
+  },
+  {
+    "key": "bucket",
+    "wordClass": "object"
+  },
+  {
+    "key": "hose",
+    "wordClass": "object"
+  },
+  {
+    "key": "snowman",
+    "wordClass": "object"
+  },
+  {
+    "key": "pen",
+    "wordClass": "object"
+  },
+  {
+    "key": "backpack",
+    "wordClass": "object"
+  },
+  {
+    "key": "lunchbox",
+    "wordClass": "object"
+  },
+  {
+    "key": "desk",
+    "wordClass": "object"
+  },
+  {
+    "key": "computer",
+    "wordClass": "object"
+  },
+  {
+    "key": "headphones",
+    "wordClass": "object"
+  },
+  {
+    "key": "charger",
+    "wordClass": "object"
+  },
+  {
+    "key": "glasses",
+    "wordClass": "object"
+  },
+  {
+    "key": "video",
+    "wordClass": "object"
+  },
+  {
+    "key": "story",
+    "wordClass": "object"
+  },
+  {
+    "key": "folder_helpers",
+    "wordClass": "navigation",
+    "label": "Helpers & jobs"
+  },
+  {
+    "key": "folder_joining",
+    "wordClass": "navigation",
+    "label": "Joining words"
+  },
+  {
+    "key": "folder_which",
+    "wordClass": "navigation",
+    "label": "Which ones"
+  },
+  {
+    "key": "folder_sounds",
+    "wordClass": "navigation",
+    "label": "Sounds"
+  },
+  {
+    "key": "folder_days",
+    "wordClass": "navigation",
+    "label": "Days"
+  },
+  {
+    "key": "folder_my_day",
+    "wordClass": "navigation",
+    "label": "My day"
+  },
+  {
+    "key": "folder_clock",
+    "wordClass": "navigation",
+    "label": "Clock"
+  },
+  {
+    "key": "folder_seasons",
+    "wordClass": "navigation",
+    "label": "Seasons & months"
+  },
+  {
+    "key": "folder_kitchen",
+    "wordClass": "navigation",
+    "label": "Kitchen"
+  },
+  {
+    "key": "folder_bathroom",
+    "wordClass": "navigation",
+    "label": "Bathroom"
+  },
+  {
+    "key": "folder_nature",
+    "wordClass": "navigation",
+    "label": "Outside & nature"
+  },
+  {
+    "key": "folder_school_tech",
+    "wordClass": "navigation",
+    "label": "School & tech"
   }
 ]

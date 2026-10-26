@@ -1,0 +1,958 @@
+{
+  "_doc": "Session 14 word pass 1: the words the folder tree (claude.ai artifact 'BlasterAI 60 Folder Tree') proposed, plus early CDI words neither Avaz nor that plan had. tools/apply_word_pass.py adds each to vocabulary.json and parts_of_speech.json and to its page in blasterai60.json. A word is 'key' or 'key|Label'. 'pos' is the page's default part of speech; 'posOf' overrides it per word. Brand names (Lego, Uno, Cheerios) are left out, and so are the rarest small words (else, instead, unless, anyway, somehow, therefore), which are phase 2. Small words and House things are full one level down, so they gain folders of their own: Joining words and Which ones; Kitchen and Bathroom (Mark: links to one level deeper are page-specific).",
+  "pages": [
+    {
+      "page": "i_page",
+      "pos": "verb",
+      "posOf": {
+        "cant": "negation"
+      },
+      "words": [
+        "cant|can't",
+        "gonna",
+        "wanna",
+        "have_to|have to",
+        "let_me|let me",
+        "could",
+        "would"
+      ]
+    },
+    {
+      "page": "people",
+      "pos": "noun",
+      "words": [
+        "kid",
+        "man",
+        "woman",
+        "person"
+      ]
+    },
+    {
+      "page": "people_family",
+      "pos": "noun",
+      "words": [
+        "parent",
+        "aunt",
+        "uncle",
+        "cousin",
+        "son",
+        "daughter",
+        "stepmom|stepmom",
+        "stepdad|stepdad"
+      ]
+    },
+    {
+      "page": "people_school",
+      "pos": "noun",
+      "words": [
+        "classmate",
+        "principal",
+        "aide",
+        "bus_driver|bus driver",
+        "therapist",
+        "coach"
+      ]
+    },
+    {
+      "page": "people_helpers",
+      "folder": {
+        "parent": "people",
+        "key": "folder_helpers",
+        "label": "Helpers & jobs"
+      },
+      "pos": "noun",
+      "words": [
+        "doctor",
+        "nurse",
+        "dentist",
+        "police",
+        "firefighter",
+        "mail_carrier|mail carrier",
+        "cashier",
+        "waiter",
+        "babysitter"
+      ],
+      "wordClass": "people"
+    },
+    {
+      "page": "questions",
+      "pos": "question",
+      "words": [
+        "how_many|how many",
+        "how_much|how much",
+        "whose",
+        "what_time|what time",
+        "can_i|can I",
+        "is_it|is it"
+      ]
+    },
+    {
+      "page": "small_words",
+      "pos": "determiner",
+      "posOf": {
+        "of": "preposition",
+        "from": "preposition",
+        "by": "preposition",
+        "so": "adjective",
+        "too": "adjective",
+        "very": "adjective",
+        "just": "adjective",
+        "only": "adjective",
+        "almost": "adjective",
+        "then": "conjunction",
+        "until": "conjunction",
+        "than": "conjunction",
+        "except": "conjunction"
+      },
+      "words": [
+        "an",
+        "of",
+        "from",
+        "by",
+        "so",
+        "too",
+        "very",
+        "just",
+        "only",
+        "then"
+      ]
+    },
+    {
+      "page": "small_joining",
+      "folder": {
+        "parent": "small_words",
+        "key": "folder_joining",
+        "label": "Joining words"
+      },
+      "pos": "conjunction",
+      "words": [
+        [
+          "and",
+          "or",
+          "but",
+          "because"
+        ],
+        [
+          "so",
+          "then",
+          "until"
+        ],
+        "than",
+        "except"
+      ]
+    },
+    {
+      "page": "small_which",
+      "folder": {
+        "parent": "small_words",
+        "key": "folder_which",
+        "label": "Which ones"
+      },
+      "pos": "determiner",
+      "words": [
+        [
+          "this",
+          "that",
+          "these",
+          "those"
+        ],
+        [
+          "here",
+          "there",
+          "it"
+        ],
+        "some",
+        "all",
+        [
+          "any",
+          "every",
+          "much"
+        ],
+        [
+          "other",
+          "another"
+        ]
+      ]
+    },
+    {
+      "page": "social",
+      "pos": "social",
+      "words": [
+        "me_too|me too",
+        "my_turn|my turn",
+        "your_turn|your turn",
+        "see_you_later|see you later",
+        "never_mind|never mind",
+        "really",
+        "sounds_good|sounds good",
+        "oh",
+        "night_night|night night",
+        "give_me_five|give me five"
+      ]
+    },
+    {
+      "page": "social_sounds",
+      "folder": {
+        "parent": "social",
+        "key": "folder_sounds",
+        "label": "Sounds"
+      },
+      "pos": "interjection",
+      "words": [
+        "uh_oh",
+        "ouch",
+        "shh",
+        "wow",
+        "yay",
+        "oops",
+        "peekaboo",
+        "yum_yum|yum yum",
+        "meow",
+        "woof",
+        "moo",
+        "quack",
+        "oink",
+        "baa",
+        "neigh",
+        "cockadoodledoo|cock-a-doodle-doo",
+        "vroom",
+        "choo_choo|choo choo",
+        "beep"
+      ]
+    },
+    {
+      "page": "actions_moving",
+      "pos": "verb",
+      "words": [
+        "hurry",
+        "chase",
+        "carry",
+        "hold",
+        "drop",
+        "bump",
+        "turn_around|turn around"
+      ]
+    },
+    {
+      "page": "actions_taking_care",
+      "pos": "verb",
+      "words": [
+        "wipe",
+        "sweep",
+        "wake_up|wake up",
+        "feed",
+        "fix",
+        "vacuum"
+      ]
+    },
+    {
+      "page": "actions_talking",
+      "pos": "verb",
+      "words": [
+        "knock",
+        "bring",
+        "visit"
+      ]
+    },
+    {
+      "page": "actions_thinking",
+      "pos": "verb",
+      "words": [
+        "smile",
+        "laugh",
+        "change"
+      ]
+    },
+    {
+      "page": "actions_playing",
+      "pos": "verb",
+      "words": [
+        "tickle",
+        "splash",
+        "pretend",
+        "pick"
+      ]
+    },
+    {
+      "page": "actions_cooking",
+      "pos": "verb",
+      "words": [
+        "taste",
+        "lick",
+        "spill",
+        "bake",
+        "mix"
+      ]
+    },
+    {
+      "page": "actions_senses",
+      "pos": "verb",
+      "words": [
+        "taste",
+        "touch"
+      ]
+    },
+    {
+      "page": "actions_doing",
+      "pos": "verb",
+      "words": [
+        "shopping"
+      ]
+    },
+    {
+      "page": "describe_size",
+      "pos": "adjective",
+      "words": [
+        "tall",
+        "huge",
+        "tiny",
+        "medium"
+      ]
+    },
+    {
+      "page": "describe_how_it_feels",
+      "pos": "adjective",
+      "words": [
+        "gentle",
+        "rough",
+        "smooth",
+        "bumpy",
+        "slippery"
+      ]
+    },
+    {
+      "page": "describe_opinions",
+      "pos": "adjective",
+      "words": [
+        "favorite",
+        "weird",
+        "gross",
+        "real",
+        "fake"
+      ]
+    },
+    {
+      "page": "describe_where",
+      "pos": "preposition",
+      "words": [
+        "above",
+        "below",
+        "next_to|next to",
+        "on_top_of|on top of",
+        "inside"
+      ]
+    },
+    {
+      "page": "describe_how_much",
+      "pos": "determiner",
+      "words": [
+        "a_lot|a lot",
+        "another",
+        "both",
+        "each",
+        "almost"
+      ],
+      "posOf": {
+        "almost": "adjective"
+      }
+    },
+    {
+      "page": "describe_what_its_like",
+      "pos": "adjective",
+      "words": [
+        "sleepy",
+        "stuck",
+        "careful",
+        "awake",
+        "noisy"
+      ]
+    },
+    {
+      "page": "feelings",
+      "pos": "adjective",
+      "posOf": {
+        "a_little": "determiner"
+      },
+      "words": [
+        "mad",
+        "nervous",
+        "confused",
+        "embarrassed",
+        "shy",
+        "disappointed",
+        "curious",
+        "brave",
+        "grumpy",
+        "safe",
+        "jealous",
+        "strong",
+        "weak",
+        "dizzy",
+        "a_little|a little",
+        "kind_of|kind of"
+      ]
+    },
+    {
+      "page": "places_house",
+      "pos": "noun",
+      "words": [
+        "garage",
+        "basement",
+        "stairs",
+        "porch",
+        "yard",
+        "grandmas_house|grandma's house",
+        "friends_house|friend's house"
+      ]
+    },
+    {
+      "page": "places_school",
+      "pos": "noun",
+      "words": [
+        "gym",
+        "cafeteria",
+        "office",
+        "bus_stop|bus stop"
+      ]
+    },
+    {
+      "page": "places_fun",
+      "pos": "noun",
+      "words": [
+        "party",
+        "picnic",
+        "circus",
+        "museum",
+        "garden"
+      ]
+    },
+    {
+      "page": "places_out_and_about",
+      "pos": "noun",
+      "words": [
+        "dentist",
+        "hospital",
+        "gas_station|gas station",
+        "bank",
+        "pizza_place|pizza place",
+        "ice_cream_shop|ice cream shop",
+        "haircut",
+        "pharmacy"
+      ]
+    },
+    {
+      "page": "time_when",
+      "pos": "adjective",
+      "posOf": {
+        "then": "conjunction",
+        "until": "conjunction"
+      },
+      "words": [
+        "then",
+        "until",
+        "already"
+      ]
+    },
+    {
+      "page": "weather",
+      "pos": "noun",
+      "posOf": {
+        "windy": "adjective"
+      },
+      "words": [
+        "hail",
+        "windy"
+      ]
+    },
+    {
+      "page": "time_days",
+      "folder": {
+        "parent": "time_when",
+        "key": "folder_days",
+        "label": "Days"
+      },
+      "pos": "noun",
+      "words": [
+        [
+          "monday|Monday",
+          "tuesday|Tuesday",
+          "wednesday|Wednesday",
+          "thursday|Thursday",
+          "friday|Friday",
+          "saturday|Saturday",
+          "sunday|Sunday"
+        ],
+        [
+          "today",
+          "tomorrow",
+          "yesterday"
+        ],
+        [
+          "week",
+          "weekend"
+        ]
+      ]
+    },
+    {
+      "page": "time_my_day",
+      "folder": {
+        "parent": "time_when",
+        "key": "folder_my_day",
+        "label": "My day"
+      },
+      "pos": "noun",
+      "posOf": {
+        "early": "adjective",
+        "late": "adjective"
+      },
+      "words": [
+        [
+          "morning",
+          "afternoon",
+          "night"
+        ],
+        "breakfast",
+        "lunch",
+        "snack",
+        "dinner",
+        "bath",
+        "bath_time|bath time",
+        "bedtime",
+        "school_day|school day",
+        [
+          "early",
+          "late"
+        ],
+        "schedule"
+      ],
+      "classOf": {
+        "early": "describe",
+        "late": "describe"
+      }
+    },
+    {
+      "page": "time_clock",
+      "folder": {
+        "parent": "time_when",
+        "key": "folder_clock",
+        "label": "Clock"
+      },
+      "pos": "noun",
+      "posOf": {
+        "what_time": "question"
+      },
+      "words": [
+        "time",
+        "clock",
+        "hour",
+        "minute",
+        "oclock|o'clock",
+        "half_past|half past",
+        "timer",
+        "what_time|what time"
+      ]
+    },
+    {
+      "page": "time_seasons",
+      "folder": {
+        "parent": "time_when",
+        "key": "folder_seasons",
+        "label": "Seasons & months"
+      },
+      "pos": "noun",
+      "words": [
+        [
+          "spring",
+          "summer",
+          "fall_|fall",
+          "winter"
+        ],
+        [
+          "january|January",
+          "february|February",
+          "march_|March",
+          "april|April",
+          "may_|May",
+          "june|June"
+        ],
+        [
+          "july|July",
+          "august|August",
+          "september|September",
+          "october|October",
+          "november|November",
+          "december|December"
+        ],
+        [
+          "birthday",
+          "holiday"
+        ]
+      ]
+    },
+    {
+      "page": "food",
+      "pos": "noun",
+      "words": [
+        "bread",
+        "ice_cream|ice cream"
+      ]
+    },
+    {
+      "page": "food_breakfast",
+      "pos": "noun",
+      "words": [
+        "muffin",
+        "donut",
+        "butter",
+        "bread"
+      ]
+    },
+    {
+      "page": "food_lunch_dinner",
+      "pos": "noun",
+      "words": [
+        "noodles",
+        "spaghetti",
+        "meat",
+        "rice",
+        "sauce",
+        "beans"
+      ]
+    },
+    {
+      "page": "food_fruit",
+      "pos": "noun",
+      "words": [
+        "raisins",
+        "melon"
+      ]
+    },
+    {
+      "page": "food_veggies",
+      "pos": "noun",
+      "words": [
+        "peas",
+        "pickle",
+        "pumpkin"
+      ]
+    },
+    {
+      "page": "food_snacks",
+      "pos": "noun",
+      "words": [
+        "candy",
+        "cake",
+        "lollipop",
+        "gum",
+        "ice_cream|ice cream",
+        "nuts"
+      ]
+    },
+    {
+      "page": "drinks",
+      "pos": "noun",
+      "words": [
+        "hot_chocolate|hot chocolate",
+        "smoothie",
+        "coffee",
+        "straw",
+        "bottle",
+        "ice"
+      ]
+    },
+    {
+      "page": "play_activities",
+      "pos": "noun",
+      "words": [
+        "balloon",
+        "teddy_bear|teddy bear"
+      ]
+    },
+    {
+      "page": "play_toys",
+      "pos": "noun",
+      "words": [
+        "teddy_bear|teddy bear",
+        "balloon",
+        "stuffed_animal|stuffed animal",
+        "train_set|train set",
+        "dinosaur",
+        "robot",
+        "slime",
+        "kinetic_sand|kinetic sand",
+        "fidget",
+        "squishy",
+        "spinner"
+      ]
+    },
+    {
+      "page": "play_art",
+      "pos": "noun",
+      "words": [
+        "chalk",
+        "stickers",
+        "glitter",
+        "beads",
+        "coloring_book|coloring book"
+      ]
+    },
+    {
+      "page": "play_games",
+      "pos": "noun",
+      "words": [
+        "hide_and_seek|hide and seek",
+        "tag",
+        "board_game|board game",
+        "simon_says|Simon says",
+        "pattycake"
+      ]
+    },
+    {
+      "page": "play_sports",
+      "pos": "noun",
+      "words": [
+        "bike",
+        "scooter",
+        "skate",
+        "golf",
+        "hockey",
+        "gymnastics"
+      ]
+    },
+    {
+      "page": "play_outside",
+      "pos": "noun",
+      "words": [
+        "sandbox",
+        "sand",
+        "sprinkler",
+        "jump_rope|jump rope",
+        "monkey_bars|monkey bars",
+        "seesaw",
+        "kite"
+      ]
+    },
+    {
+      "page": "animals",
+      "pos": "noun",
+      "words": [
+        "kitty",
+        "puppy",
+        "bunny",
+        "bear",
+        "monkey",
+        "elephant",
+        "lion",
+        "tiger",
+        "giraffe",
+        "zebra",
+        "frog",
+        "turtle",
+        "mouse",
+        "squirrel",
+        "owl",
+        "penguin",
+        "shark",
+        "alligator",
+        "bug",
+        "bee",
+        "ant",
+        "butterfly",
+        "deer",
+        "dinosaur"
+      ]
+    },
+    {
+      "page": "clothes",
+      "pos": "noun",
+      "words": [
+        "diaper",
+        "underwear",
+        "shorts",
+        "jeans",
+        "dress",
+        "jacket",
+        "sweater",
+        "boots",
+        "slippers",
+        "gloves",
+        "mittens",
+        "swimsuit",
+        "belt",
+        "zipper",
+        "button"
+      ]
+    },
+    {
+      "page": "body",
+      "pos": "noun",
+      "words": [
+        "toe",
+        "belly_button|belly button",
+        "cheek",
+        "chin",
+        "tongue",
+        "lips",
+        "shoulder",
+        "elbow",
+        "neck"
+      ]
+    },
+    {
+      "page": "health",
+      "pos": "noun",
+      "posOf": {
+        "sore": "adjective",
+        "throw_up": "verb"
+      },
+      "words": [
+        "owie",
+        "sore",
+        "throw_up|throw up",
+        "allergy",
+        "shot"
+      ]
+    },
+    {
+      "page": "vehicles",
+      "pos": "noun",
+      "words": [
+        "school_bus|school bus",
+        "tractor",
+        "motorcycle",
+        "taxi",
+        "rocket",
+        "wagon",
+        "stroller"
+      ]
+    },
+    {
+      "page": "things",
+      "pos": "noun",
+      "words": [
+        "chair",
+        "table",
+        "couch",
+        "pillow",
+        "lamp",
+        "box",
+        "keys",
+        "clock",
+        "picture",
+        "trash",
+        "crib",
+        "bag",
+        "basket",
+        "present",
+        "money",
+        "camera",
+        "broom",
+        "washing_machine|washing machine"
+      ]
+    },
+    {
+      "page": "things_kitchen",
+      "folder": {
+        "parent": "things",
+        "key": "folder_kitchen",
+        "label": "Kitchen"
+      },
+      "pos": "noun",
+      "words": [
+        [
+          "cup",
+          "spoon",
+          "plate",
+          "fork",
+          "bowl"
+        ],
+        "fridge",
+        "oven",
+        "stove",
+        "sink",
+        "dish",
+        "knife",
+        "napkin",
+        "bottle",
+        "bib"
+      ]
+    },
+    {
+      "page": "things_bathroom",
+      "folder": {
+        "parent": "things",
+        "key": "folder_bathroom",
+        "label": "Bathroom"
+      },
+      "pos": "noun",
+      "words": [
+        "toothbrush",
+        "soap",
+        "towel",
+        "bathtub",
+        "toothpaste",
+        "tissue"
+      ]
+    },
+    {
+      "page": "things_nature",
+      "folder": {
+        "parent": "groups",
+        "key": "folder_nature",
+        "label": "Outside & nature"
+      },
+      "pos": "noun",
+      "words": [
+        "tree",
+        "flower",
+        "plant",
+        "leaf",
+        "grass",
+        "rock",
+        "stick",
+        "dirt",
+        "mud",
+        "sand",
+        "puddle",
+        "hill",
+        "sky",
+        "moon",
+        "star",
+        "street",
+        "sidewalk",
+        "shovel",
+        "bucket",
+        "hose",
+        "snowman"
+      ]
+    },
+    {
+      "page": "things_school",
+      "folder": {
+        "parent": "groups",
+        "key": "folder_school_tech",
+        "label": "School & tech"
+      },
+      "pos": "noun",
+      "words": [
+        "book",
+        "paper",
+        "pencil",
+        "pen",
+        "crayons",
+        "backpack",
+        "lunchbox",
+        "desk",
+        "computer",
+        "ipad",
+        "phone",
+        "headphones",
+        "charger",
+        "glasses",
+        "video",
+        "story",
+        "music"
+      ]
+    }
+  ]
+}

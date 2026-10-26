@@ -561,11 +561,18 @@ def render_html(board, vocab, pos, path):
                 f'<div class="grid">{cells}</div></section>')
 
     order = ["home"]
+
+    def folders(page):
+        for f in page.get("folders", []):
+            if "words" in f:
+                yield f["page"]
+                yield from folders(f)   # Things › House things › Kitchen
+
     for key, page in board.spec["pages"].items():
         if key == "home":
             continue
         order.append(key)
-        order += [f["page"] for f in page.get("folders", []) if "words" in f]
+        order += list(folders(page))
     body = "".join(section(k) for k in order)
     css = """
 :root { --bg:#f4f4f2; --fg:#1d1d1f; --muted:#666; --card:#fff; --line:#d9d9d6; }
