@@ -982,7 +982,7 @@
         "playground",
         "store",
         "restaurant",
-        "doctor",
+        "doctors_office",
         "outside",
         "bathroom",
         "bedroom",
@@ -1080,13 +1080,13 @@
             "store",
             "grocery_store",
             "mall",
-            "doctor",
+            "doctors_office",
             "church",
             "airport",
             "building",
             "restaurant",
             "outside",
-            "dentist",
+            "dentists_office",
             "hospital",
             "gas_station",
             "bank",
@@ -1358,34 +1358,37 @@
         {
           "key": "folder_seasons",
           "page": "time_seasons",
-          "words": [
-            [
-              "spring",
-              "summer",
-              "fall_",
-              "winter"
+          "words": [],
+          "at": {
+            "r2c6": [
+              "birthday",
+              "holiday"
             ],
-            [
+            "r2c1": [
+              "winter",
               "january",
               "february",
-              "march_",
+              "march_"
+            ],
+            "r3c1": [
+              "spring",
               "april",
               "may_",
               "june"
             ],
-            [
+            "r4c1": [
+              "summer",
               "july",
               "august",
-              "september",
+              "september"
+            ],
+            "r5c1": [
+              "fall_",
               "october",
               "november",
               "december"
-            ],
-            [
-              "birthday",
-              "holiday"
             ]
-          ]
+          }
         }
       ]
     },
@@ -1589,6 +1592,7 @@
         ],
         [
           "ipad",
+          "phone",
           "video_game"
         ],
         [
@@ -1627,6 +1631,7 @@
             ],
             [
               "ipad",
+              "phone",
               "video_game"
             ],
             "teddy_bear",
@@ -1675,6 +1680,7 @@
             ],
             [
               "ipad",
+              "phone",
               "video_game"
             ],
             "puzzle",

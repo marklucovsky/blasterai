@@ -267,5 +267,26 @@ struct SparseBoardTests {
                 "a filter removed a gap and reflowed the sheet")
         #expect(filtered[0].tiles.filter { $0.isEmptyCell }.count == 2)
     }
+
+    // MARK: - Hidden words
+
+    /// Hiding a word in the vocabulary is not an edit to any grid. The field
+    /// case: `tractor` hidden on a device slid BlasterAI 60's Vehicles folder
+    /// out of column 11 and put `car` under the keyboard.
+    @Test("A hidden word holds its cell")
+    func hiddenWordHoldsItsCell() throws {
+        let scene = BootstrapLoader.loadDefaultVocabulary(context: TestStore.freshContainer().mainContext).scene
+        let vehicles = try #require(scene.pages.first { $0.key == "vehicles" })
+        let held = TileEntry.holdingHiddenCells(vehicles.tiles) { $0 == "tractor" }
+
+        #expect(held.count == vehicles.tiles.count, "the hidden word left the page")
+        #expect(held.map(\.key) == vehicles.tiles.map(\.key), "a placement moved")
+        let tractor = try #require(held.first { $0.key == "tractor" })
+        #expect(tractor.isEmptyCell)
+        // Column 11 of row 2 on the 12-wide board: cell 22.
+        #expect(held.firstIndex { $0.key == "vehicles" }.map { $0 + 1 } == 22)
+        // The word itself is untouched; only this drawing of it is empty.
+        #expect(vehicles.tiles.first { $0.key == "tractor" }?.isConcealed == false)
+    }
 }
 }

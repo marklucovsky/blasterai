@@ -54,9 +54,9 @@ struct WordPlacesTests {
     }
 
     /// On a 4 × 5 phone grid Actions' screen 2 starts at its 20th tile (Home is
-    /// cell 0), and a hidden word earlier on the page pulls it back — the board
-    /// reflows around hidden words, so the places must too.
-    @Test func screensFollowTheGridAndHiddenWords() {
+    /// cell 0). A hidden word earlier on the page holds its cell, as on the
+    /// board, so it moves nothing — and is not a place itself.
+    @Test func screensFollowTheGridAndHiddenWordsHoldTheirCells() {
         let onActions = { (places: [String: [WordPlace]], word: String) in
             (places[word] ?? []).first { $0.route.last == "Actions" }
         }
@@ -66,8 +66,9 @@ struct WordPlacesTests {
         #expect(onActions(phone, "take")?.screen == 2)
         #expect(onActions(phone, "take")?.label.hasSuffix("· screen 2") == true)
         #expect(onActions(phone, "give")?.screen == 1)
-        let reflowed = places(hidden: ["need"], grid: Self.phone)
-        #expect(onActions(reflowed, "take")?.screen == 1)
+        let withHidden = places(hidden: ["need"], grid: Self.phone)
+        #expect(onActions(withHidden, "take")?.screen == 2)
+        #expect(onActions(withHidden, "need") == nil)
         // On the iPad every page is one screen.
         #expect(onActions(places(), "take")?.screen == 1)
     }

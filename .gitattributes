@@ -10,3 +10,4 @@ tools/tile_sets/starter/*.png          filter=lfs diff=lfs merge=lfs -text
 tools/tile_sets/packcovers/*.png       filter=lfs diff=lfs merge=lfs -text
 tools/tile_sets/classic_chain_medium/*.png      filter=lfs diff=lfs merge=lfs -text
 tools/tile_sets/classic_chain_medium_dark/*.png filter=lfs diff=lfs merge=lfs -text
+tools/tile_sets/month_icons/**/*.png      filter=lfs diff=lfs merge=lfs -text

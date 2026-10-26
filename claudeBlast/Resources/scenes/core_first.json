@@ -1265,7 +1265,7 @@
             "playground",
             "store",
             "restaurant",
-            "doctor",
+            "doctors_office",
             "outside",
             "bathroom"
           ]
@@ -1421,8 +1421,8 @@
             "doll",
             "cars",
             "playdoh",
-            "ipad",
-            "video_game"
+            "games",
+            "cards"
           ]
         },
         {
@@ -1439,20 +1439,19 @@
         },
         {
           "keys": [
+            "ipad",
+            "phone",
+            "video_game",
             "slide",
             "swing",
             "trampoline",
-            "games",
-            "cards",
             "sports",
-            "art",
-            "crayons",
-            "markers",
-            "paper"
+            "balloon",
+            "teddy_bear"
           ]
         },
         {
-          "space": 1
+          "space": 2
         },
         {
           "link": "folder_art",
@@ -1462,12 +1461,14 @@
         },
         {
           "keys": [
-            "balloon",
-            "teddy_bear"
+            "art",
+            "crayons",
+            "markers",
+            "paper"
           ]
         },
         {
-          "space": 9
+          "space": 7
         },
         {
           "link": "folder_games",
@@ -5293,12 +5294,12 @@
           "keys": [
             "airport",
             "building",
-            "dentist",
+            "dentists_office",
             "hospital",
             "gas_station",
             "store",
             "restaurant",
-            "doctor",
+            "doctors_office",
             "outside",
             "bank"
           ]
@@ -6191,8 +6192,8 @@
             "doll",
             "cars",
             "playdoh",
-            "ipad",
-            "video_game"
+            "stuffed_animal",
+            "train_set"
           ]
         },
         {
@@ -6206,24 +6207,25 @@
         },
         {
           "keys": [
-            "stuffed_animal",
-            "train_set",
+            "ipad",
+            "phone",
+            "video_game",
             "dinosaur",
             "robot",
             "slime",
             "kinetic_sand",
-            "fidget",
-            "squishy",
-            "spinner"
+            "balloon",
+            "teddy_bear",
+            "fidget"
           ]
         },
         {
-          "space": 3
+          "space": 2
         },
         {
           "keys": [
-            "balloon",
-            "teddy_bear"
+            "squishy",
+            "spinner"
           ]
         }
       ]
@@ -6321,7 +6323,13 @@
           ]
         },
         {
-          "space": 5
+          "space": 10
+        },
+        {
+          "link": "folder_art",
+          "to": "play_art",
+          "audible": false,
+          "linkColor": "noun"
         },
         {
           "keys": [
@@ -6330,15 +6338,6 @@
             "markers",
             "paper"
           ]
-        },
-        {
-          "space": 1
-        },
-        {
-          "link": "folder_art",
-          "to": "play_art",
-          "audible": false,
-          "linkColor": "noun"
         }
       ]
     },
@@ -6428,21 +6427,22 @@
         },
         {
           "keys": [
-            "ipad",
-            "video_game"
-          ]
-        },
-        {
-          "space": 5
-        },
-        {
-          "keys": [
             "games",
             "cards"
           ]
         },
         {
-          "space": 18
+          "space": 2
+        },
+        {
+          "keys": [
+            "ipad",
+            "phone",
+            "video_game"
+          ]
+        },
+        {
+          "space": 20
         },
         {
           "link": "folder_games",
@@ -6547,7 +6547,7 @@
           ]
         },
         {
-          "space": 2
+          "space": 3
         },
         {
           "keys": [
@@ -6555,7 +6555,7 @@
           ]
         },
         {
-          "space": 29
+          "space": 28
         },
         {
           "link": "folder_sports",
@@ -6656,7 +6656,7 @@
           "linkColor": "noun"
         },
         {
-          "space": 1
+          "space": 4
         },
         {
           "keys": [
@@ -7684,17 +7684,23 @@
         },
         {
           "keys": [
-            "spring",
-            "summer",
-            "fall_",
             "winter",
             "january",
             "february",
-            "march_",
-            "april",
-            "may_",
-            "june"
+            "march_"
           ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "keys": [
+            "birthday",
+            "holiday"
+          ]
+        },
+        {
+          "space": 3
         },
         {
           "link": "folder_seasons",
@@ -7707,14 +7713,32 @@
         },
         {
           "keys": [
+            "spring",
+            "april",
+            "may_",
+            "june"
+          ]
+        },
+        {
+          "space": 8
+        },
+        {
+          "keys": [
+            "summer",
             "july",
             "august",
-            "september",
+            "september"
+          ]
+        },
+        {
+          "space": 8
+        },
+        {
+          "keys": [
+            "fall_",
             "october",
             "november",
-            "december",
-            "birthday",
-            "holiday"
+            "december"
           ]
         }
       ]

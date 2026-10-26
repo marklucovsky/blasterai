@@ -82,6 +82,8 @@ tools/tile_sets/current/
 tools/tile_sets/current_p3d/
 tools/tile_sets/current_arasaac/
 tools/tile_sets/current_classic/
+# fetch_reference_art.py: ARASAAC pictograms for review only. CC BY-NC-SA, never shipped.
+tools/reference_art/
 # build_review_page.py's copies of the shipped bundle, one per set prefix
 tools/tile_sets/current_*/
 

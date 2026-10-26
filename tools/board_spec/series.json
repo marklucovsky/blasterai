@@ -1,0 +1,14 @@
+{
+  "_doc": "Series tiles: each is an image edit of an existing tile, so a series shares one drawing and only the meaning changes (tools/draw_series.py). 'from' is the source key in the set's master folder, or with --from-dir a new candidate: tiny is an edit of the new huge (Mark: not big/little's elephant again), those of these. inside and on_top_of are not drawn: they reuse in and on through vocabulary.json's bundleImage, and a_lot reuses many.",
+  "above": {"from": "on", "edit": "Lift the red ball straight up so it floats high above the yellow box, with a clear gap of white between the ball and the box."},
+  "below": {"from": "on", "edit": "Swap their heights: the yellow box floats in the upper half of the tile and the red ball sits directly underneath it near the bottom, with a clear gap of white between them."},
+  "next_to": {"from": "on", "edit": "Move the red ball off the box and down to the ground, right beside the yellow box on its left, both resting on the same level, close but not touching."},
+  "tiny": {"from": "huge", "edit": "Move the short black arrow so it points at the tiny rowboat instead of the cruise ship. Both boats stay exactly the same."},
+  "your_turn": {"from": "my_turn", "edit": "The child on the left now holds the dice out toward the child on the right and points at them; it is the other child's turn."},
+  "those": {"from": "these", "edit": "Move the two red balls away from the child to the far right side of the tile, a little smaller but still clearly balls, sitting on a short ground line, and make the child point straight out at them instead of down at their feet."},
+  "tall": {"from": "short", "edit": "Remove the yellow glow behind the mouse and put the same yellow glow behind the giraffe instead."},
+  "medium": {"from": "folder_size", "edit": "Add one short black arrow above the middle ball, pointing down at it. The three balls stay exactly the same."},
+  "a_little": {"from": "folder_how_much", "edit": "Remove the full glass. Keep only the glass with a little water, moved to the centre of the tile."},
+  "both": {"from": "same", "edit": "Add one curved black bracket above the two apples that spans both of them, showing both together."},
+  "each": {"from": "same", "edit": "Add a short black arrow above each apple, one arrow per apple, each pointing down at its own apple."}
+}

@@ -86,7 +86,7 @@ enum WordPlaces {
         var result: [String: [WordPlace]] = [:]
         var seen = Set<String>()
         for page in pages {
-            let visible = page.tiles.filter { $0.isEmptyCell || !hidden.contains($0.key) }
+            let visible = TileEntry.holdingHiddenCells(page.tiles) { hidden.contains($0) }
             for (i, entry) in visible.enumerated() where !entry.isEmptyCell {
                 let route = routes[page.key]
                 let place = WordPlace(sceneName: scene.baseName,

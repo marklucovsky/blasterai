@@ -1,0 +1,19 @@
+{
+  "name": "2026-10-26-0947-gpt-6-luna-none-classes-after",
+  "label": "classes-after",
+  "model": "gpt-6-luna",
+  "effort": "none",
+  "judge": "gpt-6.1-sol",
+  "judge_effort": "low",
+  "judge_n": 1,
+  "samples": 3,
+  "commit": "9dd8c24+dirty",
+  "prompt_rev": "033c9d88c3",
+  "rubric_rev": "fc770a3add",
+  "rejudged_from": null,
+  "started": "2026-10-26T09:47:23",
+  "seconds": 96.2,
+  "outputs": 78,
+  "subject_cost": 0.003624265,
+  "judge_cost": 0.2012432
+}

@@ -69,6 +69,11 @@ WORDS = {
     "am": "am",
     "are": "are",
     "was": "was",
+    # Session 14 word pass. Text only where the word's home page is mostly
+    # text or it belongs to a text family (Mark, 2026-10-25): `an` sits with
+    # `a` and `the`. Every other new small word is a picture, because the pages
+    # around it are pictures; the months are render_months.py's calendar pages.
+    "an": "an",
 }
 
 # The words that set the shared point size. Frozen at the original five on
@@ -150,11 +155,55 @@ def shared_font_size(words, target_width, probe):
     return size
 
 
+# The widest a line may run before it shrinks: `another`, `September`.
+MAX_LINE = 0.86
+
+
+def fitted(word, size, probe):
+    """The lines to draw and the size to draw them at.
+
+    A word that fits at the set's size keeps it, so `of` and `the` match. A
+    phrase that does not fit on one line breaks at its space (`never / mind`)
+    and keeps the size if both halves fit. Only then does it shrink, and only as
+    far as it must: a long month is smaller than `May`, never larger.
+    """
+    def width(text, pt):
+        f = load_font(pt)
+        b = probe.textbbox((0, 0), text, font=f)
+        return b[2] - b[0]
+
+    def shrink(lines, pt):
+        while pt > 40 and max(width(l, pt) for l in lines) > SIZE * MAX_LINE:
+            pt -= 6
+        return pt
+
+    if width(word, size) <= SIZE * MAX_LINE:
+        return [word], size
+    one = shrink([word], size)
+    if " " not in word:
+        return [word], one
+    # A phrase takes whichever layout draws it larger: `never mind` reads
+    # better as two big lines than as one small one.
+    lines = word.split(" ", 1)
+    two = shrink(lines, size)
+    return (lines, two) if two > one else ([word], one)
+
+
 def render(word, style, size):
     s = STYLES[style]
     img = Image.new("RGB", (SIZE, SIZE), s["bg"])
     draw = ImageDraw.Draw(img)
+    lines, size = fitted(word, size, draw)
     font = load_font(size)
+    if len(lines) == 2:
+        ascent, descent = font.getmetrics()
+        line_h = ascent + descent
+        top = (SIZE - 2 * line_h) / 2
+        for i, line in enumerate(lines):
+            box = draw.textbbox((0, 0), line, font=font)
+            draw.text(((SIZE - (box[2] - box[0])) / 2 - box[0], top + i * line_h), line,
+                      font=font, fill=s["ink"])
+        return img
 
     # Centred on the FONT's vertical metrics, not on the word's own ink box.
     # Centring by ink puts `a` (no ascender, no descender) visually higher than
@@ -176,6 +225,8 @@ def main():
                     help="comma-separated keys to draw (default: all). Drawing only "
                          "new words leaves existing masters untouched, so the drift "
                          "check doesn't see them as changed.")
+    ap.add_argument("--out-root", default="tools/tile_sets",
+                    help="write <out-root>/<set>/<key>.png; a staging folder for review")
     args = ap.parse_args()
     only = {k.strip() for k in args.keys.split(",") if k.strip()}
     if only - set(WORDS):
@@ -184,7 +235,7 @@ def main():
     for style in [s.strip() for s in args.sets.split(",") if s.strip()]:
         if style not in STYLES:
             sys.exit(f"unknown set {style!r}; known: {', '.join(STYLES)}")
-        out = Path("tools/tile_sets") / style
+        out = Path(args.out_root) / style
         out.mkdir(parents=True, exist_ok=True)
         probe = ImageDraw.Draw(Image.new("RGB", (SIZE, SIZE)))
         size = shared_font_size([WORDS[k] for k in SIZING_WORDS], SIZE * 0.74, probe)

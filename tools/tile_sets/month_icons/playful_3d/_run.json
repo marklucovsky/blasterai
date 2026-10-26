@@ -1,0 +1,14 @@
+{
+  "model": "gpt-image-2",
+  "quality": "medium",
+  "pack": [
+    "cookie",
+    "hot",
+    "mom",
+    "play"
+  ],
+  "drawn": 12,
+  "copied": [],
+  "failed": [],
+  "finished": "2026-10-25 22:00"
+}

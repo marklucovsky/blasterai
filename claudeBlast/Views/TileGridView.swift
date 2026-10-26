@@ -470,16 +470,11 @@ struct TileGridView: View {
             // on page 4 of a long board as on page 1. `max(1,)` guards a
             // pathologically small grid.
             let vocabPerPage = max(1, spec.perPage - 1)
-            // Two different hides, and only one of them removes a cell.
-            //
-            // `isHiddenFromChild` (retired / needs review) is the word-level
-            // safety hide: the tile leaves the board everywhere and the grid
-            // reflows around it. `TileEntry.isConcealed` and spacers are
-            // placement-level and must NOT be filtered here — they keep their
-            // cell and draw empty, which is the entire point. Filtering them
+            // Nothing is filtered out: a hidden word, a concealed placement and
+            // a spacer all keep their cell and draw empty. Removing any of them
             // would reflow the board and move every word the child had learned.
-            let visible = page.tiles.filter { entry in
-                entry.isEmptyCell || lookup[entry.key]?.isHiddenFromChild != true
+            let visible = TileEntry.holdingHiddenCells(page.tiles) {
+                lookup[$0]?.isHiddenFromChild == true
             }
             // ALWAYS at least one chunk, even with nothing to put in it.
             //

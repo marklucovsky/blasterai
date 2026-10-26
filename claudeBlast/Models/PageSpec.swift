@@ -145,10 +145,10 @@ struct TileEntry: Codable, Hashable, Identifiable {
     /// ## Conceal is not hide
     ///
     /// `TileModel.isHiddenFromChild` (retired / needs review) is the *word*-level
-    /// safety hide: the tile is filtered out of the grid entirely, everywhere,
-    /// and the board reflows around the gap. This is the opposite, and it is
-    /// per-*placement*: the cell stays exactly where it is, and the same word can
-    /// be concealed on the school board and available at home.
+    /// safety hide: the word is off every board at once. Conceal is
+    /// per-*placement*: the same word can be concealed on the school board and
+    /// available at home. Both draw the same empty cell — see
+    /// `holdingHiddenCells` for why a hidden word no longer reflows the board.
     ///
     /// ## Why hold the cell rather than remove the tile
     ///
@@ -252,6 +252,28 @@ struct TileEntry: Codable, Hashable, Identifiable {
     /// Draws as an empty cell on the child's board, and does not respond to a
     /// tap. Both kinds still consume their real estate — that is the point.
     var isEmptyCell: Bool { isConcealed || isSpacer }
+
+    /// A page's placements as the child's board draws them: a word hidden from
+    /// the child (retired / needs review) becomes a concealed cell instead of
+    /// leaving the list.
+    ///
+    /// The board used to filter hidden words out and reflow. On BlasterAI 60,
+    /// with its folder column pinned to columns 11–12, one hidden `tractor` slid
+    /// the Vehicles folder into column 10 and `car` up under the keyboard.
+    /// Changing the grid is an explicit act on the grid (conceal, remove, move
+    /// in the editor), never a side effect of hiding a word in the vocabulary.
+    /// Every surface that lays out a board — the child grid, the coverage grid,
+    /// the scene preview, Find a word's screen numbers — goes through this, so
+    /// they cannot disagree about where a word is.
+    static func holdingHiddenCells(_ tiles: [TileEntry],
+                                   isHidden: (String) -> Bool) -> [TileEntry] {
+        tiles.map { entry in
+            guard !entry.isEmptyCell, isHidden(entry.key) else { return entry }
+            var held = entry
+            held.isConcealed = true
+            return held
+        }
+    }
 
     // MARK: - Codable
 

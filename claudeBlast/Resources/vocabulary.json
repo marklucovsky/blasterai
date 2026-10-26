@@ -17,7 +17,7 @@
   },
   {
     "key": "afternoon",
-    "wordClass": "object"
+    "wordClass": "time"
   },
   {
     "key": "again",
@@ -45,7 +45,7 @@
   },
   {
     "key": "always",
-    "wordClass": "describe"
+    "wordClass": "time"
   },
   {
     "key": "am",
@@ -65,7 +65,7 @@
   },
   {
     "key": "animals",
-    "wordClass": "object"
+    "wordClass": "animal"
   },
   {
     "key": "answer",
@@ -93,7 +93,7 @@
   },
   {
     "key": "around",
-    "wordClass": "describe"
+    "wordClass": "core"
   },
   {
     "key": "art",
@@ -194,7 +194,7 @@
   },
   {
     "key": "behind",
-    "wordClass": "describe"
+    "wordClass": "core"
   },
   {
     "key": "best",
@@ -206,7 +206,7 @@
   },
   {
     "key": "between",
-    "wordClass": "describe"
+    "wordClass": "core"
   },
   {
     "key": "bicycle",
@@ -582,7 +582,7 @@
   },
   {
     "key": "day",
-    "wordClass": "object"
+    "wordClass": "time"
   },
   {
     "key": "describe",
@@ -610,7 +610,7 @@
   },
   {
     "key": "doctor",
-    "wordClass": "places"
+    "wordClass": "people"
   },
   {
     "key": "dog",
@@ -622,7 +622,7 @@
   },
   {
     "key": "don't",
-    "wordClass": "social"
+    "wordClass": "core"
   },
   {
     "key": "door",
@@ -754,7 +754,7 @@
   },
   {
     "key": "feelings",
-    "wordClass": "object"
+    "wordClass": "feeling"
   },
   {
     "key": "fever",
@@ -762,7 +762,7 @@
   },
   {
     "key": "few",
-    "wordClass": "describe"
+    "wordClass": "core"
   },
   {
     "key": "find",
@@ -1148,7 +1148,7 @@
   },
   {
     "key": "ipad",
-    "wordClass": "toy"
+    "wordClass": "object"
   },
   {
     "key": "is",
@@ -1208,7 +1208,7 @@
   },
   {
     "key": "later",
-    "wordClass": "describe"
+    "wordClass": "time"
   },
   {
     "key": "laundry",
@@ -1236,7 +1236,7 @@
   },
   {
     "key": "music",
-    "wordClass": "object"
+    "wordClass": "art"
   },
   {
     "key": "nurse",
@@ -1244,7 +1244,7 @@
   },
   {
     "key": "one",
-    "wordClass": "core"
+    "wordClass": "number"
   },
   {
     "key": "our",
@@ -1348,7 +1348,7 @@
   },
   {
     "key": "lonely",
-    "wordClass": "describe"
+    "wordClass": "feeling"
   },
   {
     "key": "long",
@@ -1376,7 +1376,7 @@
   },
   {
     "key": "lunch",
-    "wordClass": "places"
+    "wordClass": "food"
   },
   {
     "key": "macaroni",
@@ -1392,7 +1392,7 @@
   },
   {
     "key": "many",
-    "wordClass": "describe"
+    "wordClass": "core"
   },
   {
     "key": "markers",
@@ -1444,11 +1444,11 @@
   },
   {
     "key": "more",
-    "wordClass": "describe"
+    "wordClass": "core"
   },
   {
     "key": "morning",
-    "wordClass": "object"
+    "wordClass": "time"
   },
   {
     "key": "mouth",
@@ -1472,7 +1472,7 @@
   },
   {
     "key": "near",
-    "wordClass": "describe"
+    "wordClass": "core"
   },
   {
     "key": "need",
@@ -1480,7 +1480,7 @@
   },
   {
     "key": "never",
-    "wordClass": "describe"
+    "wordClass": "time"
   },
   {
     "key": "new",
@@ -1504,7 +1504,7 @@
   },
   {
     "key": "night",
-    "wordClass": "object"
+    "wordClass": "time"
   },
   {
     "key": "no",
@@ -1520,11 +1520,11 @@
   },
   {
     "key": "not",
-    "wordClass": "describe"
+    "wordClass": "core"
   },
   {
     "key": "now",
-    "wordClass": "describe"
+    "wordClass": "time"
   },
   {
     "key": "nuggets",
@@ -1572,7 +1572,7 @@
   },
   {
     "key": "or",
-    "wordClass": "describe"
+    "wordClass": "core"
   },
   {
     "key": "orange",
@@ -1596,7 +1596,7 @@
   },
   {
     "key": "over",
-    "wordClass": "describe"
+    "wordClass": "core"
   },
   {
     "key": "paint",
@@ -1874,7 +1874,7 @@
   },
   {
     "key": "sick",
-    "wordClass": "feeling"
+    "wordClass": "health"
   },
   {
     "key": "silly",
@@ -1961,11 +1961,11 @@
   },
   {
     "key": "sometimes",
-    "wordClass": "describe"
+    "wordClass": "time"
   },
   {
     "key": "soon",
-    "wordClass": "describe"
+    "wordClass": "time"
   },
   {
     "key": "sore_throat",
@@ -2049,7 +2049,7 @@
   },
   {
     "key": "surprised",
-    "wordClass": "describe"
+    "wordClass": "feeling"
   },
   {
     "key": "swim",
@@ -2126,7 +2126,7 @@
   },
   {
     "key": "there",
-    "wordClass": "describe"
+    "wordClass": "core"
   },
   {
     "key": "they",
@@ -2151,11 +2151,11 @@
   },
   {
     "key": "this",
-    "wordClass": "describe"
+    "wordClass": "core"
   },
   {
     "key": "through",
-    "wordClass": "describe"
+    "wordClass": "core"
   },
   {
     "key": "throw",
@@ -2167,7 +2167,7 @@
   },
   {
     "key": "time",
-    "wordClass": "object"
+    "wordClass": "time"
   },
   {
     "key": "tired",
@@ -2184,7 +2184,7 @@
   },
   {
     "key": "today",
-    "wordClass": "describe"
+    "wordClass": "time"
   },
   {
     "key": "together",
@@ -2200,11 +2200,11 @@
   },
   {
     "key": "tomorrow",
-    "wordClass": "describe"
+    "wordClass": "time"
   },
   {
     "key": "tonight",
-    "wordClass": "describe"
+    "wordClass": "time"
   },
   {
     "key": "tooth",
@@ -2286,7 +2286,7 @@
   },
   {
     "key": "under",
-    "wordClass": "describe"
+    "wordClass": "core"
   },
   {
     "key": "understand",
@@ -2375,11 +2375,11 @@
   },
   {
     "key": "week",
-    "wordClass": "object"
+    "wordClass": "time"
   },
   {
     "key": "weekend",
-    "wordClass": "object"
+    "wordClass": "time"
   },
   {
     "key": "wet",
@@ -2475,7 +2475,7 @@
   },
   {
     "key": "yesterday",
-    "wordClass": "describe"
+    "wordClass": "time"
   },
   {
     "key": "yogurt",
@@ -2661,7 +2661,7 @@
   },
   {
     "key": "cant",
-    "wordClass": "actions",
+    "wordClass": "core",
     "label": "can't"
   },
   {
@@ -2682,11 +2682,11 @@
   },
   {
     "key": "could",
-    "wordClass": "actions"
+    "wordClass": "core"
   },
   {
     "key": "would",
-    "wordClass": "actions"
+    "wordClass": "core"
   },
   {
     "key": "kid",
@@ -3184,35 +3184,38 @@
   },
   {
     "key": "above",
-    "wordClass": "describe"
+    "wordClass": "core"
   },
   {
     "key": "below",
-    "wordClass": "describe"
+    "wordClass": "core"
   },
   {
     "key": "next_to",
-    "wordClass": "describe"
+    "wordClass": "core"
   },
   {
     "key": "on_top_of",
-    "wordClass": "describe"
+    "wordClass": "core",
+    "bundleImage": "on"
   },
   {
     "key": "inside",
-    "wordClass": "describe"
+    "wordClass": "core",
+    "bundleImage": "in"
   },
   {
     "key": "a_lot",
-    "wordClass": "describe"
+    "wordClass": "core",
+    "bundleImage": "many"
   },
   {
     "key": "both",
-    "wordClass": "describe"
+    "wordClass": "core"
   },
   {
     "key": "each",
-    "wordClass": "describe"
+    "wordClass": "core"
   },
   {
     "key": "almost",
@@ -3220,7 +3223,7 @@
   },
   {
     "key": "sleepy",
-    "wordClass": "describe"
+    "wordClass": "feeling"
   },
   {
     "key": "stuck",
@@ -3292,15 +3295,15 @@
   },
   {
     "key": "dizzy",
-    "wordClass": "feeling"
+    "wordClass": "health"
   },
   {
     "key": "a_little",
-    "wordClass": "feeling"
+    "wordClass": "core"
   },
   {
     "key": "kind_of",
-    "wordClass": "feeling"
+    "wordClass": "core"
   },
   {
     "key": "garage",
@@ -3373,6 +3376,16 @@
     "wordClass": "places"
   },
   {
+    "key": "doctors_office",
+    "wordClass": "places",
+    "label": "doctor's office"
+  },
+  {
+    "key": "dentists_office",
+    "wordClass": "places",
+    "label": "dentist's office"
+  },
+  {
     "key": "gas_station",
     "wordClass": "places"
   },
@@ -3398,7 +3411,7 @@
   },
   {
     "key": "already",
-    "wordClass": "describe"
+    "wordClass": "time"
   },
   {
     "key": "hail",
@@ -3410,46 +3423,46 @@
   },
   {
     "key": "monday",
-    "wordClass": "object",
+    "wordClass": "time",
     "label": "Monday"
   },
   {
     "key": "tuesday",
-    "wordClass": "object",
+    "wordClass": "time",
     "label": "Tuesday"
   },
   {
     "key": "wednesday",
-    "wordClass": "object",
+    "wordClass": "time",
     "label": "Wednesday"
   },
   {
     "key": "thursday",
-    "wordClass": "object",
+    "wordClass": "time",
     "label": "Thursday"
   },
   {
     "key": "friday",
-    "wordClass": "object",
+    "wordClass": "time",
     "label": "Friday"
   },
   {
     "key": "saturday",
-    "wordClass": "object",
+    "wordClass": "time",
     "label": "Saturday"
   },
   {
     "key": "sunday",
-    "wordClass": "object",
+    "wordClass": "time",
     "label": "Sunday"
   },
   {
     "key": "breakfast",
-    "wordClass": "object"
+    "wordClass": "food"
   },
   {
     "key": "dinner",
-    "wordClass": "object"
+    "wordClass": "food"
   },
   {
     "key": "bath",
@@ -3457,136 +3470,136 @@
   },
   {
     "key": "bath_time",
-    "wordClass": "object"
+    "wordClass": "time"
   },
   {
     "key": "bedtime",
-    "wordClass": "object"
+    "wordClass": "time"
   },
   {
     "key": "school_day",
-    "wordClass": "object"
+    "wordClass": "time"
   },
   {
     "key": "early",
-    "wordClass": "describe"
+    "wordClass": "time"
   },
   {
     "key": "late",
-    "wordClass": "describe"
+    "wordClass": "time"
   },
   {
     "key": "schedule",
-    "wordClass": "object"
+    "wordClass": "time"
   },
   {
     "key": "clock",
-    "wordClass": "object"
+    "wordClass": "time"
   },
   {
     "key": "hour",
-    "wordClass": "object"
+    "wordClass": "time"
   },
   {
     "key": "minute",
-    "wordClass": "object"
+    "wordClass": "time"
   },
   {
     "key": "oclock",
-    "wordClass": "object",
+    "wordClass": "time",
     "label": "o'clock"
   },
   {
     "key": "half_past",
-    "wordClass": "object"
+    "wordClass": "time"
   },
   {
     "key": "timer",
-    "wordClass": "object"
+    "wordClass": "time"
   },
   {
     "key": "spring",
-    "wordClass": "object"
+    "wordClass": "time"
   },
   {
     "key": "summer",
-    "wordClass": "object"
+    "wordClass": "time"
   },
   {
     "key": "fall_",
-    "wordClass": "object"
+    "wordClass": "time"
   },
   {
     "key": "winter",
-    "wordClass": "object"
+    "wordClass": "time"
   },
   {
     "key": "january",
-    "wordClass": "object",
+    "wordClass": "time",
     "label": "January"
   },
   {
     "key": "february",
-    "wordClass": "object",
+    "wordClass": "time",
     "label": "February"
   },
   {
     "key": "march_",
-    "wordClass": "object",
+    "wordClass": "time",
     "label": "March"
   },
   {
     "key": "april",
-    "wordClass": "object",
+    "wordClass": "time",
     "label": "April"
   },
   {
     "key": "may_",
-    "wordClass": "object",
+    "wordClass": "time",
     "label": "May"
   },
   {
     "key": "june",
-    "wordClass": "object",
+    "wordClass": "time",
     "label": "June"
   },
   {
     "key": "july",
-    "wordClass": "object",
+    "wordClass": "time",
     "label": "July"
   },
   {
     "key": "august",
-    "wordClass": "object",
+    "wordClass": "time",
     "label": "August"
   },
   {
     "key": "september",
-    "wordClass": "object",
+    "wordClass": "time",
     "label": "September"
   },
   {
     "key": "october",
-    "wordClass": "object",
+    "wordClass": "time",
     "label": "October"
   },
   {
     "key": "november",
-    "wordClass": "object",
+    "wordClass": "time",
     "label": "November"
   },
   {
     "key": "december",
-    "wordClass": "object",
+    "wordClass": "time",
     "label": "December"
   },
   {
     "key": "birthday",
-    "wordClass": "object"
+    "wordClass": "time"
   },
   {
     "key": "holiday",
-    "wordClass": "object"
+    "wordClass": "time"
   },
   {
     "key": "bread",
@@ -4191,71 +4204,71 @@
   },
   {
     "key": "tree",
-    "wordClass": "object"
+    "wordClass": "plant"
   },
   {
     "key": "flower",
-    "wordClass": "object"
+    "wordClass": "plant"
   },
   {
     "key": "plant",
-    "wordClass": "object"
+    "wordClass": "plant"
   },
   {
     "key": "leaf",
-    "wordClass": "object"
+    "wordClass": "plant"
   },
   {
     "key": "grass",
-    "wordClass": "object"
+    "wordClass": "plant"
   },
   {
     "key": "rock",
-    "wordClass": "object"
+    "wordClass": "nature"
   },
   {
     "key": "stick",
-    "wordClass": "object"
+    "wordClass": "nature"
   },
   {
     "key": "dirt",
-    "wordClass": "object"
+    "wordClass": "nature"
   },
   {
     "key": "mud",
-    "wordClass": "object"
+    "wordClass": "nature"
   },
   {
     "key": "puddle",
-    "wordClass": "object"
+    "wordClass": "nature"
   },
   {
     "key": "hill",
-    "wordClass": "object"
+    "wordClass": "nature"
   },
   {
     "key": "sky",
-    "wordClass": "object"
+    "wordClass": "nature"
   },
   {
     "key": "moon",
-    "wordClass": "object"
+    "wordClass": "nature"
   },
   {
     "key": "street",
-    "wordClass": "object"
+    "wordClass": "places"
   },
   {
     "key": "sidewalk",
-    "wordClass": "object"
+    "wordClass": "places"
   },
   {
     "key": "shovel",
-    "wordClass": "object"
+    "wordClass": "play"
   },
   {
     "key": "bucket",
-    "wordClass": "object"
+    "wordClass": "play"
   },
   {
     "key": "hose",
@@ -4263,11 +4276,11 @@
   },
   {
     "key": "snowman",
-    "wordClass": "object"
+    "wordClass": "play"
   },
   {
     "key": "pen",
-    "wordClass": "object"
+    "wordClass": "art"
   },
   {
     "key": "backpack",
