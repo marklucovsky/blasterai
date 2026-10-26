@@ -131,10 +131,10 @@ struct CoverageGridView: View {
 
     // MARK: - Board layout
 
-    /// The cells the board would draw: retired and unreviewed words are gone,
-    /// spacers and concealed cells keep their place. Same rule as the board.
+    /// The cells the board would draw: retired and unreviewed words, spacers
+    /// and concealed cells all keep their place, empty. Same rule as the board.
     private func drawn(_ board: Board) -> [TileEntry] {
-        board.entries.filter { $0.isEmptyCell || lookup[$0.key]?.isHiddenFromChild != true }
+        TileEntry.holdingHiddenCells(board.entries) { lookup[$0]?.isHiddenFromChild == true }
     }
 
     @ViewBuilder

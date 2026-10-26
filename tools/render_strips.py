@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2026 Mark Lucovsky
-"""Draw the day-strip tiles: today, tomorrow, yesterday, week, weekend.
+"""Draw the day-strip tiles: today, tomorrow, yesterday, week, weekend, and
+the seven named days.
 
     python3 tools/render_strips.py --sets classic,playful_3d,high_contrast
 
@@ -49,6 +50,13 @@ RED = (214, 43, 40)            # today
 GREEN = (44, 160, 62)          # tomorrow
 BLUE = (22, 104, 209)          # yesterday
 ORANGE = (240, 138, 22)        # the weekend pair
+
+# The named days (session 14). The week runs Monday to Sunday, which is what
+# puts the weekend in the last two cells, and a day is its own cell filled with
+# the set's ink: a position, not a colour, because red, green, blue and orange
+# already mean today, tomorrow, yesterday and the weekend.
+DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+STRIP_KEYS = ["today", "tomorrow", "yesterday", "week", "weekend"]
 
 STYLES = {
     # bg, cell fill, stroke, stroke width, corner radius, shadow
@@ -128,6 +136,8 @@ def render(key, style):
         fills = {CELLS - 2: ORANGE, CELLS - 1: ORANGE}
     elif key == "week":
         fills = {}
+    elif key in DAYS:
+        fills = {DAYS.index(key): s["stroke"]}
     else:
         raise ValueError(key)
 
@@ -160,14 +170,22 @@ def render(key, style):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--sets", default=",".join(STYLES))
+    ap.add_argument("--keys", default="",
+                    help="comma-separated keys (default: all). Drawing only new keys "
+                         "leaves shipped masters untouched, so drift sees no change.")
+    ap.add_argument("--out-root", default="tools/tile_sets",
+                    help="write <out-root>/<set>/<key>.png; a staging folder for review")
     args = ap.parse_args()
+    only = [k.strip() for k in args.keys.split(",") if k.strip()]
+    if set(only) - set(STRIP_KEYS + DAYS):
+        sys.exit(f"unknown key(s): {', '.join(sorted(set(only) - set(STRIP_KEYS + DAYS)))}")
 
     for style in [s.strip() for s in args.sets.split(",") if s.strip()]:
         if style not in STYLES:
             sys.exit(f"unknown set {style!r}; known: {', '.join(STYLES)}")
-        out = Path("tools/tile_sets") / style
+        out = Path(args.out_root) / style
         out.mkdir(parents=True, exist_ok=True)
-        for key in ("today", "tomorrow", "yesterday", "week", "weekend"):
+        for key in only or STRIP_KEYS + DAYS:
             render(key, style).save(out / f"{key}.png")
             print(f"✓ {style}/{key}.png  (7 cells, drawn)")
 

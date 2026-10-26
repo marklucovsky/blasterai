@@ -131,7 +131,7 @@ class Board:
             for f in page.get("folders", []):
                 if "words" in f:
                     self.pages[f["page"]] = {"parent": parent, "words": f["words"], "label": f["key"],
-                                             "folders": f.get("folders", [])}
+                                             "folders": f.get("folders", []), "at": f.get("at", {})}
                     add_folders(f["page"], f)
 
         for key, page in self.spec["pages"].items():

@@ -66,7 +66,7 @@ def image_stamp(path: Path) -> str:
 
 
 def build_page(set_name: str, compare: list[str] | None = None,
-               label: str | None = None) -> Path:
+               label: str | None = None, only: list[str] | None = None) -> Path:
     vocab = json.loads(VOCAB_FILE.read_text())
     set_dir = OUTPUT_BASE / set_name
     set_prefix = SET_PREFIX.get(set_name, set_name)
@@ -100,6 +100,10 @@ def build_page(set_name: str, compare: list[str] | None = None,
     cover_slugs = [e["slug"] for e in catalog]
     for slug in cover_slugs:
         entries.append((f"packcover_{slug}", "pack cover", slug))
+    # A batch review shows just its words, in the batch's order.
+    if only:
+        order = {k: i for i, k in enumerate(only)}
+        entries = sorted((e for e in entries if e[0] in order), key=lambda e: order[e[0]])
 
     # Local copies of the two shipping sets so the browser can load them.
     # The comparison baseline is Playful-3D + Classic — the sets a user can
@@ -236,6 +240,7 @@ body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans
 }}
 .card:hover {{ box-shadow: 0 4px 16px rgba(0,0,0,0.12); }}
 .card.cursor {{ outline: 3px solid #007aff; outline-offset: 2px; }}
+.keys {{ font-size: 12px; color: #666; width: 100%; }}
 .card.approved {{ border-left: 4px solid #34c759; }}
 .card.rejected {{ border-left: 4px solid #ff3b30; }}
 /* Rejected, and the art has since been regenerated — still rejected so it
@@ -333,6 +338,9 @@ body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans
     <button onclick="exportAll()">Export Full Review</button>
     <div class="progress-bar"><div class="fill" id="progressFill"></div></div>
     <div class="stats" id="stats"></div>
+    <div class="keys">Keys: <b>n</b>/<b>&rarr;</b> next &middot; <b>p</b>/<b>&larr;</b> previous &middot;
+        <b>Enter</b>/<b>a</b> approve + next &middot; <b>x</b>/<b>r</b> reject + type why &middot;
+        <b>Esc</b> leave a box</div>
 </div>
 
 <div class="grid" id="grid"></div>
@@ -618,8 +626,14 @@ document.getElementById("grid").addEventListener("click", e => {{
     }}
 }});
 document.addEventListener("keydown", e => {{
-    if (e.key === "Escape") return closeLightbox();
-    if (e.target.matches("input, select, textarea")) {{
+    // Only a box you type into keeps the keys. A checkbox or a filter menu
+    // kept focus after a click and silently swallowed every shortcut.
+    const typing = e.target.matches && e.target.matches("textarea, input[type=text], input:not([type])");
+    if (e.key === "Escape") {{
+        if (typing) e.target.blur();
+        return closeLightbox();
+    }}
+    if (typing) {{
         // Enter in a comment saves it and hands the keys back to the cursor.
         if (e.key === "Enter" && e.target.classList.contains("comment-input")) {{
             e.target.blur();
@@ -627,14 +641,17 @@ document.addEventListener("keydown", e => {{
         return;
     }}
     if (e.metaKey || e.ctrlKey || e.altKey) return;
-    if (e.key === "n") {{ e.preventDefault(); step(1); }}
-    else if (e.key === "p") {{ e.preventDefault(); step(-1); }}
-    else if (e.key === "Enter" && cursorKey) {{
+    const onMenu = e.target.matches && e.target.matches("select");
+    if (onMenu && (e.key === "ArrowUp" || e.key === "ArrowDown")) return;   // the menu's own keys
+    if (e.target.blur && e.target !== document.body) e.target.blur();
+    if (e.key === "n" || e.key === "ArrowRight") {{ e.preventDefault(); step(1); }}
+    else if (e.key === "p" || e.key === "ArrowLeft") {{ e.preventDefault(); step(-1); }}
+    else if ((e.key === "Enter" || e.key === "a") && cursorKey) {{
         e.preventDefault();
         setState(cursorKey, {{status: "approved"}});
         step(1);
     }}
-    else if (e.key === "x" && cursorKey) {{
+    else if ((e.key === "x" || e.key === "r") && cursorKey) {{
         e.preventDefault();
         setState(cursorKey, {{status: "rejected"}});
         document.querySelector("#card-" + CSS.escape(cursorKey) + " .comment-input").focus();
@@ -668,10 +685,13 @@ def main():
                         help="comparison column from a folder under tools/tile_sets, in order "
                              "(repeatable); replaces the shipped-set columns")
     parser.add_argument("--label", help="heading for the column under review")
+    parser.add_argument("--keys-file", type=Path,
+                        help="review only these keys, in this order (one batch of new words)")
     args = parser.parse_args()
 
     print(f"\nBuilding review page for {args.set}...")
-    path = build_page(args.set, compare=args.compare, label=args.label)
+    only = args.keys_file.read_text().split() if args.keys_file else None
+    path = build_page(args.set, compare=args.compare, label=args.label, only=only)
     if not args.no_open:
         webbrowser.open(f"file://{path.resolve()}")
 

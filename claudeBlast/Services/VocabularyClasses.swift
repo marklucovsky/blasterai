@@ -69,9 +69,17 @@ enum VocabularyClasses {
         // "cookie") already tells the model what it is; the sub-class did not.
         VocabularyClass(name: "food", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
         VocabularyClass(name: "plant", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
+        // The outdoors that is neither growing nor weather: rock, mud, puddle,
+        // hill, sky, moon. Without it these fell into `object`.
+        VocabularyClass(name: "nature", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
         VocabularyClass(name: "drinks", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
         VocabularyClass(name: "places", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
         VocabularyClass(name: "weather", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
+        // Days, months, seasons, parts of the day, clock words, and when-words
+        // (today, later). The class rides into the sentence prompt, and "fall
+        // (object)" read as a dropped thing; "fall (time)" reads as autumn.
+        // Colour still comes from the bundled part-of-speech table.
+        VocabularyClass(name: "time", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
         VocabularyClass(name: "colors", defaultPartOfSpeech: .adjective, isCaregiverSelectable: true),
         VocabularyClass(name: "shape", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
         VocabularyClass(name: "body", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),

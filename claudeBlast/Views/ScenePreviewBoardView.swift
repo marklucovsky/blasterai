@@ -44,10 +44,10 @@ struct ScenePreviewBoardView: View {
             deviceLayout: BoardLayout(rawValue: boardLayoutRaw) ?? .standard)
     }
 
-    /// The tiles the board would draw: retired and unreviewed words are gone,
-    /// spacers and concealed cells keep their place.
+    /// The tiles the board would draw: retired and unreviewed words, spacers
+    /// and concealed cells all keep their place, empty.
     private func visibleTiles(_ page: PageSpec) -> [TileEntry] {
-        page.tiles.filter { $0.isEmptyCell || tileLookup[$0.key]?.isHiddenFromChild != true }
+        TileEntry.holdingHiddenCells(page.tiles) { tileLookup[$0]?.isHiddenFromChild == true }
     }
 
     var body: some View {

@@ -209,8 +209,9 @@ def page_refine_body(instruction: str, page_name: str, current_tiles: list[dict]
 
 def tile_suggest_body(goal: str) -> dict:
     system = render("tile_suggest_system", _class_values())
-    # Unlike the other generators, suggestions list the vocabulary unfiltered.
-    user = render("tile_suggest_user", {"goal": goal, "vocab_block": app_inputs()["vocab_block_all"]})
+    # Folder and navigation tiles are left out, as in the other generators
+    # (TileSuggestionService.buildVocabBlock, since #150).
+    user = render("tile_suggest_user", {"goal": goal, "vocab_block": app_inputs()["vocab_block"]})
     return _chat("gpt-4o-mini", 0.4, _two(system, user), 700)
 
 

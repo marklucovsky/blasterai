@@ -52,64 +52,9 @@ struct ImageSetCoverageTests {
     /// vocabulary. It's excluded from the coverage bar entirely rather than
     /// allowlisted. The map stays for any future shippable set that needs a
     /// temporary tracked-gap window; the test fails on any NEW gap.
-    ///
-    /// **Open window, session 14:** BlasterAI 60's new folder tiles have Classic
-    /// art only, so the structure could be judged before every style was drawn
-    /// (Mark's call). The other sets fall back to Classic's picture for them.
-    /// They close in the word pass, when the other four styles are drawn.
-    private static let folderTiles: Set<String> = [
-        "folder_small_words", "folder_moving", "folder_taking_care", "folder_talking",
-        "folder_thinking", "folder_playing", "folder_cooking", "folder_senses", "folder_doing",
-        "folder_size", "folder_how_it_feels", "folder_opinions", "folder_where", "folder_how_much",
-        "folder_what_its_like", "folder_house", "folder_school", "folder_fun_places",
-        "folder_out_and_about",
-        "folder_breakfast", "folder_lunch_dinner", "folder_fruit", "folder_veggies", "folder_snacks",
-        "folder_family", "folder_toys", "folder_art", "folder_games", "folder_sports",
-        "folder_outside_play",
-    ]
-    /// **Open window, session 14 word pass:** the words of
-    /// `tools/board_spec/word_pass_1.json` landed before their art (Mark's
-    /// order: structure, then words, then images), in every set, Classic
-    /// included. Read from the pass itself, so the window is exactly that list
-    /// and closes when the images PR deletes this.
-    private static let awaitingArt: Set<String> = {
-        let url = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-            .appendingPathComponent("tools/board_spec/word_pass_1.json")
-        struct Pass: Decodable {
-            struct Folder: Decodable { let key: String }
-            struct Page: Decodable { let folder: Folder?; let words: [Word] }
-            let pages: [Page]
-        }
-        /// A word, or a run of words: `"key|Label"` or `["key", …]`.
-        enum Word: Decodable {
-            case one(String), run([String])
-            init(from decoder: Decoder) throws {
-                let c = try decoder.singleValueContainer()
-                if let s = try? c.decode(String.self) { self = .one(s) } else { self = .run(try c.decode([String].self)) }
-            }
-            var keys: [String] {
-                switch self { case .one(let s): [s]; case .run(let r): r }
-            }
-        }
-        guard let data = try? Data(contentsOf: url),
-              let pass = try? JSONDecoder().decode(Pass.self, from: data) else { return [] }
-        let words = pass.pages.flatMap { $0.words.flatMap(\.keys) }
-            .map { String($0.split(separator: "|", maxSplits: 1)[0]) }
-        return Set(words + pass.pages.compactMap(\.folder?.key))
-    }()
-
-    private static let knownIncompleteShippable: [String: Set<String>] = [
-        "classic": awaitingArt,
-        "classic_medium": folderTiles.union(awaitingArt),
-        "classic_medium_dark": folderTiles.union(awaitingArt),
-        "playful_3d": folderTiles.union(awaitingArt),
-        "high_contrast": folderTiles.union(awaitingArt),
-    ]
-
-    @Test func theWordPassIsReadable() {
-        #expect(Self.awaitingArt.count > 400, "word_pass_1.json not found or empty: \(Self.awaitingArt.count)")
-    }
+    /// Session 14's folder and word-pass windows closed in the images PR,
+    /// when every style was drawn.
+    private static let knownIncompleteShippable: [String: Set<String>] = [:]
 
     /// Every distinct tile key introduced by a bundled pack/starter scene
     /// (starter_*.json, pack_*.json). These are the "extension" words beyond core

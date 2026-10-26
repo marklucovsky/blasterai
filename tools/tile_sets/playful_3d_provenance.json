@@ -36,7 +36,29 @@
     "heart": "render_shapes.py",
     "octagon": "render_shapes.py",
     "colors": "render_categories.py",
-    "shape": "render_categories.py"
+    "shape": "render_categories.py",
+    "friday": "render_strips.py",
+    "monday": "render_strips.py",
+    "saturday": "render_strips.py",
+    "sunday": "render_strips.py",
+    "thursday": "render_strips.py",
+    "tuesday": "render_strips.py",
+    "wednesday": "render_strips.py",
+    "half_past": "render_clocks.py",
+    "oclock": "render_clocks.py",
+    "an": "render_word_glyphs.py",
+    "april": "render_months.py (picture: tools/tile_sets/month_icons, prompts in tools/board_spec/month_icons.json)",
+    "august": "render_months.py (picture: tools/tile_sets/month_icons, prompts in tools/board_spec/month_icons.json)",
+    "december": "render_months.py (picture: tools/tile_sets/month_icons, prompts in tools/board_spec/month_icons.json)",
+    "february": "render_months.py (picture: tools/tile_sets/month_icons, prompts in tools/board_spec/month_icons.json)",
+    "january": "render_months.py (picture: tools/tile_sets/month_icons, prompts in tools/board_spec/month_icons.json)",
+    "july": "render_months.py (picture: tools/tile_sets/month_icons, prompts in tools/board_spec/month_icons.json)",
+    "june": "render_months.py (picture: tools/tile_sets/month_icons, prompts in tools/board_spec/month_icons.json)",
+    "march_": "render_months.py (picture: tools/tile_sets/month_icons, prompts in tools/board_spec/month_icons.json)",
+    "may_": "render_months.py (picture: tools/tile_sets/month_icons, prompts in tools/board_spec/month_icons.json)",
+    "november": "render_months.py (picture: tools/tile_sets/month_icons, prompts in tools/board_spec/month_icons.json)",
+    "october": "render_months.py (picture: tools/tile_sets/month_icons, prompts in tools/board_spec/month_icons.json)",
+    "september": "render_months.py (picture: tools/tile_sets/month_icons, prompts in tools/board_spec/month_icons.json)"
   },
   "ai": {
     "actions": {
@@ -2523,12 +2545,1655 @@
     "zoo": {
       "source": "prompts.json",
       "subject": "prompts.json"
+    },
+    "one": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_small_words": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_moving": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_taking_care": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_talking": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_thinking": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_playing": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_cooking": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_senses": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_doing": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_size": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_how_it_feels": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_opinions": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_where": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_how_much": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_what_its_like": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_house": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_school": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_fun_places": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_out_and_about": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_breakfast": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_lunch_dinner": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_fruit": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_veggies": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_snacks": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_family": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_toys": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_art": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_games": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_sports": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_outside_play": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "cant": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "gonna": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "wanna": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "have_to": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "let_me": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "could": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "would": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "kid": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "man": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "woman": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "person": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "parent": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "aunt": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "uncle": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "cousin": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "son": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "daughter": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "stepdad": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "classmate": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "principal": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "aide": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bus_driver": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "therapist": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "coach": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "dentist": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "police": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "firefighter": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "mail_carrier": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "cashier": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "waiter": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "babysitter": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "how_many": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "how_much": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "whose": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "what_time": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "can_i": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "is_it": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "of": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "from": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "by": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "so": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "too": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "very": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "just": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "only": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "then": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "until": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "than": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "except": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "these": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "any": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "every": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "much": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "other": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "another": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "me_too": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "my_turn": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "see_you_later": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "never_mind": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "really": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "sounds_good": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "oh": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "night_night": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "give_me_five": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "ouch": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "shh": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "wow": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "yay": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "oops": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "peekaboo": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "yum_yum": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "meow": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "woof": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "moo": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "quack": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "oink": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "baa": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "neigh": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "cockadoodledoo": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "vroom": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "choo_choo": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "beep": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "hurry": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "chase": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "carry": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "hold": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "drop": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bump": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "turn_around": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "wipe": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "sweep": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "wake_up": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "feed": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "fix": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "vacuum": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "knock": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bring": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "visit": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "smile": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "laugh": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "change": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "tickle": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "splash": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "pretend": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "pick": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "taste": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "lick": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "spill": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bake": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "mix": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "touch": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "shopping": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "huge": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "gentle": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "rough": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "smooth": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bumpy": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "slippery": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "favorite": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "weird": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "gross": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "real": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "fake": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "almost": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "sleepy": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "stuck": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "careful": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "awake": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "noisy": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "mad": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "nervous": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "confused": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "embarrassed": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "shy": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "disappointed": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "curious": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "brave": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "grumpy": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "safe": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "jealous": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "strong": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "weak": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "dizzy": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "garage": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "basement": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "stairs": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "porch": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "yard": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "grandmas_house": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "friends_house": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "gym": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "cafeteria": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "office": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bus_stop": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "party": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "picnic": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "circus": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "museum": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "garden": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "hospital": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "gas_station": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bank": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "pizza_place": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "ice_cream_shop": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "haircut": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "pharmacy": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "already": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "hail": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "windy": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "breakfast": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "dinner": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bath": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bath_time": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bedtime": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "school_day": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "early": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "late": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "schedule": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "clock": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "hour": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "timer": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "spring": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "summer": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "fall_": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "winter": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "birthday": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "holiday": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bread": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "ice_cream": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "muffin": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "donut": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "butter": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "noodles": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "meat": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "rice": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "sauce": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "beans": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "raisins": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "melon": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "peas": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "pickle": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "pumpkin": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "candy": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "cake": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "lollipop": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "gum": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "nuts": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "hot_chocolate": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "smoothie": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "coffee": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "straw": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bottle": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "ice": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "balloon": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "teddy_bear": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "stuffed_animal": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "train_set": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "robot": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "slime": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "kinetic_sand": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "fidget": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "squishy": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "spinner": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "chalk": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "stickers": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "glitter": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "beads": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "coloring_book": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "hide_and_seek": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "tag": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "board_game": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "simon_says": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "pattycake": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bike": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "scooter": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "skate": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "golf": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "hockey": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "gymnastics": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "sandbox": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "sand": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "sprinkler": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "jump_rope": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "monkey_bars": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "seesaw": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "kite": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "kitty": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "puppy": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bunny": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bear": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "monkey": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "elephant": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "lion": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "tiger": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "giraffe": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "zebra": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "frog": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "turtle": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "mouse": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "squirrel": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "owl": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "penguin": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "shark": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "alligator": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bug": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bee": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "ant": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "butterfly": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "deer": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "diaper": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "underwear": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "shorts": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "jeans": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "dress": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "jacket": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "sweater": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "boots": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "slippers": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "gloves": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "mittens": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "swimsuit": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "belt": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "zipper": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "button": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "toe": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "belly_button": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "cheek": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "chin": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "tongue": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "lips": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "shoulder": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "elbow": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "neck": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "owie": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "sore": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "throw_up": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "allergy": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "shot": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "school_bus": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "motorcycle": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "taxi": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "wagon": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "stroller": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "chair": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "table": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "couch": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "pillow": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "lamp": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "box": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "keys": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "picture": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "trash": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "crib": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bag": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "basket": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "present": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "money": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "camera": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "broom": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "washing_machine": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "fridge": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "oven": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "stove": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "sink": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "dish": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "knife": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bib": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "soap": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "towel": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bathtub": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "toothpaste": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "tissue": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "tree": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "flower": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "plant": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "leaf": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "grass": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "rock": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "stick": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "dirt": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "mud": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "puddle": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "hill": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "sky": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "street": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "sidewalk": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "shovel": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "bucket": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "hose": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "snowman": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "pen": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "backpack": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "lunchbox": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "desk": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "computer": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "headphones": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "charger": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "glasses": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "video": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "story": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_helpers": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_joining": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_which": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_sounds": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_days": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_my_day": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_clock": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_seasons": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_kitchen": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_bathroom": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_nature": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "folder_school_tech": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "doctors_office": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "dentists_office": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "stepmom": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "kind_of": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "minute": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
     }
   },
   "special": {
     "next": "composed by compose_queue.py --set playful_3d from first.png. Regenerate first, then rerun compose_queue.",
     "last": "composed by compose_queue.py --set playful_3d from first.png. Regenerate first, then rerun compose_queue.",
-    "previous_page": "horizontal mirror of next_page.png; derive with mirror_tile.py --from next_page --to previous_page."
+    "previous_page": "horizontal mirror of next_page.png; derive with mirror_tile.py --from next_page --to previous_page.",
+    "above": "draw_series.py edit of on.png (tools/board_spec/series.json); redraw on first, then rerun draw_series.py --keys above.",
+    "below": "draw_series.py edit of on.png (tools/board_spec/series.json); redraw on first, then rerun draw_series.py --keys below.",
+    "next_to": "draw_series.py edit of on.png (tools/board_spec/series.json); redraw on first, then rerun draw_series.py --keys next_to.",
+    "tiny": "draw_series.py edit of huge.png (tools/board_spec/series.json); redraw huge first, then rerun draw_series.py --keys tiny.",
+    "your_turn": "draw_series.py edit of my_turn.png (tools/board_spec/series.json); redraw my_turn first, then rerun draw_series.py --keys your_turn.",
+    "those": "draw_series.py edit of these.png (tools/board_spec/series.json); redraw these first, then rerun draw_series.py --keys those.",
+    "tall": "draw_series.py edit of short.png (tools/board_spec/series.json); redraw short first, then rerun draw_series.py --keys tall.",
+    "medium": "draw_series.py edit of folder_size.png (tools/board_spec/series.json); redraw folder_size first, then rerun draw_series.py --keys medium.",
+    "a_little": "draw_series.py edit of folder_how_much.png (tools/board_spec/series.json); redraw folder_how_much first, then rerun draw_series.py --keys a_little.",
+    "both": "draw_series.py edit of same.png (tools/board_spec/series.json); redraw same first, then rerun draw_series.py --keys both.",
+    "each": "draw_series.py edit of same.png (tools/board_spec/series.json); redraw same first, then rerun draw_series.py --keys each."
   },
   "unknown": []
 }
