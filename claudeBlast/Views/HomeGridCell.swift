@@ -134,23 +134,20 @@ struct HomeGridCell: View {
                 // every row aligns, without labelling Home as a word. The
                 // padding has to match `TileView`'s label band exactly or Home
                 // sits high by twice it — the band is not just a font any more.
-                Text(" ")
-                    .font(.system(size: labelFontSize, weight: .semibold))
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, GridLayoutCalculator.labelBandPadding)
-                    .accessibilityHidden(true)
+                // A square tile carries its word inside the square, so there is
+                // nothing to reserve.
+                labelStandIn
             }
             // The card covers the label band too, so Home is the same height as
             // the tiles rather than a short square with dead space under it.
             // Its shape and radius are `TileView`'s: Home is chrome, but chrome
             // that is visibly the same *kind of object* as the words around it.
             .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
                     .fill(Color(.systemGray4))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
                     .stroke(Color.primary.opacity(0.18), lineWidth: 1)
             )
             .opacity(isEnabled ? 1 : 0.4)
@@ -179,6 +176,13 @@ struct HomeGridCell: View {
     private var footprint: some View {
         VStack(spacing: 0) {
             Color.clear.aspectRatio(1, contentMode: .fit)
+            labelStandIn
+        }
+    }
+
+    @ViewBuilder
+    private var labelStandIn: some View {
+        if look == .classic {
             Text(" ")
                 .font(.system(size: labelFontSize, weight: .semibold))
                 .lineLimit(1)
@@ -187,6 +191,9 @@ struct HomeGridCell: View {
                 .accessibilityHidden(true)
         }
     }
+
+    @Environment(\.tileLook) private var look
+    private var radius: CGFloat { look == .square ? TileLayout.cornerRadius : 10 }
 
     private func split(back: @escaping () -> Void) -> some View {
         footprint.overlay {
@@ -209,10 +216,10 @@ struct HomeGridCell: View {
     private func half(_ symbol: String, isPressed: Binding<Bool>,
                       action: @escaping () -> Void, opensMenu: Bool) -> some View {
         Button(action: action) {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: radius, style: .continuous)
                 .fill(Color(.systemGray4))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    RoundedRectangle(cornerRadius: radius, style: .continuous)
                         .stroke(Color.primary.opacity(0.18), lineWidth: 1)
                 )
                 .overlay(

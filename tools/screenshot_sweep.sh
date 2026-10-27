@@ -167,6 +167,14 @@ for DEVICE in "${DEVICES[@]}"; do
     --cellularMode active --cellularBars 4 \
     --batteryState charged --batteryLevel 100 2>/dev/null || true
 
+  # Device settings a script cannot set, written into the fresh install's
+  # defaults before it launches: space-separated key=value pairs.
+  #
+  #   BLASTER_DEFAULTS="tile_look=square" tools/screenshot_sweep.sh shots_tile_look …
+  for pair in ${=BLASTER_DEFAULTS:-}; do
+    xcrun simctl spawn "$UDID" defaults write "$BUNDLE_ID" "${pair%%=*}" "${pair#*=}"
+  done
+
   xcrun simctl launch "$UDID" "$BUNDLE_ID" -TileScriptAutorun "$SCRIPT_NAME" > /dev/null
 
   echo "  running $SCRIPT_NAME…"

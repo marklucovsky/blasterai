@@ -154,6 +154,33 @@ final class TileImageResolver {
         resolved(key, in: activeSet)
     }
 
+    /// Whether the picture `image(for:)` returns has its ground cut away, so a
+    /// cut-out tile can draw it straight on the tint (`TileLayout.cutOut`).
+    ///
+    /// Asked of the picture, not the set: in Classic a caregiver's photo, a
+    /// variant made before art was cut, and a tile the review left uncut are
+    /// all opaque, and each falls back to the white card rather than sitting
+    /// on the tint as a white square.
+    ///
+    /// Cached per set and key, and dropped whenever `revision` moves — every
+    /// change of art bumps it. Not observed: the views already re-render on
+    /// `revision`, and an observed cache filled from inside `body` would
+    /// re-render them again.
+    func drawsCutOut(_ key: String) -> Bool {
+        if cutOutRevision != revision {
+            cutOutCache.removeAll()
+            cutOutRevision = revision
+        }
+        let cacheKey = "\(activeSet.rawValue):\(key)"
+        if let known = cutOutCache[cacheKey] { return known }
+        let cut = image(for: key)?.cgImage.map(TileCutout.hasTransparency) ?? false
+        cutOutCache[cacheKey] = cut
+        return cut
+    }
+
+    @ObservationIgnored private var cutOutCache: [String: Bool] = [:]
+    @ObservationIgnored private var cutOutRevision = 0
+
     /// Resolve a tile's real art in a specific image set — no placeholder, no
     /// master-set backfill. Returns nil when that set genuinely lacks the tile.
     ///

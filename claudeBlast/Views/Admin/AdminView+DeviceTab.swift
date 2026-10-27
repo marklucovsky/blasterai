@@ -526,6 +526,13 @@ extension AdminView {
                     }
                 }
             }
+            // On trial: the square tile ships behind this until it has been
+            // lived with on a device. See `TileLook`.
+            Picker("Tile Look", selection: $tileLookRaw) {
+                ForEach(TileLook.allCases) { look in
+                    Text(look.title).tag(look.rawValue)
+                }
+            }
             Picker("Image Set", selection: $imageSetRaw) {
                 ForEach(ImageSetCatalog.selectable) { set in
                     Text(set.isShippable ? set.displayName : "\(set.displayName) (incomplete)")

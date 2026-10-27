@@ -63,6 +63,17 @@ struct ImageSetID: RawRepresentable, Hashable, Codable, Identifiable, Sendable {
     /// its black plate. Matches `CUT_SETS` in `tools/optimize_tiles.py`.
     var cutsArt: Bool { [.classic, .classicMedium, .classicMediumDark].contains(self) }
 
+    /// How a square tile draws this set's art. See `TileLayout`.
+    ///
+    /// A set we know nothing about — an installed one — gets the card, which
+    /// draws any picture well: it is a white plate, so art on white, a photo and
+    /// a transparent cut-out all look meant.
+    var tileLayout: TileLayout {
+        if cutsArt { return .cutOut }
+        if self == .highContrast { return .plate }
+        return .card
+    }
+
     /// A set this build can actually resolve, or `defaultSet`.
     ///
     /// **Always use this when reading a persisted or user-supplied id.**

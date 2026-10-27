@@ -209,6 +209,28 @@ enum GridLayoutCalculator {
             + labelBandPadding * 2
     }
 
+    /// The word's band inside a square tile (`TileLook.square`): its line and
+    /// a point either side. Tighter than the classic band, because it is not
+    /// under the picture but inside the same square, and every point it takes
+    /// comes off the picture.
+    static func squareLabelHeight(forFont font: CGFloat) -> CGFloat {
+        UIFont.systemFont(ofSize: font, weight: .medium).lineHeight.rounded(.up) + 2
+    }
+
+    /// Space between tiles for a look: the square tiles sit 2pt apart, close
+    /// enough to read as one board of colour.
+    private static func spacing(_ look: TileLook) -> CGFloat {
+        look == .square ? TileLayout.gap : spacing
+    }
+
+    /// A cell's height for a tile of width `tile`. The square tile carries its
+    /// word inside the square; the classic one hangs it underneath.
+    private static func cellHeight(_ tile: CGFloat, look: TileLook, textScale: CGFloat) -> CGFloat {
+        look == .square
+            ? tile
+            : tile + labelHeight(forFont: labelFontSize(forTile: tile, scale: textScale))
+    }
+
     // Form-factor base sizes (the "auto" tile size at userStep=0).
     // Device class is detected from the screen's shorter dimension so
     // orientation doesn't change the classification.
@@ -278,7 +300,9 @@ enum GridLayoutCalculator {
     static func compute(screenSize: CGSize,
                         geo: CGSize,
                         layout: BoardLayout = .standard,
-                        textScale: CGFloat = 1) -> GridLayoutSpec {
+                        textScale: CGFloat = 1,
+                        look: TileLook = .classic) -> GridLayoutSpec {
+        let spacing = Self.spacing(look)
         let screenMin = min(screenSize.width, screenSize.height)
         let base: CGFloat = {
             if screenMin < phoneMinDimMax { return phoneBaseSize }
@@ -298,10 +322,11 @@ enum GridLayoutCalculator {
         let availH = max(0, geo.height - vPad)
 
         guard availW > 0 && availH > 0 else {
+            let font = labelFontSize(forTile: pref, scale: textScale)
             return GridLayoutSpec(
                 tileSize: pref,
-                labelFontSize: labelFontSize(forTile: pref, scale: textScale),
-                labelHeight: labelHeight(forFont: labelFontSize(forTile: pref, scale: textScale)),
+                labelFontSize: font,
+                labelHeight: look == .square ? squareLabelHeight(forFont: font) : labelHeight(forFont: font),
                 cols: 1, rows: 1, verticalSpacing: spacing
             )
         }
@@ -311,11 +336,11 @@ enum GridLayoutCalculator {
         if isDesignedOrientation {
             return finish(cols: grid.cols, rows: grid.rows,
                           tileW: min(maxTileSize,
-                                     renderTile(forCols: grid.cols, availW: availW),
+                                     renderTile(forCols: grid.cols, availW: availW, spacing: spacing),
                                      largestTile(fittingRows: grid.rows, availH: availH,
-                                                 textScale: textScale)),
+                                                 textScale: textScale, look: look)),
                           availH: availH, textScale: textScale,
-                          screenSize: screenSize, geo: geo, layout: layout)
+                          screenSize: screenSize, geo: geo, layout: layout, look: look)
         }
 
         // Accept any tile width within one tick of the user's preference —
@@ -327,10 +352,10 @@ enum GridLayoutCalculator {
 
         // Upper bound 30 covers any plausible device width / minTileSize ratio.
         for cols in 1...30 {
-            let tileW = renderTile(forCols: cols, availW: availW)
+            let tileW = renderTile(forCols: cols, availW: availW, spacing: spacing)
             guard tileW >= minAcceptable && tileW <= maxAcceptable else { continue }
 
-            let cellH = tileW + labelHeight(forFont: labelFontSize(forTile: tileW, scale: textScale))
+            let cellH = cellHeight(tileW, look: look, textScale: textScale)
             let rows = max(1, Int((availH + spacing) / (cellH + spacing)))
             let capacity = cols * rows
 
@@ -348,9 +373,9 @@ enum GridLayoutCalculator {
         // honor the preferred size directly.
         let result: (cols: Int, rows: Int, tileW: CGFloat, capacity: Int) = {
             if let b = best { return b }
-            let cols = colsForTile(pref, availW: availW)
-            let tileW = renderTile(forCols: cols, availW: availW)
-            let cellH = tileW + labelHeight(forFont: labelFontSize(forTile: tileW, scale: textScale))
+            let cols = colsForTile(pref, availW: availW, spacing: spacing)
+            let tileW = renderTile(forCols: cols, availW: availW, spacing: spacing)
+            let cellH = cellHeight(tileW, look: look, textScale: textScale)
             let rows = max(1, Int((availH + spacing) / (cellH + spacing)))
             return (cols, rows, tileW, cols * rows)
         }()
@@ -359,33 +384,39 @@ enum GridLayoutCalculator {
         // its size. The capacity rule above is Auto's, and at large sizes it
         // folds Large and Largest onto the same grid.
         if layout != .standard {
-            let cols = colsForTile(pref, availW: availW)
-            let tileW = renderTile(forCols: cols, availW: availW)
-            let cellH = tileW + labelHeight(forFont: labelFontSize(forTile: tileW, scale: textScale))
+            let cols = colsForTile(pref, availW: availW, spacing: spacing)
+            let tileW = renderTile(forCols: cols, availW: availW, spacing: spacing)
+            let cellH = cellHeight(tileW, look: look, textScale: textScale)
             let rows = max(1, Int((availH + spacing) / (cellH + spacing)))
             return finish(cols: cols, rows: rows, tileW: tileW,
                           availH: availH, textScale: textScale,
-                          screenSize: screenSize, geo: geo, layout: layout)
+                          screenSize: screenSize, geo: geo, layout: layout, look: look)
         }
         return finish(cols: result.cols, rows: result.rows, tileW: result.tileW,
                       availH: availH, textScale: textScale,
-                      screenSize: screenSize, geo: geo, layout: layout)
+                      screenSize: screenSize, geo: geo, layout: layout, look: look)
     }
 
     private static func finish(cols: Int, rows: Int, tileW: CGFloat,
                                availH: CGFloat, textScale: CGFloat,
                                screenSize: CGSize, geo: CGSize,
-                               layout: BoardLayout, log: Bool = true) -> GridLayoutSpec {
+                               layout: BoardLayout, look: TileLook,
+                               log: Bool = true) -> GridLayoutSpec {
+        let spacing = Self.spacing(look)
         let result = (cols: cols, rows: rows, tileW: tileW)
         let labelF = labelFontSize(forTile: result.tileW, scale: textScale)
-        let cellH = result.tileW + labelHeight(forFont: labelF)
+        let cellH = cellHeight(result.tileW, look: look, textScale: textScale)
 
         // Distribute vertical slack as inter-row spacing, capped so gaps
         // don't get loose. Any remaining slack stays at the bottom of the
         // page rather than being absorbed into the grid.
+        //
+        // Not for the square look: its tiles are 2pt apart both ways, and a
+        // board whose rows drift apart while its columns stay together stops
+        // reading as one sheet of colour.
         let usedAtMinSpacing = CGFloat(result.rows) * cellH + CGFloat(result.rows - 1) * spacing
         let slack = max(0, availH - usedAtMinSpacing)
-        let extraPerGap = result.rows > 1 ? slack / CGFloat(result.rows - 1) : 0
+        let extraPerGap = result.rows > 1 && look == .classic ? slack / CGFloat(result.rows - 1) : 0
         let vSpacing = spacing + min(maxRowSpacingBoost, extraPerGap)
 
         // Spare width, shared equally between the edges and the gaps between
@@ -397,7 +428,7 @@ enum GridLayoutCalculator {
         let spec = GridLayoutSpec(
             tileSize: result.tileW,
             labelFontSize: labelF,
-            labelHeight: labelHeight(forFont: labelF),
+            labelHeight: look == .square ? squareLabelHeight(forFont: labelF) : labelHeight(forFont: labelF),
             cols: result.cols,
             rows: result.rows,
             verticalSpacing: vSpacing,
@@ -406,7 +437,7 @@ enum GridLayoutCalculator {
         )
 
         #if DEBUG
-        if log { print("[GridLayout] screen=\(Int(screenSize.width))×\(Int(screenSize.height)) geo=\(Int(geo.width))×\(Int(geo.height)) layout=\(layout.rawValue) → tile=\(Int(spec.tileSize)) cols=\(spec.cols) rows=\(spec.rows) cap=\(spec.perPage) vGap=\(Int(spec.verticalSpacing))") }
+        if log { print("[GridLayout] screen=\(Int(screenSize.width))×\(Int(screenSize.height)) geo=\(Int(geo.width))×\(Int(geo.height)) layout=\(layout.rawValue) look=\(look.rawValue) slack=\(Int(slack)) → tile=\(Int(spec.tileSize)) cols=\(spec.cols) rows=\(spec.rows) cap=\(spec.perPage) vGap=\(Int(spec.verticalSpacing))") }
         #endif
 
         return spec
@@ -460,16 +491,17 @@ enum GridLayoutCalculator {
     /// page editor. `fitHeight: false` sizes by width only, for a view that
     /// scrolls vertically.
     static func compute(geo: CGSize, grid: (cols: Int, rows: Int),
-                        fitHeight: Bool = true, textScale: CGFloat = 1) -> GridLayoutSpec {
+                        fitHeight: Bool = true, textScale: CGFloat = 1,
+                        look: TileLook = .classic) -> GridLayoutSpec {
         let availW = max(1, geo.width - hPad)
         let availH = max(1, geo.height - vPad)
-        var tile = min(maxTileSize, renderTile(forCols: grid.cols, availW: availW))
+        var tile = min(maxTileSize, renderTile(forCols: grid.cols, availW: availW, spacing: spacing(look)))
         if fitHeight {
-            tile = min(tile, largestTile(fittingRows: grid.rows, availH: availH, textScale: textScale))
+            tile = min(tile, largestTile(fittingRows: grid.rows, availH: availH, textScale: textScale, look: look))
         }
         return finish(cols: grid.cols, rows: grid.rows, tileW: max(1, tile),
                       availH: fitHeight ? availH : .greatestFiniteMagnitude, textScale: textScale,
-                      screenSize: geo, geo: geo, layout: .standard, log: false)
+                      screenSize: geo, geo: geo, layout: .standard, look: look, log: false)
     }
 
     // MARK: - Helpers
@@ -478,9 +510,10 @@ enum GridLayoutCalculator {
     /// is not linear in tile size (the label tracks the tile, within bounds),
     /// so this searches rather than solves.
     private static func largestTile(fittingRows rows: Int, availH: CGFloat,
-                                    textScale: CGFloat) -> CGFloat {
+                                    textScale: CGFloat, look: TileLook) -> CGFloat {
+        let spacing = Self.spacing(look)
         func fits(_ t: CGFloat) -> Bool {
-            let cell = t + labelHeight(forFont: labelFontSize(forTile: t, scale: textScale))
+            let cell = cellHeight(t, look: look, textScale: textScale)
             return CGFloat(rows) * cell + CGFloat(rows - 1) * spacing <= availH
         }
         var lo: CGFloat = 1, hi: CGFloat = max(1, availH)
@@ -492,11 +525,11 @@ enum GridLayoutCalculator {
         return lo
     }
 
-    private static func colsForTile(_ tile: CGFloat, availW: CGFloat) -> Int {
+    private static func colsForTile(_ tile: CGFloat, availW: CGFloat, spacing: CGFloat) -> Int {
         max(1, Int((availW + spacing) / (tile + spacing)))
     }
 
-    private static func renderTile(forCols cols: Int, availW: CGFloat) -> CGFloat {
+    private static func renderTile(forCols cols: Int, availW: CGFloat, spacing: CGFloat) -> CGFloat {
         guard cols > 0 else { return availW }
         return (availW - CGFloat(cols - 1) * spacing) / CGFloat(cols)
     }

@@ -98,6 +98,11 @@ struct TileView: View {
     /// the press, which is the part that reads as a real button.
     @State private var isPressed = false
 
+    @Environment(\.tileLook) private var look
+    @Environment(TileImageResolver.self) private var resolver
+
+    private var radius: CGFloat { look == .square ? TileLayout.cornerRadius : 10 }
+
     var body: some View {
         Button {
             // A nav tile and a word tile answer different questions, so they
@@ -109,16 +114,12 @@ struct TileView: View {
             if !isNavigation { triggerPulse() }
             onTap()
         } label: {
-            VStack(spacing: 0) {
-                // Full-bleed square image card, then the word on the same color.
-                tileCard
-                labelBand
-            }
+            tileFace
             // The card treatment wraps BOTH, so the color runs behind the word
             // and the tile is one object rather than a card with a caption under
             // it. Everything below used to sit on `tileCard`; moving it out is
             // most of this change.
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .clipShape(RoundedRectangle(cornerRadius: radius))
             // A nav tile deepens under the finger: a scale change is read against
             // the edge as a reference, so a static edge is part of what made a
             // small scale hard to see. Opacity only — changing its width made the
@@ -134,18 +135,20 @@ struct TileView: View {
             // at the exact moment the child is looking at the tile. Single-word mode
             // never had this treatment; the grid now matches it.
             .overlay(
-                RoundedRectangle(cornerRadius: 10)
+                RoundedRectangle(cornerRadius: radius)
                     .strokeBorder(
-                        isNavigation ? accent.opacity(isPressed ? 1.0 : 0.0) : .clear,
+                        isNavigation ? pressRing.opacity(isPressed ? 1.0 : 0.0) : .clear,
                         lineWidth: 3
                     )
             )
-            .shadow(color: .black.opacity(0.12), radius: 2, y: 1)
+            // The square tiles are one sheet of colour 2pt apart; a shadow under
+            // each would put a grey seam in every gap.
+            .shadow(color: .black.opacity(look == .square ? 0 : 0.12), radius: 2, y: 1)
             // Press "pop + glow": a thick bright ring + strong colored halo flashes
             // on every tap (glow springs 0→1→0 with the bounce), so a press is
             // unmistakable in motion and on camera.
             .overlay(
-                RoundedRectangle(cornerRadius: 10)
+                RoundedRectangle(cornerRadius: radius)
                     .stroke(Color.white.opacity(glow), lineWidth: 6)
             )
             .shadow(color: Color.cyan.opacity(0.9 * glow), radius: 20)
@@ -168,7 +171,7 @@ struct TileView: View {
         // Find Word: the press's own ring and glow, held and breathing, so the
         // found word reads as "this one" in the board's existing language.
         .overlay(
-            RoundedRectangle(cornerRadius: 10)
+            RoundedRectangle(cornerRadius: radius)
                 .stroke(Color.white.opacity(highlight), lineWidth: 5)
                 .allowsHitTesting(false)
         )
@@ -250,6 +253,117 @@ struct TileView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, GridLayoutCalculator.labelBandPadding)
             .background(accent)
+    }
+
+    @ViewBuilder
+    private var tileFace: some View {
+        if look == .square {
+            squareTile
+        } else {
+            VStack(spacing: 0) {
+                // Full-bleed square image card, then the word on the same color.
+                tileCard
+                labelBand
+            }
+        }
+    }
+
+    // MARK: - Square tile
+
+    /// How this tile holds its picture: the active set's layout, except that a
+    /// cut-out set falls back to the card for a picture that was not cut — a
+    /// photo, an older variant, a tile the review left whole. An opaque picture
+    /// straight on the tint would be a white square.
+    private var layout: TileLayout {
+        let declared = resolver.activeSet.tileLayout
+        if declared == .cutOut && !resolver.drawsCutOut(tile.bundleImage) { return .card }
+        return declared
+    }
+
+    /// The ground: a light tint of the tile's colour, or the full colour under
+    /// High Contrast's black plate, whose white figures a tint would wash out.
+    private var squareGround: Color {
+        layout == .plate ? accent : TileColorResolver.tint(accent, mix: TileLayout.tintMix)
+    }
+
+    /// The word's colour on that ground. On a tint it is near-black whatever
+    /// the colour, as on paper; on the full colour it is the usual contrast.
+    private var squareInk: Color {
+        layout == .plate ? TileColorResolver.label(on: accent) : Color(white: 0.1)
+    }
+
+    /// The ring a pressed folder shows. On the full colour of a plate tile the
+    /// colour itself would not show, so it is white there.
+    private var pressRing: Color {
+        look == .square && layout == .plate ? .white : accent
+    }
+
+    /// One square: the picture, then the word in a band across the bottom.
+    ///
+    /// The three layouts differ only in what holds the picture (see
+    /// `TileLayout`); the square, the band and the badge are the same for all
+    /// of them, so a board mixing a cut-out and a fallback card still reads as
+    /// one board.
+    private var squareTile: some View {
+        GeometryReader { geo in
+            let side = geo.size.width
+            let band = GridLayoutCalculator.squareLabelHeight(forFont: labelFontSize)
+            let m = TileLayout.margin
+            let art = max(1, side - band - m)
+            ZStack(alignment: .top) {
+                squareGround
+                squarePicture(size: art)
+                    .frame(width: art, height: art)
+                    .modifier(WayMarkOverlay(mark: wayMark))
+                    .overlay(alignment: .bottomTrailing) { linkBadge }
+                    .padding(.top, m)
+                Text(tile.displayName)
+                    .font(.system(size: labelFontSize, weight: layout == .plate ? .semibold : .medium))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .foregroundStyle(squareInk)
+                    .padding(.horizontal, 3)
+                    .frame(width: side, height: band)
+                    .offset(y: m + art)
+            }
+        }
+        .aspectRatio(1, contentMode: .fit)
+    }
+
+    @ViewBuilder
+    private func squarePicture(size: CGFloat) -> some View {
+        switch layout {
+        case .cutOut:
+            TileImageView(key: tile.bundleImage, wordClass: tile.wordClass, drawsOnTint: true)
+        case .card:
+            // A white card a point above the tint: no frame, only its shadow,
+            // so a picture with white at its edges still has an edge.
+            TileImageView(key: tile.bundleImage, wordClass: tile.wordClass)
+                .clipShape(RoundedRectangle(cornerRadius: 2))
+                .background(
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Color.white)
+                        .shadow(color: .black.opacity(0.2), radius: 1, y: 1)
+                        .shadow(color: .black.opacity(0.2), radius: 3.5, y: 3)
+                )
+        case .plate:
+            TileImageView(key: tile.bundleImage, wordClass: tile.wordClass)
+                .padding(1.5)
+                .background(Color.black)
+                .overlay(Rectangle().strokeBorder(Color.white, lineWidth: 1.5))
+                .clipShape(RoundedRectangle(cornerRadius: 2))
+        }
+    }
+
+    @ViewBuilder
+    private var linkBadge: some View {
+        if isNavigation && wayMark != .here {
+            let badge = TileColorResolver.marker(on: accent)
+            Image(systemName: "arrow.right.circle.fill")
+                .font(.caption)
+                .foregroundStyle(TileColorResolver.label(on: badge), badge)
+                .padding(2)
+        }
     }
 
     /// The color a tile carries: its part of speech, or blue for a nav tile,

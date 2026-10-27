@@ -104,6 +104,19 @@ struct ImageSetCatalogTests {
                 "two sets sharing a prefix would resolve each other's art")
     }
 
+    /// Each set declares how a square tile draws it: Classic and its tones are
+    /// cut, so their art sits on the tint; Playful 3D floats on a white card;
+    /// High Contrast keeps its black plate. A set we know nothing about gets
+    /// the card, which is safe for any art.
+    @Test func everySetDeclaresItsTileLayout() {
+        #expect(ImageSetID.classic.tileLayout == .cutOut)
+        #expect(ImageSetID.classicMedium.tileLayout == .cutOut)
+        #expect(ImageSetID.classicMediumDark.tileLayout == .cutOut)
+        #expect(ImageSetID.playful3D.tileLayout == .card)
+        #expect(ImageSetID.highContrast.tileLayout == .plate)
+        #expect(ImageSetID("someone_elses_set").tileLayout == .card)
+    }
+
     @Test func setIDsAreUnique() {
         let ids = ImageSetCatalog.all.map(\.id)
         #expect(Set(ids).count == ids.count)
