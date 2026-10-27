@@ -3,47 +3,63 @@
   "systemRow": [
     {
       "key": "people",
-      "to": "people"
+      "to": "people",
+      "level": 3,
+      "linkColor": "pronoun"
     },
     {
       "key": "question",
-      "to": "questions"
+      "to": "questions",
+      "level": 3,
+      "linkColor": "question"
     },
     {
       "key": "actions",
-      "to": "actions"
-    },
-    {
-      "key": "places",
-      "to": "places"
-    },
-    {
-      "key": "social",
-      "to": "social"
-    },
-    {
-      "key": "time",
-      "to": "time_when"
-    },
-    {
-      "key": "describe",
-      "to": "describe"
-    },
-    {
-      "key": "groups",
-      "to": "groups"
+      "to": "actions",
+      "level": 3,
+      "linkColor": "verb"
     },
     {
       "key": "feelings",
-      "to": "feelings"
+      "to": "feelings",
+      "level": 3,
+      "linkColor": "adjective"
+    },
+    {
+      "key": "social",
+      "to": "social",
+      "level": 3,
+      "linkColor": "social"
+    },
+    {
+      "key": "time",
+      "to": "time_when",
+      "level": 3,
+      "linkColor": "adjective"
+    },
+    {
+      "key": "describe",
+      "to": "describe",
+      "level": 3,
+      "linkColor": "adjective"
+    },
+    {
+      "key": "places",
+      "to": "places",
+      "level": 3,
+      "linkColor": "noun"
     },
     {
       "key": "folder_small_words",
-      "to": "small_words"
+      "to": "small_words",
+      "level": 3,
+      "linkColor": "preposition"
     },
     {
-      "key": "keyboard",
-      "to": "keyboard"
+      "key": "groups",
+      "to": "groups",
+      "level": 4,
+      "linkColor": "noun"
     }
   ],
   "doorways": {
@@ -61,10 +77,10 @@
     "thirsty": "drinks",
     "who": "people",
     "where": "places",
-    "when": "time_when"
+    "when": "time_when",
+    "me": "i_page",
+    "my": "i_page"
   },
-  "_systemRowExempt": "Pages that would overflow one screen with the row on top. Each leaves this list when it is split into folders.",
-  "systemRowExempt": [],
   "_pageNames": "A page's name where the key's title case is wrong for it. Folder pages are named after their folder tile.",
   "pageNames": {
     "groups": "Things",
@@ -91,8 +107,6 @@
           "drink",
           "to",
           "some",
-          "more",
-          "all",
           "don't"
         ],
         [
@@ -104,9 +118,7 @@
           "do",
           "can",
           "for",
-          "and",
-          "a",
-          "the",
+          "more",
           "stop"
         ],
         [
@@ -117,25 +129,33 @@
           "like",
           "read",
           "put",
-          "here",
-          "in",
-          "on",
-          "up",
+          "and",
+          "all",
           "not"
+        ],
+        [
+          "we",
+          "they",
+          "this",
+          "open",
+          "watch",
+          "play",
+          "is",
+          "the",
+          "a",
+          "here"
         ],
         [
           "yes",
           "all_done",
           "no",
-          "open",
-          "watch",
-          "play",
-          "is",
-          "with",
-          "out",
-          "off",
-          "down",
-          "feel"
+          "feel",
+          "make",
+          "look",
+          "see",
+          "in",
+          "on",
+          "up"
         ]
       ],
       "levels": [
@@ -190,25 +210,15 @@
             "open",
             "watch",
             "is",
-            "with",
-            "out",
-            "off",
-            "down",
             "feel"
           ]
         },
         {
           "level": 3,
           "words": [
-            "people",
-            "question",
-            "actions",
-            "places",
-            "social",
-            "time",
-            "describe",
-            "feelings",
-            "folder_small_words"
+            "we",
+            "they",
+            "this"
           ]
         },
         {
@@ -243,6 +253,36 @@
         "let_me",
         "could",
         "would"
+      ],
+      "folders": [
+        {
+          "key": "eat",
+          "page": "food"
+        },
+        {
+          "key": "drink",
+          "page": "drinks"
+        },
+        {
+          "key": "play",
+          "page": "play_activities"
+        },
+        {
+          "key": "folder_snacks",
+          "page": "food_snacks"
+        },
+        {
+          "key": "folder_fruit",
+          "page": "food_fruit"
+        },
+        {
+          "key": "folder_toys",
+          "page": "play_toys"
+        },
+        {
+          "key": "folder_games",
+          "page": "play_games"
+        }
       ]
     },
     "small_words": {
@@ -347,6 +387,10 @@
           "have"
         ],
         [
+          "write",
+          "draw"
+        ],
+        [
           "give",
           "take"
         ],
@@ -368,6 +412,20 @@
           "do"
         ],
         [
+          "walk",
+          "run",
+          "jump"
+        ],
+        [
+          "am",
+          "are",
+          "was"
+        ],
+        [
+          "sit",
+          "stand"
+        ],
+        [
           "help",
           "like",
           "read",
@@ -381,37 +439,12 @@
           "watch",
           "play"
         ],
-        "stop",
-        "make",
         [
           "look",
           "see"
         ],
-        [
-          "wait",
-          "finish"
-        ],
-        "try",
-        [
-          "write",
-          "draw"
-        ],
-        "work",
-        [
-          "am",
-          "are",
-          "was"
-        ],
-        [
-          "sit",
-          "stand"
-        ],
-        "sleep",
-        [
-          "walk",
-          "run",
-          "jump"
-        ]
+        "stop",
+        "make"
       ],
       "folders": [
         {
@@ -712,8 +745,8 @@
           "pretty",
           "ugly"
         ],
-        "busy",
         "broken",
+        "busy",
         "smart",
         "soft",
         "maybe",
@@ -936,7 +969,9 @@
               "orange_",
               "yellow",
               "green",
-              "blue",
+              "blue"
+            ],
+            [
               "purple",
               "pink",
               "brown",
@@ -954,7 +989,9 @@
               "circle",
               "square",
               "triangle",
-              "rectangle",
+              "rectangle"
+            ],
+            [
               "oval",
               "star",
               "heart",
@@ -965,7 +1002,7 @@
         }
       ],
       "at": {
-        "r5c1": [
+        "r6c1": [
           "right",
           "okay_",
           "wrong"
@@ -1135,14 +1172,16 @@
           "his"
         ],
         [
-          "they",
-          "them",
-          "their"
+          "we",
+          "they"
         ],
         [
-          "we",
           "us",
-          "our"
+          "them"
+        ],
+        [
+          "our",
+          "their"
         ],
         "mine",
         "kid",
@@ -1360,33 +1399,37 @@
           "page": "time_seasons",
           "words": [],
           "at": {
-            "r2c6": [
-              "birthday",
-              "holiday"
-            ],
             "r2c1": [
-              "winter",
               "january",
               "february",
               "march_"
             ],
             "r3c1": [
-              "spring",
               "april",
               "may_",
               "june"
             ],
             "r4c1": [
-              "summer",
               "july",
               "august",
               "september"
             ],
             "r5c1": [
-              "fall_",
               "october",
               "november",
               "december"
+            ],
+            "r2c5": [
+              "winter",
+              "spring"
+            ],
+            "r3c5": [
+              "summer",
+              "fall_"
+            ],
+            "r5c5": [
+              "birthday",
+              "holiday"
             ]
           }
         }
@@ -1395,10 +1438,6 @@
     "food": {
       "parent": "home",
       "words": [
-        [
-          "hungry",
-          "more"
-        ],
         "snack",
         [
           "apple",
@@ -1446,7 +1485,11 @@
         "ice_cream"
       ],
       "at": {
-        "r5c1": [
+        "r2c1": [
+          "hungry",
+          "more"
+        ],
+        "r6c1": [
           "yummy",
           "all_done",
           "yucky"
@@ -1855,7 +1898,9 @@
               "hair",
               "face",
               "eye",
-              "ear",
+              "ear"
+            ],
+            [
               "nose",
               "mouth",
               "tooth",
@@ -2136,7 +2181,7 @@
         "give_me_five"
       ],
       "at": {
-        "r4c1": [
+        "r6c1": [
           "yes",
           "i_dont_know",
           "no"
@@ -2173,10 +2218,6 @@
     "drinks": {
       "parent": "home",
       "words": [
-        [
-          "thirsty",
-          "more"
-        ],
         "chocolate_milk",
         "drinks",
         "ice_cubes",
@@ -2196,7 +2237,11 @@
         "ice"
       ],
       "at": {
-        "r4c1": [
+        "r2c1": [
+          "thirsty",
+          "more"
+        ],
+        "r6c1": [
           "yummy",
           "all_done",
           "yucky"
@@ -2453,5 +2498,6 @@
   "retiredPages": [
     "body_health"
   ],
-  "_retiredPages": "Pages a split replaced. build_core_board.py drops them from the scene."
+  "_retiredPages": "Pages a split replaced. build_core_board.py drops them from the scene.",
+  "_systemRow": "Row 1 of every page, drawn by the app rather than stored: written to page_templates.json `systemRow` by build_core_board.py. The keyboard is on the rail."
 }

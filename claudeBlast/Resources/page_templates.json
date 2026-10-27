@@ -1,9 +1,20 @@
 {
-  "version": 1,
-  "designedFor": "ipad-12x5",
-  "cols": 12,
-  "rows": 5,
-  "keyboard": "r1c12",
+  "version": 2,
+  "designedFor": "ipad-10x6",
+  "cols": 10,
+  "rows": 6,
+  "systemRow": [
+    {"key": "people", "page": "people", "level": 3, "linkColor": "pronoun"},
+    {"key": "question", "page": "questions", "level": 3, "linkColor": "question"},
+    {"key": "actions", "page": "actions", "level": 3, "linkColor": "verb"},
+    {"key": "feelings", "page": "feelings", "level": 3, "linkColor": "adjective"},
+    {"key": "social", "page": "social", "level": 3, "linkColor": "social"},
+    {"key": "time", "page": "time_when", "level": 3, "linkColor": "adjective"},
+    {"key": "describe", "page": "describe", "level": 3, "linkColor": "adjective"},
+    {"key": "places", "page": "places", "level": 3, "linkColor": "noun"},
+    {"key": "folder_small_words", "page": "small_words", "level": 3, "linkColor": "preposition"},
+    {"key": "groups", "page": "groups", "level": 4, "linkColor": "noun"}
+  ],
   "bands": ["pronoun", "people", "verb", "adjective", "social", "noun"],
   "templates": {
     "home": {
@@ -11,8 +22,8 @@
       "frameLinks": {},
       "cluster": ["don't", "stop", "not"],
       "displaceable": ["not", "don't"],
-      "wordColumns": [1, 10],
-      "linkSlots": ["r2c11", "r3c11", "r4c11", "r5c11", "r5c12"],
+      "wordColumns": [1, 8],
+      "linkSlots": ["r2c9", "r4c9", "r5c9", "r6c9", "r5c10"],
       "spreadBands": false
     },
     "leaf": {
@@ -20,8 +31,8 @@
       "frameLinks": {},
       "cluster": [],
       "displaceable": [],
-      "wordColumns": [1, 10],
-      "linkSlots": ["r2c12", "r3c12", "r4c12", "r5c12", "r2c11", "r3c11", "r4c11", "r5c11"],
+      "wordColumns": [1, 8],
+      "linkSlots": ["r2c10", "r3c10", "r4c10", "r5c10", "r6c10", "r2c9", "r3c9", "r4c9", "r5c9", "r6c9"],
       "spreadBands": true
     }
   }

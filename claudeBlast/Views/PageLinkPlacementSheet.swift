@@ -118,7 +118,8 @@ struct PageLinkPlacementSheet: View {
             let link = TileEntry(key: linkKey, link: target.pageKey, isAudible: false)
             // A page on the page scheme takes the link in its next link slot;
             // a flat page gets it at the end.
-            if let kind = PageTemplate.kind(of: pages[i], homePageKey: scene.homePageKey) {
+            if BoardChrome.inherits(scene) {
+                let kind = PageTemplate.kind(of: pages[i], homePageKey: scene.homePageKey)
                 pages[i].tiles = PagePlacer.insertLink(link, into: pages[i].tiles, kind: kind)
             } else {
                 pages[i].tiles.append(link)

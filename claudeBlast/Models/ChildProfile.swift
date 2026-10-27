@@ -33,6 +33,29 @@ import AVFoundation
 /// a four-tile cap; Stage IV+ is where you already are once a caregiver widens
 /// past four. None of the three meant anything to a speech-language pathologist.
 /// One stage does.
+/// Whether the tray shows a chip's picture, on this device.
+enum TrayPictures: String, CaseIterable, Identifiable {
+    /// The child's stage decides: pictures through Stage II-III, words at IV+.
+    case auto
+    case pictures
+    /// Words only.
+    case words
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .auto: "Follow Stage"
+        case .pictures: "Pictures and Words"
+        case .words: "Words Only"
+        }
+    }
+
+    static func current(_ defaults: UserDefaults = .standard) -> TrayPictures {
+        defaults.string(forKey: AppSettingsKey.trayPictures).flatMap(TrayPictures.init(rawValue:)) ?? .auto
+    }
+}
+
 enum BrownsStage: String, CaseIterable, Identifiable {
     /// MLU ~1.0-2.0. Single words, no grammatical morphemes. Classic AAC:
     /// each tile speaks its own word. **No AI call is made at this stage.**

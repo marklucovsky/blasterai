@@ -283,8 +283,9 @@ struct SparseBoardTests {
         #expect(held.map(\.key) == vehicles.tiles.map(\.key), "a placement moved")
         let tractor = try #require(held.first { $0.key == "tractor" })
         #expect(tractor.isEmptyCell)
-        // Column 11 of row 2 on the 12-wide board: cell 22.
-        #expect(held.firstIndex { $0.key == "vehicles" }.map { $0 + 1 } == 22)
+        // Its own tile, bottom of the folder column: r6c10, the page's 50th
+        // tile under the inherited system row.
+        #expect(held.firstIndex { $0.key == "vehicles" } == 49)
         // The word itself is untouched; only this drawing of it is empty.
         #expect(vehicles.tiles.first { $0.key == "tractor" }?.isConcealed == false)
     }

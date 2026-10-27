@@ -35,8 +35,21 @@ struct GridLayoutSpec: Equatable {
     /// wide empty margins.
     var horizontalSpacing: CGFloat = 6
     var horizontalPadding: CGFloat = 16
+    /// One slot of the control rail (`ControlRail`): a tile wide on the side
+    /// rail, and as tall as the bottom one. 0 when there is no rail.
+    var railSlot: CGFloat = 0
 
     var perPage: Int { cols * rows }
+}
+
+/// Where the control rail sits, which decides what room it takes from the grid.
+enum RailPlacement: Equatable {
+    case none
+    /// iPad landscape: a column one tile wide at the right of the grid.
+    case side
+    /// iPad portrait and iPhone: a row under the grid of `slots` square slots,
+    /// a tile tall at most.
+    case bottom(slots: Int)
 }
 
 /// The three board layouts a device can show, as fixed grids.
@@ -49,10 +62,11 @@ struct GridLayoutSpec: Equatable {
 /// columns on one iPad and 12 on another, and the phone's steps jumped about
 /// (4×5 to 2×4 in one tap). A board author could not design for any of it.
 ///
-/// So a layout is a grid, pinned in both directions: Standard is 12×5 on every
-/// iPad and 4×5 on every iPhone, with the same positions and the same page
-/// breaks. Tile size follows from the screen; spare space becomes margin and
-/// row spacing, never an extra column or row.
+/// So a layout is a grid, pinned in both directions: Standard is 10×6 on every
+/// iPad and 4×6 on every iPhone, with the same positions and the same page
+/// breaks. Row 1 is the system row (`BoardChrome`); every other cell is a word
+/// or a folder, with the controls on a rail outside the grid. Tile size follows
+/// from the screen; spare space becomes margin, never an extra column or row.
 ///
 /// Nothing is denser than Standard. Denser boards were possible and were
 /// dropped on purpose: more, smaller pictures over-stimulate, and the grids
@@ -75,15 +89,19 @@ enum BoardLayout: String, CaseIterable, Identifiable {
         }
     }
 
-    /// The grid on a device of this kind, in its designed orientation.
+    /// The grid on a device of this kind, in its designed orientation, with
+    /// the system row as its first row. (Mark 2026-10-27: iPad 10×6, and the
+    /// larger layouts 8 and 6 wide with four and three rows of words.)
+    ///
+    /// On a grid narrower than the ten folders, the system row scrolls.
     func grid(phone: Bool) -> (cols: Int, rows: Int) {
         switch (self, phone) {
-        case (.standard, false): return (12, 5)
-        case (.large, false):    return (10, 4)
-        case (.largest, false):  return (9, 4)
-        case (.standard, true):  return (4, 5)
-        case (.large, true):     return (3, 4)
-        case (.largest, true):   return (2, 4)
+        case (.standard, false): return (10, 6)
+        case (.large, false):    return (8, 5)
+        case (.largest, false):  return (6, 4)
+        case (.standard, true):  return (4, 6)
+        case (.large, true):     return (3, 5)
+        case (.largest, true):   return (2, 5)
         }
     }
 
@@ -118,8 +136,8 @@ enum BoardLayout: String, CaseIterable, Identifiable {
 /// The grid a scene was designed for: a kind of device and a layout on it.
 ///
 /// A board's word positions are only stable on the grid it was authored
-/// against, so a scene can say which one that is — `"ipad-12x5"`, `"phone-2x4"`.
-/// One device kind, not one per kind: a 12×5 board cannot keep its positions
+/// against, so a scene can say which one that is — `"ipad-10x6"`, `"phone-2x5"`.
+/// One device kind, not one per kind: a 10×6 board cannot keep its positions
 /// at 4×5, so "Standard everywhere" would promise something it cannot keep.
 ///
 /// Stored on `BlasterScene.designedFor` as `rawValue`; empty means undeclared.
@@ -131,13 +149,13 @@ struct DesignedLayout: Hashable, Identifiable {
 
     var grid: (cols: Int, rows: Int) { layout.grid(phone: phone) }
 
-    /// `"ipad-12x5"`. Spelled with the grid rather than the layout name so the
+    /// `"ipad-10x6"`. Spelled with the grid rather than the layout name so the
     /// file says what it means even if a layout is ever retuned.
     var rawValue: String {
         "\(phone ? "phone" : "ipad")-\(grid.cols)x\(grid.rows)"
     }
 
-    /// `"iPad 12×5"`.
+    /// `"iPad 10×6"`.
     var title: String {
         "\(phone ? "iPhone" : "iPad") \(grid.cols)×\(grid.rows)"
     }
@@ -184,6 +202,9 @@ enum GridLayoutCalculator {
     private static let hPad: CGFloat = 32   // 16pt side padding × 2
     private static let vPad: CGFloat = 8
     private static let spacing: CGFloat = 6
+    /// Between the grid and the control rail: a little more than the tiles'
+    /// own gap, so the rail reads as a separate strip of controls.
+    static let railGap: CGFloat = 6
 
     /// Vertical padding above and below the word in its colored label band.
     ///
@@ -192,7 +213,7 @@ enum GridLayoutCalculator {
     /// own color, which makes it part of the card rather than a caption beneath
     /// one — and a word touching the edge of a colored band reads as clipped.
     ///
-    /// It is public and used by `TileView` and `HomeGridCell` because the cell
+    /// It is public and used by `TileView` because the cell
     /// height computed here and the height those actually draw have to be the
     /// same number. They were the same literal `2` in five places before.
     static let labelBandPadding: CGFloat = 3
@@ -240,7 +261,9 @@ enum GridLayoutCalculator {
     private static let iPadLargeMinDim: CGFloat = 950
     private static let phoneBaseSize: CGFloat = 85
 
-    /// The mini's default, dialled so it lands on the 11"'s 12 columns.
+    /// The mini's default, dialled when the grid was 12 wide so it landed on
+    /// the 11"'s columns. The designed grid is pinned now; these only size
+    /// tiles off the designed orientation.
     ///
     /// At 88 the acceptance band reached down to 78.6pt, and 13 columns fit at
     /// 79pt — inside by 0.4pt. 13×5 out-counted 12×5, so the mini laid out one
@@ -297,11 +320,15 @@ enum GridLayoutCalculator {
     ///   telling them what it thinks of their settings. Labels grow, cells grow
     ///   with them, and fewer tiles fit a page — the tile *size* they dialled in
     ///   is preserved, because that is the setting they chose deliberately.
+    ///
+    /// - Parameter rail: room to leave for the control rail. The tile is sized
+    ///   for the grid and the rail together, so the rail's slots are tiles.
     static func compute(screenSize: CGSize,
                         geo: CGSize,
                         layout: BoardLayout = .standard,
                         textScale: CGFloat = 1,
-                        look: TileLook = .classic) -> GridLayoutSpec {
+                        look: TileLook = .classic,
+                        rail: RailPlacement = .none) -> GridLayoutSpec {
         let spacing = Self.spacing(look)
         let screenMin = min(screenSize.width, screenSize.height)
         let base: CGFloat = {
@@ -331,16 +358,33 @@ enum GridLayoutCalculator {
             )
         }
 
-        // The designed orientation: the grid is the layout's, exactly.
-        let isDesignedOrientation = isPhone ? availH > availW : availW >= availH
+        // The designed orientation: the grid is the layout's, exactly. An iPad
+        // keeps its grid turned to portrait too, with the rail moved under it:
+        // the words stay in their cells, only smaller (Mark 2026-10-27). A
+        // board sized to the window instead had eight columns there, and every
+        // word after the first row moved.
+        let isDesignedOrientation = isPhone ? availH > availW : (rail != .none || availW >= availH)
         if isDesignedOrientation {
-            return finish(cols: grid.cols, rows: grid.rows,
-                          tileW: min(maxTileSize,
-                                     renderTile(forCols: grid.cols, availW: availW, spacing: spacing),
-                                     largestTile(fittingRows: grid.rows, availH: availH,
-                                                 textScale: textScale, look: look)),
+            var tile = min(maxTileSize,
+                           renderTile(forCols: grid.cols, availW: availW, spacing: spacing),
+                           largestTile(fittingRows: grid.rows, availH: availH,
+                                       textScale: textScale, look: look))
+            switch rail {
+            case .none:
+                break
+            case .side:
+                // One more column, a little further off.
+                tile = min(tile, renderTile(forCols: grid.cols + 1,
+                                            availW: availW - (railGap - spacing), spacing: spacing))
+            case .bottom(let slots):
+                tile = min(tile, largestTile(fittingRows: grid.rows,
+                                             availH: availH - bottomRail(slots: slots, tile: tile,
+                                                                         availW: availW) - railGap,
+                                             textScale: textScale, look: look))
+            }
+            return finish(cols: grid.cols, rows: grid.rows, tileW: tile,
                           availH: availH, textScale: textScale,
-                          screenSize: screenSize, geo: geo, layout: layout, look: look)
+                          screenSize: screenSize, geo: geo, layout: layout, look: look, rail: rail)
         }
 
         // Accept any tile width within one tick of the user's preference —
@@ -351,12 +395,23 @@ enum GridLayoutCalculator {
         var best: (cols: Int, rows: Int, tileW: CGFloat, capacity: Int)?
 
         // Upper bound 30 covers any plausible device width / minTileSize ratio.
+        // The rail's room comes out of the height first: off the designed
+        // orientation the board sizes tiles, and the rail is one more row.
+        func usableH(_ tileW: CGFloat) -> CGFloat {
+            if case .bottom(let slots) = rail {
+                return availH - bottomRail(slots: slots, tile: tileW, availW: availW) - railGap
+            }
+            return availH
+        }
+        let railW: CGFloat = rail == .side ? 1 : 0
+
         for cols in 1...30 {
-            let tileW = renderTile(forCols: cols, availW: availW, spacing: spacing)
+            let tileW = renderTile(forCols: cols + Int(railW), availW: availW - railW * (railGap - spacing),
+                                   spacing: spacing)
             guard tileW >= minAcceptable && tileW <= maxAcceptable else { continue }
 
             let cellH = cellHeight(tileW, look: look, textScale: textScale)
-            let rows = max(1, Int((availH + spacing) / (cellH + spacing)))
+            let rows = max(1, Int((usableH(tileW) + spacing) / (cellH + spacing)))
             let capacity = cols * rows
 
             let isBetter: Bool
@@ -373,10 +428,10 @@ enum GridLayoutCalculator {
         // honor the preferred size directly.
         let result: (cols: Int, rows: Int, tileW: CGFloat, capacity: Int) = {
             if let b = best { return b }
-            let cols = colsForTile(pref, availW: availW, spacing: spacing)
-            let tileW = renderTile(forCols: cols, availW: availW, spacing: spacing)
+            let cols = max(1, colsForTile(pref, availW: availW, spacing: spacing) - Int(railW))
+            let tileW = renderTile(forCols: cols + Int(railW), availW: availW, spacing: spacing)
             let cellH = cellHeight(tileW, look: look, textScale: textScale)
-            let rows = max(1, Int((availH + spacing) / (cellH + spacing)))
+            let rows = max(1, Int((usableH(tileW) + spacing) / (cellH + spacing)))
             return (cols, rows, tileW, cols * rows)
         }()
 
@@ -384,26 +439,43 @@ enum GridLayoutCalculator {
         // its size. The capacity rule above is Auto's, and at large sizes it
         // folds Large and Largest onto the same grid.
         if layout != .standard {
-            let cols = colsForTile(pref, availW: availW, spacing: spacing)
-            let tileW = renderTile(forCols: cols, availW: availW, spacing: spacing)
+            let cols = max(1, colsForTile(pref, availW: availW, spacing: spacing) - Int(railW))
+            let tileW = renderTile(forCols: cols + Int(railW), availW: availW, spacing: spacing)
             let cellH = cellHeight(tileW, look: look, textScale: textScale)
-            let rows = max(1, Int((availH + spacing) / (cellH + spacing)))
+            let rows = max(1, Int((usableH(tileW) + spacing) / (cellH + spacing)))
             return finish(cols: cols, rows: rows, tileW: tileW,
                           availH: availH, textScale: textScale,
-                          screenSize: screenSize, geo: geo, layout: layout, look: look)
+                          screenSize: screenSize, geo: geo, layout: layout, look: look, rail: rail)
         }
         return finish(cols: result.cols, rows: result.rows, tileW: result.tileW,
                       availH: availH, textScale: textScale,
-                      screenSize: screenSize, geo: geo, layout: layout, look: look)
+                      screenSize: screenSize, geo: geo, layout: layout, look: look, rail: rail)
+    }
+
+    /// The bottom rail's height: square slots a tile tall, or smaller when
+    /// `slots` of them would not fit across.
+    private static func bottomRail(slots: Int, tile: CGFloat, availW: CGFloat) -> CGFloat {
+        min(tile, renderTile(forCols: max(1, slots), availW: availW, spacing: TileLayout.gap))
     }
 
     private static func finish(cols: Int, rows: Int, tileW: CGFloat,
                                availH: CGFloat, textScale: CGFloat,
                                screenSize: CGSize, geo: CGSize,
                                layout: BoardLayout, look: TileLook,
+                               rail: RailPlacement = .none,
                                log: Bool = true) -> GridLayoutSpec {
         let spacing = Self.spacing(look)
         let result = (cols: cols, rows: rows, tileW: tileW)
+        let availW = max(0, geo.width - hPad)
+        let railSlot: CGFloat = {
+            switch rail {
+            case .none: return 0
+            case .side: return tileW
+            case .bottom(let slots): return bottomRail(slots: slots, tile: tileW, availW: availW)
+            }
+        }()
+        // The grid's own width: the side rail stands beside it.
+        let gridWidth = geo.width - (rail == .side ? railSlot + railGap : 0)
         let labelF = labelFontSize(forTile: result.tileW, scale: textScale)
         let cellH = cellHeight(result.tileW, look: look, textScale: textScale)
 
@@ -422,8 +494,8 @@ enum GridLayoutCalculator {
         // Spare width, shared equally between the edges and the gaps between
         // columns — but only once every gap would be at least the usual edge
         // margin. A grid that fills the width keeps 16 at the edges, 6 between.
-        let even = (geo.width - CGFloat(result.cols) * result.tileW) / CGFloat(result.cols + 1)
-        let isEven = even >= hPad / 2
+        let even = (gridWidth - CGFloat(result.cols) * result.tileW) / CGFloat(result.cols + 1)
+        let isEven = even >= hPad / 2 && rail == .none
 
         let spec = GridLayoutSpec(
             tileSize: result.tileW,
@@ -433,7 +505,8 @@ enum GridLayoutCalculator {
             rows: result.rows,
             verticalSpacing: vSpacing,
             horizontalSpacing: isEven ? even : spacing,
-            horizontalPadding: isEven ? even : hPad / 2
+            horizontalPadding: isEven ? even : hPad / 2,
+            railSlot: railSlot
         )
 
         #if DEBUG
@@ -441,6 +514,17 @@ enum GridLayoutCalculator {
         #endif
 
         return spec
+    }
+
+    // MARK: - The rail
+
+    /// One slot of the side rail. It spans the grid's height, a slot per row
+    /// on a full grid; a large layout has fewer rows than the rail has slots,
+    /// so its slots are shorter than a tile there.
+    static func sideRailSlot(_ spec: GridLayoutSpec, slots: Int, cellHeight: CGFloat) -> CGSize {
+        let height = CGFloat(spec.rows) * cellHeight + CGFloat(spec.rows - 1) * spec.verticalSpacing
+        let slot = (height - CGFloat(slots - 1) * spec.verticalSpacing) / CGFloat(max(1, slots))
+        return CGSize(width: spec.tileSize, height: min(slot, cellHeight))
     }
 
     // MARK: - Which grid

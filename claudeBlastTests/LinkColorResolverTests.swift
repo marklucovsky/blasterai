@@ -492,16 +492,22 @@ struct LinkColorResolverTests {
     /// its folder blue once every page carried the row.
     @Test("Chrome links do not make a page of words wayfinding")
     func chromeLinksAreNotContent() {
-        let row = (0..<(PageTemplate.cols - 1)).map {
+        let folders = (0..<8).map {
             TileEntry(key: "row\($0)", link: "page\($0)", isAudible: false)
         }
-        let page = row + Self.words(["he", "she", "they", "we"])
+        // Folders in columns 9–10, the folder column, are navigation.
+        let words = Self.words(["he", "she", "they", "we"])
+        var page: [TileEntry] = []
+        for row in 0..<4 {
+            page += (row == 0 ? words : Array(repeating: TileEntry.spacer(), count: 4))
+                + Array(repeating: TileEntry.spacer(), count: PageTemplate.cols - 6)
+                + Array(folders[(row * 2)..<(row * 2 + 2)])
+        }
         #expect(LinkColorResolver.slot(forDestination: page, partOfSpeech: Self.part,
                                        background: Self.background)
                 == .partOfSpeech(.pronoun))
-        // The same links below row 1, in the word columns, are content: a hub.
-        let hub = [TileEntry.spacer()] + Self.words(["he", "she", "they", "we"])
-            + Array(repeating: TileEntry.spacer(), count: PageTemplate.cols - 6) + row
+        // The same links in the word columns are content: a hub.
+        let hub = folders + words
         #expect(LinkColorResolver.slot(forDestination: hub, partOfSpeech: Self.part,
                                        background: Self.background)
                 == .wayfinding)

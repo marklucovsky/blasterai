@@ -121,9 +121,10 @@ The board is a fixed grid, and anything past the end of it pages
 automatically — there are no "next page" tiles to manage.
 
 How many fit depends on the device's **Board Layout**: **60 cells on any iPad**
-at Standard (12 × 5), 40 at Large, 36 at Largest; on an iPhone, 20, 12 or 8.
-**Home takes one of those cells**, since it sits in the grid as cell zero on
-every page rather than floating above it, so a 60-cell page holds 59 words.
+at Standard (10 × 6), 40 at Large, 24 at Largest; on an iPhone, 24, 15 or 10.
+**The system row takes the first row** on a scene that declares its grid, so a
+60-cell page holds 50 words and folders. Home, Back and the keyboard are on the
+rail beside the grid, not in it.
 
 That means a page with eighty tiles isn't an error, it just becomes a page the
 child has to scroll. Whether that's right depends on the child, and you know

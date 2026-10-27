@@ -79,9 +79,10 @@ enum WordPlaces {
                       grid: (cols: Int, rows: Int)) -> [String: [WordPlace]] {
         // The board as the child has it: above-level words are not places yet.
         let pages = scene.visiblePages
-        let routes = routesFromHome(pages: pages, homeKey: scene.homePageKey)
-        // Home takes cell 0 of every screen.
-        let perScreen = max(1, grid.cols * grid.rows - 1)
+        let routes = routesFromHome(pages: pages, homeKey: scene.homePageKey,
+                                    row: BoardChrome.rowPages(of: scene))
+        // Row 1 of every screen is the system row on a scene that inherits it.
+        let perScreen = max(1, grid.cols * grid.rows - (BoardChrome.inherits(scene) ? grid.cols : 0))
 
         var result: [String: [WordPlace]] = [:]
         var seen = Set<String>()
@@ -112,9 +113,10 @@ enum WordPlaces {
     /// Breadth-first, following folders in page and cell order, so among
     /// equally short routes the one a child meets first wins. A page absent
     /// from the result is not reachable from home.
-    static func routesFromHome(pages: [PageSpec], homeKey: String) -> [String: [String]] {
+    static func routesFromHome(pages: [PageSpec], homeKey: String,
+                               row: [String] = []) -> [String: [String]] {
         let byKey = Dictionary(pages.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
-        return pathsFromHome(pages: pages, homeKey: homeKey)
+        return pathsFromHome(pages: pages, homeKey: homeKey, row: row)
             .mapValues { path in path.compactMap { byKey[$0]?.title } }
     }
 
@@ -122,18 +124,20 @@ enum WordPlaces {
     /// Describe › How much`. Folders first, so a page a doorway also opens is
     /// placed under its category; a page only a doorway reaches comes next, and
     /// a page nothing reaches is just its own title.
-    static func trail(to key: String, pages: [PageSpec], homeKey: String) -> [String] {
+    static func trail(to key: String, pages: [PageSpec], homeKey: String,
+                      row: [String] = []) -> [String] {
         let byKey = Dictionary(pages.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
         let home = byKey[homeKey]?.title ?? PageNaming.displayName(homeKey)
-        return [home] + trailKeys(to: key, pages: pages, homeKey: homeKey)
+        return [home] + trailKeys(to: key, pages: pages, homeKey: homeKey, row: row)
             .map { byKey[$0]?.title ?? PageNaming.displayName($0) }
     }
 
     /// `trail` as page keys, home left out: the pages whose tiles the board
     /// marks "you are here" (the last) and "on the way here" (the rest).
-    static func trailKeys(to key: String, pages: [PageSpec], homeKey: String) -> [String] {
-        let path = pathsFromHome(pages: pages, homeKey: homeKey, followDoorways: false)[key]
-            ?? pathsFromHome(pages: pages, homeKey: homeKey)[key]
+    static func trailKeys(to key: String, pages: [PageSpec], homeKey: String,
+                          row: [String] = []) -> [String] {
+        let path = pathsFromHome(pages: pages, homeKey: homeKey, followDoorways: false, row: row)[key]
+            ?? pathsFromHome(pages: pages, homeKey: homeKey, row: row)[key]
             ?? [key]
         return path.filter { $0 != homeKey }
     }
@@ -144,12 +148,20 @@ enum WordPlaces {
     /// `followDoorways: false` walks folders only, leaving out words that also
     /// open a page (*wear* → Clothes from Actions): the route the hierarchy
     /// gives, not a shortcut into it.
+    ///
+    /// `row`: pages the system row opens. It is on every page, so each is one
+    /// step from home, ahead of anything a page's own tiles lead to.
     static func pathsFromHome(pages: [PageSpec], homeKey: String,
-                              followDoorways: Bool = true) -> [String: [String]] {
+                              followDoorways: Bool = true,
+                              row: [String] = []) -> [String: [String]] {
         let byKey = Dictionary(pages.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
         guard byKey[homeKey] != nil else { return [:] }
         var paths: [String: [String]] = [homeKey: []]
         var queue = [homeKey]
+        for key in row where paths[key] == nil && byKey[key] != nil {
+            paths[key] = [key]
+            queue.append(key)
+        }
         while !queue.isEmpty {
             let key = queue.removeFirst()
             guard let page = byKey[key], let here = paths[key] else { continue }

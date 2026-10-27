@@ -155,7 +155,7 @@ Override: set `OPENAI_API_KEY` env var in scheme → takes precedence, skips UI 
 
 ### Views
 - `ContentView` — root TabView with two tabs: child grid (TileGridView) and admin (AdminView)
-- `TileGridView` — paginated grid. `tilesPerPage(geo:isLandscape:)` computes from geometry (min tile 72pt). Portrait uses `VStack` (not LazyVStack) for correct snap offsets. Debug builds show breadcrumb navigation trail.
+- `TileGridView` — paginated grid on a fixed layout (`BoardLayout`: iPad 10×6). Row 1 is the system row, inherited and never stored (`BoardChrome`, from `page_templates.json`); a path line sits under the tray; Home/Back/keyboard and the caregiver tools are on `ControlRail` outside the grid (beside it in iPad landscape, below otherwise; child vs caregiver rail by `RailProfile`). Portrait uses `VStack` (not LazyVStack) for correct snap offsets.
 - `TileView` — single tile: image + label. Color-coded by wordClass (see `wordClassColor()` in `SentenceTrayView.swift`). Long-press → note capture sheet.
 - `SentenceTrayView` — top tray: mini color-tinted tile chips + generated sentence text + replay/clear buttons. History sheet accessible via clock icon.
 - `AdminView` — admin panel: scenes list (activate/delete), cache viewer, session notes, provider/key picker, "Create Sample Scene" button.

@@ -25,6 +25,13 @@ final class CaregiverMenuCoordinator {
     /// Device -> TileScript is the door that works.
     enum Destination: Equatable {
         case admin       // presented behind AdminGate (Face ID / PIN)
+        /// The page editor on one of the active scene's pages: the caregiver
+        /// rail's Edit. Behind AdminGate, like Admin.
+        case editPage(String)
+        /// The scene editor on the active scene: the Edit menu's Edit Scene.
+        case editScene
+        /// Back to the caregiver rail from Child mode, behind AdminGate.
+        case unlockCaregiverRail
     }
 
     /// Set by the caregiver menu; observed and cleared by ContentView.

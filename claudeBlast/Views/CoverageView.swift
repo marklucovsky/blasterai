@@ -83,7 +83,9 @@ struct CoverageView: View {
             grid: GridLayoutCalculator.authoringGrid(
                 designed: scene.designedLayout,
                 isPhone: GridLayoutCalculator.isPhone(screenSize: GridLayoutCalculator.deviceScreenSize),
-                deviceLayout: BoardLayout(rawValue: boardLayoutRaw) ?? .standard))
+                deviceLayout: BoardLayout(rawValue: boardLayoutRaw) ?? .standard),
+            chrome: BoardChrome.inherits(scene)
+                ? BoardChrome.row(for: scene, level: scene.effectiveRevealLevel) : [])
     }
 
     private var report: CoverageReport? {

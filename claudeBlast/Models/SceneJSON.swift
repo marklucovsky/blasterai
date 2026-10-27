@@ -23,7 +23,7 @@ struct SceneJSON: Codable {
     let description: String?
     let homePageKey: String         // must match one of the pages' keys
     let isDefault: Bool
-    /// `DesignedLayout.rawValue`, e.g. `"ipad-12x5"`. Absent = undeclared.
+    /// `DesignedLayout.rawValue`, e.g. `"ipad-10x6"`. Absent = undeclared.
     var designedFor: String? = nil
     /// Graded reveal: how many levels the board declares, and the level a newly
     /// installed board starts at (the top when absent). After that the level is

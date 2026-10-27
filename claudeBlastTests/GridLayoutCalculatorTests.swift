@@ -114,13 +114,15 @@ struct GridLayoutCalculatorTests {
     /// the top — the geometry the board actually gets.
     private func landscapeBoard(_ screen: CGSize,
                                 layout: BoardLayout = .standard,
-                                look: TileLook = .classic) -> GridLayoutSpec {
+                                look: TileLook = .classic,
+                                rail: RailPlacement = .none) -> GridLayoutSpec {
         GridLayoutCalculator.compute(
             screenSize: screen,
             geo: CGSize(width: max(screen.width, screen.height),
                         height: min(screen.width, screen.height) - 134),
             layout: layout,
-            look: look)
+            look: look,
+            rail: rail)
     }
 
     /// An iPhone 17 board, portrait, as measured on the simulator.
@@ -152,8 +154,8 @@ struct GridLayoutCalculatorTests {
 
     /// The bigger screen's room goes into bigger tiles, not more of them.
     @Test func largeIPadGetsBiggerTilesNotMoreOfThem() {
-        let eleven = landscapeBoard(iPad11).tileSize
-        let thirteen = landscapeBoard(iPad13).tileSize
+        let eleven = landscapeBoard(iPad11, look: .square, rail: .side).tileSize
+        let thirteen = landscapeBoard(iPad13, look: .square, rail: .side).tileSize
         #expect(thirteen > eleven)
         #expect(thirteen / eleven < 1.25)
     }
@@ -171,7 +173,7 @@ struct GridLayoutCalculatorTests {
     @Test func miniMatchesTheOtherIPadsColumnCount() {
         let mini = landscapeBoard(miniPortrait)
         #expect(mini.cols == landscapeBoard(iPad11).cols)
-        #expect(mini.rows == 5)
+        #expect(mini.rows == BoardLayout.standard.grid(phone: false).rows)
     }
 
     /// The per-device base sizes still matter off the designed orientation,
@@ -247,15 +249,15 @@ struct GridLayoutCalculatorTests {
     /// Mark's choice of grids, pinned so a retune is deliberate.
     @Test func theGridsAreTheChosenOnes() {
         #expect(BoardLayout.allCases.map { $0.gridsDescription } == [
-            "iPad 12×5 · iPhone 4×5",
-            "iPad 10×4 · iPhone 3×4",
-            "iPad 9×4 · iPhone 2×4",
+            "iPad 10×6 · iPhone 4×6",
+            "iPad 8×5 · iPhone 3×5",
+            "iPad 6×4 · iPhone 2×5",
         ])
     }
 
     @Test func largerLayoutsMakeBiggerTiles() {
-        for board in [{ (l: BoardLayout) in self.landscapeBoard(self.iPad11, layout: l) },
-                      { (l: BoardLayout) in self.iPhone17Board(l) }] {
+        for board in [{ (l: BoardLayout) in self.landscapeBoard(self.iPad11, layout: l, look: .square, rail: .side) },
+                      { (l: BoardLayout) in self.iPhone17Board(l, look: .square) }] {
             let sizes = BoardLayout.allCases.map { board($0).tileSize }
             #expect(sizes == sizes.sorted() && Set(sizes).count == sizes.count, "\(sizes)")
         }
@@ -288,22 +290,42 @@ struct GridLayoutCalculatorTests {
         #expect(BoardLayout.current(d) == .large)
     }
 
-    // MARK: - Home over Back
+    // MARK: - The rail
 
-    /// When Back shares Home's cell, each half must still be a reasonable
-    /// target. 44pt is Apple's minimum, and every layout on every device
-    /// clears it — Standard is the densest there is.
-    @Test func splitHomeCellHalvesClearTheTouchMinimum() {
+    /// The caregiver rail stacks two controls in a slot (Levels over Topics,
+    /// Search over Edit). Beside the grid, in the orientation the iPad is
+    /// designed for, each half must still be a reasonable target: 44pt is
+    /// Apple's minimum, on every iPad and every layout.
+    @Test func sideRailHalvesClearTheTouchMinimum() {
+        let slots = RailProfile.caregiver.slots.count
         for l in BoardLayout.allCases {
-            let boards = [landscapeBoard(miniPortrait, layout: l), landscapeBoard(iPad11, layout: l),
-                          landscapeBoard(iPad13, layout: l), spec(phonePortrait, layout: l),
-                          iPhone17Board(l)]
-            for board in boards {
-                let cell = board.tileSize + board.labelHeight
-                #expect(HomeGridCell.halfHeight(cellHeight: cell) >= 44,
-                        "\(l): \(board.cols)×\(board.rows) at \(Int(board.tileSize))pt")
+            for screen in [miniPortrait, iPad11, iPad13] {
+                let board = landscapeBoard(screen, layout: l, look: .square, rail: .side)
+                let slot = GridLayoutCalculator.sideRailSlot(board, slots: slots, cellHeight: board.tileSize)
+                #expect((slot.height - board.verticalSpacing) / 2 >= 44,
+                        "\(l) on \(Int(screen.height)): \(Int(slot.height))pt slot")
             }
         }
+    }
+
+    /// The rail is one more column: the grid keeps its columns and every tile,
+    /// the rail's slot included, is the same size.
+    @Test func theSideRailIsATileWide() {
+        let board = landscapeBoard(iPad11, look: .square, rail: .side)
+        #expect(board.cols == BoardLayout.standard.grid(phone: false).cols)
+        #expect(board.railSlot == board.tileSize)
+        #expect(board.tileSize < landscapeBoard(iPad11, look: .square).tileSize)
+    }
+
+    /// Turned to portrait the iPad keeps its grid, with the rail under it:
+    /// a word stays in its cell whichever way the iPad is held.
+    @Test func portraitIPadKeepsItsGridWithTheRailBelow() {
+        let portrait = GridLayoutCalculator.compute(
+            screenSize: iPad11, geo: CGSize(width: 834, height: 1000),
+            look: .square, rail: .bottom(slots: 6))
+        let pad = BoardLayout.standard.grid(phone: false)
+        #expect(portrait.cols == pad.cols && portrait.rows == pad.rows)
+        #expect(portrait.railSlot > 0)
     }
 
     // MARK: - Degenerate geometry

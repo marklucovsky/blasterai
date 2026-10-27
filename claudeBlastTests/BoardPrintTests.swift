@@ -28,19 +28,19 @@ struct BoardPrintTests {
     /// A printed board that is not the app's grid is a second layout for the
     /// same vocabulary, and a child who has learned where `want` sits has
     /// learned a position rather than a word.
-    @Test("The default sheet is landscape and twelve columns")
+    @Test("The default sheet is landscape and ten columns")
     func defaultSheetMatchesTheScreen() {
         let options = BoardPrintOptions()
         #expect(options.orientation == .landscape)
         #expect(options.columns == BoardPrintOptions.screenColumns)
-        #expect(options.resolvedColumns == 12)
+        #expect(options.resolvedColumns == 10)
         #expect(options.matchesScreenLayout)
     }
 
-    /// "For anyone deviating from our standard landscape 12 column layout they
-    /// get what they asked for" — including no reserved Home cell, because
-    /// holding a cell for a button that is not where they put it would be
-    /// superstition rather than alignment.
+    /// "For anyone deviating from our standard landscape layout they get what
+    /// they asked for" — including no system row, because a row of folders
+    /// over columns that are not the board's would be superstition rather than
+    /// alignment.
     @Test("Turning the paper or moving the density opts out")
     func deviatingFromTheStandardSheetOptsOut() {
         var turned = BoardPrintOptions()
@@ -58,17 +58,17 @@ struct BoardPrintTests {
 
     /// The printed board starts from the grid the scene was designed for, so
     /// paper and screen agree: its columns, and portrait for a phone grid.
-    /// Undeclared is the iPad's 12 in landscape, as before.
+    /// Undeclared is the iPad's 10 in landscape.
     @Test("A scene's designed grid seeds the sheet")
     func designedGridSeedsTheSheet() {
         #expect(BoardPrintOptions.forScene(nil) == BoardPrintOptions())
 
-        let pad = BoardPrintOptions.forScene(DesignedLayout(rawValue: "ipad-10x4"))
+        let pad = BoardPrintOptions.forScene(DesignedLayout(rawValue: "ipad-8x5"))
         #expect(pad.orientation == .landscape)
-        #expect(pad.resolvedColumns == 10)
+        #expect(pad.resolvedColumns == 8)
         #expect(pad.matchesScreenLayout)
 
-        let phone = BoardPrintOptions.forScene(DesignedLayout(rawValue: "phone-3x4"))
+        let phone = BoardPrintOptions.forScene(DesignedLayout(rawValue: "phone-3x5"))
         #expect(phone.orientation == .portrait)
         #expect(phone.resolvedColumns == 3)
         #expect(phone.matchesScreenLayout)
@@ -79,9 +79,9 @@ struct BoardPrintTests {
     /// The sheet used to hold as many rows as the paper allowed, so a 9×4 board
     /// printed 45 to a sheet against the screen's 36 and every page break after
     /// the first fell on a different word. On the board's own grid the sheet is
-    /// now exactly one board page: Home, then `cols × rows − 1` words.
+    /// exactly one board page: the system row, then `cols × (rows − 1)` words.
     @Test("A sheet on the board's grid is exactly one board page", arguments: [
-        "ipad-12x5", "ipad-10x4", "ipad-9x4", "phone-4x5", "phone-3x4",
+        "ipad-10x6", "ipad-8x5", "ipad-6x4", "phone-4x6", "phone-3x5",
     ])
     func sheetIsOneBoardPage(_ raw: String) {
         let designed = DesignedLayout(rawValue: raw)!
@@ -93,10 +93,10 @@ struct BoardPrintTests {
         #expect(layout.columns == designed.grid.cols && layout.rows == designed.grid.rows)
 
         let page = PageSpec(key: "big", tiles: (0..<100).map { TileEntry(key: "w\($0)") })
-        let sheets = BoardPagination.paginate([page], perSheet: layout.perSheet,
-                                              reservingHomeCell: options.matchesScreenLayout)
-        let wordsPerBoardPage = designed.grid.cols * designed.grid.rows - 1
-        #expect(sheets.first?.tiles.dropFirst().map(\.key)
+        let chrome = Array(BoardChrome.row(inSystemScene: false).prefix(designed.grid.cols))
+        let sheets = BoardPagination.paginate([page], perSheet: layout.perSheet, chrome: chrome)
+        let wordsPerBoardPage = designed.grid.cols * (designed.grid.rows - 1)
+        #expect(sheets.first?.tiles.dropFirst(chrome.count).map(\.key)
                 == (0..<wordsPerBoardPage).map { "w\($0)" })
         #expect(sheets.count == Int((100.0 / Double(wordsPerBoardPage)).rounded(.up)))
         // Every card still fits the sheet.
@@ -105,64 +105,53 @@ struct BoardPrintTests {
     }
 
     /// Off by default: the columns are the scene's, the rows are the paper's,
-    /// so a long page prints the most words per sheet. Home is still held in
-    /// cell 0, because the columns — and so the first row — still match.
+    /// so a long page prints the most words per sheet. The system row still
+    /// opens each sheet, because the columns — and so the first row — match.
     @Test("By default only columns follow the scene")
     func rowsFollowThePaperByDefault() {
-        let options = BoardPrintOptions.forScene(DesignedLayout(rawValue: "ipad-9x4"))
+        let options = BoardPrintOptions.forScene(DesignedLayout(rawValue: "ipad-6x4"))
         #expect(!options.matchPageBreaks)
         #expect(options.pinnedRows == nil)
         #expect(options.matchesScreenLayout)
         let layout = SheetLayout.compute(paper: options.paper, orientation: options.orientation,
                                          columns: options.resolvedColumns,
                                          pinnedRows: options.pinnedRows)
-        #expect(layout.columns == 9)
+        #expect(layout.columns == 6)
         #expect(layout.rows > 4, "the paper holds more than the board's four rows")
     }
 
     /// Two columns on portrait paper would be 3.75-inch tiles, past what the
     /// 512 px art holds. The paper's limit wins, and since the sheet is then not
-    /// the screen's grid, no Home cell is held for it.
+    /// the screen's grid, no system row is printed on it.
     @Test("A grid the paper cannot hold clamps and opts out")
     func aGridThePaperCannotHoldClamps() {
-        let phone = BoardPrintOptions.forScene(DesignedLayout(rawValue: "phone-2x4"))
+        let phone = BoardPrintOptions.forScene(DesignedLayout(rawValue: "phone-2x5"))
         #expect(phone.resolvedColumns > 2)
         #expect(!phone.matchesScreenLayout)
     }
 
-    /// On screen Home occupies cell 0 of **every** board page, so the printed
-    /// sheet has to hold that cell too — otherwise every tile on paper sits one
-    /// place earlier than the same tile on the iPad.
-    @Test("The reserved Home cell holds cell 0 of every sheet")
-    func homeCellIsReservedOnEverySheet() {
-        let sheets = BoardPagination.paginate([page("describe", 40)], perSheet: 16,
-                                              reservingHomeCell: true)
-        // 15 words per sheet once Home has its cell, so 40 words need 3 sheets.
-        #expect(sheets.count == 3)
+    /// On screen the system row is row 1 of **every** board page, so the
+    /// printed sheet opens with it too — otherwise every tile on paper sits a
+    /// row higher than the same tile on the iPad.
+    @Test("The system row opens every sheet")
+    func systemRowOpensEverySheet() {
+        let chrome = Array(BoardChrome.row(inSystemScene: false).prefix(4))
+        let sheets = BoardPagination.paginate([page("describe", 40)], perSheet: 16, chrome: chrome)
+        // 12 words per sheet under a 4-cell row, so 40 words need 4 sheets.
+        #expect(sheets.count == 4)
         for sheet in sheets {
-            #expect(sheet.tiles.first?.isEmptyCell == true,
-                    "sheet \(sheet.sheetIndex) does not open with the Home gap")
+            #expect(Array(sheet.tiles.prefix(4).map(\.key)) == chrome.map(\.key),
+                    "sheet \(sheet.sheetIndex) does not open with the system row")
             #expect(sheet.tiles.count <= 16)
         }
-        // Nothing is lost to the reservation — every word still prints.
-        let words = sheets.flatMap { $0.tiles }.filter { !$0.isEmptyCell }
+        // Nothing is lost to the row — every word still prints.
+        let words = sheets.flatMap { $0.tiles.dropFirst(4) }
         #expect(words.count == 40)
     }
 
-    /// Each spacer carries its own key, because a `TileEntry`'s identity *is*
-    /// its key and two sheets opening with the same one would collide in any
-    /// view that renders them together.
-    @Test("Each reserved cell is its own entry")
-    func reservedCellsAreDistinct() {
-        let sheets = BoardPagination.paginate([page("describe", 40)], perSheet: 16,
-                                              reservingHomeCell: true)
-        let keys = sheets.compactMap { $0.tiles.first?.key }
-        #expect(Set(keys).count == keys.count)
-    }
-
-    /// Off by default, so nothing that asked for the old behaviour gets a gap
-    /// it did not ask for.
-    @Test("Without the reservation a sheet is unchanged")
+    /// Off by default, so a sheet that is not the board's grid gets no row it
+    /// did not ask for.
+    @Test("Without the system row a sheet is unchanged")
     func reservationIsOptIn() {
         let sheets = BoardPagination.paginate([page("describe", 40)], perSheet: 16)
         #expect(sheets.count == 3)
@@ -170,9 +159,9 @@ struct BoardPrintTests {
         #expect(sheets.allSatisfy { $0.tiles.allSatisfy { !$0.isEmptyCell } })
     }
 
-    /// The case this exists for: the bundled home page is 59 tiles, and with the
-    /// Home cell reserved it lands on one sheet in the same columns the app
-    /// draws — row 0 the folders, row 1 the pronouns, and so on.
+    /// The case this exists for: the bundled home page is 50 tiles, and under
+    /// the system row it lands on one sheet in the same columns the app draws —
+    /// row 1 the folders, row 2 the pronouns, and so on.
     @Test("The bundled home page prints in the same columns it draws in")
     func bundledHomePagePrintsInScreenColumns() throws {
         let container = TestStore.freshContainer()
@@ -183,17 +172,17 @@ struct BoardPrintTests {
         let layout = SheetLayout.compute(paper: options.paper,
                                          orientation: options.orientation,
                                          columns: options.resolvedColumns)
-        let sheets = BoardPagination.paginate([home], perSheet: layout.perSheet,
-                                              reservingHomeCell: options.matchesScreenLayout)
+        let chrome = Array(BoardChrome.row(inSystemScene: true).prefix(options.resolvedColumns))
+        let sheets = BoardPagination.paginate([home], perSheet: layout.perSheet, chrome: chrome)
 
         #expect(sheets.count == 1, "the home page should not spill onto a second sheet")
         let printed = try #require(sheets.first).tiles
-        #expect(printed.first?.isEmptyCell == true)
-        // Cell 0 is the gap, so the first word prints at index 1 — exactly where
-        // it sits on the board.
-        #expect(printed.count == home.tiles.count + 1)
-        #expect(printed[1].key == home.tiles[0].key)
-        #expect(printed[12].key == home.tiles[11].key, "column 0 of row 1 has moved")
+        #expect(printed.first?.key == "people")
+        // Row 1 is the system row, so the first word prints at index 10 —
+        // exactly where it sits on the board.
+        #expect(printed.count == home.tiles.count + 10)
+        #expect(printed[10].key == home.tiles[0].key)
+        #expect(printed[20].key == home.tiles[10].key, "column 1 of row 3 has moved")
     }
 
     // MARK: - Pagination

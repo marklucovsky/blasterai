@@ -71,11 +71,11 @@ import Foundation
 /// artifact, so a divergence cannot pass quietly.
 enum LinkColorResolver {
 
-    /// Row 1, or columns 11–12 below it: where the page scheme puts the system
-    /// row and the folder column.
+    /// Columns 9–10: where the page scheme puts the folder column. The system
+    /// row is inherited, not on the page, so a page's cells start at r2c1.
     static func isChromeCell(_ cell: Int) -> Bool {
         let cols = PageTemplate.cols
-        return cell < cols || cell % cols >= cols - 2
+        return cell % cols >= cols - 2
     }
 
     /// A part of speech below this share of the destination page is noise.
@@ -133,13 +133,12 @@ enum LinkColorResolver {
 
         // Spacers are holes, not tiles, and must not dilute the page.
         let real = destination.filter { !$0.isSpacer }
-        // Navigation chrome is not content: the system row, and the folder
-        // column a folder page repeats from its category so a child can hop to a
-        // sibling. Counting them made the 8-word Questions page and the 5-word
-        // Senses folder "mostly links" and turned their folders blue. Placement i
-        // is cell i + 1, because Home is cell 0 and not in the list.
+        // Navigation chrome is not content: the folder column a folder page
+        // repeats from its category. Counting it made the 8-word Questions page
+        // and the 5-word Senses folder "mostly links" and turned their folders
+        // blue. Placement i is cell i + cols: row 1 is inherited.
         let chrome = Set(destination.enumerated().filter { index, entry in
-            !entry.link.isEmpty && !entry.isAudible && Self.isChromeCell(index + 1)
+            !entry.link.isEmpty && !entry.isAudible && Self.isChromeCell(index + PageTemplate.cols)
         }.map { $0.element.key })
         let links = real.filter { !$0.link.isEmpty && !chrome.contains($0.key) }
         let words = real.filter { $0.link.isEmpty }

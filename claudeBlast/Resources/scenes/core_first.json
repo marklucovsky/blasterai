@@ -4,7 +4,7 @@
   "description": "Sentence-first home: pronouns, verbs and function words, with categories behind links",
   "homePageKey": "home",
   "isDefault": true,
-  "designedFor": "ipad-12x5",
+  "designedFor": "ipad-10x6",
   "revealLevels": 4,
   "revealLevel": 4,
   "pages": [
@@ -12,82 +12,22 @@
       "key": "home",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "link": "i",
           "to": "i_page",
           "audible": true,
           "linkColor": "pronoun"
         },
         {
-          "keys": [
-            "me",
-            "my"
-          ]
+          "link": "me",
+          "to": "i_page",
+          "audible": true,
+          "linkColor": "pronoun"
+        },
+        {
+          "link": "my",
+          "to": "i_page",
+          "audible": true,
+          "linkColor": "pronoun"
         },
         {
           "link": "come",
@@ -117,8 +57,6 @@
           "keys": [
             "to",
             "some",
-            "more",
-            "all",
             "don't",
             "he",
             "she",
@@ -128,9 +66,7 @@
             "do",
             "can",
             "for",
-            "and",
-            "a",
-            "the",
+            "more",
             "stop",
             "you",
             "your",
@@ -139,14 +75,12 @@
             "like",
             "read",
             "put",
-            "here",
-            "in",
-            "on",
-            "up",
+            "and",
+            "all",
             "not",
-            "yes",
-            "all_done",
-            "no",
+            "we",
+            "they",
+            "this",
             "open",
             "watch"
           ]
@@ -160,10 +94,12 @@
         {
           "keys": [
             "is",
-            "with",
-            "out",
-            "off",
-            "down"
+            "the",
+            "a",
+            "here",
+            "yes",
+            "all_done",
+            "no"
           ]
         },
         {
@@ -171,6 +107,16 @@
           "to": "feelings",
           "audible": true,
           "linkColor": "verb"
+        },
+        {
+          "keys": [
+            "make",
+            "look",
+            "see",
+            "in",
+            "on",
+            "up"
+          ]
         },
         {
           "level": 1,
@@ -223,25 +169,15 @@
             "open",
             "watch",
             "is",
-            "with",
-            "out",
-            "off",
-            "down",
             "feel"
           ]
         },
         {
           "level": 3,
           "words": [
-            "people",
-            "question",
-            "actions",
-            "places",
-            "social",
-            "time",
-            "describe",
-            "feelings",
-            "folder_small_words"
+            "we",
+            "they",
+            "this"
           ]
         },
         {
@@ -254,83 +190,15 @@
       "key": "people",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
-            "mom",
-            "dad",
             "brother",
             "sister",
             "baby",
-            "grandma",
-            "grandpa",
-            "family",
-            "friend",
-            "mine"
+            "teacher",
+            "student",
+            "nurse",
+            "mom",
+            "dad"
           ]
         },
         {
@@ -346,14 +214,12 @@
           "keys": [
             "he",
             "she",
-            "boy",
-            "girl",
-            "teacher",
-            "student",
-            "nurse",
             "him",
             "her",
-            "his"
+            "his",
+            "grandma",
+            "grandpa",
+            "family"
           ]
         },
         {
@@ -367,16 +233,14 @@
         },
         {
           "keys": [
-            "they",
-            "them",
-            "their",
-            "we",
+            "boy",
+            "girl",
             "us",
+            "them",
             "our",
-            "kid",
-            "man",
-            "woman",
-            "person"
+            "their",
+            "friend",
+            "mine"
           ]
         },
         {
@@ -387,6 +251,16 @@
           "to": "people_helpers",
           "audible": false,
           "linkColor": "noun"
+        },
+        {
+          "keys": [
+            "we",
+            "they",
+            "kid",
+            "man",
+            "woman",
+            "person"
+          ]
         }
       ]
     },
@@ -394,83 +268,15 @@
       "key": "social",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
-            "awesome",
-            "be_quiet",
-            "break",
             "hello",
             "bye",
             "goodbye",
             "goodnight",
-            "cool",
-            "don't",
-            "excuse_me"
+            "i_love_it",
+            "i_love_you",
+            "awesome",
+            "be_quiet"
           ]
         },
         {
@@ -484,16 +290,44 @@
         },
         {
           "keys": [
+            "break",
+            "cool",
+            "don't",
+            "excuse_me",
             "funny",
             "great",
             "how_are_you",
-            "i_love_it",
-            "i_love_you",
-            "maybe",
+            "maybe"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "keys": [
             "nice_to_meet",
             "no_way",
             "oh_my",
-            "okay"
+            "okay",
+            "please",
+            "problem",
+            "sorry",
+            "thank_you"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "keys": [
+            "uh_oh",
+            "whats_up",
+            "youre_welcome",
+            "me_too",
+            "my_turn",
+            "your_turn",
+            "see_you_later",
+            "never_mind"
           ]
         },
         {
@@ -504,25 +338,6 @@
             "yes",
             "i_dont_know",
             "no",
-            "please",
-            "problem",
-            "sorry",
-            "thank_you",
-            "uh_oh",
-            "whats_up",
-            "youre_welcome"
-          ]
-        },
-        {
-          "space": 2
-        },
-        {
-          "keys": [
-            "me_too",
-            "my_turn",
-            "your_turn",
-            "see_you_later",
-            "never_mind",
             "really",
             "sounds_good",
             "oh",
@@ -536,76 +351,10 @@
       "key": "actions",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
-            "need",
-            "have",
-            "stop"
+            "walk",
+            "run",
+            "jump"
           ]
         },
         {
@@ -634,14 +383,12 @@
         },
         {
           "keys": [
-            "give",
-            "take",
-            "make"
+            "stop"
           ]
         },
         {
-          "link": "folder_playing",
-          "to": "actions_playing",
+          "link": "folder_cooking",
+          "to": "actions_cooking",
           "audible": false,
           "linkColor": "verb"
         },
@@ -653,21 +400,19 @@
         },
         {
           "keys": [
-            "find",
-            "lose",
-            "try",
+            "am",
+            "are",
+            "was",
             "get",
             "want",
             "do",
-            "look",
-            "see",
-            "wait",
-            "finish"
+            "need",
+            "have"
           ]
         },
         {
-          "link": "folder_cooking",
-          "to": "actions_cooking",
+          "link": "folder_senses",
+          "to": "actions_senses",
           "audible": false,
           "linkColor": "verb"
         },
@@ -680,20 +425,26 @@
         {
           "keys": [
             "write",
-            "draw",
-            "work",
-            "help",
-            "like",
-            "read",
-            "put",
-            "am",
-            "are",
-            "was"
+            "draw"
           ]
         },
         {
-          "link": "folder_senses",
-          "to": "actions_senses",
+          "space": 1
+        },
+        {
+          "keys": [
+            "help",
+            "like",
+            "read",
+            "put"
+          ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "link": "folder_doing",
+          "to": "actions_doing",
           "audible": false,
           "linkColor": "verb"
         },
@@ -705,8 +456,8 @@
         },
         {
           "keys": [
-            "sit",
-            "stand",
+            "give",
+            "take",
             "close",
             "open",
             "watch"
@@ -720,21 +471,41 @@
         },
         {
           "keys": [
-            "sleep",
-            "walk",
-            "run",
-            "jump"
+            "find",
+            "lose"
           ]
         },
         {
-          "link": "folder_doing",
-          "to": "actions_doing",
-          "audible": false,
-          "linkColor": "verb"
+          "space": 1
         },
         {
           "link": "folder_thinking",
           "to": "actions_thinking",
+          "audible": false,
+          "linkColor": "verb"
+        },
+        {
+          "keys": [
+            "sit",
+            "stand"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "keys": [
+            "make",
+            "look",
+            "see"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "link": "folder_playing",
+          "to": "actions_playing",
           "audible": false,
           "linkColor": "verb"
         }
@@ -744,72 +515,6 @@
       "key": "describe",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "big",
             "little",
@@ -818,16 +523,14 @@
             "hot_",
             "cold__",
             "loud",
-            "quiet",
-            "fast",
-            "slow"
+            "quiet"
           ]
         },
         {
-          "link": "folder_how_much",
-          "to": "describe_how_much",
+          "link": "folder_what_its_like",
+          "to": "describe_what_its_like",
           "audible": false,
-          "linkColor": "determiner"
+          "linkColor": "adjective"
         },
         {
           "link": "folder_size",
@@ -837,21 +540,19 @@
         },
         {
           "keys": [
+            "fast",
+            "slow",
             "new",
             "old",
             "clean_",
             "dirty",
             "wet",
-            "dry_",
-            "full",
-            "empty",
-            "easy",
-            "hard"
+            "dry_"
           ]
         },
         {
-          "link": "folder_what_its_like",
-          "to": "describe_what_its_like",
+          "link": "colors",
+          "to": "colors_shapes",
           "audible": false,
           "linkColor": "adjective"
         },
@@ -863,23 +564,18 @@
         },
         {
           "keys": [
+            "full",
+            "empty",
+            "easy",
+            "hard",
             "yummy",
             "yucky",
             "fun",
-            "boring",
-            "nice",
-            "mean",
-            "same",
-            "different",
-            "pretty",
-            "ugly"
+            "boring"
           ]
         },
         {
-          "link": "colors",
-          "to": "colors_shapes",
-          "audible": false,
-          "linkColor": "adjective"
+          "space": 1
         },
         {
           "link": "folder_opinions",
@@ -889,11 +585,30 @@
         },
         {
           "keys": [
+            "nice",
+            "mean",
+            "same",
+            "different",
+            "pretty",
+            "ugly",
+            "broken",
+            "busy"
+          ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "link": "folder_where",
+          "to": "describe_where",
+          "audible": false,
+          "linkColor": "preposition"
+        },
+        {
+          "keys": [
             "right",
             "okay_",
             "wrong",
-            "busy",
-            "broken",
             "smart",
             "soft",
             "maybe",
@@ -905,10 +620,10 @@
           "space": 1
         },
         {
-          "link": "folder_where",
-          "to": "describe_where",
+          "link": "folder_how_much",
+          "to": "describe_how_much",
           "audible": false,
-          "linkColor": "preposition"
+          "linkColor": "determiner"
         }
       ]
     },
@@ -916,90 +631,19 @@
       "key": "food",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
-            "snack",
+            "hungry",
+            "more",
             "apple",
             "banana",
             "grapes",
             "strawberry",
             "orange",
-            "fruit",
-            "veggie",
-            "hungry",
-            "more"
+            "snack"
           ]
         },
         {
-          "link": "folder_snacks",
-          "to": "food_snacks",
-          "audible": false,
-          "linkColor": "noun"
+          "space": 1
         },
         {
           "link": "folder_breakfast",
@@ -1009,16 +653,14 @@
         },
         {
           "keys": [
-            "carrot",
-            "corn",
-            "potato",
-            "cereal",
-            "pancakes",
-            "eggs",
-            "toast",
-            "yogurt",
-            "bread",
-            "ice_cream"
+            "sandwich",
+            "pizza",
+            "nuggets",
+            "fries",
+            "macaroni",
+            "hot_dog",
+            "hamburger",
+            "fruit"
           ]
         },
         {
@@ -1032,16 +674,14 @@
         },
         {
           "keys": [
-            "sandwich",
-            "pizza",
-            "nuggets",
-            "fries",
-            "macaroni",
-            "hot_dog",
-            "hamburger",
-            "cheese",
-            "crackers",
-            "chips"
+            "cereal",
+            "pancakes",
+            "eggs",
+            "toast",
+            "yogurt",
+            "carrot",
+            "corn",
+            "potato"
           ]
         },
         {
@@ -1055,22 +695,41 @@
         },
         {
           "keys": [
-            "yummy",
-            "all_done",
-            "yucky",
             "goldfish_cracker",
             "fruit_snack",
             "popcorn",
             "cookie",
-            "chocolate"
+            "chocolate",
+            "cheese",
+            "crackers",
+            "chips"
+          ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "link": "folder_veggies",
+          "to": "food_veggies",
+          "audible": false,
+          "linkColor": "noun"
+        },
+        {
+          "keys": [
+            "yummy",
+            "all_done",
+            "yucky",
+            "veggie",
+            "bread",
+            "ice_cream"
           ]
         },
         {
           "space": 3
         },
         {
-          "link": "folder_veggies",
-          "to": "food_veggies",
+          "link": "folder_snacks",
+          "to": "food_snacks",
           "audible": false,
           "linkColor": "noun"
         }
@@ -1080,83 +739,15 @@
       "key": "drinks",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
+            "thirsty",
+            "more",
             "chocolate_milk",
             "drinks",
             "ice_cubes",
             "iced_tea",
             "juice",
-            "lemonade",
-            "milk",
-            "milkshake",
-            "thirsty",
-            "more"
+            "lemonade"
           ]
         },
         {
@@ -1164,19 +755,28 @@
         },
         {
           "keys": [
+            "milk",
+            "milkshake",
             "soda",
             "water",
             "cup",
             "hot_chocolate",
             "smoothie",
-            "coffee",
+            "coffee"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "keys": [
             "straw",
             "bottle",
             "ice"
           ]
         },
         {
-          "space": 3
+          "space": 17
         },
         {
           "keys": [
@@ -1191,75 +791,28 @@
       "key": "places",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
+          "keys": [
+            "car",
+            "bus",
+            "train",
+            "bicycle",
+            "airplane",
+            "boat",
+            "home_",
+            "house"
+          ]
         },
         {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
+          "space": 1
         },
         {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
+          "link": "folder_house",
+          "to": "places_house",
           "audible": false,
           "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
         },
         {
           "keys": [
-            "home_",
-            "house",
             "school",
             "park",
             "playground",
@@ -1274,8 +827,8 @@
           "space": 1
         },
         {
-          "link": "folder_house",
-          "to": "places_house",
+          "link": "folder_school",
+          "to": "places_school",
           "audible": false,
           "linkColor": "noun"
         },
@@ -1288,34 +841,11 @@
             "pool",
             "beach",
             "zoo",
-            "farm",
-            "therapy",
-            "speech"
+            "farm"
           ]
         },
         {
           "space": 1
-        },
-        {
-          "link": "folder_school",
-          "to": "places_school",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "keys": [
-            "class",
-            "movie",
-            "mall",
-            "grocery_store",
-            "lunch",
-            "car",
-            "bus",
-            "train"
-          ]
-        },
-        {
-          "space": 3
         },
         {
           "link": "folder_fun_places",
@@ -1325,13 +855,17 @@
         },
         {
           "keys": [
-            "bicycle",
-            "airplane",
-            "boat"
+            "therapy",
+            "speech",
+            "class",
+            "movie",
+            "mall",
+            "grocery_store",
+            "lunch"
           ]
         },
         {
-          "space": 8
+          "space": 2
         },
         {
           "link": "folder_out_and_about",
@@ -1346,72 +880,6 @@
       "name": "Play",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "ball",
             "bubbles",
@@ -1420,16 +888,11 @@
             "toy",
             "doll",
             "cars",
-            "playdoh",
-            "games",
-            "cards"
+            "playdoh"
           ]
         },
         {
-          "link": "folder_outside_play",
-          "to": "play_outside",
-          "audible": false,
-          "linkColor": "noun"
+          "space": 1
         },
         {
           "link": "folder_toys",
@@ -1439,19 +902,18 @@
         },
         {
           "keys": [
+            "art",
+            "crayons",
+            "markers",
+            "paper",
             "ipad",
             "phone",
             "video_game",
-            "slide",
-            "swing",
-            "trampoline",
-            "sports",
-            "balloon",
-            "teddy_bear"
+            "sports"
           ]
         },
         {
-          "space": 2
+          "space": 1
         },
         {
           "link": "folder_art",
@@ -1461,14 +923,17 @@
         },
         {
           "keys": [
-            "art",
-            "crayons",
-            "markers",
-            "paper"
+            "slide",
+            "swing",
+            "trampoline",
+            "games",
+            "cards",
+            "balloon",
+            "teddy_bear"
           ]
         },
         {
-          "space": 7
+          "space": 2
         },
         {
           "link": "folder_games",
@@ -1477,11 +942,20 @@
           "linkColor": "noun"
         },
         {
-          "space": 11
+          "space": 9
         },
         {
           "link": "folder_sports",
           "to": "play_sports",
+          "audible": false,
+          "linkColor": "noun"
+        },
+        {
+          "space": 9
+        },
+        {
+          "link": "folder_outside_play",
+          "to": "play_outside",
           "audible": false,
           "linkColor": "noun"
         }
@@ -1492,78 +966,19 @@
       "name": "Colors & shapes",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "red",
             "orange_",
             "yellow",
             "green",
-            "blue",
+            "blue"
+          ]
+        },
+        {
+          "space": 5
+        },
+        {
+          "keys": [
             "purple",
             "pink",
             "brown",
@@ -1572,18 +987,16 @@
           ]
         },
         {
-          "space": 2
+          "space": 3
         },
         {
-          "keys": [
-            "grey",
-            "tan",
-            "gold",
-            "silver"
-          ]
+          "link": "colors",
+          "to": "colors_shapes",
+          "audible": false,
+          "linkColor": "adjective"
         },
         {
-          "space": 8
+          "space": 1
         },
         {
           "keys": [
@@ -1591,7 +1004,14 @@
             "circle",
             "square",
             "triangle",
-            "rectangle",
+            "rectangle"
+          ]
+        },
+        {
+          "space": 5
+        },
+        {
+          "keys": [
             "oval",
             "star",
             "heart",
@@ -1600,10 +1020,15 @@
           ]
         },
         {
-          "link": "colors",
-          "to": "colors_shapes",
-          "audible": false,
-          "linkColor": "adjective"
+          "space": 5
+        },
+        {
+          "keys": [
+            "grey",
+            "tan",
+            "gold",
+            "silver"
+          ]
         }
       ]
     },
@@ -1611,82 +1036,14 @@
       "key": "weather",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "sun",
             "cloud",
             "rain",
             "snow",
             "wind",
-            "storm",
-            "thunder",
-            "lightning",
-            "tornado",
+            "rainbow",
+            "fog",
             "hail"
           ]
         },
@@ -1701,12 +1058,21 @@
         },
         {
           "keys": [
-            "rainbow",
-            "fog",
+            "storm",
+            "thunder",
+            "lightning",
+            "tornado",
             "hot",
             "cold_",
             "warm",
-            "cool_",
+            "cool_"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "keys": [
             "windy"
           ]
         }
@@ -1717,72 +1083,6 @@
       "name": "Time",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "when",
             "now",
@@ -1791,16 +1091,11 @@
             "today",
             "tomorrow",
             "yesterday",
-            "tonight",
-            "week",
-            "weekend"
+            "tonight"
           ]
         },
         {
-          "link": "folder_seasons",
-          "to": "time_seasons",
-          "audible": false,
-          "linkColor": "noun"
+          "space": 1
         },
         {
           "link": "weather",
@@ -1810,15 +1105,13 @@
         },
         {
           "keys": [
-            "morning",
-            "afternoon",
-            "night",
-            "day",
             "before",
             "after",
             "first",
             "next",
             "last",
+            "week",
+            "weekend",
             "then"
           ]
         },
@@ -1836,14 +1129,15 @@
             "always",
             "sometimes",
             "never",
-            "wait",
-            "again",
-            "until",
-            "already"
+            "morning",
+            "afternoon",
+            "night",
+            "day",
+            "until"
           ]
         },
         {
-          "space": 4
+          "space": 1
         },
         {
           "link": "folder_my_day",
@@ -1852,11 +1146,27 @@
           "linkColor": "noun"
         },
         {
-          "space": 11
+          "keys": [
+            "wait",
+            "again",
+            "already"
+          ]
+        },
+        {
+          "space": 6
         },
         {
           "link": "folder_clock",
           "to": "time_clock",
+          "audible": false,
+          "linkColor": "noun"
+        },
+        {
+          "space": 9
+        },
+        {
+          "link": "folder_seasons",
+          "to": "time_seasons",
           "audible": false,
           "linkColor": "noun"
         }
@@ -1865,75 +1175,6 @@
     {
       "key": "keyboard",
       "tiles": [
-        {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
-          "space": 1
-        },
         {
           "keys": [
             "ipad"
@@ -1944,72 +1185,6 @@
     {
       "key": "questions",
       "tiles": [
-        {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
         {
           "link": "who",
           "to": "people",
@@ -2038,9 +1213,7 @@
             "why",
             "how",
             "which",
-            "how_many",
-            "how_much",
-            "whose"
+            "how_many"
           ]
         },
         {
@@ -2048,6 +1221,8 @@
         },
         {
           "keys": [
+            "how_much",
+            "whose",
             "what_time",
             "can_i",
             "is_it"
@@ -2059,83 +1234,30 @@
       "key": "feelings",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "happy",
             "sad",
             "angry",
             "scared",
             "afraid",
+            "okay_",
+            "mad",
+            "nervous"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "keys": [
             "excited",
             "calm",
             "silly",
             "proud",
-            "bored"
+            "bored",
+            "confused",
+            "embarrassed",
+            "shy"
           ]
         },
         {
@@ -2148,6 +1270,16 @@
             "worried",
             "lonely",
             "surprised",
+            "disappointed",
+            "curious",
+            "brave"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "keys": [
             "sick",
             "hurt",
             "tired"
@@ -2166,20 +1298,10 @@
           "linkColor": "adjective"
         },
         {
-          "space": 2
-        },
-        {
           "keys": [
-            "okay_",
-            "feel",
-            "mad",
-            "nervous",
-            "confused",
-            "embarrassed",
-            "shy",
-            "disappointed",
-            "curious",
-            "brave"
+            "grumpy",
+            "safe",
+            "jealous"
           ]
         },
         {
@@ -2187,12 +1309,10 @@
         },
         {
           "keys": [
-            "grumpy",
-            "safe",
-            "jealous",
             "strong",
             "weak",
             "dizzy",
+            "feel",
             "a_little",
             "kind_of"
           ]
@@ -2204,70 +1324,28 @@
       "name": "Things",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
+          "keys": [
+            "bed",
+            "blanket",
+            "book",
+            "phone",
+            "tv",
+            "cup",
+            "spoon",
+            "plate"
+          ]
         },
         {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
+          "link": "things",
+          "to": "things",
           "audible": false,
           "linkColor": "noun"
         },
         {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
+          "link": "animals",
+          "to": "animals",
           "audible": false,
           "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
         },
         {
           "keys": [
@@ -2282,39 +1360,8 @@
           ]
         },
         {
-          "space": 2
-        },
-        {
-          "link": "vehicles",
-          "to": "vehicles",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "animals",
-          "to": "animals",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "keys": [
-            "car",
-            "bus",
-            "train",
-            "airplane",
-            "bed",
-            "blanket",
-            "book",
-            "phone",
-            "tv"
-          ]
-        },
-        {
-          "space": 1
-        },
-        {
-          "link": "things",
-          "to": "things",
+          "link": "folder_nature",
+          "to": "things_nature",
           "audible": false,
           "linkColor": "noun"
         },
@@ -2326,17 +1373,18 @@
         },
         {
           "keys": [
-            "cup",
-            "spoon",
-            "plate"
+            "car",
+            "bus",
+            "train",
+            "airplane"
           ]
         },
         {
-          "space": 7
+          "space": 4
         },
         {
-          "link": "folder_nature",
-          "to": "things_nature",
+          "link": "folder_school_tech",
+          "to": "things_school",
           "audible": false,
           "linkColor": "noun"
         },
@@ -2347,19 +1395,22 @@
           "linkColor": "noun"
         },
         {
-          "space": 10
-        },
-        {
-          "link": "folder_school_tech",
-          "to": "things_school",
-          "audible": false,
-          "linkColor": "noun"
+          "space": 9
         },
         {
           "link": "health",
           "to": "health",
           "audible": false,
           "linkColor": "adjective"
+        },
+        {
+          "space": 9
+        },
+        {
+          "link": "vehicles",
+          "to": "vehicles",
+          "audible": false,
+          "linkColor": "noun"
         }
       ]
     },
@@ -2368,83 +1419,15 @@
       "name": "Animals",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
-            "dog",
-            "cat",
-            "bird",
-            "fish",
             "horse",
             "cow",
             "pig",
             "duck",
             "chicken",
-            "sheep"
+            "sheep",
+            "kitty",
+            "puppy"
           ]
         },
         {
@@ -2458,16 +1441,14 @@
         },
         {
           "keys": [
-            "kitty",
-            "puppy",
+            "dog",
+            "cat",
+            "bird",
+            "fish",
             "bunny",
             "bear",
             "monkey",
-            "elephant",
-            "lion",
-            "tiger",
-            "giraffe",
-            "zebra"
+            "elephant"
           ]
         },
         {
@@ -2475,16 +1456,29 @@
         },
         {
           "keys": [
+            "lion",
+            "tiger",
+            "giraffe",
+            "zebra",
             "frog",
             "turtle",
             "mouse",
-            "squirrel",
+            "squirrel"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "keys": [
             "owl",
             "penguin",
             "shark",
             "alligator",
             "bug",
-            "bee"
+            "bee",
+            "ant",
+            "butterfly"
           ]
         },
         {
@@ -2492,8 +1486,6 @@
         },
         {
           "keys": [
-            "ant",
-            "butterfly",
             "deer",
             "dinosaur"
           ]
@@ -2504,83 +1496,15 @@
       "key": "clothes",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "pants",
             "coat",
             "pajamas",
             "diaper",
-            "shoes",
-            "socks",
-            "shirt",
-            "hat",
             "underwear",
-            "shorts"
+            "shorts",
+            "jeans",
+            "dress"
           ]
         },
         {
@@ -2588,16 +1512,14 @@
         },
         {
           "keys": [
-            "jeans",
-            "dress",
             "jacket",
             "sweater",
             "boots",
             "slippers",
-            "gloves",
-            "mittens",
-            "swimsuit",
-            "belt"
+            "shoes",
+            "socks",
+            "shirt",
+            "hat"
           ]
         },
         {
@@ -2611,6 +1533,10 @@
         },
         {
           "keys": [
+            "gloves",
+            "mittens",
+            "swimsuit",
+            "belt",
             "zipper",
             "button"
           ]
@@ -2622,106 +1548,15 @@
       "name": "House things",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
-            "fork",
-            "bowl",
-            "toothbrush",
-            "music",
-            "door",
-            "window",
-            "chair",
-            "table",
-            "couch",
-            "pillow"
-          ]
-        },
-        {
-          "space": 1
-        },
-        {
-          "link": "folder_kitchen",
-          "to": "things_kitchen",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "keys": [
-            "lamp",
-            "box",
-            "keys",
-            "clock",
             "bed",
             "blanket",
             "book",
             "phone",
             "tv",
-            "picture"
+            "cup",
+            "spoon",
+            "plate"
           ]
         },
         {
@@ -2731,6 +1566,27 @@
           "linkColor": "noun"
         },
         {
+          "link": "folder_kitchen",
+          "to": "things_kitchen",
+          "audible": false,
+          "linkColor": "noun"
+        },
+        {
+          "keys": [
+            "door",
+            "window",
+            "fork",
+            "bowl",
+            "toothbrush",
+            "music",
+            "chair",
+            "table"
+          ]
+        },
+        {
+          "space": 1
+        },
+        {
           "link": "folder_bathroom",
           "to": "things_bathroom",
           "audible": false,
@@ -2738,16 +1594,14 @@
         },
         {
           "keys": [
-            "cup",
-            "spoon",
-            "plate",
-            "trash",
-            "crib",
-            "bag",
-            "basket",
-            "present",
-            "money",
-            "camera"
+            "couch",
+            "pillow",
+            "lamp",
+            "box",
+            "keys",
+            "clock",
+            "picture",
+            "trash"
           ]
         },
         {
@@ -2755,6 +1609,12 @@
         },
         {
           "keys": [
+            "crib",
+            "bag",
+            "basket",
+            "present",
+            "money",
+            "camera",
             "broom",
             "washing_machine"
           ]
@@ -2765,72 +1625,6 @@
       "key": "vehicles",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "truck",
             "bicycle",
@@ -2839,31 +1633,41 @@
             "fire_truck",
             "ambulance",
             "police_car",
-            "school_bus",
-            "tractor",
-            "motorcycle"
+            "school_bus"
           ]
         },
         {
-          "link": "vehicles",
-          "to": "vehicles",
-          "audible": false,
-          "linkColor": "noun"
+          "space": 2
         },
         {
-          "space": 1
+          "keys": [
+            "tractor",
+            "motorcycle",
+            "taxi",
+            "rocket",
+            "wagon",
+            "stroller"
+          ]
+        },
+        {
+          "space": 4
         },
         {
           "keys": [
             "car",
             "bus",
             "train",
-            "airplane",
-            "taxi",
-            "rocket",
-            "wagon",
-            "stroller"
+            "airplane"
           ]
+        },
+        {
+          "space": 25
+        },
+        {
+          "link": "vehicles",
+          "to": "vehicles",
+          "audible": false,
+          "linkColor": "noun"
         }
       ]
     },
@@ -2872,83 +1676,12 @@
       "name": "I",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "am",
             "need",
-            "love"
+            "love",
+            "have"
           ]
-        },
-        {
-          "link": "feel",
-          "to": "feelings",
-          "audible": true,
-          "linkColor": "verb"
         },
         {
           "link": "go",
@@ -2958,15 +1691,22 @@
         },
         {
           "keys": [
-            "see",
-            "have",
             "don't",
             "will",
             "was"
           ]
         },
         {
-          "space": 2
+          "link": "folder_toys",
+          "to": "play_toys",
+          "audible": false,
+          "linkColor": "noun"
+        },
+        {
+          "link": "eat",
+          "to": "food",
+          "audible": false,
+          "linkColor": "noun"
         },
         {
           "keys": [
@@ -2977,27 +1717,73 @@
             "want",
             "wanna",
             "can",
-            "have_to",
+            "have_to"
+          ]
+        },
+        {
+          "link": "folder_games",
+          "to": "play_games",
+          "audible": false,
+          "linkColor": "noun"
+        },
+        {
+          "link": "drink",
+          "to": "drinks",
+          "audible": false,
+          "linkColor": "noun"
+        },
+        {
+          "keys": [
             "let_me",
-            "could"
-          ]
-        },
-        {
-          "space": 2
-        },
-        {
-          "keys": [
-            "would"
-          ]
-        },
-        {
-          "space": 2
-        },
-        {
-          "keys": [
+            "could",
+            "would",
             "help",
             "like"
           ]
+        },
+        {
+          "space": 4
+        },
+        {
+          "link": "play",
+          "to": "play_activities",
+          "audible": false,
+          "linkColor": "noun"
+        },
+        {
+          "space": 9
+        },
+        {
+          "link": "folder_snacks",
+          "to": "food_snacks",
+          "audible": false,
+          "linkColor": "noun"
+        },
+        {
+          "space": 3
+        },
+        {
+          "link": "feel",
+          "to": "feelings",
+          "audible": true,
+          "linkColor": "verb"
+        },
+        {
+          "space": 2
+        },
+        {
+          "keys": [
+            "see"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "link": "folder_fruit",
+          "to": "food_fruit",
+          "audible": false,
+          "linkColor": "noun"
         }
       ]
     },
@@ -3006,83 +1792,15 @@
       "name": "Small words",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
-            "the",
+            "a",
+            "on",
             "up",
+            "out",
+            "off",
             "down",
-            "all",
-            "not",
-            "or",
-            "but",
-            "to",
-            "some",
-            "more"
+            "with",
+            "to"
           ]
         },
         {
@@ -3096,16 +1814,14 @@
         },
         {
           "keys": [
-            "because",
-            "there",
+            "some",
+            "all",
             "it",
-            "at",
-            "this",
-            "again",
-            "now",
-            "for",
-            "and",
-            "a"
+            "not",
+            "more",
+            "here",
+            "or",
+            "for"
           ]
         },
         {
@@ -3119,16 +1835,14 @@
         },
         {
           "keys": [
-            "later",
-            "will",
+            "but",
+            "because",
             "that",
-            "an",
-            "of",
-            "from",
-            "by",
-            "here",
-            "in",
-            "on"
+            "there",
+            "at",
+            "again",
+            "now",
+            "and"
           ]
         },
         {
@@ -3136,16 +1850,29 @@
         },
         {
           "keys": [
+            "later",
+            "will",
+            "this",
+            "an",
+            "of",
+            "from",
+            "is",
+            "the"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "keys": [
+            "by",
             "so",
             "too",
             "very",
             "just",
             "only",
             "then",
-            "is",
-            "with",
-            "out",
-            "off"
+            "in"
           ]
         }
       ]
@@ -3155,76 +1882,10 @@
       "name": "Moving",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
-            "climb",
-            "dance",
-            "fly"
+            "walk",
+            "run",
+            "jump"
           ]
         },
         {
@@ -3253,9 +1914,7 @@
         },
         {
           "keys": [
-            "fall",
-            "push",
-            "pull"
+            "climb"
           ]
         },
         {
@@ -3269,16 +1928,14 @@
         },
         {
           "keys": [
+            "push",
+            "pull",
+            "dance",
+            "fly",
+            "fall",
             "turn",
             "swim",
-            "move",
-            "leave",
-            "hurry",
-            "chase",
-            "carry",
-            "hold",
-            "drop",
-            "bump"
+            "move"
           ]
         },
         {
@@ -3286,26 +1943,23 @@
         },
         {
           "keys": [
+            "leave",
+            "hurry",
+            "chase",
+            "carry",
+            "hold",
+            "drop",
+            "bump",
             "turn_around"
           ]
         },
         {
-          "space": 11
+          "space": 12
         },
         {
           "keys": [
             "sit",
             "stand"
-          ]
-        },
-        {
-          "space": 5
-        },
-        {
-          "keys": [
-            "walk",
-            "run",
-            "jump"
           ]
         }
       ]
@@ -3315,80 +1969,23 @@
       "name": "Taking care",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "wash",
             "wash_hands",
             "wash_hair",
-            "bathe",
-            "shower",
             "brush",
             "brush_teeth",
+            "sleep",
+            "nap",
+            "bathe"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "keys": [
+            "shower",
             "dry",
             "dress_up"
           ]
@@ -3400,22 +1997,15 @@
           "linkColor": "verb"
         },
         {
-          "space": 2
-        },
-        {
           "keys": [
             "polish_nails",
             "clean",
             "wipe",
-            "sweep",
-            "wake_up",
-            "feed",
-            "fix",
-            "vacuum"
+            "sweep"
           ]
         },
         {
-          "space": 3
+          "space": 1
         },
         {
           "link": "folder_taking_care",
@@ -3424,12 +2014,11 @@
           "linkColor": "verb"
         },
         {
-          "space": 18
-        },
-        {
           "keys": [
-            "sleep",
-            "nap"
+            "wake_up",
+            "feed",
+            "fix",
+            "vacuum"
           ]
         }
       ]
@@ -3439,83 +2028,15 @@
       "name": "Talking",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
-            "tell",
-            "listen",
             "talk",
             "say",
             "ask",
             "answer",
             "speak",
-            "call",
-            "email",
-            "meet"
+            "tell",
+            "listen",
+            "call"
           ]
         },
         {
@@ -3523,6 +2044,8 @@
         },
         {
           "keys": [
+            "email",
+            "meet",
             "show",
             "knock",
             "bring",
@@ -3530,7 +2053,7 @@
           ]
         },
         {
-          "space": 19
+          "space": 13
         },
         {
           "link": "folder_talking",
@@ -3545,92 +2068,15 @@
       "name": "Thinking",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "know",
             "think",
             "remember",
             "forget",
             "understand",
-            "learn"
-          ]
-        },
-        {
-          "link": "feel",
-          "to": "feelings",
-          "audible": true,
-          "linkColor": "verb"
-        },
-        {
-          "keys": [
             "love",
             "hate",
-            "guess"
+            "learn"
           ]
         },
         {
@@ -3640,14 +2086,12 @@
           "keys": [
             "hope",
             "wish",
+            "guess",
             "pray",
             "cry",
             "hurt",
             "blush",
-            "kiss",
-            "hug",
-            "smile",
-            "laugh"
+            "kiss"
           ]
         },
         {
@@ -3655,16 +2099,28 @@
         },
         {
           "keys": [
+            "hug",
+            "smile",
+            "laugh",
             "change"
           ]
         },
         {
-          "space": 22
+          "space": 15
         },
         {
           "link": "folder_thinking",
           "to": "actions_thinking",
           "audible": false,
+          "linkColor": "verb"
+        },
+        {
+          "space": 3
+        },
+        {
+          "link": "feel",
+          "to": "feelings",
+          "audible": true,
           "linkColor": "verb"
         }
       ]
@@ -3674,72 +2130,6 @@
       "name": "Playing",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "catch",
             "throw",
@@ -3748,22 +2138,16 @@
             "hide",
             "share",
             "blow",
-            "bowl",
-            "sing",
-            "clap"
+            "bowl"
           ]
         },
         {
-          "link": "folder_playing",
-          "to": "actions_playing",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "space": 1
+          "space": 2
         },
         {
           "keys": [
+            "sing",
+            "clap",
             "tickle",
             "splash",
             "pretend",
@@ -3771,7 +2155,7 @@
           ]
         },
         {
-          "space": 9
+          "space": 5
         },
         {
           "keys": [
@@ -3781,12 +2165,21 @@
           ]
         },
         {
-          "space": 13
+          "space": 11
         },
         {
           "link": "play",
           "to": "play_activities",
           "audible": true,
+          "linkColor": "verb"
+        },
+        {
+          "space": 13
+        },
+        {
+          "link": "folder_playing",
+          "to": "actions_playing",
+          "audible": false,
           "linkColor": "verb"
         }
       ]
@@ -3795,72 +2188,6 @@
       "key": "actions_cooking",
       "name": "Cooking & eating",
       "tiles": [
-        {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
         {
           "keys": [
             "bite",
@@ -3884,28 +2211,25 @@
         },
         {
           "keys": [
-            "taste",
-            "lick",
-            "spill"
+            "taste"
           ]
-        },
-        {
-          "space": 2
-        },
-        {
-          "keys": [
-            "bake",
-            "mix"
-          ]
-        },
-        {
-          "space": 8
         },
         {
           "link": "folder_cooking",
           "to": "actions_cooking",
           "audible": false,
           "linkColor": "verb"
+        },
+        {
+          "space": 1
+        },
+        {
+          "keys": [
+            "lick",
+            "spill",
+            "bake",
+            "mix"
+          ]
         }
       ]
     },
@@ -3913,72 +2237,6 @@
       "key": "actions_senses",
       "name": "Senses",
       "tiles": [
-        {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
         {
           "keys": [
             "hear",
@@ -3991,26 +2249,26 @@
           "space": 14
         },
         {
-          "keys": [
-            "look",
-            "see"
-          ]
-        },
-        {
-          "space": 14
-        },
-        {
           "link": "folder_senses",
           "to": "actions_senses",
           "audible": false,
           "linkColor": "verb"
         },
         {
-          "space": 5
+          "space": 15
         },
         {
           "keys": [
             "watch"
+          ]
+        },
+        {
+          "space": 10
+        },
+        {
+          "keys": [
+            "look",
+            "see"
           ]
         }
       ]
@@ -4020,83 +2278,55 @@
       "name": "Doing",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
+          "keys": [
+            "wait",
+            "finish",
+            "buy",
+            "shop",
+            "use",
+            "try",
+            "work",
+            "hit"
+          ]
         },
         {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
+          "space": 2
         },
         {
-          "link": "actions",
-          "to": "actions",
+          "keys": [
+            "line_up",
+            "lets",
+            "live",
+            "get",
+            "shopping"
+          ]
+        },
+        {
+          "space": 11
+        },
+        {
+          "keys": [
+            "put"
+          ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "link": "folder_doing",
+          "to": "actions_doing",
           "audible": false,
           "linkColor": "verb"
         },
         {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
+          "space": 1
         },
         {
           "keys": [
-            "use",
-            "buy",
-            "shop",
-            "hit",
-            "line_up",
-            "lets",
-            "live",
             "give",
             "take",
-            "make"
+            "close",
+            "open"
           ]
         },
         {
@@ -4105,54 +2335,16 @@
         {
           "keys": [
             "find",
-            "lose",
-            "try",
-            "get",
-            "shopping"
-          ]
-        },
-        {
-          "space": 3
-        },
-        {
-          "keys": [
-            "wait",
-            "finish"
-          ]
-        },
-        {
-          "space": 4
-        },
-        {
-          "keys": [
-            "work"
-          ]
-        },
-        {
-          "space": 3
-        },
-        {
-          "keys": [
-            "put"
-          ]
-        },
-        {
-          "space": 7
-        },
-        {
-          "keys": [
-            "close",
-            "open"
+            "lose"
           ]
         },
         {
           "space": 6
         },
         {
-          "link": "folder_doing",
-          "to": "actions_doing",
-          "audible": false,
-          "linkColor": "verb"
+          "keys": [
+            "make"
+          ]
         }
       ]
     },
@@ -4160,72 +2352,6 @@
       "key": "describe_size",
       "name": "Size",
       "tiles": [
-        {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
         {
           "keys": [
             "big",
@@ -4235,9 +2361,7 @@
             "fat",
             "thin",
             "high",
-            "low",
-            "heavy",
-            "light"
+            "low"
           ]
         },
         {
@@ -4251,6 +2375,8 @@
         },
         {
           "keys": [
+            "heavy",
+            "light",
             "tall",
             "huge",
             "tiny",
@@ -4264,72 +2390,6 @@
       "name": "How it feels",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "sticky",
             "sharp",
@@ -4338,9 +2398,7 @@
             "hot_",
             "cold__",
             "uncomfortable",
-            "gentle",
-            "rough",
-            "smooth"
+            "gentle"
           ]
         },
         {
@@ -4348,6 +2406,8 @@
         },
         {
           "keys": [
+            "rough",
+            "smooth",
             "bumpy",
             "slippery"
           ]
@@ -4362,14 +2422,6 @@
           ]
         },
         {
-          "space": 3
-        },
-        {
-          "keys": [
-            "hard"
-          ]
-        },
-        {
           "space": 1
         },
         {
@@ -4379,7 +2431,15 @@
           "linkColor": "adjective"
         },
         {
-          "space": 18
+          "space": 3
+        },
+        {
+          "keys": [
+            "hard"
+          ]
+        },
+        {
+          "space": 20
         },
         {
           "keys": [
@@ -4393,83 +2453,15 @@
       "name": "Opinions",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
-            "cute",
-            "fine",
-            "good",
-            "bad",
             "excellent",
             "terrific",
+            "good",
+            "bad",
+            "cute",
+            "fine",
             "terrible",
-            "exciting",
-            "dumb",
-            "crazy"
+            "exciting"
           ]
         },
         {
@@ -4477,6 +2469,8 @@
         },
         {
           "keys": [
+            "dumb",
+            "crazy",
             "favorite",
             "weird",
             "gross",
@@ -4490,7 +2484,20 @@
         {
           "keys": [
             "fun",
-            "boring",
+            "boring"
+          ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "link": "folder_opinions",
+          "to": "describe_opinions",
+          "audible": false,
+          "linkColor": "adjective"
+        },
+        {
+          "keys": [
             "nice",
             "mean"
           ]
@@ -4505,16 +2512,7 @@
           ]
         },
         {
-          "space": 1
-        },
-        {
-          "link": "folder_opinions",
-          "to": "describe_opinions",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "space": 5
+          "space": 7
         },
         {
           "keys": [
@@ -4536,72 +2534,6 @@
       "name": "Where",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "top",
             "bottom",
@@ -4610,9 +2542,7 @@
             "over",
             "under",
             "near",
-            "far",
-            "left",
-            "right_"
+            "far"
           ]
         },
         {
@@ -4620,16 +2550,29 @@
         },
         {
           "keys": [
+            "left",
+            "right_",
             "middle",
             "between",
+            "together",
+            "apart",
             "around",
-            "through",
+            "through"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "keys": [
             "away",
             "back_",
             "there",
-            "together",
-            "apart",
-            "alone"
+            "alone",
+            "above",
+            "below",
+            "next_to",
+            "on_top_of"
           ]
         },
         {
@@ -4637,15 +2580,11 @@
         },
         {
           "keys": [
-            "above",
-            "below",
-            "next_to",
-            "on_top_of",
             "inside"
           ]
         },
         {
-          "space": 18
+          "space": 8
         },
         {
           "link": "folder_where",
@@ -4660,100 +2599,37 @@
       "name": "How much",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
-            "many",
-            "few",
-            "one",
             "better",
             "best",
             "worse",
             "worst",
+            "many",
+            "few",
+            "more",
+            "one"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "keys": [
             "a_lot",
             "another",
-            "more"
+            "both",
+            "each",
+            "almost"
           ]
+        },
+        {
+          "space": 34
         },
         {
           "link": "folder_how_much",
           "to": "describe_how_much",
           "audible": false,
           "linkColor": "determiner"
-        },
-        {
-          "space": 1
-        },
-        {
-          "keys": [
-            "both",
-            "each",
-            "almost"
-          ]
         }
       ]
     },
@@ -4762,98 +2638,16 @@
       "name": "What it's like",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
-            "quick",
+            "fixed",
             "cheap",
             "expensive",
+            "quick",
             "messy",
             "asleep",
             "dark",
-            "sleepy",
-            "stuck",
-            "careful",
-            "awake"
+            "sleepy"
           ]
-        },
-        {
-          "space": 2
-        },
-        {
-          "keys": [
-            "new",
-            "old",
-            "young",
-            "noisy"
-          ]
-        },
-        {
-          "space": 6
         },
         {
           "link": "folder_what_its_like",
@@ -4862,7 +2656,21 @@
           "linkColor": "adjective"
         },
         {
-          "space": 7
+          "space": 1
+        },
+        {
+          "keys": [
+            "stuck",
+            "careful",
+            "new",
+            "old",
+            "young",
+            "awake",
+            "noisy"
+          ]
+        },
+        {
+          "space": 15
         },
         {
           "keys": [
@@ -4871,13 +2679,19 @@
           ]
         },
         {
-          "space": 7
+          "space": 2
         },
         {
           "keys": [
-            "busy",
             "broken",
-            "fixed",
+            "busy"
+          ]
+        },
+        {
+          "space": 6
+        },
+        {
+          "keys": [
             "true",
             "maybe",
             "false",
@@ -4891,83 +2705,15 @@
       "name": "House",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
-            "home_",
-            "house",
             "living_room",
             "dining_room",
             "backyard",
             "closet",
             "laundry",
             "toilet",
-            "garage",
-            "bathroom"
+            "home_",
+            "house"
           ]
         },
         {
@@ -4981,14 +2727,23 @@
         },
         {
           "keys": [
-            "bedroom",
-            "kitchen",
+            "garage",
             "basement",
             "stairs",
             "porch",
             "yard",
             "grandmas_house",
-            "friends_house"
+            "friends_house",
+            "bathroom"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "keys": [
+            "bedroom",
+            "kitchen"
           ]
         }
       ]
@@ -4998,100 +2753,31 @@
       "name": "School",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "gym",
             "cafeteria",
-            "school",
             "office",
-            "playground",
             "bus_stop"
           ]
         },
         {
-          "space": 9
+          "space": 6
         },
         {
           "keys": [
-            "library"
-          ]
-        },
-        {
-          "space": 4
-        },
-        {
-          "keys": [
-            "therapy",
-            "speech"
+            "school"
           ]
         },
         {
           "space": 1
+        },
+        {
+          "keys": [
+            "playground"
+          ]
+        },
+        {
+          "space": 6
         },
         {
           "link": "folder_school",
@@ -5100,7 +2786,20 @@
           "linkColor": "noun"
         },
         {
+          "space": 3
+        },
+        {
           "keys": [
+            "library"
+          ]
+        },
+        {
+          "space": 6
+        },
+        {
+          "keys": [
+            "therapy",
+            "speech",
             "class"
           ]
         }
@@ -5111,87 +2810,28 @@
       "name": "Fun places",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "lake",
             "ocean",
             "camp",
-            "park",
             "bowling_alley",
             "party",
             "picnic",
             "circus",
-            "museum",
-            "garden"
+            "museum"
           ]
         },
         {
-          "space": 6
+          "space": 2
+        },
+        {
+          "keys": [
+            "garden",
+            "park"
+          ]
+        },
+        {
+          "space": 12
         },
         {
           "keys": [
@@ -5202,21 +2842,21 @@
           ]
         },
         {
-          "space": 5
-        },
-        {
-          "keys": [
-            "movie"
-          ]
-        },
-        {
-          "space": 9
+          "space": 1
         },
         {
           "link": "folder_fun_places",
           "to": "places_fun",
           "audible": false,
           "linkColor": "noun"
+        },
+        {
+          "space": 3
+        },
+        {
+          "keys": [
+            "movie"
+          ]
         }
       ]
     },
@@ -5225,83 +2865,15 @@
       "name": "Out & about",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "airport",
             "building",
             "dentists_office",
             "hospital",
             "gas_station",
-            "store",
-            "restaurant",
-            "doctors_office",
-            "outside",
-            "bank"
+            "bank",
+            "pizza_place",
+            "ice_cream_shop"
           ]
         },
         {
@@ -5309,15 +2881,31 @@
         },
         {
           "keys": [
-            "pizza_place",
-            "ice_cream_shop",
-            "church",
             "haircut",
             "pharmacy"
           ]
         },
         {
-          "space": 9
+          "space": 1
+        },
+        {
+          "keys": [
+            "store",
+            "restaurant",
+            "doctors_office",
+            "outside"
+          ]
+        },
+        {
+          "space": 5
+        },
+        {
+          "keys": [
+            "church"
+          ]
+        },
+        {
+          "space": 11
         },
         {
           "keys": [
@@ -5326,7 +2914,7 @@
           ]
         },
         {
-          "space": 19
+          "space": 3
         },
         {
           "link": "folder_out_and_about",
@@ -5341,83 +2929,15 @@
       "name": "Family",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
-            "mom",
-            "dad",
             "brother",
             "sister",
             "baby",
-            "grandma",
-            "grandpa",
-            "family",
             "parent",
-            "aunt"
+            "aunt",
+            "uncle",
+            "mom",
+            "dad"
           ]
         },
         {
@@ -5431,12 +2951,14 @@
         },
         {
           "keys": [
-            "uncle",
             "cousin",
             "son",
             "daughter",
             "stepmom",
-            "stepdad"
+            "stepdad",
+            "grandma",
+            "grandpa",
+            "family"
           ]
         }
       ]
@@ -5446,79 +2968,15 @@
       "name": "School people",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "classmate",
             "principal",
             "aide",
+            "teacher",
+            "student",
+            "nurse",
             "bus_driver",
-            "therapist",
-            "coach"
+            "therapist"
           ]
         },
         {
@@ -5526,27 +2984,25 @@
         },
         {
           "keys": [
-            "friend"
+            "coach"
           ]
         },
         {
-          "space": 7
-        },
-        {
-          "keys": [
-            "teacher",
-            "student",
-            "nurse"
-          ]
-        },
-        {
-          "space": 4
+          "space": 8
         },
         {
           "link": "school_people",
           "to": "people_school",
           "audible": false,
           "linkColor": "noun"
+        },
+        {
+          "space": 6
+        },
+        {
+          "keys": [
+            "friend"
+          ]
         }
       ]
     },
@@ -5554,72 +3010,6 @@
       "key": "food_breakfast",
       "name": "Breakfast",
       "tiles": [
-        {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
         {
           "keys": [
             "oatmeal",
@@ -5629,12 +3019,11 @@
             "sausage",
             "applesauce",
             "muffin",
-            "donut",
-            "butter"
+            "donut"
           ]
         },
         {
-          "space": 2
+          "space": 1
         },
         {
           "link": "folder_breakfast",
@@ -5643,7 +3032,12 @@
           "linkColor": "noun"
         },
         {
-          "space": 3
+          "keys": [
+            "butter"
+          ]
+        },
+        {
+          "space": 9
         },
         {
           "keys": [
@@ -5651,7 +3045,14 @@
             "pancakes",
             "eggs",
             "toast",
-            "yogurt",
+            "yogurt"
+          ]
+        },
+        {
+          "space": 19
+        },
+        {
+          "keys": [
             "bread"
           ]
         }
@@ -5662,72 +3063,6 @@
       "name": "Lunch & dinner",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "soup",
             "salad",
@@ -5736,26 +3071,11 @@
             "spaghetti",
             "meat",
             "rice",
-            "sauce",
-            "beans"
+            "sauce"
           ]
         },
         {
-          "space": 5
-        },
-        {
-          "keys": [
-            "potato"
-          ]
-        },
-        {
-          "space": 8
-        },
-        {
-          "link": "folder_lunch_dinner",
-          "to": "food_lunch_dinner",
-          "audible": false,
-          "linkColor": "noun"
+          "space": 2
         },
         {
           "keys": [
@@ -5766,6 +3086,31 @@
             "macaroni",
             "hot_dog",
             "hamburger",
+            "beans"
+          ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "link": "folder_lunch_dinner",
+          "to": "food_lunch_dinner",
+          "audible": false,
+          "linkColor": "noun"
+        },
+        {
+          "space": 7
+        },
+        {
+          "keys": [
+            "potato"
+          ]
+        },
+        {
+          "space": 7
+        },
+        {
+          "keys": [
             "cheese"
           ]
         }
@@ -5776,83 +3121,15 @@
       "name": "Fruit",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "blueberries",
+            "cherry",
             "apple",
             "banana",
             "grapes",
             "strawberry",
             "orange",
-            "fruit",
-            "cherry",
-            "pear",
-            "lemon"
+            "pear"
           ]
         },
         {
@@ -5860,13 +3137,22 @@
         },
         {
           "keys": [
+            "lemon",
             "applesauce",
             "raisins",
             "melon"
           ]
         },
         {
-          "space": 20
+          "space": 3
+        },
+        {
+          "keys": [
+            "fruit"
+          ]
+        },
+        {
+          "space": 11
         },
         {
           "link": "folder_fruit",
@@ -5881,72 +3167,6 @@
       "name": "Veggies",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "broccoli",
             "cucumber",
@@ -5955,9 +3175,7 @@
             "tomato",
             "pepper",
             "salad",
-            "veggie",
-            "peas",
-            "pickle"
+            "peas"
           ]
         },
         {
@@ -5965,20 +3183,36 @@
         },
         {
           "keys": [
-            "carrot",
-            "corn",
-            "potato",
+            "pickle",
             "pumpkin"
           ]
         },
         {
-          "space": 31
+          "space": 13
+        },
+        {
+          "keys": [
+            "carrot",
+            "corn",
+            "potato"
+          ]
+        },
+        {
+          "space": 11
         },
         {
           "link": "folder_veggies",
           "to": "food_veggies",
           "audible": false,
           "linkColor": "noun"
+        },
+        {
+          "space": 3
+        },
+        {
+          "keys": [
+            "veggie"
+          ]
         }
       ]
     },
@@ -5987,74 +3221,7 @@
       "name": "Snacks & treats",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
-            "snack",
             "graham_cracker",
             "pretzel",
             "snack_bar",
@@ -6062,44 +3229,21 @@
             "popsicle",
             "candy",
             "cake",
-            "lollipop",
-            "gum"
+            "snack"
           ]
         },
         {
-          "link": "folder_snacks",
-          "to": "food_snacks",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "space": 1
+          "space": 2
         },
         {
           "keys": [
+            "lollipop",
+            "gum",
             "nuts"
           ]
         },
         {
-          "space": 8
-        },
-        {
-          "keys": [
-            "ice_cream"
-          ]
-        },
-        {
-          "space": 9
-        },
-        {
-          "keys": [
-            "cheese",
-            "crackers",
-            "chips"
-          ]
-        },
-        {
-          "space": 5
+          "space": 17
         },
         {
           "keys": [
@@ -6107,8 +3251,28 @@
             "fruit_snack",
             "popcorn",
             "cookie",
-            "chocolate"
+            "chocolate",
+            "cheese",
+            "crackers",
+            "chips"
           ]
+        },
+        {
+          "space": 7
+        },
+        {
+          "keys": [
+            "ice_cream"
+          ]
+        },
+        {
+          "space": 3
+        },
+        {
+          "link": "folder_snacks",
+          "to": "food_snacks",
+          "audible": false,
+          "linkColor": "noun"
         }
       ]
     },
@@ -6116,72 +3280,6 @@
       "key": "play_toys",
       "name": "Toys",
       "tiles": [
-        {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
         {
           "keys": [
             "ball",
@@ -6191,9 +3289,7 @@
             "toy",
             "doll",
             "cars",
-            "playdoh",
-            "stuffed_animal",
-            "train_set"
+            "playdoh"
           ]
         },
         {
@@ -6207,16 +3303,14 @@
         },
         {
           "keys": [
+            "stuffed_animal",
+            "train_set",
+            "dinosaur",
+            "robot",
             "ipad",
             "phone",
             "video_game",
-            "dinosaur",
-            "robot",
-            "slime",
-            "kinetic_sand",
-            "balloon",
-            "teddy_bear",
-            "fidget"
+            "slime"
           ]
         },
         {
@@ -6224,8 +3318,19 @@
         },
         {
           "keys": [
+            "kinetic_sand",
+            "fidget",
             "squishy",
             "spinner"
+          ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "keys": [
+            "balloon",
+            "teddy_bear"
           ]
         }
       ]
@@ -6235,72 +3340,6 @@
       "name": "Art",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "paintbrush",
             "pencil",
@@ -6309,9 +3348,7 @@
             "tape",
             "chalk",
             "stickers",
-            "playdoh",
-            "glitter",
-            "beads"
+            "playdoh"
           ]
         },
         {
@@ -6319,25 +3356,23 @@
         },
         {
           "keys": [
+            "art",
+            "crayons",
+            "markers",
+            "paper",
+            "glitter",
+            "beads",
             "coloring_book"
           ]
         },
         {
-          "space": 10
+          "space": 2
         },
         {
           "link": "folder_art",
           "to": "play_art",
           "audible": false,
           "linkColor": "noun"
-        },
-        {
-          "keys": [
-            "art",
-            "crayons",
-            "markers",
-            "paper"
-          ]
         }
       ]
     },
@@ -6345,72 +3380,6 @@
       "key": "play_games",
       "name": "Games",
       "tiles": [
-        {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
         {
           "keys": [
             "bingo",
@@ -6423,16 +3392,7 @@
           ]
         },
         {
-          "space": 1
-        },
-        {
-          "keys": [
-            "games",
-            "cards"
-          ]
-        },
-        {
-          "space": 2
+          "space": 7
         },
         {
           "keys": [
@@ -6442,7 +3402,16 @@
           ]
         },
         {
-          "space": 20
+          "space": 6
+        },
+        {
+          "keys": [
+            "games",
+            "cards"
+          ]
+        },
+        {
+          "space": 4
         },
         {
           "link": "folder_games",
@@ -6457,72 +3426,6 @@
       "name": "Sports",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "ball",
             "baseball",
@@ -6531,9 +3434,7 @@
             "soccer",
             "tennis",
             "tricycle",
-            "bike",
-            "scooter",
-            "skate"
+            "bike"
           ]
         },
         {
@@ -6541,13 +3442,15 @@
         },
         {
           "keys": [
+            "scooter",
+            "skate",
             "golf",
             "hockey",
             "gymnastics"
           ]
         },
         {
-          "space": 3
+          "space": 2
         },
         {
           "keys": [
@@ -6555,7 +3458,7 @@
           ]
         },
         {
-          "space": 28
+          "space": 21
         },
         {
           "link": "folder_sports",
@@ -6570,72 +3473,6 @@
       "name": "Outside play",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "ball",
             "bubbles",
@@ -6644,19 +3481,20 @@
             "sand",
             "sprinkler",
             "jump_rope",
-            "monkey_bars",
+            "monkey_bars"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "keys": [
             "seesaw",
             "kite"
           ]
         },
         {
-          "link": "folder_outside_play",
-          "to": "play_outside",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "space": 4
+          "space": 8
         },
         {
           "keys": [
@@ -6664,6 +3502,15 @@
             "swing",
             "trampoline"
           ]
+        },
+        {
+          "space": 26
+        },
+        {
+          "link": "folder_outside_play",
+          "to": "play_outside",
+          "audible": false,
+          "linkColor": "noun"
         }
       ]
     },
@@ -6671,83 +3518,30 @@
       "key": "body",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "head",
             "hair",
             "face",
             "eye",
             "ear",
+            "back",
+            "tummy",
+            "stomach"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "keys": [
             "nose",
             "mouth",
             "tooth",
             "arm",
-            "hand"
+            "hand",
+            "leg",
+            "knee",
+            "foot"
           ]
         },
         {
@@ -6756,38 +3550,29 @@
         {
           "keys": [
             "finger",
-            "back",
-            "tummy",
-            "stomach",
-            "leg",
-            "knee",
-            "foot",
             "toe",
             "belly_button",
-            "cheek"
-          ]
-        },
-        {
-          "space": 2
-        },
-        {
-          "keys": [
+            "cheek",
             "chin",
             "tongue",
             "lips",
-            "shoulder",
-            "elbow",
-            "neck"
+            "shoulder"
           ]
         },
         {
-          "space": 5
+          "space": 1
         },
         {
           "link": "body",
           "to": "body",
           "audible": false,
           "linkColor": "noun"
+        },
+        {
+          "keys": [
+            "elbow",
+            "neck"
+          ]
         }
       ]
     },
@@ -6796,70 +3581,19 @@
       "name": "Health",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
+          "keys": [
+            "cough",
+            "fever",
+            "cold",
+            "headache",
+            "sore_throat",
+            "stomachache",
+            "toothache",
+            "owie"
+          ]
         },
         {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
+          "space": 2
         },
         {
           "keys": [
@@ -6868,6 +3602,35 @@
             "poop",
             "bathroom",
             "toilet",
+            "medicine",
+            "bandaid",
+            "doctor"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "keys": [
+            "uncomfortable",
+            "itchy",
+            "sore",
+            "throw_up",
+            "allergy",
+            "shot"
+          ]
+        },
+        {
+          "space": 13
+        },
+        {
+          "link": "health",
+          "to": "health",
+          "audible": false,
+          "linkColor": "adjective"
+        },
+        {
+          "keys": [
             "sick",
             "hurt",
             "tired"
@@ -6878,50 +3641,6 @@
           "to": "feelings",
           "audible": true,
           "linkColor": "verb"
-        },
-        {
-          "keys": [
-            "owie"
-          ]
-        },
-        {
-          "space": 2
-        },
-        {
-          "keys": [
-            "uncomfortable",
-            "itchy",
-            "cough",
-            "fever",
-            "cold",
-            "headache",
-            "sore_throat",
-            "stomachache",
-            "toothache",
-            "sore"
-          ]
-        },
-        {
-          "space": 2
-        },
-        {
-          "keys": [
-            "medicine",
-            "bandaid",
-            "doctor",
-            "throw_up",
-            "allergy",
-            "shot"
-          ]
-        },
-        {
-          "space": 17
-        },
-        {
-          "link": "health",
-          "to": "health",
-          "audible": false,
-          "linkColor": "adjective"
         }
       ]
     },
@@ -6930,88 +3649,13 @@
       "name": "Joining words",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "than",
             "except"
           ]
         },
         {
-          "space": 3
-        },
-        {
-          "keys": [
-            "or",
-            "but"
-          ]
-        },
-        {
-          "space": 4
+          "space": 7
         },
         {
           "link": "folder_joining",
@@ -7020,12 +3664,24 @@
           "linkColor": "conjunction"
         },
         {
+          "space": 6
+        },
+        {
           "keys": [
+            "or"
+          ]
+        },
+        {
+          "space": 3
+        },
+        {
+          "keys": [
+            "but",
             "because"
           ]
         },
         {
-          "space": 7
+          "space": 5
         },
         {
           "keys": [
@@ -7033,7 +3689,7 @@
           ]
         },
         {
-          "space": 15
+          "space": 13
         },
         {
           "keys": [
@@ -7063,79 +3719,22 @@
       "name": "Which ones",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "any",
             "every",
             "much",
-            "all",
             "other",
             "another"
+          ]
+        },
+        {
+          "space": 5
+        },
+        {
+          "keys": [
+            "some",
+            "all",
+            "it"
           ]
         },
         {
@@ -7143,33 +3742,7 @@
         },
         {
           "keys": [
-            "some"
-          ]
-        },
-        {
-          "space": 4
-        },
-        {
-          "keys": [
-            "there",
-            "it"
-          ]
-        },
-        {
-          "space": 1
-        },
-        {
-          "keys": [
-            "this"
-          ]
-        },
-        {
-          "space": 1
-        },
-        {
-          "keys": [
-            "these",
-            "those"
+            "here"
           ]
         },
         {
@@ -7186,15 +3759,25 @@
         },
         {
           "keys": [
-            "that"
+            "that",
+            "there"
           ]
         },
         {
-          "space": 4
+          "space": 8
         },
         {
           "keys": [
-            "here"
+            "this"
+          ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "keys": [
+            "these",
+            "those"
           ]
         }
       ]
@@ -7204,93 +3787,27 @@
       "name": "Helpers & jobs",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "doctor",
             "dentist",
             "police",
             "firefighter",
             "mail_carrier",
+            "nurse",
             "cashier",
-            "waiter",
+            "waiter"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "keys": [
             "babysitter"
           ]
         },
         {
-          "space": 10
-        },
-        {
-          "keys": [
-            "nurse"
-          ]
-        },
-        {
-          "space": 16
+          "space": 18
         },
         {
           "link": "folder_helpers",
@@ -7305,72 +3822,6 @@
       "name": "Days",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "space": 4
         },
         {
@@ -7381,7 +3832,7 @@
           ]
         },
         {
-          "space": 1
+          "space": 8
         },
         {
           "keys": [
@@ -7393,6 +3844,12 @@
           "space": 2
         },
         {
+          "link": "folder_days",
+          "to": "time_days",
+          "audible": false,
+          "linkColor": "noun"
+        },
+        {
           "keys": [
             "monday",
             "tuesday",
@@ -7402,15 +3859,6 @@
             "saturday",
             "sunday"
           ]
-        },
-        {
-          "space": 4
-        },
-        {
-          "link": "folder_days",
-          "to": "time_days",
-          "audible": false,
-          "linkColor": "noun"
         }
       ]
     },
@@ -7419,83 +3867,15 @@
       "name": "My day",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
+            "early",
+            "late",
             "breakfast",
             "lunch",
             "snack",
             "dinner",
             "bath",
-            "bath_time",
-            "bedtime",
-            "school_day",
-            "early",
-            "late"
+            "bath_time"
           ]
         },
         {
@@ -7503,14 +3883,23 @@
         },
         {
           "keys": [
-            "morning",
-            "afternoon",
-            "night",
+            "bedtime",
+            "school_day",
             "schedule"
           ]
         },
         {
-          "space": 19
+          "space": 10
+        },
+        {
+          "keys": [
+            "morning",
+            "afternoon",
+            "night"
+          ]
+        },
+        {
+          "space": 3
         },
         {
           "link": "folder_my_day",
@@ -7525,72 +3914,6 @@
       "name": "Clock",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "clock",
             "hour",
@@ -7602,7 +3925,7 @@
           ]
         },
         {
-          "space": 40
+          "space": 32
         },
         {
           "link": "folder_clock",
@@ -7617,77 +3940,58 @@
       "name": "Seasons & months",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
+          "keys": [
+            "january",
+            "february",
+            "march_"
+          ]
         },
         {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
+          "space": 1
         },
         {
           "keys": [
             "winter",
-            "january",
-            "february",
-            "march_"
+            "spring"
+          ]
+        },
+        {
+          "space": 4
+        },
+        {
+          "keys": [
+            "april",
+            "may_",
+            "june"
+          ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "keys": [
+            "summer",
+            "fall_"
+          ]
+        },
+        {
+          "space": 4
+        },
+        {
+          "keys": [
+            "july",
+            "august",
+            "september"
+          ]
+        },
+        {
+          "space": 7
+        },
+        {
+          "keys": [
+            "october",
+            "november",
+            "december"
           ]
         },
         {
@@ -7700,46 +4004,13 @@
           ]
         },
         {
-          "space": 3
+          "space": 13
         },
         {
           "link": "folder_seasons",
           "to": "time_seasons",
           "audible": false,
           "linkColor": "noun"
-        },
-        {
-          "space": 1
-        },
-        {
-          "keys": [
-            "spring",
-            "april",
-            "may_",
-            "june"
-          ]
-        },
-        {
-          "space": 8
-        },
-        {
-          "keys": [
-            "summer",
-            "july",
-            "august",
-            "september"
-          ]
-        },
-        {
-          "space": 8
-        },
-        {
-          "keys": [
-            "fall_",
-            "october",
-            "november",
-            "december"
-          ]
         }
       ]
     },
@@ -7747,83 +4018,15 @@
       "key": "things_kitchen",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
-            "fork",
-            "bowl",
             "fridge",
             "oven",
             "stove",
             "sink",
             "dish",
-            "knife",
-            "napkin",
-            "bottle"
+            "cup",
+            "spoon",
+            "plate"
           ]
         },
         {
@@ -7837,17 +4040,12 @@
         },
         {
           "keys": [
+            "knife",
+            "napkin",
+            "fork",
+            "bowl",
+            "bottle",
             "bib"
-          ]
-        },
-        {
-          "space": 11
-        },
-        {
-          "keys": [
-            "cup",
-            "spoon",
-            "plate"
           ]
         }
       ]
@@ -7856,83 +4054,24 @@
       "key": "things_bathroom",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "soap",
             "towel",
-            "toothbrush",
             "bathtub",
             "toothpaste",
             "tissue"
           ]
         },
         {
-          "space": 17
+          "space": 9
+        },
+        {
+          "keys": [
+            "toothbrush"
+          ]
+        },
+        {
+          "space": 4
         },
         {
           "link": "folder_bathroom",
@@ -7947,72 +4086,6 @@
       "name": "Outside & nature",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "tree",
             "flower",
@@ -8021,9 +4094,7 @@
             "grass",
             "rock",
             "stick",
-            "dirt",
-            "mud",
-            "sand"
+            "dirt"
           ]
         },
         {
@@ -8031,34 +4102,33 @@
         },
         {
           "keys": [
+            "mud",
+            "sand",
             "puddle",
             "hill",
             "sky",
             "moon",
             "star",
-            "street",
-            "sidewalk",
-            "shovel",
-            "bucket",
-            "hose"
+            "street"
           ]
-        },
-        {
-          "space": 2
-        },
-        {
-          "keys": [
-            "snowman"
-          ]
-        },
-        {
-          "space": 9
         },
         {
           "link": "folder_nature",
           "to": "things_nature",
           "audible": false,
           "linkColor": "noun"
+        },
+        {
+          "space": 1
+        },
+        {
+          "keys": [
+            "sidewalk",
+            "shovel",
+            "bucket",
+            "hose",
+            "snowman"
+          ]
         }
       ]
     },
@@ -8067,83 +4137,15 @@
       "name": "School & tech",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "paper",
             "pencil",
+            "book",
+            "phone",
             "pen",
             "crayons",
             "backpack",
-            "lunchbox",
-            "desk",
-            "computer",
-            "ipad",
-            "headphones"
+            "lunchbox"
           ]
         },
         {
@@ -8151,24 +4153,26 @@
         },
         {
           "keys": [
+            "desk",
+            "computer",
+            "ipad",
+            "headphones",
             "charger",
             "glasses",
             "video",
-            "story",
+            "story"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "keys": [
             "music"
           ]
         },
         {
-          "space": 1
-        },
-        {
-          "keys": [
-            "book",
-            "phone"
-          ]
-        },
-        {
-          "space": 26
+          "space": 7
         },
         {
           "link": "folder_school_tech",
@@ -8183,72 +4187,6 @@
       "name": "Sounds",
       "tiles": [
         {
-          "link": "people",
-          "to": "people",
-          "audible": false,
-          "linkColor": "pronoun"
-        },
-        {
-          "link": "question",
-          "to": "questions",
-          "audible": false,
-          "linkColor": "question"
-        },
-        {
-          "link": "actions",
-          "to": "actions",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "link": "places",
-          "to": "places",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "social",
-          "to": "social",
-          "audible": false,
-          "linkColor": "social"
-        },
-        {
-          "link": "time",
-          "to": "time_when",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "describe",
-          "to": "describe",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "groups",
-          "to": "groups",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "link": "feelings",
-          "to": "feelings",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "link": "folder_small_words",
-          "to": "small_words",
-          "audible": false,
-          "linkColor": "preposition"
-        },
-        {
-          "link": "keyboard",
-          "to": "keyboard",
-          "audible": false,
-          "linkColor": "wayfinding"
-        },
-        {
           "keys": [
             "ouch",
             "shh",
@@ -8257,9 +4195,7 @@
             "oops",
             "peekaboo",
             "yum_yum",
-            "meow",
-            "woof",
-            "moo"
+            "meow"
           ]
         },
         {
@@ -8273,18 +4209,27 @@
         },
         {
           "keys": [
+            "woof",
+            "moo",
             "quack",
             "oink",
             "baa",
             "neigh",
             "cockadoodledoo",
-            "vroom",
+            "vroom"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "keys": [
             "choo_choo",
             "beep"
           ]
         },
         {
-          "space": 11
+          "space": 8
         },
         {
           "keys": [

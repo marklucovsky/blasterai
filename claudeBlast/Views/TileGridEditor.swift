@@ -47,11 +47,15 @@ struct TileGridEditor<Cell: View>: View {
     var onTapTile: ((String) -> Void)? = nil
 
     /// Lay the page out on this board grid instead of adaptively: fixed
-    /// columns, cell 0 of every page reserved where the board puts Home, and a
-    /// break wherever the board's pages break. Every word then sits where the
-    /// child will find it. The Add cell takes the first page's cell 0, which is
-    /// Home's place on the board. Nil keeps the adaptive layout.
+    /// columns, the system row over every page when the scene inherits it, and
+    /// a break wherever the board's pages break. Every word then sits where the
+    /// child will find it. The Add cell follows the last word, where a new one
+    /// goes. Nil keeps the adaptive layout.
     var boardGrid: (cols: Int, rows: Int)? = nil
+    /// The system row the board draws over this page, shown read-only at the
+    /// top of each page so every word sits where the child will find it.
+    /// Empty for a scene that does not inherit it.
+    var chrome: [TileEntry] = []
 
     /// Graded reveal. When the host passes `onEnableLevels`, Conceal becomes a
     /// visibility menu — Always Shown / Show from Level N / Concealed — so the
@@ -112,7 +116,8 @@ struct TileGridEditor<Cell: View>: View {
     private func boardPages(_ grid: (cols: Int, rows: Int), width: CGFloat) -> some View {
         let spec = GridLayoutCalculator.compute(geo: CGSize(width: width, height: 1),
                                                 grid: grid, fitHeight: false)
-        let chunks = tiles.chunked(into: max(1, spec.perPage - 1))
+        let perScreen = max(1, spec.perPage - (chrome.isEmpty ? 0 : spec.cols))
+        let chunks = tiles.chunked(into: perScreen)
         let pages = chunks.isEmpty ? [[]] : chunks
         let columns = Array(repeating: GridItem(.fixed(spec.tileSize), spacing: spec.horizontalSpacing),
                             count: spec.cols)
@@ -125,13 +130,15 @@ struct TileGridEditor<Cell: View>: View {
                         .padding(.horizontal, spec.horizontalPadding)
                 }
                 LazyVGrid(columns: columns, spacing: 10) {
-                    if index == 0, showAddCell, !isSelecting, let onAdd {
-                        addCell(onAdd)
-                    } else {
-                        homePlaceholder
+                    ForEach(Array(chrome.prefix(spec.cols).enumerated()), id: \.offset) { _, entry in
+                        chromeCell(entry)
                     }
                     ForEach(chunk, id: \.key) { entry in
                         cellView(entry)
+                    }
+                    // After the last word, where a new one will go.
+                    if index == pages.count - 1, showAddCell, !isSelecting, let onAdd {
+                        addCell(onAdd)
                     }
                 }
                 .padding(.horizontal, spec.horizontalPadding)
@@ -140,14 +147,13 @@ struct TileGridEditor<Cell: View>: View {
         .padding(.vertical, 16)
     }
 
-    /// Where the board puts Home. Drawn, not interactive: it holds the cell so
-    /// every word after it is in its board position.
-    private var homePlaceholder: some View {
-        RoundedRectangle(cornerRadius: 10, style: .continuous)
-            .fill(Color(.systemGray5))
-            .aspectRatio(1, contentMode: .fit)
-            .overlay(Image(systemName: "house.fill").foregroundStyle(.tertiary))
-            .accessibilityLabel("Home's place on the board")
+    /// A folder of the system row: drawn, not editable. The row belongs to
+    /// the core board and every scene inherits it.
+    private func chromeCell(_ entry: TileEntry) -> some View {
+        cell(entry)
+            .opacity(entry.isEmptyCell ? 0 : 0.45)
+            .allowsHitTesting(false)
+            .accessibilityLabel("System row: \(entry.key)")
     }
 
     // MARK: - Cell

@@ -166,10 +166,13 @@ struct WordFinderTests {
         let (scene, _) = bundled()
         let pages = scene.visiblePages
         let home = scene.homePageKey
-        #expect(WordPlaces.trail(to: "describe_how_much", pages: pages, homeKey: home)
+        // The system row is drawn on every page, not stored: its folders are
+        // one step from home.
+        let row = BoardChrome.rowPages(of: scene)
+        #expect(WordPlaces.trail(to: "describe_how_much", pages: pages, homeKey: home, row: row)
                 == ["Home", "Describe", "How much"])
-        #expect(WordPlaces.trail(to: "clothes", pages: pages, homeKey: home).dropFirst().first == "Things")
-        #expect(WordPlaces.trail(to: home, pages: pages, homeKey: home) == ["Home"])
+        #expect(WordPlaces.trail(to: "clothes", pages: pages, homeKey: home, row: row).dropFirst().first == "Things")
+        #expect(WordPlaces.trail(to: home, pages: pages, homeKey: home, row: row) == ["Home"])
     }
 
     @Test func keyPathsMatchTheTitledRoutes() {

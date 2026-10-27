@@ -92,7 +92,8 @@ enum WordFinder {
 
         let level = scene.effectiveRevealLevel
         // Routes at the current level: a folder above it is not a way in.
-        let paths = WordPlaces.pathsFromHome(pages: scene.visiblePages, homeKey: scene.homePageKey)
+        let paths = WordPlaces.pathsFromHome(pages: scene.visiblePages, homeKey: scene.homePageKey,
+                                             row: BoardChrome.rowPages(of: scene))
         let titles = Dictionary(scene.pages.map { ($0.key, $0.title) },
                                 uniquingKeysWith: { first, _ in first })
 

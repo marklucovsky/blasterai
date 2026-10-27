@@ -30,8 +30,14 @@ struct ContentView: View {
     @State private var activeDestination: Destination?
     @State private var pendingImportSheet: ImportSheetURL?
 
-    private enum Destination: Identifiable {
+    private enum Destination: Identifiable, Hashable {
         case admin, tileScript
+        /// The caregiver rail's Edit: one page of the active scene.
+        case editPage(String)
+        /// The Edit menu's Edit Scene: the active scene in the scene editor.
+        case editScene
+        /// Child mode off again: the gate, then nothing else to show.
+        case unlockCaregiverRail
         /// Admin without a challenge, reachable only from a running TileScript.
         /// The script itself starts behind `AdminGate`, so re-challenging here
         /// would prompt a caregiver who authenticated moments ago — and would
@@ -109,6 +115,9 @@ struct ContentView: View {
                 caregiverMenu.requested = nil
                 switch requested {
                 case .admin: activeDestination = .admin
+                case .editPage(let key): activeDestination = .editPage(key)
+                case .editScene: activeDestination = .editScene
+                case .unlockCaregiverRail: activeDestination = .unlockCaregiverRail
                 }
             }
             .onAppear {
@@ -182,6 +191,12 @@ struct ContentView: View {
             AdminView()
         case .tileScriptUngated:
             TileScriptView()
+        case .editPage(let key):
+            AdminGate { RailPageEditor(pageKey: key) }
+        case .editScene:
+            AdminGate { RailSceneEditor() }
+        case .unlockCaregiverRail:
+            AdminGate { CaregiverRailUnlock() }
         case .tileScript:
             // Gated for the same reason Admin is, and it used not to be.
             //

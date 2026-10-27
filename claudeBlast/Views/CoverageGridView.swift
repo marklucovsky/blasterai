@@ -23,7 +23,7 @@ import SwiftData
 /// ## A page is drawn on the board's own grid
 ///
 /// A page is laid out exactly as the board lays it out: the scene's designed
-/// grid (12 × 5 on BlasterAI 60), Home in cell 0, spacers and concealed cells
+/// grid (10 × 6 on BlasterAI 60), the system row on top, spacers and concealed cells
 /// holding their places, broken into screens where the board breaks it. It used
 /// to reflow the words to fit, which kept their order but not their places —
 /// and on a fixed grid a place is the thing a child learns. A dimmed corner
@@ -45,6 +45,8 @@ struct CoverageGridView: View {
         /// Every cell in page order, spacers and concealed cells included.
         let entries: [TileEntry]
         let grid: (cols: Int, rows: Int)
+        /// The system row over every screen; empty when the scene has none.
+        var chrome: [TileEntry] = []
     }
 
     private var isPositional: Bool { board != nil }
@@ -57,13 +59,12 @@ struct CoverageGridView: View {
 
     @Environment(\.horizontalSizeClass) private var sizeClass
 
-    /// Twelve across, the board's own density, so a word is about the size it
-    /// is on the board. A phone cannot fit twelve readable tiles, so there it
-    /// is as many as fit.
+    /// The board's own width, so a word is about the size it is on the board.
+    /// A phone cannot fit ten readable tiles, so there it is as many as fit.
     private var columns: [GridItem] {
         sizeClass == .compact
             ? [GridItem(.adaptive(minimum: 64, maximum: 96), spacing: 4)]
-            : Array(repeating: GridItem(.flexible(), spacing: 4), count: 12)
+            : Array(repeating: GridItem(.flexible(), spacing: 4), count: PageTemplate.cols)
     }
 
     var body: some View {
@@ -139,8 +140,8 @@ struct CoverageGridView: View {
 
     @ViewBuilder
     private func boardScreens(_ board: Board) -> some View {
-        // One cell per screen is Home, as on the board.
-        let perScreen = max(1, board.grid.cols * board.grid.rows - 1)
+        // Row 1 of every screen is the system row, as on the board.
+        let perScreen = max(1, board.grid.cols * board.grid.rows - (board.chrome.isEmpty ? 0 : board.grid.cols))
         let screens = drawn(board).chunked(into: perScreen)
         let gridColumns = Array(repeating: GridItem(.flexible(), spacing: 4),
                                 count: board.grid.cols)
@@ -152,22 +153,16 @@ struct CoverageGridView: View {
                         .foregroundStyle(.secondary)
                 }
                 LazyVGrid(columns: gridColumns, spacing: 4) {
-                    homeCell
+                    ForEach(Array(board.chrome.prefix(board.grid.cols).enumerated()), id: \.offset) { _, entry in
+                        boardCell(entry)
+                            .allowsHitTesting(false)
+                    }
                     ForEach(Array(cells.enumerated()), id: \.offset) { _, entry in
                         boardCell(entry)
                     }
                 }
             }
         }
-    }
-
-    /// Home is on every screen and is not a choice the page offers, so it is
-    /// drawn for position and never dimmed or counted.
-    /// The board's own Home cell, inert, so it looks like the board's.
-    private var homeCell: some View {
-        HomeGridCell(isEnabled: true, action: {}, onOpenMenu: {}, labelFontSize: 9)
-            .allowsHitTesting(false)
-            .accessibilityLabel("Home")
     }
 
     @ViewBuilder

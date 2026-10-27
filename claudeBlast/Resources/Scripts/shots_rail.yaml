@@ -1,0 +1,29 @@
+name: Screenshots — Rail
+description: The board under the system row with its control rail, on Home, a category and a folder page.
+scene: "<default>"   # the bundled board, whatever it is named
+audio: off
+provider: mock
+tileWait: .fast
+sentenceWait: .fast
+
+script:
+  - tileSet: classic
+  - tiles:
+    - <home>
+  - screenshot: rail-01-home
+  - tiles:
+    - <actions>
+  - screenshot: rail-02-actions
+  - tiles:
+    - <actions_moving>
+  - screenshot: rail-03-moving
+  - tiles:
+    - <places>
+  - screenshot: rail-04-places
+  - tiles:
+    - <home>
+  - tiles:
+    - i
+    - want
+    - go
+  - screenshot: rail-05-sentence

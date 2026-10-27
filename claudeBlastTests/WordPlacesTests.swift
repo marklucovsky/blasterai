@@ -19,11 +19,11 @@ extension SerialTests {
 @Suite(.serialized)
 struct WordPlacesTests {
 
-    private static let ipad = (cols: 12, rows: 5)
+    private static let ipad = (cols: 10, rows: 6)
 
-    /// The iPhone's 4 × 5: since session 14 every BlasterAI 60 page fits one
+    /// The iPhone's 4 × 6: since session 14 every BlasterAI 60 page fits one
     /// iPad screen, so screens are only exercised on a phone.
-    private static let phone = (cols: 4, rows: 5)
+    private static let phone = (cols: 4, rows: 6)
 
     private func places(hidden: Set<String> = [],
                         grid: (cols: Int, rows: Int) = ipad) -> [String: [WordPlace]] {
@@ -53,24 +53,24 @@ struct WordPlacesTests {
         #expect(pages.isSuperset(of: ["Feelings", "Health", "Thinking"]), "\(pages)")
     }
 
-    /// On a 4 × 5 phone grid Actions' screen 2 starts at its 20th tile (Home is
-    /// cell 0). A hidden word earlier on the page holds its cell, as on the
+    /// On a 4 × 6 phone grid Actions' screen 2 starts at its 21st tile (row 1
+    /// is the system row, so a screen holds 20). A hidden word earlier on the page holds its cell, as on the
     /// board, so it moves nothing — and is not a place itself.
     @Test func screensFollowTheGridAndHiddenWordsHoldTheirCells() {
         let onActions = { (places: [String: [WordPlace]], word: String) in
             (places[word] ?? []).first { $0.route.last == "Actions" }
         }
         let phone = places(grid: Self.phone)
-        // `take` is the first word of screen 2, after the system row and need ·
-        // have · stop · come · go · eat · drink · give.
-        #expect(onActions(phone, "take")?.screen == 2)
-        #expect(onActions(phone, "take")?.label.hasSuffix("· screen 2") == true)
-        #expect(onActions(phone, "give")?.screen == 1)
+        // `write` opens Actions' third row, the 21st tile: the first word of
+        // screen 2. `need`, on its second row, is on screen 1.
+        #expect(onActions(phone, "write")?.screen == 2)
+        #expect(onActions(phone, "write")?.label.hasSuffix("· screen 2") == true)
+        #expect(onActions(phone, "need")?.screen == 1)
         let withHidden = places(hidden: ["need"], grid: Self.phone)
-        #expect(onActions(withHidden, "take")?.screen == 2)
+        #expect(onActions(withHidden, "write")?.screen == 2)
         #expect(onActions(withHidden, "need") == nil)
         // On the iPad every page is one screen.
-        #expect(onActions(places(), "take")?.screen == 1)
+        #expect(onActions(places(), "write")?.screen == 1)
     }
 
     /// Shortest route wins, and a page no folder reaches is reported as such
