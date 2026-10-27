@@ -110,10 +110,10 @@ enum TileToken {
     /// The prefix travels with the navigation: a folder on a system page opens
     /// the system scene's page of that name, so Actions → its subfolders stays
     /// inside BlasterAI 60. Home still returns to the *active* scene's home.
-    static let systemPrefix = "<system>:"
+    nonisolated static let systemPrefix = "<system>:"
 
     /// The link that opens `pageKey` of the system scene.
-    static func systemLink(to pageKey: String) -> String {
+    nonisolated static func systemLink(to pageKey: String) -> String {
         systemPrefix + pageKey
     }
 

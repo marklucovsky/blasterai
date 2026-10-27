@@ -207,7 +207,7 @@ struct TopicWordsService {
 
     // MARK: - Prompt pieces
 
-    private static func sceneContext(_ scene: SceneContext) -> String {
+    nonisolated private static func sceneContext(_ scene: SceneContext) -> String {
         PromptTemplate.render("topic_scene_context", [
             "scene_name": scene.name,
             "scene_description": scene.description,
@@ -216,7 +216,7 @@ struct TopicWordsService {
     }
 
     /// A key as the prompt says it: `all_done` → "all done".
-    private static func spoken(_ key: String) -> String {
+    nonisolated private static func spoken(_ key: String) -> String {
         key.replacingOccurrences(of: "_", with: " ")
     }
 }

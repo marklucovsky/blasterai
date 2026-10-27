@@ -323,7 +323,7 @@ enum PagePlacer {
             grid[cell] = entry(link)
         }
         // A link is never lost: with no cell left it starts a second screen.
-        let overflow = pendingLinks.map(entry)
+        let overflow = pendingLinks.map { entry($0) }
 
         guard let last = grid.keys.max() else { return overflow }
         return (1...last).map { grid[$0] ?? .spacer() } + overflow

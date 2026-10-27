@@ -17,7 +17,7 @@
 import Foundation
 import os
 
-enum PromptTemplate {
+nonisolated enum PromptTemplate {
     private static let logger = Logger(subsystem: "app.blasterai", category: "prompts")
 
     /// Render `prompt_<name>.txt` with `values`. Every placeholder in the file
