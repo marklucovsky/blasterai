@@ -112,9 +112,16 @@ enum ExportArtResolver {
     /// every Blaster→Blaster path ships the stored HEIC verbatim instead, and
     /// re-encoding there would inflate a scene roughly tenfold to deliver art the
     /// recipient already has.
+    ///
+    /// `onWhite` puts back the white the shipped art was cut off. A caregiver's
+    /// picture export wants it (Photos and Word show a transparent PNG on
+    /// black or grey); an OBF board does not, because the reader draws its own
+    /// button colour behind the picture, as our board does.
     static func renderedPNG(_ key: String,
                             in set: ImageSetID,
-                            resolver: TileImageResolver) -> Data? {
-        rendered(key, in: set, resolver: resolver)?.pngData()
+                            resolver: TileImageResolver,
+                            onWhite: Bool) -> Data? {
+        guard let image = rendered(key, in: set, resolver: resolver) else { return nil }
+        return (onWhite ? image.flattenedOnWhite() : image).pngData()
     }
 }

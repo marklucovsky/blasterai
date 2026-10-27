@@ -13,6 +13,12 @@ import SwiftUI
 struct TileImageView: View {
     let key: String
     let wordClass: String
+    /// Draw the art straight on whatever is behind it. Off by default: shipped
+    /// art is cut off its white ground (`TileCutout`), and on a list row or a
+    /// tray chip in dark mode its black outlines would vanish into the dark.
+    /// Every surface that was drawn on white stays on white; only a tile that
+    /// paints its own colour behind the art turns this on.
+    var drawsOnTint: Bool = false
 
     @Environment(TileImageResolver.self) private var resolver
 
@@ -24,6 +30,7 @@ struct TileImageView: View {
             Image(uiImage: uiImage)
                 .resizable()
                 .scaledToFit()
+                .background(drawsOnTint ? Color.clear : Color.white)
         } else {
             // Composed placeholder for missing tiles in sparse sets.
             // Shows the word-class color with the first letter of the key,

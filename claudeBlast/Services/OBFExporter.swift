@@ -280,7 +280,7 @@ enum OBFExporter {
         progress(0, total)
         for (index, key) in built.imageKeys.enumerated() {
             try Task.checkCancellation()
-            if let png = ExportArtResolver.renderedPNG(key, in: imageSet, resolver: resolver) {
+            if let png = ExportArtResolver.renderedPNG(key, in: imageSet, resolver: resolver, onWhite: false) {
                 let path = "images/\(key).png"
                 entries.append((path, png))
                 imagePaths[key] = path

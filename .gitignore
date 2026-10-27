@@ -125,3 +125,8 @@ tools/tile_sets/*_gi2/
 tools/tile_sets/review_*_gi2.html
 tools/tile_sets/review_*_gi2__*.html
 tools/tile_sets/packcovers/*_gi2_*.png
+
+# Cut-out art: cache of masters with their white ground removed (optimize_tiles.py), and the cutter build
+tools/tile_sets/cut/
+tools/cutout/.build/
+tools/tile_sets/cutreview_*/
