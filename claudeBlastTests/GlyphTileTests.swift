@@ -81,10 +81,34 @@ struct GlyphTileTests {
     /// it rather than render black ink on a black board.
     @Test("High Contrast inverts")
     func highContrastInverts() throws {
-        let light = try #require(GlyphTile.image(for: "letter_a", in: ImageSetID.classic, size: 64))
+        // Playful 3D, not Classic: Classic's glyph has no paper to compare.
+        let light = try #require(GlyphTile.image(for: "letter_a", in: ImageSetID.playful3D, size: 64))
         let dark = try #require(GlyphTile.image(for: "letter_a", in: ImageSetID.highContrast, size: 64))
         #expect(corner(of: light) != corner(of: dark),
                 "both sets drew the same paper color")
+    }
+
+    /// In a set whose art is cut, a glyph sits on the tile's tint like every
+    /// other picture, so it draws no paper; the uncut sets keep theirs.
+    @Test("A glyph in a cut set has no paper")
+    func cutSetGlyphHasNoPaper() throws {
+        let cut = try #require(GlyphTile.image(for: "letter_a", in: ImageSetID.classic, size: 64))
+        let uncut = try #require(GlyphTile.image(for: "letter_a", in: ImageSetID.playful3D, size: 64))
+        #expect(alpha(of: cut) == 0)
+        #expect(alpha(of: uncut) == 255)
+    }
+
+    /// The square tile asks the picture, not the set, whether it is cut: a
+    /// cut Classic tile draws on the tint, and the same word in Playful 3D
+    /// goes on a card.
+    @Test("drawsCutOut follows the picture")
+    func drawsCutOutFollowsThePicture() {
+        let resolver = TileImageResolver()
+        resolver.activeSet = .classic
+        #expect(resolver.drawsCutOut("eat"))
+        #expect(resolver.drawsCutOut("letter_a"))
+        resolver.activeSet = .playful3D
+        #expect(!resolver.drawsCutOut("eat"))
     }
 
     /// A glyph has no skin tone, so the three Classic sets share one rendering —
@@ -187,6 +211,22 @@ struct GlyphTileTests {
     }
 
     // MARK: - Helpers
+
+    /// Corner alpha, read through a context of known layout rather than the
+    /// image's own bytes, whose order depends on how it was rendered.
+    private func alpha(of image: UIImage) -> UInt8 {
+        guard let cg = image.cgImage else { return 0 }
+        var px: [UInt8] = [0, 0, 0, 0]
+        let space = CGColorSpaceCreateDeviceRGB()
+        px.withUnsafeMutableBytes { buf in
+            guard let ctx = CGContext(data: buf.baseAddress, width: 1, height: 1, bitsPerComponent: 8,
+                                      bytesPerRow: 4, space: space,
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return }
+            ctx.draw(cg, in: CGRect(x: -1, y: -CGFloat(cg.height) + 2,
+                                    width: CGFloat(cg.width), height: CGFloat(cg.height)))
+        }
+        return px[3]
+    }
 
     private func corner(of image: UIImage) -> UInt32 {
         pixel(of: image, at: CGPoint(x: 1, y: 1))

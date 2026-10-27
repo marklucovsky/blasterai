@@ -386,6 +386,16 @@ enum TileColorResolver {
     ///
     /// Rec. 709 luminance, the same weighting WCAG contrast uses. The split at
     /// 0.5 puts every Fitzgerald color on the side a person would pick by eye.
+    /// `color` mixed toward white by `mix` (0 = the colour, 1 = white): the
+    /// light ground a square tile draws on (`TileLayout.tintMix`). Mixed in
+    /// sRGB, the way the mocks Mark picked from were.
+    static func tint(_ color: Color, mix: CGFloat) -> Color {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        guard UIColor(color).getRed(&r, green: &g, blue: &b, alpha: &a) else { return color }
+        func up(_ c: CGFloat) -> CGFloat { c + (1 - c) * mix }
+        return Color(red: up(r), green: up(g), blue: up(b))
+    }
+
     static func label(on color: Color) -> Color {
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
         guard UIColor(color).getRed(&r, green: &g, blue: &b, alpha: &a) else { return .black }

@@ -113,19 +113,23 @@ struct GridLayoutCalculatorTests {
     /// An 11" Pro and a 13" Pro, landscape, with the sentence tray taken off
     /// the top — the geometry the board actually gets.
     private func landscapeBoard(_ screen: CGSize,
-                                layout: BoardLayout = .standard) -> GridLayoutSpec {
+                                layout: BoardLayout = .standard,
+                                look: TileLook = .classic) -> GridLayoutSpec {
         GridLayoutCalculator.compute(
             screenSize: screen,
             geo: CGSize(width: max(screen.width, screen.height),
                         height: min(screen.width, screen.height) - 134),
-            layout: layout)
+            layout: layout,
+            look: look)
     }
 
     /// An iPhone 17 board, portrait, as measured on the simulator.
-    private func iPhone17Board(_ layout: BoardLayout = .standard) -> GridLayoutSpec {
+    private func iPhone17Board(_ layout: BoardLayout = .standard,
+                               look: TileLook = .classic) -> GridLayoutSpec {
         GridLayoutCalculator.compute(screenSize: CGSize(width: 402, height: 874),
                                      geo: CGSize(width: 402, height: 674),
-                                     layout: layout)
+                                     layout: layout,
+                                     look: look)
     }
 
     private let iPad11 = CGSize(width: 834, height: 1210)
@@ -202,6 +206,42 @@ struct GridLayoutCalculatorTests {
                         "\(layout): \(board.cols)×\(board.rows)")
             }
         }
+    }
+
+    // MARK: - The square look
+
+    /// The look changes how a tile is drawn, never where it is: a child who
+    /// learned a board in one look finds every word in the same cell in the
+    /// other.
+    @Test func squareLookKeepsEveryGrid() {
+        for layout in BoardLayout.allCases {
+            let pad = layout.grid(phone: false), phone = layout.grid(phone: true)
+            for screen in [miniPortrait, iPad11, iPad13] {
+                let board = landscapeBoard(screen, layout: layout, look: .square)
+                #expect(board.cols == pad.cols && board.rows == pad.rows,
+                        "\(layout): \(board.cols)×\(board.rows)")
+            }
+            let board = iPhone17Board(layout, look: .square)
+            #expect(board.cols == phone.cols && board.rows == phone.rows,
+                    "\(layout): \(board.cols)×\(board.rows)")
+        }
+    }
+
+    /// The word sits inside the square, so its band is the square's, and the
+    /// tiles sit a hairline apart in both directions with no row boost.
+    @Test func squareTilesCarryTheirWordAndSitTwoPointsApart() {
+        let board = landscapeBoard(iPad13, look: .square)
+        #expect(board.labelHeight == GridLayoutCalculator.squareLabelHeight(forFont: board.labelFontSize))
+        #expect(board.verticalSpacing == TileLayout.gap)
+    }
+
+    /// No label hangs under a square tile, so a height-bound board can only
+    /// get bigger tiles from the change, never smaller ones.
+    @Test func squareTilesAreNeverSmallerThanClassic() {
+        for screen in [miniPortrait, iPad11, iPad13] {
+            #expect(landscapeBoard(screen, look: .square).tileSize >= landscapeBoard(screen).tileSize)
+        }
+        #expect(iPhone17Board(look: .square).tileSize >= iPhone17Board().tileSize)
     }
 
     /// Mark's choice of grids, pinned so a retune is deliberate.

@@ -90,6 +90,8 @@ struct TileGridView: View {
     @AppStorage(AppSettingsKey.boardLayout) private var boardLayoutRaw: String =
         BoardLayout.current().rawValue
     @AppStorage(AppSettingsKey.honorSceneLayouts) private var honorSceneLayouts = true
+    @AppStorage(AppSettingsKey.tileLook) private var tileLookRaw: String = TileLook.classic.rawValue
+    private var tileLook: TileLook { TileLook(rawValue: tileLookRaw) ?? .classic }
 
     @Environment(\.horizontalSizeClass) private var hSizeClass
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -251,6 +253,7 @@ struct TileGridView: View {
     private var gridContent: some View {
         if let page = currentPage {
             pagedGrid(for: page)
+                .environment(\.tileLook, tileLook)
                 // Keyed by page, so a page change is an insertion and a removal
                 // — which is what gives the transition below something to
                 // animate — and so no tile view is ever reused across pages.
@@ -442,7 +445,8 @@ struct TileGridView: View {
                     isPhone: GridLayoutCalculator.isPhone(screenSize: GridLayoutCalculator.deviceScreenSize),
                     deviceLayout: BoardLayout(rawValue: boardLayoutRaw) ?? .standard,
                     honorSceneLayouts: honorSceneLayouts),
-                textScale: textScale
+                textScale: textScale,
+                look: tileLook
             )
             // Retired (hidden) and unreviewed (moderation-flagged) tiles never
             // render for the child — both stay invisible in running scenes until

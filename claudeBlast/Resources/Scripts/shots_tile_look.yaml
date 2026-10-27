@@ -1,0 +1,83 @@
+name: Screenshots — Tile Look
+description: The same pages in every image set, for judging a tile look across the art it has to hold.
+scene: "<default>"   # the bundled board, whatever it is named
+audio: off
+provider: mock
+tileWait: .fast
+sentenceWait: .fast
+
+# The look itself is a device setting, not a script step. Set it before launch:
+#
+#   xcrun simctl spawn booted defaults write app.blasterai.ios tile_look square
+#
+# then run with tools/screenshot_sweep.sh shots_tile_look <out-dir>.
+
+script:
+  - tileSet: classic
+  - tiles:
+    - <home>
+  - screenshot: classic-01-home
+  - tiles:
+    - <actions>
+  - screenshot: classic-02-actions
+  - tiles:
+    - <describe>
+  - screenshot: classic-03-describe
+  - tiles:
+    - <food>
+  - screenshot: classic-04-food
+  - tiles:
+    - <places>
+  - screenshot: classic-05-places
+  - tiles:
+    - <groups>
+  - screenshot: classic-06-things
+
+  - tileSet: classic_medium_dark
+  - tiles:
+    - <home>
+  - screenshot: dark-01-home
+  - tiles:
+    - <people>
+  - screenshot: dark-02-people
+
+  - tileSet: playful_3d
+  - tiles:
+    - <home>
+  - screenshot: p3d-01-home
+  - tiles:
+    - <actions>
+  - screenshot: p3d-02-actions
+  - tiles:
+    - <describe>
+  - screenshot: p3d-03-describe
+  - tiles:
+    - <food>
+  - screenshot: p3d-04-food
+  - tiles:
+    - <places>
+  - screenshot: p3d-05-places
+  - tiles:
+    - <groups>
+  - screenshot: p3d-06-things
+
+  - tileSet: high_contrast
+  - tiles:
+    - <home>
+  - screenshot: hc-01-home
+  - tiles:
+    - <actions>
+  - screenshot: hc-02-actions
+  - tiles:
+    - <describe>
+  - screenshot: hc-03-describe
+  - tiles:
+    - <food>
+  - screenshot: hc-04-food
+  - tiles:
+    - <places>
+  - screenshot: hc-05-places
+  - tiles:
+    - <groups>
+  - screenshot: hc-06-things
+  - tileSet: classic

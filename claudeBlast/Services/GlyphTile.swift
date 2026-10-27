@@ -105,17 +105,22 @@ enum GlyphTile {
         guard let text = character(for: key) else { return nil }
 
         let isInverted = imageSet == ImageSetID.highContrast
-        let paper: UIColor = isInverted ? .black : .white
+        // No paper at all in a set whose art is cut: its glyph sits on the
+        // tile's tint like every other picture in the set, as the shipped word
+        // glyphs ("and", "the") already do.
+        let paper: UIColor? = imageSet.cutsArt ? nil : (isInverted ? .black : .white)
         let ink: UIColor = isInverted ? .white : .black
 
         let bounds = CGSize(width: size, height: size)
         let format = UIGraphicsImageRendererFormat.default()
-        format.opaque = true
+        format.opaque = paper != nil
         format.scale = 1
 
         return UIGraphicsImageRenderer(size: bounds, format: format).image { context in
-            paper.setFill()
-            context.fill(CGRect(origin: .zero, size: bounds))
+            if let paper {
+                paper.setFill()
+                context.fill(CGRect(origin: .zero, size: bounds))
+            }
 
             // Fit the glyph to the cell rather than trusting a point size: "W"
             // and "1" have very different widths, and a fixed size would make one

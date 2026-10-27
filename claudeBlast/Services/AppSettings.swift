@@ -96,6 +96,8 @@ nonisolated enum AppSettingsKey {
     /// Whether a scene's declared grid (`BlasterScene.designedFor`) overrides
     /// `boardLayout` on a matching device. On unless a caregiver opts out.
     static let honorSceneLayouts     = "honor_scene_layouts"
+    /// `TileLook.rawValue`: classic or square. Device-local.
+    static let tileLook              = "tile_look"
     /// Whether the Caregiver Menu (long-press Home) offers quick actions —
     /// mode, level, scene, tile style — or Admin alone. Device-local, and on
     /// unless a caregiver turns it off. Patient devices show Admin only
