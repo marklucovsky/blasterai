@@ -649,10 +649,6 @@
       "source": "prompts.json",
       "subject": "prompts.json"
     },
-    "doctor": {
-      "source": "prompts.json",
-      "subject": "prompts.json"
-    },
     "dog": {
       "source": "prompts.json",
       "subject": "prompts.json"
@@ -3068,10 +3064,6 @@
       "source": "prompts.json",
       "subject": "prompts.json"
     },
-    "dentist": {
-      "source": "prompts.json",
-      "subject": "prompts.json"
-    },
     "mail_carrier": {
       "source": "prompts.json",
       "subject": "prompts.json"
@@ -3620,10 +3612,6 @@
       "source": "prompts.json",
       "subject": "prompts.json"
     },
-    "glitter": {
-      "source": "prompts.json",
-      "subject": "prompts.json"
-    },
     "beads": {
       "source": "prompts.json",
       "subject": "prompts.json"
@@ -4165,6 +4153,18 @@
       "subject": "prompts.json"
     },
     "rough": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "doctor": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "dentist": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
+    },
+    "glitter": {
       "source": "prompts.json",
       "subject": "prompts.json"
     }

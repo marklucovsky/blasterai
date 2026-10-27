@@ -55,6 +55,14 @@ struct ImageSetID: RawRepresentable, Hashable, Codable, Identifiable, Sendable {
     /// vocabulary coverage**.
     static let universalBackfill: ImageSetID = .classic
 
+    /// Whether this set's art is drawn on white and cut off it (`TileCutout`),
+    /// so a tile paints its own colour behind the picture. Only Classic and its
+    /// tones: their black outlines give the cut an edge to stop at. Playful 3D's
+    /// clay has no outlines, so a cream egg or cloud on white paper has nowhere
+    /// for the cut to stop; it ships on a framed white plate. High Contrast keeps
+    /// its black plate. Matches `CUT_SETS` in `tools/optimize_tiles.py`.
+    var cutsArt: Bool { [.classic, .classicMedium, .classicMediumDark].contains(self) }
+
     /// A set this build can actually resolve, or `defaultSet`.
     ///
     /// **Always use this when reading a persisted or user-supplied id.**

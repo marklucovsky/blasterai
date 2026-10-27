@@ -128,6 +128,7 @@ struct AddWordSheet: View {
                                 .resizable()
                                 .scaledToFill()
                                 .frame(width: 56, height: 56)
+                                .background(Color.white)   // generated art is cut off its ground
                                 .clipShape(RoundedRectangle(cornerRadius: 10))
                             Spacer()
                             Button(role: .destructive) {
@@ -371,7 +372,7 @@ struct AddWordSheet: View {
 
         for (set, image) in images.images {
             do {
-                let data = try TilePhotoProcessor.process(image)
+                let data = try TilePhotoProcessor.processArt(image, for: set)
                 generatedArt[set.rawValue] = data
                 if set == resolver.activeSet { photoPreview = UIImage(data: data) }
             } catch let err as TilePhotoProcessor.ProcessError {
@@ -402,7 +403,7 @@ struct AddWordSheet: View {
         do {
             let image = try await TileImageGenerator.edit(
                 baseImage: base, instruction: imageDetail, apiKey: apiKey)
-            let data = try TilePhotoProcessor.process(image)
+            let data = try TilePhotoProcessor.processArt(image, for: resolver.activeSet)
             // Refine updates the displayed style's canonical art, not the override.
             generatedArt[resolver.activeSet.rawValue] = data
             photoPreview = UIImage(data: data)

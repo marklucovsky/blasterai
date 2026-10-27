@@ -14,6 +14,7 @@
 //
 
 import Foundation
+import ImageIO
 import UIKit
 
 enum TilePhotoProcessor {
@@ -52,6 +53,40 @@ enum TilePhotoProcessor {
             }
         }
         throw ProcessError.tooLargeAfterCompression
+    }
+
+    /// Generated art for `set`, cut off its white ground and stored with its
+    /// transparency — the same treatment the shipped sets get.
+    ///
+    /// **Generated art only, never a photo.** A photo of the child's own cup is
+    /// a photo; cutting it would guess at what "background" means in a kitchen.
+    /// High Contrast is not cut either: its figures are white on black.
+    ///
+    /// HEIC, not JPEG, because JPEG has no alpha. The resolver decodes either,
+    /// and CloudKit stores the bytes as it always did, so a variant written
+    /// before this change (an opaque JPEG) still loads, and draws framed.
+    ///
+    /// No one reviews art made in the app, so the edge guard decides: if the
+    /// edge cut would take part of the picture (a white coat drawn without a
+    /// closed outline), or Vision can't say, it is stored uncut and draws
+    /// framed. Uncut is always safe; a cut coat is not.
+    static func processArt(_ image: UIImage, for set: ImageSetID) throws -> Data {
+        guard set.cutsArt else { return try process(image) }
+        let resized = downscaled(image, maxDimension: maxDimension)
+        guard let source = resized.cgImage,
+              let found = TileCutout.propose(source), found.edgeOnSubject <= TileCutout.edgeGuard,
+              let cut = TileCutout.cut(source)?.image else { return try process(image) }
+        for quality in [0.8, 0.6, 0.4] as [CGFloat] {
+            if let data = heic(cut, quality: quality), data.count <= maxBytes { return data }
+        }
+        throw ProcessError.tooLargeAfterCompression
+    }
+
+    private static func heic(_ image: CGImage, quality: CGFloat) -> Data? {
+        let data = NSMutableData()
+        guard let dest = CGImageDestinationCreateWithData(data, "public.heic" as CFString, 1, nil) else { return nil }
+        CGImageDestinationAddImage(dest, image, [kCGImageDestinationLossyCompressionQuality: quality] as CFDictionary)
+        return CGImageDestinationFinalize(dest) ? data as Data : nil
     }
 
     /// Resize so the longest edge is ≤ `maxDimension`, preserving aspect ratio.

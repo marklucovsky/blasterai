@@ -241,7 +241,7 @@ enum TileImageExporter {
             }
             for key in orderedKeys {
                 try Task.checkCancellation()
-                if let png = ExportArtResolver.renderedPNG(key, in: set, resolver: resolver) {
+                if let png = ExportArtResolver.renderedPNG(key, in: set, resolver: resolver, onWhite: true) {
                     try png.write(to: directory.appendingPathComponent("\(key).png"))
                 }
                 written += 1

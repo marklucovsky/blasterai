@@ -75,6 +75,12 @@ PROMPT = (
     "colors, the same level of simplicity, and people drawn the same way the references draw "
     "them. Keep only what is needed to read the subject — drop small decorative details. "
     "Do not copy any reference's subject into the new tile.\n\n"
+    # The tile is cut off its white ground (TileCutout) and drawn on colour, so
+    # white that runs off the frame or has no outline is cut with the paper: a
+    # doctor's coat whose lines stopped short of the edge vanished.
+    "Draw the whole subject inside the frame with a margin of empty background on every "
+    "side; nothing is cropped by the edge. Close every shape with its outline, white "
+    "shapes (coats, paper, clouds) especially.\n\n"
     "The set's style, for reference: {style}"
 )
 

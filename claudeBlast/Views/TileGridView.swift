@@ -98,20 +98,17 @@ struct TileGridView: View {
 
     private var isCompact: Bool { hSizeClass == .compact }
 
-    /// Which way the board is travelling, so the transition can say so.
+    /// How a page change animates: not at all.
     ///
-    /// Going deeper comes in from the trailing edge; coming back — Home, or a
-    /// link to a page already on the path — comes from the leading edge.
-    /// Without this a page change was instant and silent, which on a shared
-    /// tablet is the moment a child most needs to be told that the board they
-    /// were looking at is not the board in front of them any more.
-    ///
-    /// Derived from the path depth rather than set by each caller. Setting it
-    /// at the call sites covered the two the child touches and silently missed
-    /// TileScript, which drives the coordinator directly — so a scripted trip
-    /// Home slid the wrong way, in exactly the recordings made to show the app
-    /// off.
-    @State private var navDirection: Edge = .trailing
+    /// It used to be a 0.3s crossfade with a 40pt push. On BlasterAI 60 the
+    /// system row, Home and every same-cell word are identical on both pages,
+    /// so the fade drew each of them twice, 80pt apart — the board juddered
+    /// exactly where it was meant to stand still. Avaz swaps the page
+    /// instantly, and so do we. The "you are here" folder marker and the
+    /// changed words are the cue that the board moved. Every navigation the
+    /// child or the Find sheet triggers goes through this one value, so a
+    /// short fade (`.easeOut(duration: 0.12)`) is a one-line experiment.
+    static let pageChange: Animation? = nil
 
     /// The reader's Dynamic Type multiplier, taken from the system rather than
     /// from a hand-written table of category → factor. Reading
@@ -258,19 +255,9 @@ struct TileGridView: View {
                 // — which is what gives the transition below something to
                 // animate — and so no tile view is ever reused across pages.
                 .id(page.key)
-                // A short push and a crossfade, not a full-width slide.
-                //
-                // `.move(edge:)` travels the whole screen, which at 0.26s reads
-                // as the board being yanked sideways — and it dwarfed the tile
-                // press that was supposed to precede it. 40pt of movement under
-                // a crossfade still says "this went that way" without the board
-                // appearing to bolt.
-                .transition(.asymmetric(
-                    insertion: .opacity.combined(
-                        with: .offset(x: navDirection == .trailing ? 40 : -40)),
-                    removal: .opacity.combined(
-                        with: .offset(x: navDirection == .trailing ? -40 : 40))
-                ))
+                // Only used if `pageChange` is ever an animation: a fade in
+                // place, never a push, so unchanged cells cannot draw double.
+                .transition(.opacity)
                 .overlay(alignment: .top) {
                     compactOverlayContent
                 }
@@ -420,9 +407,6 @@ struct TileGridView: View {
         .onChange(of: currentPage?.tiles.map(\.key)) { _, _ in
             // Reset display page position when tile count changes significantly
             currentDisplayPage = 0
-        }
-        .onChange(of: coordinator.navigationPath.count) { old, new in
-            navDirection = new >= old ? .trailing : .leading
         }
         .onChange(of: coordinator.currentPageKey) { _, _ in
             // The lift belongs to the tap that caused it, and that tap is over.
@@ -662,7 +646,7 @@ struct TileGridView: View {
         HomeGridCell(
             isEnabled: coordinator.navigationPath.count > 1 || currentDisplayPage != 0,
             action: {
-                withAnimation(.easeOut(duration: 0.30)) {
+                withAnimation(Self.pageChange) {
                     coordinator.navigateToRoot()
                 }
                 currentDisplayPage = 0
@@ -671,7 +655,7 @@ struct TileGridView: View {
             isMenuOpen: showCaregiverMenu,
             labelFontSize: spec.labelFontSize,
             backAction: coordinator.canGoBack ? {
-                withAnimation(.easeOut(duration: 0.30)) {
+                withAnimation(Self.pageChange) {
                     coordinator.goBack()
                 }
                 currentDisplayPage = 0
@@ -887,7 +871,7 @@ struct TileGridView: View {
     /// Open the folders from home to the found word's page, as though tapped,
     /// and mark the word. See `NavigationCoordinator.show(path:homePageKey:)`.
     private func go(to finding: WordFinder.Finding, in scene: BlasterScene) {
-        withAnimation(.easeOut(duration: 0.30)) {
+        withAnimation(Self.pageChange) {
             coordinator.show(path: finding.path, homePageKey: scene.homePageKey)
         }
         findHighlight = FindHighlight(key: finding.key, pageKey: finding.pageKey)
@@ -1060,7 +1044,7 @@ struct TileGridView: View {
             }
         }
         if !resolvedLink.isEmpty {
-            withAnimation(.easeOut(duration: 0.30)) {
+            withAnimation(Self.pageChange) {
                 coordinator.navigate(to: resolvedLink, linkKey: key)
             }
             if recorder.state == .recording {

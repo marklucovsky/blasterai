@@ -67,9 +67,11 @@ private struct StyleThumb: View {
         VStack(spacing: 3) {
             Group {
                 if let ui = resolver.image(for: tileKey, in: set) {
+                    // White, not the system background: art is cut off its
+                    // ground and would lose its outlines on dark grey.
                     Image(uiImage: ui).resizable().scaledToFit()
                         .frame(width: size, height: size)
-                        .background(Color(.secondarySystemBackground))
+                        .background(Color.white)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                 } else {
                     RoundedRectangle(cornerRadius: 8)
@@ -141,7 +143,7 @@ struct TileArtComparisonView: View {
         Group {
             if let ui = resolver.image(for: tileKey, in: set) {
                 Image(uiImage: ui).resizable().scaledToFit()
-                    .background(Color(.secondarySystemBackground))
+                    .background(Color.white)   // cut-out art; see the strip above
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .onTapGesture { zoomed = set }
             } else {
@@ -180,6 +182,7 @@ private struct ZoomedArtView: View {
 
             if let ui = resolver.image(for: tileKey, in: set) {
                 Image(uiImage: ui).resizable().scaledToFit()
+                    .background(Color.white)   // cut-out art on the black viewer
                     .padding()
                     .scaleEffect(scale)
                     .gesture(

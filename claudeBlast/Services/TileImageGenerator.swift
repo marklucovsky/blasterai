@@ -569,7 +569,10 @@ enum TileImageGenerator {
     /// last image), unlike a fresh text-to-image generation.
     static func edit(baseImage: UIImage, instruction: String, apiKey: String) async throws -> UIImage {
         guard !apiKey.isEmpty else { throw OpenAIError.missingAPIKey }
-        guard let png = baseImage.pngData() else {
+        // Flattened onto white first: shipped art is cut off its ground, and the
+        // edit endpoint would otherwise be handed a picture on nothing and asked
+        // to keep "the same background".
+        guard let png = baseImage.flattenedOnWhite().pngData() else {
             throw OpenAIError.decodingError("Couldn't encode the base image")
         }
 

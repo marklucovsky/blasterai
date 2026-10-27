@@ -363,7 +363,7 @@ enum TilePhotoCommit {
                              context: ModelContext,
                              resolver: TileImageResolver) -> String? {
         do {
-            let processed = try TilePhotoProcessor.process(image)
+            let processed = try TilePhotoProcessor.processArt(image, for: imageSet)
             // `artKey`, not `key`: reads resolve the alias, so a write that did
             // not would store an aliased tile's art where nothing looks.
             TileArtVariant.upsert(tileKey: tile.artKey, imageSet: imageSet,
