@@ -135,14 +135,27 @@ final class SentenceEngine {
         return scriptedModeOverride ?? (profileResolver?.interactionMode ?? .sentence)
     }
 
-    /// Whether tray chips show their pictures. Derived from the child's stage —
-    /// see `BrownsStage.showsPicturesInTray`.
+    /// Whether tray chips show their pictures: the device's `trayPictures`,
+    /// which by default follows the child's stage (`BrownsStage.showsPicturesInTray`).
     ///
     /// Read through the engine because that is where the tray already looks for
     /// everything else about the active child, and one environment object in a
     /// hot view body beats two.
     var trayShowsPictures: Bool {
-        profileResolver?.brownsStage.showsPicturesInTray ?? true
+        switch trayPictures {
+        case .pictures: return true
+        case .words: return false
+        case .auto: return profileResolver?.brownsStage.showsPicturesInTray ?? true
+        }
+    }
+
+    /// The tray's pictures as a setting a caregiver can change, rather than
+    /// only a consequence of the stage. Which stage should drop the pictures is
+    /// our reading of the development, not a therapist's yet (Mark
+    /// 2026-10-27): until it is, the knob stays exposed so the guess can be
+    /// tested. `auto` is the stage's answer.
+    var trayPictures: TrayPictures = TrayPictures.current() {
+        didSet { UserDefaults.standard.set(trayPictures.rawValue, forKey: AppSettingsKey.trayPictures) }
     }
 
     /// Set when OpenAI rejects the key outright — revoked, expired, or out of
@@ -464,7 +477,7 @@ final class SentenceEngine {
             // A lone tile has no sentence to escalate — a mash just re-speaks the
             // word ("say it again"). Do NOT populate the sentence bubble with the
             // raw word (that read as a bogus one-word "sentence").
-            if let tile = activeGroup.tiles.first { speakTile(tile.value) }
+            if let tile = activeGroup.tiles.first { speakTile(tile.value, key: tile.key) }
         } else if canReplay {
             replay()
         } else if activeGroup.tiles.count >= 2 {
@@ -790,7 +803,7 @@ final class SentenceEngine {
         activeGroup.sentence = tile.value
         activeGroup.state = .locked
         isIdleNudge = false
-        speak(tile.value)
+        speak(tile.value, key: tile.key)
         startIdleTimers()
     }
 
@@ -1206,7 +1219,8 @@ final class SentenceEngine {
                 // still deserves an answer. Speak the words themselves rather
                 // than leaving the child with silence and a tray they have to
                 // clear by hand.
-                speak(tiles.map(\.value).joined(separator: " "))
+                speak(tiles.map(\.value).joined(separator: " "),
+                      key: tiles.count == 1 ? tiles.first?.key : nil)
                 activeGroup.state = .unlockedEditable
             } else {
                 activeGroup.state = .unlockedEditable
@@ -1257,14 +1271,16 @@ final class SentenceEngine {
     func speakStrip() {
         let line = spokenStrip.map(\.value).joined(separator: " ")
         guard !line.isEmpty else { return }
-        speak(line)
+        speak(line, key: spokenStrip.count == 1 ? spokenStrip.first?.key : nil)
     }
 
-    func speakTile(_ text: String) {
-        speak(text)
+    /// One tile's word, on its own. `key` lets a word the voice would read as a
+    /// letter (*I*) be said as a word (`SpeechSynthesizer.loneSpeech`).
+    func speakTile(_ text: String, key: String? = nil) {
+        speak(text, key: key)
     }
 
-    private func speak(_ text: String) {
+    private func speak(_ text: String, key: String? = nil) {
         guard audioEnabled else { return }
         // Resolution order for voice: engine override (still set by some
         // AdminView code paths) → active ChildProfile.voiceIdentifier →
@@ -1277,6 +1293,7 @@ final class SentenceEngine {
         let rate: Float? = profileResolver?.active != nil ? profileResolver?.ttsRate : nil
         let volume: Float? = profileResolver?.active != nil ? profileResolver?.ttsVolume : nil
         speechSynthesizer.speak(text,
+                                key: key,
                                 voiceIdentifier: override ?? fromResolver,
                                 rate: rate,
                                 volume: volume)

@@ -221,7 +221,7 @@ struct SentenceTrayView: View {
     ///
     /// This used to be two rows: the active card + play column on top, and a
     /// nav strip beneath holding Home, a history scroll and Favorites. History
-    /// is gone and Home moved into the board as cell 0, which left an entire
+    /// is gone and Home moved out of the tray (it is on the rail), which left an entire
     /// 38pt row carrying one small card. Folding Favorites up here deletes that
     /// row — the tray is shorter, which is the whole point of the exercise.
     private var activeRow: some View {

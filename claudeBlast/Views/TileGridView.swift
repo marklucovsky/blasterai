@@ -46,6 +46,8 @@ struct TileGridView: View {
     @Environment(CaregiverMenuCoordinator.self) private var caregiverMenu
     @Environment(\.modelContext) private var modelContext
     @State private var showCaregiverMenu = false
+    /// The caregiver rail's Edit menu, opened off the Edit button.
+    @State private var showEditMenu = false
     @State private var currentDisplayPage: Int? = 0
     @AppStorage("tile_speech_enabled") private var tileSpeechEnabled: Bool = true
     @State private var haptic = UIImpactFeedbackGenerator(style: .heavy)
@@ -90,8 +92,10 @@ struct TileGridView: View {
     @AppStorage(AppSettingsKey.boardLayout) private var boardLayoutRaw: String =
         BoardLayout.current().rawValue
     @AppStorage(AppSettingsKey.honorSceneLayouts) private var honorSceneLayouts = true
-    @AppStorage(AppSettingsKey.tileLook) private var tileLookRaw: String = TileLook.classic.rawValue
-    private var tileLook: TileLook { TileLook(rawValue: tileLookRaw) ?? .classic }
+    @AppStorage(AppSettingsKey.tileLook) private var tileLookRaw: String = TileLook.square.rawValue
+    private var tileLook: TileLook { TileLook(rawValue: tileLookRaw) ?? .square }
+    /// Child mode on a caregiver device. See `RailProfile`.
+    @AppStorage(AppSettingsKey.railChildLock) private var railChildLock = false
 
     @Environment(\.horizontalSizeClass) private var hSizeClass
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -318,18 +322,10 @@ struct TileGridView: View {
                 TileScriptPlaybackOverlay()
             }
         }
-        // Caregiver menu — opened by long-pressing Home, which is now cell 0 of
-        // the board rather than a tray button. Anchored top-leading, the corner
-        // Home sits nearest, so it pops up beside it rather than centered
-        // mid-screen where the caregiver's reaching arm would occlude it.
-        // Admin is gated by AdminGate when ContentView presents it; on a
-        // patient device it is the only entry the menu offers.
-        .popover(isPresented: $showCaregiverMenu,
-                 attachmentAnchor: .point(.topLeading),
-                 arrowEdge: .top) {
-            caregiverMenuContent
-                .presentationCompactAdaptation(.popover)
-        }
+        // The caregiver menu opens from a long-press on the rail's Home and is
+        // anchored there (`ControlRail`). Admin is gated by AdminGate when
+        // ContentView presents it; on a child's rail it is the only entry the
+        // menu offers besides unlocking the caregiver's.
         .alert(item: $sceneNotice) { notice in
             Alert(title: Text(notice.title), message: Text(notice.message))
         }
@@ -432,64 +428,102 @@ struct TileGridView: View {
         }
     }
 
+    /// The path line under the tray: `Home › Actions › Moving`.
+    private static let pathLineHeight: CGFloat = 22
+
+    /// Which rail this device shows. See `RailProfile`.
+    private var railProfile: RailProfile {
+        RailProfile.resolve(role: DeviceProfileStore.current(context: modelContext)?.role,
+                            childLock: railChildLock)
+    }
+
+    /// A cell's height: the tile, and on the classic look its label beneath.
+    private func cellHeight(_ spec: GridLayoutSpec) -> CGFloat {
+        tileLook == .square ? spec.tileSize : spec.tileSize + spec.labelHeight
+    }
+
+    /// The board: the path line, the system row, the page, and the rail.
+    ///
+    /// The rail is a column beside the grid in iPad landscape. Turned to
+    /// portrait, and on iPhone, the same slots in the same order run along the
+    /// bottom. The tile is sized for grid and rail together, so the rail's
+    /// slots are tiles too.
     private func pagedGrid(for page: PageSpec) -> some View {
         GeometryReader { geo in
             let isLandscape = geo.size.width > geo.size.height
+            let isPhone = GridLayoutCalculator.isPhone(screenSize: GridLayoutCalculator.deviceScreenSize)
+            let rail: RailPlacement = !isPhone && isLandscape ? .side : .bottom(slots: railProfile.slots.count)
             let spec = GridLayoutCalculator.compute(
                 screenSize: GridLayoutCalculator.deviceScreenSize,
-                geo: geo.size,
+                geo: CGSize(width: geo.size.width, height: geo.size.height - Self.pathLineHeight),
                 // The scene's declared grid on a matching device, else this
                 // device's own. See `GridLayoutCalculator.liveLayout`.
                 layout: GridLayoutCalculator.liveLayout(
                     designed: activeScene?.designedLayout,
-                    isPhone: GridLayoutCalculator.isPhone(screenSize: GridLayoutCalculator.deviceScreenSize),
+                    isPhone: isPhone,
                     deviceLayout: BoardLayout(rawValue: boardLayoutRaw) ?? .standard,
                     honorSceneLayouts: honorSceneLayouts),
                 textScale: textScale,
-                look: tileLook
+                look: tileLook,
+                rail: rail
             )
             // Retired (hidden) and unreviewed (moderation-flagged) tiles never
             // render for the child — both stay invisible in running scenes until
             // the caregiver resolves them. A missing tile stays a no-op as before.
             let lookup = tileLookup
-            // Cell 0 of every page is Home, so each page carries one fewer
-            // vocabulary tile. Reserving it here — rather than only on page 1 —
-            // is what makes the position invariant: Home is in the same place
-            // on page 4 of a long board as on page 1. `max(1,)` guards a
-            // pathologically small grid.
-            let vocabPerPage = max(1, spec.perPage - 1)
+            // Row 1 is the system row on a scene that inherits it, the same on
+            // every screen of every page; the rest of the grid is the page.
+            let inherits = activeScene.map(BoardChrome.inherits) ?? false
+            let contentRows = inherits ? max(1, spec.rows - 1) : spec.rows
+            let perScreen = max(1, spec.cols * contentRows)
             // Nothing is filtered out: a hidden word, a concealed placement and
             // a spacer all keep their cell and draw empty. Removing any of them
             // would reflow the board and move every word the child had learned.
             let visible = TileEntry.holdingHiddenCells(page.tiles) {
                 lookup[$0]?.isHiddenFromChild == true
             }
-            // ALWAYS at least one chunk, even with nothing to put in it.
-            //
-            // `chunked(into:)` returns no chunks for an empty page, and Home is
-            // cell 0 of a chunk — so an empty page drew no Home, and with Home
-            // gone there is no long-press target and therefore no route into
-            // Admin. A page emptied by a bad import, or by hiding its last tile,
-            // bricked the device.
-            //
-            // Now that Admin is reached *through* the board, an empty grid is a
-            // state the board has to survive rather than one it can assume away.
-            let chunkedTiles = visible.isEmpty ? [[]] : visible.chunked(into: vocabPerPage)
-            Group {
-                if isLandscape {
-                    landscapeTabView(chunks: chunkedTiles, spec: spec, lookup: lookup)
+            // Always at least one chunk, so an empty page still draws a board
+            // with its rail — the rail's Home is the way into Admin.
+            let chunkedTiles = visible.isEmpty ? [[]] : visible.chunked(into: perScreen)
+            let cellH = cellHeight(spec)
+            let contentHeight = CGFloat(contentRows) * cellH + CGFloat(contentRows - 1) * spec.verticalSpacing
+            let isSide = rail == .side
+            let gridPadding = isSide ? 0 : spec.horizontalPadding
+            let gridWidth = CGFloat(spec.cols) * spec.tileSize + CGFloat(spec.cols - 1) * spec.horizontalSpacing
+            let board = VStack(spacing: spec.verticalSpacing) {
+                if inherits, let scene = activeScene {
+                    chromeRow(BoardChrome.row(for: scene, level: chromeLevel(scene)),
+                              spec: spec, lookup: lookup, padding: gridPadding)
+                }
+                Group {
+                    if isLandscape {
+                        landscapeTabView(chunks: chunkedTiles, spec: spec, lookup: lookup, padding: gridPadding)
+                    } else {
+                        portraitScrollView(chunks: chunkedTiles, pageHeight: contentHeight, spec: spec,
+                                           lookup: lookup, padding: gridPadding)
+                    }
+                }
+                .frame(height: contentHeight)
+            }
+            VStack(alignment: .leading, spacing: 0) {
+                pathLine
+                    .frame(height: Self.pathLineHeight)
+                    .padding(.horizontal, 16)
+                if isSide {
+                    HStack(alignment: .top, spacing: GridLayoutCalculator.railGap) {
+                        board.frame(width: gridWidth)
+                        controlRail(spec: spec, cellHeight: cellH, vertical: true)
+                    }
+                    .padding(.horizontal, 16)
+                    .frame(maxWidth: .infinity)
                 } else {
-                    portraitScrollView(chunks: chunkedTiles, pageHeight: geo.size.height, spec: spec, lookup: lookup)
+                    board
+                    Spacer(minLength: GridLayoutCalculator.railGap)
+                    controlRail(spec: spec, cellHeight: cellH, vertical: false)
+                        .frame(maxWidth: .infinity)
+                        .padding(.bottom, 4)
                 }
             }
-            #if DEBUG
-            .overlay(alignment: .centerLastTextBaseline) {
-                // Hidden in demo mode so the path badge isn't recorded.
-                if !demoMode {
-                    pathBadge
-                }
-            }
-            #endif
             .onChange(of: isLandscape) { _, _ in
                 currentDisplayPage = 0
             }
@@ -499,7 +533,7 @@ struct TileGridView: View {
             .task(id: findHighlight?.token) {
                 guard let target = findHighlight, target.pageKey == page.key,
                       let idx = visible.firstIndex(where: { $0.key == target.key }) else { return }
-                let chunk = idx / vocabPerPage
+                let chunk = idx / perScreen
                 if currentDisplayPage != chunk {
                     withAnimation { currentDisplayPage = chunk }
                 }
@@ -511,12 +545,42 @@ struct TileGridView: View {
                 // first, so the tile is always somewhere on `page`.)
                 guard let key,
                       let idx = page.tiles.firstIndex(where: { $0.key == key }) else { return }
-                // Pages hold `perPage - 1` vocabulary tiles; cell 0 is Home.
-                let chunk = idx / max(1, spec.perPage - 1)
+                let chunk = idx / perScreen
                 if currentDisplayPage != chunk {
                     withAnimation { currentDisplayPage = chunk }
                 }
             }
+        }
+    }
+
+    /// The level the system row shows at: the board's own on BlasterAI 60,
+    /// else the dial applied to the core board, as its pages are.
+    private func chromeLevel(_ scene: BlasterScene) -> Int? {
+        if scene.isDefault { return scene.effectiveRevealLevel }
+        return BoardLevels.clamp(BoardLevels(scene: scene, system: systemScene).level,
+                                 to: systemScene?.revealLevelCount ?? 0)
+    }
+
+    /// Row 1: the system folders. On a grid narrower than the row (Large,
+    /// Largest, iPhone) it scrolls sideways rather than wrapping onto the page.
+    @ViewBuilder
+    private func chromeRow(_ row: [TileEntry], spec: GridLayoutSpec,
+                           lookup: [String: TileModel], padding: CGFloat) -> some View {
+        let cells = HStack(spacing: spec.horizontalSpacing) {
+            ForEach(row, id: \.key) { entry in
+                tileCellView(for: entry, labelFontSize: spec.labelFontSize, lookup: lookup)
+                    .frame(width: spec.tileSize, height: cellHeight(spec))
+            }
+        }
+        if row.count > spec.cols {
+            ScrollView(.horizontal, showsIndicators: false) {
+                cells.padding(.horizontal, padding)
+            }
+            .frame(height: cellHeight(spec))
+        } else {
+            cells
+                .padding(.horizontal, padding)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -547,36 +611,37 @@ struct TileGridView: View {
         withAnimation(.easeOut(duration: 0.25)) { compactOverlay = .none }
     }
 
-    #if DEBUG
     /// Where the child is in the hierarchy: `Home › Describe › How much`.
-    /// A trial in debug builds (it replaced the grid-geometry badge); if it
-    /// helps, it comes forward as a breadcrumb the child sees.
+    /// It reads left to right under the tray, aligned with the grid.
     @ViewBuilder
-    private var pathBadge: some View {
+    private var pathLine: some View {
         if let scene = activeScene {
             let key = coordinator.currentPageKey ?? scene.homePageKey
             let trail: [String] = {
                 if let systemKey = TileToken.systemPageKey(key), let system = systemScene {
                     let pages = BoardLevels(scene: scene, system: system).systemPages
-                    return WordPlaces.trail(to: systemKey, pages: pages, homeKey: system.homePageKey)
+                    return WordPlaces.trail(to: systemKey, pages: pages, homeKey: system.homePageKey,
+                                            row: BoardChrome.rowPages(of: system))
                 }
-                return WordPlaces.trail(to: key, pages: scene.visiblePages, homeKey: scene.homePageKey)
+                return WordPlaces.trail(to: key, pages: scene.visiblePages, homeKey: scene.homePageKey,
+                                        row: BoardChrome.rowPages(of: scene))
             }()
-            Text(trail.joined(separator: " › "))
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(.black.opacity(0.55), in: Capsule())
-                .padding(6)
+            Text(trail.joined(separator: "  ›  "))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.head)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .allowsHitTesting(false)
+                .accessibilityLabel("You are on " + (trail.last ?? "Home"))
+        } else {
+            Color.clear
         }
     }
-    #endif
 
     @ViewBuilder
     private func landscapeTabView(chunks: [[TileEntry]], spec: GridLayoutSpec,
-                                  lookup: [String: TileModel]) -> some View {
+                                  lookup: [String: TileModel], padding: CGFloat) -> some View {
         // Fixed at the computed tile size, not flexible. At Auto the two are the
         // same width; at a row-stepped density the tile is sized by the height,
         // and flexible columns would stretch it back to fill the width — making
@@ -587,14 +652,12 @@ struct TileGridView: View {
         TabView(selection: $currentDisplayPage) {
             ForEach(Array(chunks.enumerated()), id: \.offset) { index, tiles in
                 LazyVGrid(columns: columns, spacing: spec.verticalSpacing) {
-                    homeCell(spec: spec)
                     ForEach(tiles, id: \.key) { entry in
                         tileCellView(for: entry, labelFontSize: spec.labelFontSize, lookup: lookup)
                     }
                 }
-                .padding(.horizontal, spec.horizontalPadding)
-                .padding(.vertical, 4)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .padding(.horizontal, padding)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .tag(index as Int?)
             }
         }
@@ -606,7 +669,7 @@ struct TileGridView: View {
 
     @ViewBuilder
     private func portraitScrollView(chunks: [[TileEntry]], pageHeight: CGFloat, spec: GridLayoutSpec,
-                                    lookup: [String: TileModel]) -> some View {
+                                    lookup: [String: TileModel], padding: CGFloat) -> some View {
         // Fixed at the computed tile size, not flexible. At Auto the two are the
         // same width; at a row-stepped density the tile is sized by the height,
         // and flexible columns would stretch it back to fill the width — making
@@ -621,13 +684,11 @@ struct TileGridView: View {
             VStack(spacing: 0) {
                 ForEach(Array(chunks.enumerated()), id: \.offset) { index, tiles in
                     LazyVGrid(columns: columns, spacing: spec.verticalSpacing) {
-                        homeCell(spec: spec)
                         ForEach(tiles, id: \.key) { entry in
                             tileCellView(for: entry, labelFontSize: spec.labelFontSize, lookup: lookup)
                         }
                     }
-                    .padding(.horizontal, spec.horizontalPadding)
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, padding)
                     .frame(height: pageHeight, alignment: .top)
                     .id(index)
                 }
@@ -644,31 +705,86 @@ struct TileGridView: View {
         }
     }
 
-    /// Home, at cell 0 of every page. See `HomeGridCell` for why it is in the
-    /// grid rather than the tray.
-    private func homeCell(spec: GridLayoutSpec) -> some View {
-        HomeGridCell(
-            isEnabled: coordinator.navigationPath.count > 1 || currentDisplayPage != 0,
-            action: {
-                withAnimation(Self.pageChange) {
-                    coordinator.navigateToRoot()
-                }
-                currentDisplayPage = 0
-            },
-            onOpenMenu: { showCaregiverMenu = true },
-            isMenuOpen: showCaregiverMenu,
-            labelFontSize: spec.labelFontSize,
-            backAction: coordinator.canGoBack ? {
-                withAnimation(Self.pageChange) {
-                    coordinator.goBack()
-                }
-                currentDisplayPage = 0
-                // Recorded as `<back>`, which the runner replays as a Back.
-                if recorder.state == .recording {
-                    recorder.recordNavigate(pageKey: NavigationCoordinator.backPageKey)
-                }
-            } : nil
-        )
+    // MARK: - Rail
+
+    private func controlRail(spec: GridLayoutSpec, cellHeight: CGFloat, vertical: Bool) -> some View {
+        let slots = railProfile.slots
+        let size = vertical
+            ? GridLayoutCalculator.sideRailSlot(spec, slots: slots.count, cellHeight: cellHeight)
+            : CGSize(width: spec.railSlot, height: spec.railSlot)
+        return ControlRail(slots: slots, slot: size,
+                           spacing: vertical ? spec.verticalSpacing : TileLayout.gap,
+                           vertical: vertical,
+                           isEnabled: isRailEnabled, action: railAction,
+                           isMenuOpen: $showCaregiverMenu,
+                           menu: { caregiverMenuContent },
+                           isEditMenuOpen: $showEditMenu,
+                           editMenu: { editMenuContent },
+                           level: railLevel)
+    }
+
+    private func isRailEnabled(_ item: RailItem) -> Bool {
+        switch item {
+        case .home: coordinator.navigationPath.count > 1 || currentDisplayPage != 0
+        case .back: coordinator.canGoBack
+        // Mounting topic scenes comes with the scene editor work.
+        case .topics: false
+        case .keyboard, .search: activeScene != nil
+        case .edit: activeScene != nil
+        case .levels, .childMode: true
+        }
+    }
+
+    private func railAction(_ item: RailItem) {
+        switch item {
+        case .home:
+            guard isRailEnabled(.home) else { return }
+            withAnimation(Self.pageChange) { coordinator.navigateToRoot() }
+            currentDisplayPage = 0
+        case .back:
+            withAnimation(Self.pageChange) { coordinator.goBack() }
+            currentDisplayPage = 0
+            // Recorded as `<back>`, which the runner replays as a Back.
+            if recorder.state == .recording {
+                recorder.recordNavigate(pageKey: NavigationCoordinator.backPageKey)
+            }
+        case .keyboard:
+            let key = activeScene?.isDefault == true ? Self.keyboardPage
+                                                     : TileToken.systemLink(to: Self.keyboardPage)
+            withAnimation(Self.pageChange) { coordinator.navigate(to: key, linkKey: Self.keyboardPage) }
+            if recorder.state == .recording { recorder.recordNavigate(pageKey: key) }
+        case .search:
+            showFindWord = true
+        case .edit:
+            showEditMenu = true
+        case .childMode:
+            railChildLock = true
+        case .topics, .levels:
+            break
+        }
+    }
+
+    private static var keyboardPage: String { BoardChrome.keyboardPage }
+
+    /// The page Edit would open: one of the active scene's own. BlasterAI 60's
+    /// pages are the system's and cannot be edited.
+    private var editablePageKey: String? {
+        guard let scene = activeScene, !scene.isDefault,
+              TileToken.systemPageKey(identityPageKey) == nil,
+              scene.page(withKey: identityPageKey) != nil else { return nil }
+        return identityPageKey
+    }
+
+    /// The level dial, inline on the caregiver rail; nil when neither board
+    /// has levels.
+    private var railLevel: RailLevel? {
+        guard let scene = activeScene else { return nil }
+        let levels = BoardLevels(scene: scene, system: systemScene)
+        guard levels.count > 0, let level = levels.level else { return nil }
+        return RailLevel(level: level, count: levels.count) { next in
+            levels.setLevel(next)
+            try? modelContext.save()
+        }
     }
 
     /// Page a tile is rendered on, used to scope its identity. Falls back the
@@ -685,10 +801,12 @@ struct TileGridView: View {
         if let systemKey = TileToken.systemPageKey(key) {
             guard let system = systemScene else { return [key] }
             let pages = BoardLevels(scene: scene, system: system).systemPages
-            return WordPlaces.trailKeys(to: systemKey, pages: pages, homeKey: system.homePageKey)
+            return WordPlaces.trailKeys(to: systemKey, pages: pages, homeKey: system.homePageKey,
+                                        row: BoardChrome.rowPages(of: system))
                 .map(TileToken.systemLink(to:))
         }
-        return WordPlaces.trailKeys(to: key, pages: scene.visiblePages, homeKey: scene.homePageKey)
+        return WordPlaces.trailKeys(to: key, pages: scene.visiblePages, homeKey: scene.homePageKey,
+                                    row: BoardChrome.rowPages(of: scene))
     }
 
     /// Where a tap on `entry` would go, from the page showing.
@@ -854,6 +972,15 @@ struct TileGridView: View {
             // Keeping the broken second route and injecting the environment into
             // it was the other option. One gated door to a developer tool is
             // worth more than two.
+            // Child mode on a caregiver device: the way back to the caregiver's
+            // rail, behind the same gate as Admin.
+            if railChildLock && !isPatientDevice {
+                caregiverMenuRow("Caregiver Controls", systemImage: "lock.open.fill") {
+                    showCaregiverMenu = false
+                    caregiverMenu.requested = .unlockCaregiverRail
+                }
+                Divider()
+            }
             caregiverMenuRow("Admin", systemImage: "lock.fill") {
                 showCaregiverMenu = false
                 caregiverMenu.requested = .admin
@@ -866,7 +993,93 @@ struct TileGridView: View {
         .padding(.bottom, 8)
     }
 
-    private var showsQuickActions: Bool { quickActionsEnabled && !isPatientDevice }
+    /// The quick actions are the caregiver's: not on a patient device, and not
+    /// on a caregiver device in Child mode.
+    /// The caregiver rail's Edit menu: what changes how this board looks and
+    /// behaves, in one place, beside the button.
+    private var editMenuContent: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Edit")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+                .padding(.bottom, 4)
+            if allScenes.count > 1 {
+                sceneSwitcher
+                Divider()
+            }
+            tileStyleSwitcher
+            Divider()
+            trayModeSwitcher
+            Divider()
+            caregiverMenuRow("Edit This Page", systemImage: "square.and.pencil",
+                             enabled: editablePageKey != nil) {
+                showEditMenu = false
+                if let key = editablePageKey { caregiverMenu.requested = .editPage(key) }
+            }
+            Divider()
+            caregiverMenuRow("Edit This Scene", systemImage: "square.grid.3x3",
+                             enabled: activeScene.map { !$0.isDefault } ?? false) {
+                showEditMenu = false
+                caregiverMenu.requested = .editScene
+            }
+            Divider()
+            caregiverMenuRow("Settings", systemImage: "gearshape") {
+                showEditMenu = false
+                caregiverMenu.requested = .admin
+            }
+        }
+        .frame(minWidth: 320)
+        .padding(.bottom, 8)
+    }
+
+    /// Single words or AI sentences, and whether the tray's chips carry their
+    /// pictures, for this device. Pictures follow the child's stage unless a
+    /// caregiver picks otherwise (`TrayPictures`).
+    private var trayModeSwitcher: some View {
+        Menu {
+            Button {
+                if engine.interactionMode != .singleWord { toggleInteractionMode() }
+            } label: {
+                if engine.interactionMode == .singleWord {
+                    Label("Single Words", systemImage: "checkmark")
+                } else {
+                    Text("Single Words")
+                }
+            }
+            Button {
+                if engine.interactionMode != .sentence { toggleInteractionMode() }
+            } label: {
+                if engine.interactionMode == .sentence {
+                    Label("AI Sentences", systemImage: "checkmark")
+                } else {
+                    Text(engine.canGenerateSentences ? "AI Sentences" : "AI Sentences (needs a key)")
+                }
+            }
+            .disabled(engine.interactionMode == .singleWord && !engine.canGenerateSentences)
+            Section("Tray chips") {
+                ForEach(TrayPictures.allCases) { option in
+                    Button {
+                        engine.trayPictures = option
+                    } label: {
+                        let title = option == .auto
+                            ? "\(option.title) (\(profileResolver.brownsStage.label))" : option.title
+                        if engine.trayPictures == option {
+                            Label(title, systemImage: "checkmark")
+                        } else {
+                            Text(title)
+                        }
+                    }
+                }
+            }
+        } label: {
+            menuLabel("Tray", value: engine.interactionMode == .singleWord ? "Single Words" : "AI Sentences",
+                      systemImage: "text.bubble")
+        }
+    }
+
+    private var showsQuickActions: Bool { quickActionsEnabled && railProfile == .caregiver }
 
     private func isFindTarget(_ entry: TileEntry) -> Bool {
         findHighlight?.key == entry.key && findHighlight?.pageKey == identityPageKey
@@ -887,7 +1100,9 @@ struct TileGridView: View {
         Menu {
             ForEach(allScenes) { scene in
                 Button {
+                    // Shared by the caregiver menu and the Edit menu.
                     showCaregiverMenu = false
+                    showEditMenu = false
                     switchScene(to: scene)
                 } label: {
                     if scene.isActive {
@@ -1032,7 +1247,7 @@ struct TileGridView: View {
             // Speak the word on tap. Always in single-word mode (the word IS the
             // communication); in sentence mode only when the preview is enabled.
             if tileSpeechEnabled || engine.interactionMode == .singleWord {
-                engine.speakTile(tile.displayName)
+                engine.speakTile(tile.displayName, key: tile.key)
             }
             // Universal: a grid tap adds, never deletes. The engine appends to
             // the FIFO strip (single-word, duplicates allowed) or to the active

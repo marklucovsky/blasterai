@@ -19,10 +19,16 @@ struct NavigationCoordinatorTests {
         return c
     }
 
-    /// One level down, the previous page is home, and Home already goes there.
-    @Test func noBackOnHomeOrItsChildren() {
+    /// Back is a fixed control on the rail: nothing to do on home, and one
+    /// level down it goes home.
+    @Test func backOneLevelDownGoesHome() {
         #expect(!at().canGoBack)
-        #expect(!at("groups").canGoBack)
+        let c = at("groups")
+        #expect(c.canGoBack)
+        c.goBack()
+        #expect(c.currentPageKey == nil)
+        #expect(c.navigationPath == ["home"])
+        #expect(!c.canGoBack)
     }
 
     @Test func backFromAGrandchildReturnsToItsParent() {
@@ -31,7 +37,7 @@ struct NavigationCoordinatorTests {
         c.goBack()
         #expect(c.currentPageKey == "groups")
         #expect(c.navigationPath == ["home", "groups"])
-        #expect(!c.canGoBack)   // now one level down: Home's job again
+        #expect(c.canGoBack)
     }
 
     /// Sideways trips count: actions → food → drinks retraces through food.
@@ -80,9 +86,9 @@ struct NavigationCoordinatorTests {
     }
 
     @Test func backWithNowhereToGoIsANoOp() {
-        let c = at("groups")
+        let c = at()
         c.goBack()
-        #expect(c.currentPageKey == "groups")
-        #expect(c.navigationPath == ["home", "groups"])
+        #expect(c.currentPageKey == nil)
+        #expect(c.navigationPath == ["home"])
     }
 }

@@ -34,6 +34,14 @@ enum WayMark {
 /// at the label band, so the word underneath keeps its colour and its room.
 private struct WayMarkOverlay: ViewModifier {
     let mark: WayMark?
+    /// The corner of what it frames: the picture on a classic tile, the whole
+    /// tile on a square one.
+    var radius: CGFloat = 8
+    /// Inset from the edge. A square tile's frame is its own border.
+    var inset: CGFloat = 1
+    /// The stripe. Narrower round a whole square tile, where the word's band
+    /// runs to the bottom edge and a 6pt stripe cut into it.
+    var width: CGFloat = 6
 
     func body(content: Content) -> some View {
         content
@@ -41,13 +49,13 @@ private struct WayMarkOverlay: ViewModifier {
                 if mark != nil {
                     ZStack {
                         if mark == .here {
-                            RoundedRectangle(cornerRadius: 6).fill(WayMark.veil).padding(6)
+                            RoundedRectangle(cornerRadius: max(0, radius - 2)).fill(WayMark.veil).padding(width)
                         }
-                        RoundedRectangle(cornerRadius: 8).strokeBorder(WayMark.stripes.0, lineWidth: 6)
-                        RoundedRectangle(cornerRadius: 8)
-                            .strokeBorder(WayMark.stripes.1, style: StrokeStyle(lineWidth: 6, dash: [7, 7]))
+                        RoundedRectangle(cornerRadius: radius).strokeBorder(WayMark.stripes.0, lineWidth: width)
+                        RoundedRectangle(cornerRadius: radius)
+                            .strokeBorder(WayMark.stripes.1, style: StrokeStyle(lineWidth: width, dash: [7, 7]))
                     }
-                    .padding(1)
+                    .padding(inset)
                     .allowsHitTesting(false)
                 }
             }
@@ -314,7 +322,6 @@ struct TileView: View {
                 squareGround
                 squarePicture(size: art)
                     .frame(width: art, height: art)
-                    .modifier(WayMarkOverlay(mark: wayMark))
                     .overlay(alignment: .bottomTrailing) { linkBadge }
                     .padding(.top, m)
                 Text(tile.displayName)
@@ -326,6 +333,10 @@ struct TileView: View {
                     .frame(width: side, height: band)
                     .offset(y: m + art)
             }
+            // The way here frames the whole tile, its border, rather than the
+            // picture inside it (Mark 2026-10-27): on a 2pt-gap board of colour
+            // a picture-sized frame read as part of the art.
+            .modifier(WayMarkOverlay(mark: wayMark, radius: TileLayout.cornerRadius, inset: 0, width: 4))
         }
         .aspectRatio(1, contentMode: .fit)
     }
@@ -358,7 +369,11 @@ struct TileView: View {
     @ViewBuilder
     private var linkBadge: some View {
         if isNavigation && wayMark != .here {
-            let badge = TileColorResolver.marker(on: accent)
+            // Against what is behind it. On a square tile that is the tint, not
+            // the colour: a folder's light-blue badge on its own light-blue tint
+            // all but vanished on Classic's cut-out art, while the same badge on
+            // Playful 3D's white card read fine.
+            let badge = TileColorResolver.marker(on: look == .square ? squareGround : accent)
             Image(systemName: "arrow.right.circle.fill")
                 .font(.caption)
                 .foregroundStyle(TileColorResolver.label(on: badge), badge)

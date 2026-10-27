@@ -98,6 +98,12 @@ nonisolated enum AppSettingsKey {
     static let honorSceneLayouts     = "honor_scene_layouts"
     /// `TileLook.rawValue`: classic or square. Device-local.
     static let tileLook              = "tile_look"
+    /// Child mode on a caregiver device: the board shows the child's rail
+    /// until the Admin gate turns it off (`RailProfile`). Device-local.
+    static let railChildLock         = "rail_child_lock"
+    /// `TrayPictures.rawValue`: whether tray chips carry their pictures.
+    /// Device-local; `auto` follows the child's stage.
+    static let trayPictures          = "tray_pictures"
     /// Whether the Caregiver Menu (long-press Home) offers quick actions —
     /// mode, level, scene, tile style — or Admin alone. Device-local, and on
     /// unless a caregiver turns it off. Patient devices show Admin only

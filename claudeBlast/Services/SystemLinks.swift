@@ -78,8 +78,10 @@ struct BoardLevels {
 
     init(scene: BlasterScene, system: BlasterScene?) {
         self.scene = scene
+        // A scene under the system row reaches BlasterAI 60 from every page,
+        // whether or not any page stores a link into it.
         if let system, system.persistentModelID != scene.persistentModelID,
-           Self.linksIntoSystem(scene.pages) {
+           BoardChrome.inherits(scene) || Self.linksIntoSystem(scene.pages) {
             self.system = system
         } else {
             self.system = nil
@@ -113,7 +115,8 @@ struct BoardLevels {
     func visibleTileCount(atLevel level: Int) -> Int {
         let own = scene.visibleTileCount(atLevel: Self.clamp(level, to: scene.revealLevelCount))
         guard let system else { return own }
-        let reachable = Self.reachableSystemKeys(from: scene.pages, system: system)
+        let reachable = Self.reachableSystemKeys(from: scene.pages, system: system,
+                                                 inheritsRow: BoardChrome.inherits(scene))
         let pages = system.pages(atLevel: Self.clamp(level, to: system.revealLevelCount))
         return own + pages.filter { reachable.contains($0.key) }
             .reduce(0) { $0 + $1.tiles.count { !$0.isEmptyCell } }
@@ -132,10 +135,14 @@ struct BoardLevels {
 
     /// Keys of the system pages a scene's links reach, following the folders
     /// on those pages (the system home is Home, so it is not a way in).
-    static func reachableSystemKeys(from pages: [PageSpec], system: BlasterScene) -> Set<String> {
+    /// `inheritsRow`: the scene draws the system row, so its folders are ways
+    /// in from every page.
+    static func reachableSystemKeys(from pages: [PageSpec], system: BlasterScene,
+                                    inheritsRow: Bool = false) -> Set<String> {
         let byKey = Dictionary(system.pages.map { ($0.key, $0) },
                                uniquingKeysWith: { first, _ in first })
         var queue = pages.flatMap { $0.tiles.compactMap { TileToken.systemPageKey($0.link) } }
+        if inheritsRow { queue += BoardChrome.pageKeys }
         var seen = Set<String>()
         while let key = queue.popLast() {
             guard key != system.homePageKey, !seen.contains(key),

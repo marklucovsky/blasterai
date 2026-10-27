@@ -88,15 +88,20 @@ enum OBFExporter {
 
             // Home has to be written out, because OBF has no chrome.
             //
-            // In the app, Home is not a tile: the grid injects it at cell 0 of
-            // every page, so it never appears in `page.tiles`. Export it as-is
-            // and a board set arrives with no way back — every sub-board a
-            // one-way trip, which is worse than useless to a child.
+            // In the app, Home is not a tile: it is on the control rail, so it
+            // never appears in `page.tiles`. Export it as-is and a board set
+            // arrives with no way back — every sub-board a one-way trip, which
+            // is worse than useless to a child. Cell 0, in the same place on
+            // every board, so it is motor-planned rather than hunted for.
             //
-            // Cell 0 matches the app exactly, and for the same reason: an
-            // invariant position is what makes it motor-planned rather than
-            // hunted for.
-            var pageEntries = page.tiles
+            // The system row is not stored either. On BlasterAI 60 its folders
+            // open the board's own pages, so they go out on every page as they
+            // are drawn. Another scene's row opens BlasterAI 60, which is not
+            // in the package, so there is nothing for it to open.
+            let rowPages = Set(BoardChrome.rowPages(of: scene))
+            let row = BoardChrome.row(for: scene, level: scene.effectiveRevealLevel)
+                .filter { rowPages.contains($0.link) }
+            var pageEntries = row + page.tiles
             if page.key != scene.homePageKey,
                scenePages.contains(where: { $0.key == scene.homePageKey }),
                !page.tiles.contains(where: { $0.link == scene.homePageKey || $0.link == "<home>" }) {

@@ -9,7 +9,7 @@ import SwiftUI
 ///
 /// Laid out on the scene's designed grid (`BlasterScene.designedFor`), whatever
 /// device this is — a phone board designed on an iPad previews as the phone
-/// will show it. Paged as the board pages, with Home in cell 0, so every word
+/// will show it. Paged as the board pages, under the system row, so every word
 /// is where the child will find it. Undeclared, this device's own layout.
 struct ScenePreviewBoardView: View {
     let scene: BlasterScene
@@ -56,7 +56,11 @@ struct ScenePreviewBoardView: View {
                 if let page = currentPage {
                     GeometryReader { geo in
                         let spec = GridLayoutCalculator.compute(geo: geo.size, grid: grid)
-                        let chunks = visibleTiles(page).chunked(into: max(1, spec.perPage - 1))
+                        // The system row on every screen, as the board draws it.
+                        let chrome = BoardChrome.inherits(scene)
+                            ? BoardChrome.row(for: scene, level: scene.effectiveRevealLevel) : []
+                        let perScreen = max(1, spec.perPage - (chrome.isEmpty ? 0 : spec.cols))
+                        let chunks = visibleTiles(page).chunked(into: perScreen)
                         let columns = Array(repeating: GridItem(.fixed(spec.tileSize),
                                                                 spacing: spec.horizontalSpacing),
                                             count: spec.cols)
@@ -64,10 +68,9 @@ struct ScenePreviewBoardView: View {
                             ForEach(Array((chunks.isEmpty ? [[]] : chunks).enumerated()),
                                     id: \.offset) { index, tiles in
                                 LazyVGrid(columns: columns, spacing: spec.verticalSpacing) {
-                                    HomeGridCell(isEnabled: currentPageKey != scene.homePageKey,
-                                                 action: { go(to: scene.homePageKey) },
-                                                 onOpenMenu: {},
-                                                 labelFontSize: spec.labelFontSize)
+                                    ForEach(Array(chrome.prefix(spec.cols).enumerated()), id: \.offset) { _, entry in
+                                        previewCell(entry, labelFontSize: spec.labelFontSize)
+                                    }
                                     ForEach(tiles) { entry in
                                         previewCell(entry, labelFontSize: spec.labelFontSize)
                                     }
@@ -108,7 +111,7 @@ struct ScenePreviewBoardView: View {
         displayPage = 0
     }
 
-    /// "Designed for iPad 12×5", or the device layout being shown in its place.
+    /// "Designed for iPad 10×6", or the device layout being shown in its place.
     private var gridSubtitle: String {
         if let designed = scene.designedLayout { return "Designed for \(designed.title)" }
         return "\(grid.cols)×\(grid.rows) · this device's layout"

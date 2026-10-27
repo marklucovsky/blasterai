@@ -149,7 +149,7 @@ EXPECTED = [
 # a word somebody forgot.
 UNPLACED_ON_PURPOSE = {
     "meals": "a category word, not a food a child asks for; left Food in session 8 "
-             "so the page still fits one 12×5 screen",
+             "so the page still fits one 10×6 screen",
 }
 
 # (word, page it would also go on, why). Reviewed by hand; see the docstring.

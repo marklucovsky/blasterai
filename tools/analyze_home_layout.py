@@ -3,14 +3,14 @@
 # Copyright 2026 Mark Lucovsky
 """Show a home page's structure: parts of speech, bands, and vertical pairs.
 
-    python3 tools/analyze_home_layout.py [--scene core_first] [--cols 12]
+    python3 tools/analyze_home_layout.py [--scene core_first] [--cols 10]
 
 WHY BOTH AXES
 -------------
 `show_page_grid.py` prints what is where. This asks whether the arrangement
 *means* anything, which is a different question and needs both directions.
 
-The board is 12 wide, so cell n and cell n+12 are vertically adjacent — and a
+The board is 10 wide, so cell n and cell n+10 are vertically adjacent — and a
 child scanning for a word uses that adjacency exactly as much as the horizontal
 one. Laying the page out as a reading-order run and then judging it as a run
 misses half the structure: `in`/`out`, `on`/`off` and `up`/`down` sit one above
@@ -51,7 +51,7 @@ COLOUR = {
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--scene", default="core_first")
-    ap.add_argument("--cols", type=int, default=12)
+    ap.add_argument("--cols", type=int, default=10)
     args = ap.parse_args()
 
     scene = json.loads((SCENES / f"{args.scene}.json").read_text())
@@ -90,7 +90,7 @@ def main():
         flag = "" if len(kinds) == 1 else f"   MIXED: {', '.join(sorted(kinds))}"
         print(f"  col {c:2d}  {'/'.join(sorted(kinds)):28s}{flag}")
 
-    print("\nVERTICAL PAIRS (n, n+12) — both cells a word\n")
+    print("\nVERTICAL PAIRS (n, n+cols) — both cells a word\n")
     for a in range(len(cells) - cols):
         top, bottom = cells[a], cells[a + cols]
         if top[2] in ("chrome", "link", "gap") or bottom[2] in ("chrome", "link", "gap"):

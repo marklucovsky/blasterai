@@ -71,8 +71,10 @@ struct NavigationLogTests {
         var presses: [Press] = []
         let c = coordinator { presses.append($0) }
         c.navigate(to: "food")
-        c.goBack()                       // food's parent is home: not a Back
-        #expect(presses.count == 1)
+        c.goBack()                       // back to home: a Back
+        #expect(presses.count == 2)
+        c.goBack()                       // on home: nowhere to go
+        #expect(presses.count == 2)
     }
 
     // MARK: - Coverage
@@ -165,9 +167,11 @@ struct NavigationLogTests {
                                          inWindow: [], allTime: [])
         let home = try #require(report.usageByPage.first { $0.pageKey == scene.homePageKey })
         let grid = try #require(scene.designedLayout?.grid)
-        #expect(home.available == grid.cols * grid.rows - 1)
-        #expect(home.available == 59)
-        #expect(home.linkCount >= 11)
+        // Row 1 is the inherited system row, so the page is the 50 cells under it.
+        #expect(home.available == grid.cols * (grid.rows - 1))
+        #expect(home.available == 50)
+        // Home's links are its doorways now (I, go, eat…); its folders are row 1.
+        #expect(home.linkCount >= 6)
     }
 
     // MARK: - Activity

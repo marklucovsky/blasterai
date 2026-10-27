@@ -177,7 +177,7 @@ struct ExportableScene: Codable {
     var sceneVersion: String? = nil
     /// The author's self-asserted display name ("by Greta"). May be absent.
     var authorName: String? = nil
-    /// The grid the scene was designed for, e.g. `"ipad-12x5"`. Optional and
+    /// The grid the scene was designed for, e.g. `"ipad-10x6"`. Optional and
     /// ignored by older builds, so the format version does not change.
     var designedFor: String? = nil
     /// Graded reveal. The file carries every level's words; `revealLevel` is

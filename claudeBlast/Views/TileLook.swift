@@ -28,14 +28,14 @@ enum TileLook: String, CaseIterable, Identifiable {
     }
 
     static func current(_ defaults: UserDefaults = .standard) -> TileLook {
-        defaults.string(forKey: AppSettingsKey.tileLook).flatMap(TileLook.init(rawValue:)) ?? .classic
+        defaults.string(forKey: AppSettingsKey.tileLook).flatMap(TileLook.init(rawValue:)) ?? .square
     }
 }
 
 extension EnvironmentValues {
     /// Set once by the board, read by every cell in it, so Home and the
     /// spacers can never disagree with the tiles about the shape of a cell.
-    @Entry var tileLook: TileLook = .classic
+    @Entry var tileLook: TileLook = .square
 }
 
 /// How a square tile holds its picture. Each image set declares one

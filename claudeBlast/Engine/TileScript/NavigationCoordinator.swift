@@ -61,13 +61,12 @@ final class NavigationCoordinator {
         currentPageKey = pageKey
     }
 
-    /// Whether there is somewhere to go back to *other than home*.
+    /// Whether there is anywhere to go back to.
     ///
-    /// The path is `[home, …]`, so two entries means the previous page is home
-    /// and Home already does that. Only from a page whose parent is not home —
-    /// `groups → feelings`, or a sideways `food → drinks` — does Back add a
-    /// destination Home cannot reach in one tap.
-    var canGoBack: Bool { navigationPath.count > 2 }
+    /// Back is a fixed control on the rail now, so it works one level down as
+    /// well, where it lands on home. It used to share Home's cell and appear
+    /// only two levels down, where it added a destination Home could not reach.
+    var canGoBack: Bool { navigationPath.count > 1 }
 
     /// What a script writes for a Back tap: `<back>`. The history is a true
     /// history now, so recording where Back *landed* would replay as a forward
@@ -80,7 +79,8 @@ final class NavigationCoordinator {
         guard canGoBack else { return }
         let from = showingPageKey
         navigationPath.removeLast()
-        currentPageKey = navigationPath.last
+        // Back onto home is home, as the Home button leaves it.
+        currentPageKey = navigationPath.count == 1 ? nil : navigationPath.last
         onPress?(from, showingPageKey, Self.backPageKey)
     }
 

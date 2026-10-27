@@ -70,7 +70,7 @@ struct SceneRow: View {
 
     private var isSystemScene: Bool { scene.isSystemOwned }
 
-    /// " · designed for iPad 12×5", or nothing when undeclared.
+    /// " · designed for iPad 10×6", or nothing when undeclared.
     private func designedSuffix(_ scene: BlasterScene) -> String {
         scene.designedLayout.map { " · designed for \($0.title)" } ?? ""
     }
@@ -705,8 +705,7 @@ struct ScenePreviewView: View {
     private var placedPage: PageSpec? {
         guard working.template != nil,
               let page = working.placedPages(systemHome: systemHome, lookup: tileLookup)
-                .first(where: { $0.key == currentPage.key }),
-              PageTemplate.kind(of: page, homePageKey: working.homePageKey) != nil else { return nil }
+                .first(where: { $0.key == currentPage.key }) else { return nil }
         return page
     }
 
@@ -839,7 +838,7 @@ struct ScenePreviewView: View {
         }
     }
 
-    /// The page on the board's own 12 × 5 grid, Home in cell 0, so the
+    /// The page on the board's own 10 × 6 grid, under the system row, so the
     /// caregiver sees each word where the child will find it.
     private func boardGrid(_ page: PageSpec) -> some View {
         let byKey = Dictionary(currentPage.tiles.map { ($0.key, $0) },

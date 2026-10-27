@@ -31,8 +31,8 @@ struct SceneDesignedLayoutTests {
 
     @Test func everyDeclarableGridRoundTrips() {
         #expect(DesignedLayout.all.map(\.rawValue) == [
-            "ipad-12x5", "ipad-10x4", "ipad-9x4",
-            "phone-4x5", "phone-3x4", "phone-2x4",
+            "ipad-10x6", "ipad-8x5", "ipad-6x4",
+            "phone-4x6", "phone-3x5", "phone-2x5",
         ])
         for designed in DesignedLayout.all {
             #expect(DesignedLayout(rawValue: designed.rawValue) == designed)
@@ -49,7 +49,7 @@ struct SceneDesignedLayoutTests {
     // MARK: - Where it applies
 
     @Test func liveBoardHonoursAMatchingDevice() {
-        let ward = DesignedLayout(rawValue: "phone-2x4")
+        let ward = DesignedLayout(rawValue: "phone-2x5")
         #expect(GridLayoutCalculator.liveLayout(designed: ward, isPhone: true,
                                                 deviceLayout: .standard, honorSceneLayouts: true) == .largest)
     }
@@ -57,7 +57,7 @@ struct SceneDesignedLayoutTests {
     /// A caregiver may want Large for a child with low vision, whatever the
     /// author chose.
     @Test func aDeviceCanOptOut() {
-        let ward = DesignedLayout(rawValue: "phone-2x4")
+        let ward = DesignedLayout(rawValue: "phone-2x5")
         #expect(GridLayoutCalculator.liveLayout(designed: ward, isPhone: true,
                                                 deviceLayout: .large, honorSceneLayouts: false) == .large)
     }
@@ -65,7 +65,7 @@ struct SceneDesignedLayoutTests {
     /// A phone board cannot keep its positions on an iPad's grid, so the iPad
     /// uses its own layout.
     @Test func theOtherKindOfDeviceUsesItsOwn() {
-        let ward = DesignedLayout(rawValue: "phone-2x4")
+        let ward = DesignedLayout(rawValue: "phone-2x5")
         #expect(GridLayoutCalculator.liveLayout(designed: ward, isPhone: false,
                                                 deviceLayout: .standard, honorSceneLayouts: true) == .standard)
     }
@@ -73,11 +73,11 @@ struct SceneDesignedLayoutTests {
     /// The preview and page editor show the declared grid on any device — a
     /// phone board is designed on an iPad.
     @Test func authoringShowsTheDeclaredGridAnywhere() {
-        let ward = DesignedLayout(rawValue: "phone-2x4")
+        let ward = DesignedLayout(rawValue: "phone-2x5")
         let onPad = GridLayoutCalculator.authoringGrid(designed: ward, isPhone: false, deviceLayout: .standard)
-        #expect(onPad.cols == 2 && onPad.rows == 4)
+        #expect(onPad.cols == 2 && onPad.rows == 5)
         let undeclared = GridLayoutCalculator.authoringGrid(designed: nil, isPhone: false, deviceLayout: .large)
-        #expect(undeclared.cols == 10 && undeclared.rows == 4)
+        #expect(undeclared.cols == 8 && undeclared.rows == 5)
     }
 
     @Test func anExplicitGridIsExact() {
@@ -93,19 +93,19 @@ struct SceneDesignedLayoutTests {
 
     @Test func theBundledBoardIsDesignedForTheIPad() {
         let result = BootstrapLoader.loadDefaultVocabulary(context: TestStore.freshContainer().mainContext)
-        #expect(result.scene.designedFor == "ipad-12x5")
+        #expect(result.scene.designedFor == "ipad-10x6")
     }
 
     /// `ExportableScene` lists its keys by hand, so a field left out of
     /// `CodingKeys` is silently dropped both ways. Export, then import into a
     /// fresh store.
     @Test func exportAndImportCarryIt() throws {
-        let source = scene(in: TestStore.freshContainer().mainContext, designedFor: "phone-3x4")
+        let source = scene(in: TestStore.freshContainer().mainContext, designedFor: "phone-3x5")
         let data = try SceneExporter.exportJSON(source, tileLookup: [:])
-        #expect(String(decoding: data, as: UTF8.self).contains("\"designedFor\" : \"phone-3x4\""))
+        #expect(String(decoding: data, as: UTF8.self).contains("\"designedFor\" : \"phone-3x5\""))
 
         let result = try SceneImporter.importJSON(data, context: TestStore.freshContainer().mainContext)
-        #expect(result.scene.designedFor == "phone-3x4")
+        #expect(result.scene.designedFor == "phone-3x5")
     }
 
     @Test func undeclaredExportsNoKey() throws {
@@ -116,11 +116,11 @@ struct SceneDesignedLayoutTests {
 
     @Test func cloneAndDuplicateCarryIt() {
         let context = TestStore.freshContainer().mainContext
-        let source = scene(in: context, designedFor: "ipad-9x4")
+        let source = scene(in: context, designedFor: "ipad-6x4")
         #expect(BlasterScene.cloneForEditing(source, in: context, authorID: "a", authorName: "A")
-                    .designedFor == "ipad-9x4")
+                    .designedFor == "ipad-6x4")
         #expect(BlasterScene.duplicate(of: source, in: context, authorID: "a", authorName: "A")
-                    .designedFor == "ipad-9x4")
+                    .designedFor == "ipad-6x4")
     }
 
     /// Undeclared leaves the content hash as it was before the field existed,
@@ -132,7 +132,7 @@ struct SceneDesignedLayoutTests {
         let before = s.contentHash
         s.designedFor = ""
         #expect(s.contentHash == before)
-        s.designedFor = "ipad-12x5"
+        s.designedFor = "ipad-10x6"
         #expect(s.contentHash != before)
     }
 }

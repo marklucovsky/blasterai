@@ -58,7 +58,7 @@ final class BlasterScene {
     var importedContentHash: String = ""
 
     /// The grid this scene was designed for — `DesignedLayout.rawValue`, e.g.
-    /// `"ipad-12x5"`. Empty when undeclared.
+    /// `"ipad-10x6"`. Empty when undeclared.
     ///
     /// A non-optional String with an empty sentinel, per the schema rules in
     /// `SchemaVersions.swift`: additive, defaulted, and written for every row so

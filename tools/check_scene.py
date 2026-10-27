@@ -62,6 +62,19 @@ from pathlib import Path
 
 VOCAB = Path("claudeBlast/Resources/vocabulary.json")
 SCENES = Path("claudeBlast/Resources/scenes")
+TEMPLATES = Path("claudeBlast/Resources/page_templates.json")
+
+
+def inherited_row(scene):
+    """The system row a scene on a current grid draws on every page without
+    storing it (`BoardChrome`). The system scene's own row opens its pages."""
+    if not scene.get("designedFor") or not scene.get("isDefault"):
+        return []
+    templates = json.loads(TEMPLATES.read_text())
+    if scene["designedFor"] != templates["designedFor"]:
+        return []
+    # The rail's Keyboard opens the keyboard page from anywhere, too.
+    return [e["page"] for e in templates["systemRow"]] + ["keyboard"]
 
 
 def check(path, vocab):
@@ -72,7 +85,8 @@ def check(path, vocab):
     if scene.get("homePageKey") not in pages:
         errors.append(f"homePageKey {scene.get('homePageKey')!r} is not a page")
 
-    edges = {p["key"]: set() for p in scene["pages"]}
+    row = [k for k in inherited_row(scene) if k in pages]
+    edges = {p["key"]: set(row) for p in scene["pages"]}
     for page in scene["pages"]:
         key, placed = page["key"], []
         for tile in page["tiles"]:

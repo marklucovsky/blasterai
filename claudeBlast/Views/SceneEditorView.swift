@@ -757,10 +757,8 @@ private struct PageGeneratorSheet: View {
     @Query private var allScenes: [BlasterScene]
 
     /// A scene built on the page scheme gets its new pages on the leaf
-    /// template: the system row, then the words in bands.
-    private var isTemplated: Bool {
-        PageTemplate.isTemplated(scene.pages, homePageKey: scene.homePageKey)
-    }
+    /// template: under the system row, the words in bands.
+    private var isTemplated: Bool { BoardChrome.inherits(scene) }
 
     /// BlasterAI 60's home, whose system row a templated page opens with.
     private var systemHome: PageSpec? { SceneBuilder.systemHome(in: modelContext) }

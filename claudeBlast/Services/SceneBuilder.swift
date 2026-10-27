@@ -79,7 +79,7 @@ enum SceneBuilder {
                                                 lookup: lookup)
                 .map { page in
                     var page = page
-                    let placed = PageTemplate.kind(of: page, homePageKey: generated.homePageKey) != nil
+                    let placed = generated.template != nil
                     page.tiles = page.tiles.compactMap { entry in
                         if entry.isSpacer || lookup[entry.key] != nil { return entry }
                         return placed ? .spacer() : nil

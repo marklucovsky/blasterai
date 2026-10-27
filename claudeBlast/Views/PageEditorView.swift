@@ -195,6 +195,8 @@ struct PageEditorView: View {
                         onAddSpace: { addSpacer() },
                         onTapTile: { editingTileKey = $0 },
                         boardGrid: boardGrid,
+                        chrome: BoardChrome.inherits(scene)
+                            ? BoardChrome.row(for: scene, level: scene.effectiveRevealLevel) : [],
                         levelCount: scene.revealLevelCount,
                         onEnableLevels: { count in
                             scene.setRevealLevelCount(count)

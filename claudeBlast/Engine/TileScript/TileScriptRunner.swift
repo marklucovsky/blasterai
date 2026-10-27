@@ -707,7 +707,7 @@ final class TileScriptRunner {
             Self.logger.warning("TileScript: tile '\(tileKey)' not found, skipping")
             return
         }
-        if voicePerTile { engine.speakTile(tile.displayName) }   // voice the word as it lands
+        if voicePerTile { engine.speakTile(tile.displayName, key: tile.key) }   // voice the word as it lands
         engine.addTile(tile)
         // Pulse the tapped tile in the grid so the tap is visible on playback —
         // count bumps every time, so repeated taps of the same tile re-animate.

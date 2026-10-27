@@ -4,30 +4,24 @@
 //  TemplateBoardGrid.swift
 //  claudeBlast
 //
-//  A page laid out on the page scheme, drawn on the board's own 12 × 5 grid
-//  with Home in cell 0, so a caregiver previewing it sees each word where the
+//  A page laid out on the page scheme, drawn on the board's own 10 × 6 grid
+//  under the system row, so a caregiver previewing it sees each word where the
 //  child will find it. Shared by the scene and page previews.
 //
 
 import SwiftUI
 
 struct TemplateBoardGrid<Cell: View>: View {
-    /// Cells 1…n, as `PagePlacer.place` returns them.
+    /// The page from r2c1 on, as `PagePlacer.place` returns it.
     let page: PageSpec
     @ViewBuilder let cell: (TileEntry) -> Cell
 
     var body: some View {
-        let cells = page.tiles + Array(repeating: TileEntry.spacer(),
-                                       count: max(0, PageTemplate.cols * PageTemplate.rows - 1
-                                                  - page.tiles.count))
+        let content = PageTemplate.cols * (PageTemplate.rows - 1)
+        let cells = BoardChrome.row(inSystemScene: false) + page.tiles
+            + Array(repeating: TileEntry.spacer(), count: max(0, content - page.tiles.count))
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4),
                                  count: PageTemplate.cols), spacing: 6) {
-            Image(systemName: "house.fill")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity)
-                .aspectRatio(1, contentMode: .fit)
-                .background(RoundedRectangle(cornerRadius: 8).fill(Color.secondary.opacity(0.15)))
             ForEach(Array(cells.enumerated()), id: \.offset) { _, entry in
                 if entry.isSpacer {
                     Color.clear.aspectRatio(1, contentMode: .fit)

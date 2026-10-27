@@ -60,12 +60,12 @@ SCENES = Path("claudeBlast/Resources/scenes")
 
 MIN_SHARE = 0.15
 MIN_WORDS = 4
-COLS = 12
+COLS = 10
 
 
 def is_chrome_cell(cell):
-    """Row 1, or columns 11-12 below it."""
-    return cell < COLS or cell % COLS >= COLS - 2
+    """Columns 9-10, the folder column. Row 1 is inherited, not on the page."""
+    return cell % COLS >= COLS - 2
 WAYFINDING = "wayfinding"
 
 
@@ -82,14 +82,14 @@ def page_tiles(page, vocab_by_class, vocab_order):
     because both change the count.
     """
     words, links = [], []
-    # Navigation chrome is not content: silent links in row 1 or in columns
-    # 11-12 (the system row, and the folder column a folder page repeats) are
-    # left out, or the 8-word Questions page reads as "mostly links". Placement
-    # n is cell n + 1, because Home is cell 0. Mirror of `isChromeCell` in
+    # Navigation chrome is not content: silent links in columns 9-10 (the
+    # folder column a folder page repeats) are left out, or the 8-word
+    # Questions page reads as "mostly links". The system row is inherited, not
+    # stored, so placement n is cell n + COLS. Mirror of `isChromeCell` in
     # `LinkColorResolver.swift`.
     placed = 0
     for cmd in page["tiles"]:
-        if "link" in cmd and is_chrome_cell(placed + 1) and not cmd.get("audible") \
+        if "link" in cmd and is_chrome_cell(placed + COLS) and not cmd.get("audible") \
                 and cmd["link"] not in words and cmd["link"] not in links:
             placed += 1
             continue

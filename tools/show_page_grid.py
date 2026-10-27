@@ -41,19 +41,19 @@ word promoted to the front does not have to be removed from anywhere.
 
 PAGING
 ------
-Home occupies cell 0 of **every** chunk — it is an invariant position, which is
-motor planning — so a page holds `cols * rows - 1` words per chunk and the app
-pages through the rest. That is why a long page is shown here in chunks rather
-than as one tall grid: the chunk boundary is where a column relationship breaks.
+Row 1 of **every** screen is the system row (`BoardChrome`), drawn by the app
+and not stored on the page, so a page holds `cols * (rows - 1)` words per screen
+and the app pages through the rest. That is why a long page is shown here in
+chunks rather than as one tall grid: the chunk boundary is where a column
+relationship breaks. A scene that does not inherit the row (no current
+`designedFor`) uses every cell.
 
-WHY 12 COLUMNS
---------------
-An 11" iPad Pro at the default density gives **12 x 5 = 60** cells, and since the
-large-iPad tier was added (`GridLayoutCalculator.iPadLargeBaseSize`) a 13" gives
-the same 12 columns rather than 14. iPad mini and iPhone reflow to their own
-column counts and are deliberately not what this optimises for — tile position is
-motor planning, and it can only be held stable across the sizes the board is
-actually used on.
+WHY 10 x 6
+----------
+Every iPad shows **10 x 6**: the system row and 50 cells of words and folders,
+with Home, Back and the keyboard on a rail beside the grid (Mark, 2026-10-27,
+after Avaz). The grid is pinned on every iPad, mini to 13", because tile
+position is motor planning.
 """
 
 import argparse
@@ -61,6 +61,7 @@ import json
 from pathlib import Path
 
 SCENES = Path("claudeBlast/Resources/scenes")
+TEMPLATES = Path("claudeBlast/Resources/page_templates.json")
 VOCAB = Path("claudeBlast/Resources/vocabulary.json")
 POS = Path("claudeBlast/Resources/parts_of_speech.json")
 
@@ -121,8 +122,8 @@ def main():
     ap.add_argument("--list", action="store_true", help="list the scene's pages")
     ap.add_argument("--pos", action="store_true",
                     help="annotate each word with its part of speech")
-    ap.add_argument("--cols", type=int, default=12)
-    ap.add_argument("--rows", type=int, default=5)
+    ap.add_argument("--cols", type=int, default=10)
+    ap.add_argument("--rows", type=int, default=6)
     args = ap.parse_args()
 
     path = SCENES / f"{args.scene}.json"
@@ -153,12 +154,15 @@ def main():
         cells = [c if c.startswith(("→", "·"))
                  else f"{c}:{parts.get(c, '?')[:4]}" for c in cells]
 
-    # Home takes cell 0 of every chunk, so each chunk carries one fewer word.
-    per_chunk = args.cols * args.rows - 1
+    # Row 1 is the inherited system row on a scene on the current grid.
+    templates = json.loads(TEMPLATES.read_text())
+    row = ([f"▤{e['key']}" for e in templates["systemRow"]][:args.cols]
+           if scene.get("designedFor") == templates["designedFor"] else [])
+    per_chunk = args.cols * args.rows - (args.cols if row else 0)
     chunks = [cells[i:i + per_chunk] for i in range(0, len(cells), per_chunk)] or [[]]
 
     print(f"{scene['name']} — page '{key}'")
-    print(f"{args.cols} columns x {args.rows} rows, Home in cell 0 of every page")
+    print(f"{args.cols} columns x {args.rows} rows" + (", the system row (▤) on every page" if row else ""))
     print(f"{len(cells)} tiles over {len(chunks)} page(s), {per_chunk} per page\n")
 
     width = max((len(c) for c in cells), default=6) + 1
@@ -166,7 +170,7 @@ def main():
     for number, chunk in enumerate(chunks, 1):
         if len(chunks) > 1:
             print(f"  page {number} of {len(chunks)}")
-        laid = ["⌂ HOME"] + chunk
+        laid = row + [""] * (args.cols - len(row)) * bool(row) + chunk
         for r in range(args.rows):
             row = laid[r * args.cols:(r + 1) * args.cols]
             if not row:

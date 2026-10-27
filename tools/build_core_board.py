@@ -19,17 +19,19 @@ child can see and enter from any word. The spec, `tools/board_spec/blasterai60.j
 says where every word lives. This tool turns it into pages with four rules that
 are tedious and error-prone by hand:
 
-1. **The system row.** Row 1 of every page is Home (drawn by the grid in cell 0)
-   and the spec's `systemRow`, keyboard last, in r1c12. Avaz's bottom bar, on top.
-   Pages in `systemRowExempt` don't get it yet: they would overflow one screen,
-   and each leaves the list when it is split into folders.
+1. **The system row.** Row 1 of every page is the spec's `systemRow`: the ten
+   folders, drawn by the app rather than stored (Mark 2026-10-27: scenes
+   "ALWAYS inherit system chrome from row 1"). This tool writes it to
+   `page_templates.json`, the one place the app reads it from, and writes each
+   page's content starting at r2c1. Home, Back and the keyboard are on the
+   control rail, outside the grid.
 
 2. **Doorways.** A word in `doorways` speaks AND opens a page, on every page it is
    on: *go* opens Places from Home, Actions, Moving and the I page alike. It is a
    property of the word, written onto every placement, and never on the page it
    opens (no *feel* → Feelings on Feelings).
 
-3. **Folders in columns 11–12.** A page's folders take r2c12 down, then r2c11
+3. **Folders in columns 9–10.** A page's folders take r2c10 down, then r2c9
    down, the leaf template's link slots (`page_templates.json`). The column
    belongs to the page that owns the folders, and only that page: it extends the
    path one level down, it is not a topic toolbar. A folder page does not repeat
@@ -43,18 +45,19 @@ are tedious and error-prone by hand:
 
 4. **Same word, same cell** (Avaz, Mark 2026-10-25: *teacher* sits in one cell on
    People and on School people). A word on a page and on one of its ancestors
-   takes the ancestor's cell, nearest ancestor first. Only words in columns 1–10
+   takes the ancestor's cell, nearest ancestor first. Only words in columns 1–8
    pin: a cell in the folder column is a folder on the page below. Up-front words
    on Actions take their Home cells, and Moving's take Actions'.
 
-Everything else fills columns 1–10 row by row, in spec order.
+Everything else fills columns 1–8 row by row, in spec order.
 
 PAGES THE SPEC DOES NOT OWN
 ---------------------------
-Get the system row and one gap prepended, which moves the page down exactly one
-row so every column it was laid out in survives, and their doorways made links.
-Otherwise they are left as authored, class selectors and all. Re-running strips
-what a previous run added before adding it again, so the tool is idempotent.
+Lose the system row a 12×5 build stored on them, and the row's folders they
+listed again, and get their doorways made links. Otherwise they are left as
+authored, class selectors and all, and reflow into ten columns. Re-running
+strips what a previous run added before adding it again, so the tool is
+idempotent.
 
 LAYING OUT A PAGE
 -----------------
@@ -65,8 +68,8 @@ that word's cell. `at` places a run by hand (`{"r5c1": ["right", "okay_",
 
 THE CHECKS
 ----------
-`--check` fails on: a board that differs from the spec (colours aside), a page
-over one screen, a doorway on its own target, an unknown key, a word that was on
+`--check` fails on: a board or template that differs from the spec (colours
+aside), a page over one screen of content, a doorway on its own target, an unknown key, a word that was on
 the board and is now on no page, or a pinned word that could not take its cell.
 """
 import argparse
@@ -81,6 +84,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SPEC = ROOT / "tools/board_spec/blasterai60.json"
 SCENE = ROOT / "claudeBlast/Resources/scenes/core_first.json"
+TEMPLATES = ROOT / "claudeBlast/Resources/page_templates.json"
 VOCAB = ROOT / "claudeBlast/Resources/vocabulary.json"
 POS = ROOT / "claudeBlast/Resources/parts_of_speech.json"
 ART = ROOT / "claudeBlast/TileImageSets"
@@ -89,11 +93,13 @@ THUMBS = ROOT / "tools/tile_sets/layout_thumbs_gi2"   # gitignored; shared with 
 sys.path.insert(0, str(ROOT / "tools"))
 from show_page_grid import expand  # noqa: E402
 
-COLS, ROWS = 12, 5
-CELLS = COLS * ROWS                      # cell 0 is Home, so a page holds CELLS - 1 tiles
-WORD_COLS = range(0, 10)                 # columns 1–10
-FOLDER_SLOTS = [r * COLS + 11 for r in range(1, ROWS)] + [r * COLS + 10 for r in range(1, ROWS)]
-KEYBOARD_CELL = 11                       # r1c12
+COLS, ROWS = 10, 6
+CELLS = COLS * ROWS
+CONTENT = CELLS - COLS                   # row 1 is the inherited system row; a page stores the rest
+WORD_COLS = range(0, 8)                  # columns 1–8
+FOLDER_SLOTS = [r * COLS + 9 for r in range(1, ROWS)] + [r * COLS + 8 for r in range(1, ROWS)]
+DESIGNED_FOR = "ipad-10x6"
+LEGACY_ROW = {"keyboard"}                # stored on 12×5 pages, now on the rail
 NEW_TILE_CLASS = "navigation"            # chrome: hidden from AI prompts, no part of speech (TileModel.isStructuralChrome)
 
 
@@ -102,7 +108,7 @@ def cell(row: int, col: int) -> int:
 
 
 def word_cells():
-    """Columns 1–10 of rows 2–5, row by row."""
+    """Columns 1–8 of rows 2–6, row by row."""
     return [cell(r, c) for r in range(1, ROWS) for c in WORD_COLS]
 
 
@@ -159,13 +165,24 @@ class Board:
         return {"key": key}
 
     def system_row(self):
+        """Row 1, cells 0–9. In the grid so a page does not repeat a folder the
+        row already holds; never written to a page."""
         row = {}
         entries = self.spec["systemRow"]
-        for i, e in enumerate(entries):
+        if len(entries) != COLS:
+            self.errors.append(f"systemRow has {len(entries)} folders, row 1 holds {COLS}")
+        for i, e in enumerate(entries[:COLS]):
             self.check_key(e["key"], "systemRow")
-            c = KEYBOARD_CELL if e["key"] == "keyboard" else i + 1
-            row[c] = {"key": e["key"], "to": e["to"], "audible": False}
+            row[i] = {"key": e["key"], "to": e["to"], "audible": False}
         return row
+
+    def templates(self, current):
+        """`page_templates.json` with this spec's system row."""
+        out = copy.deepcopy(current)
+        out["systemRow"] = [{"key": e["key"], "page": e["to"],
+                             **{k: e[k] for k in ("level", "linkColor") if k in e}}
+                            for e in self.spec["systemRow"]]
+        return out
 
     def folder_column(self, key):
         if key in self.folders_of:
@@ -193,6 +210,8 @@ class Board:
         page = self.pages[key]
         grid = self.system_row()
         if key == "home":
+            if len(page["rows"]) != ROWS - 1:
+                self.errors.append(f"home has {len(page['rows'])} rows, needs {ROWS - 1}")
             for r, row in enumerate(page["rows"], start=1):
                 if len(row) != COLS:
                     self.errors.append(f"home row {r + 1} has {len(row)} cells, needs {COLS}")
@@ -256,7 +275,16 @@ class Board:
             cells = [start + j for j in range(n)]
             return cells if all(free(x) and x // COLS == start // COLS for x in cells) else None
 
-        for run in items:
+        # Runs that grow from an inherited cell first (close · open around
+        # Home's open), then other runs longest first, then single words, each
+        # in spec order: a run needs a gap as wide as itself, and eight columns
+        # packed with inherited cells leave few once shorter ones have taken theirs.
+        def order(run):
+            if len(run) > 1 and any(w in inherited for w in run):
+                return (0, 0)
+            return (1, -len(run)) if len(run) > 1 else (2, 0)
+
+        for run in sorted(items, key=order):
             rest = [w for w in run if w not in placed]
             if not rest:
                 continue
@@ -274,14 +302,21 @@ class Board:
                             put(run[i], x)
                             placed.add(run[i])
                     continue
-                self.errors.append(f"{key}: run {run} cannot form around {run[j]}")
+                self.notes.append(f"{key}: run {run} cannot form around {run[j]}; placed apart")
             for start in word_cells():
                 spot = span(start, len(rest))
                 if spot:
                     break
             if not spot:
-                self.errors.append(f"{key}: no room for {rest}")
-                continue
+                # Eight columns are narrower than a run of ten colours, and a
+                # page packed with inherited cells may have no gap wide enough:
+                # keep the order, give up the row.
+                spot = [c for c in word_cells() if free(c)][:len(rest)]
+                if len(spot) < len(rest):
+                    self.errors.append(f"{key}: no room for {rest}")
+                    continue
+                if len(rest) > 1:
+                    self.notes.append(f"{key}: run {rest} wraps")
             for w, x in zip(rest, spot):
                 put(w, x)
                 placed.add(w)
@@ -291,6 +326,7 @@ class Board:
     # MARK: - Commands
 
     def commands(self, key, grid):
+        """The page's content, r2c1 on: row 1 is inherited, not stored."""
         cmds, run, gap = [], [], 0
         last = max(grid) if grid else 0
 
@@ -303,7 +339,7 @@ class Board:
                 cmds.append({"space": gap})
                 gap = 0
 
-        for c in range(1, last + 1):
+        for c in range(COLS, last + 1):
             e = grid.get(c)
             if e is None:
                 if run:
@@ -322,12 +358,6 @@ class Board:
         if key == "home":
             cmds += self.pages["home"].get("levels", [])
         return cmds
-
-    def row_commands(self, page_key):
-        """The system row as commands: eleven links, so the keyboard lands in r1c12."""
-        return [{"link": e["key"], "to": e["to"], "audible": False,
-                 "linkColor": self.old_colors.get((page_key, e["key"])) or self.home_colors.get(e["key"]) or "auto"}
-                for e in self.spec["systemRow"]]
 
     def door(self, page_key, w):
         return {"link": w, "to": self.doorways[w], "audible": True,
@@ -350,16 +380,16 @@ class Board:
         Each fix is written into the page, so a second run finds nothing to do.
         """
         key = page["key"]
-        exempt = key in self.spec.get("systemRowExempt", [])
         tiles = list(page["tiles"])
-        while tiles and "link" in tiles[0] and tiles[0]["link"] in self.row_keys and not tiles[0]["audible"]:
+        stored_row = self.row_keys | LEGACY_ROW
+        while tiles and "link" in tiles[0] and tiles[0]["link"] in stored_row and not tiles[0]["audible"]:
             tiles.pop(0)
-        if not exempt and tiles and tiles[0] == {"space": 1}:
+        if tiles and tiles[0] == {"space": 1}:
             tiles.pop(0)
         while tiles and "link" in tiles[-1] and tiles[-1]["audible"] \
                 and self.doorways.get(tiles[-1]["link"]) == tiles[-1]["to"]:
             tiles.pop()
-        row_keys = set() if exempt else self.row_keys
+        row_keys = self.row_keys
         is_door = lambda w: w in self.doorways and self.doorways[w] != key
         body = []
         for cmd in tiles:
@@ -367,10 +397,6 @@ class Board:
                 run = []
                 for w in cmd["keys"]:
                     if w in row_keys:
-                        if run:
-                            body.append({"keys": run})
-                            run = []
-                        body.append({"space": 1})
                         continue
                     if is_door(w):
                         if run:
@@ -382,16 +408,13 @@ class Board:
                 if run:
                     body.append({"keys": run})
             elif "link" in cmd and cmd["link"] in row_keys:
-                body.append({"space": 1})
+                continue
             elif "class" in cmd:
                 classes = cmd["class"] if isinstance(cmd["class"], list) else [cmd["class"]]
                 hits = [w for w in vocab_order if vocab_by_class.get(w) in classes
                         and w in row_keys and w not in cmd.get("exclude", [])]
                 if hits:
-                    cmd = dict(cmd, exclude=cmd.get("exclude", []) + hits)
-                    body.append(cmd)
-                    if not cmd.get("limit"):
-                        body.append({"space": len(hits)})
+                    body.append(dict(cmd, exclude=cmd.get("exclude", []) + hits))
                 else:
                     body.append(cmd)
             else:
@@ -399,11 +422,7 @@ class Board:
         placed = expand({"key": key, "tiles": body}, vocab_by_class, vocab_order)
         words = [c for c in placed if c != "·" and not c.startswith("→")]
         doors = [self.door(key, w) for w in words if is_door(w)]
-        # One gap after the row moves the page down exactly one row, so every
-        # column it was laid out in survives: Social's yes / I don't know / no
-        # stay level with Drinks' yummy / all done / yucky.
-        row = [] if exempt else self.row_commands(key) + [{"space": 1}]
-        return row + body + doors
+        return body + doors
 
     # MARK: - Build
 
@@ -411,6 +430,7 @@ class Board:
         vocab_by_class = {t["key"]: t["wordClass"] for t in self.vocab}
         vocab_order = [t["key"] for t in self.vocab]
         out = copy.deepcopy(self.scene)
+        out["designedFor"] = DESIGNED_FOR
         # A page a split replaced (Body & health → Body, Health) leaves the scene.
         retired = set(self.spec.get("retiredPages", []))
         out["pages"] = [p for p in out["pages"] if p["key"] not in retired]
@@ -451,8 +471,8 @@ class Board:
         for p in out["pages"]:
             cells = expand(p, vocab_by_class, vocab_order)
             after |= {c for c in cells if c != "·"}
-            if len(cells) > CELLS - 1:
-                self.errors.append(f"{p['key']}: {len(cells)} tiles, one screen holds {CELLS - 1}")
+            if len(cells) > CONTENT:
+                self.errors.append(f"{p['key']}: {len(cells)} tiles, one screen holds {CONTENT} under the system row")
             for c in p["tiles"]:
                 if "link" in c:
                     if c["to"] not in page_keys:
@@ -461,8 +481,9 @@ class Board:
                         self.errors.append(f"{p['key']}: doorway {c['link']} opens its own page")
         strip = lambda s: s.lstrip("→")
         # A retired page's own folder tile goes with it.
+        # The system row's folders are drawn by the app now, not stored.
         lost = ({strip(w) for w in before} - {strip(w) for w in after}
-                - set(self.spec.get("retiredPages", [])))
+                - set(self.spec.get("retiredPages", [])) - self.row_keys - LEGACY_ROW)
         if lost:
             self.errors.append(f"words no longer on any page: {sorted(lost)}")
 
@@ -517,9 +538,7 @@ def render_html(board, vocab, pos, path):
         titles[f["page"]] = label.get(f["key"], f["key"])
 
     def tile(c, e, pins, key, path):
-        if c == 0:
-            img, name, color, cls = thumb("home_") or thumb("home"), "Home", COLOR["home"], "nav"
-        elif e is None:
+        if e is None:
             return '<div class="cell empty"></div>'
         else:
             k = e["key"]
@@ -582,7 +601,7 @@ body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.45 -apple-sy
 main { max-width:1280px; margin:0 auto; padding:24px 16px 64px; }
 h1 { font-size:26px; margin:0 0 6px; } h3 { font-size:17px; margin:34px 0 2px; }
 .desc, .lede { color:var(--muted); margin:2px 0 8px; }
-.grid { display:grid; grid-template-columns:repeat(12, 1fr); gap:5px; background:var(--card); padding:8px; border-radius:12px; border:1px solid var(--line); }
+.grid { display:grid; grid-template-columns:repeat(10, 1fr); gap:5px; background:var(--card); padding:8px; border-radius:12px; border:1px solid var(--line); }
 .cell { position:relative; aspect-ratio:1/1.12; border-radius:8px; background:var(--c); display:flex; flex-direction:column; overflow:hidden; min-width:0; }
 .cell.empty { background:transparent; border:1.5px dashed var(--line); }
 .cell.pin { box-shadow:0 0 0 3px var(--fg); }
@@ -603,7 +622,7 @@ h1 { font-size:26px; margin:0 0 6px; } h3 { font-size:17px; margin:34px 0 2px; }
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>BlasterAI 60 Pages</title><style>{css}</style></head>
 <body><main><h1>BlasterAI 60, page by page</h1>
 <p class="lede">Built from <code>tools/board_spec/blasterai60.json</code> by <code>tools/build_core_board.py</code>.
-Row 1 is the system row on every page. Blue tiles are folders; a ↗ marks a doorway, a word that speaks and opens a page.
+Row 1 is the system row, inherited by every page rather than stored on it. Blue tiles are folders; a ↗ marks a doorway, a word that speaks and opens a page.
 A ringed cell holds the same word in the same cell as on the page above it.
 A blue-and-green striped tile is on the way to this page; with a red dot, it is this page (pressing it does nothing).</p>{body}</main></body></html>"""
     Path(path).write_text(doc)
@@ -614,6 +633,22 @@ A blue-and-green striped tile is on the way to this page; with a red dot, it is 
 
 def dump(obj):
     return json.dumps(obj, indent=2, ensure_ascii=False) + "\n"
+
+
+def dump_compact(obj, indent=0):
+    """`dump`, with anything that fits on one line kept there: how the
+    hand-kept `page_templates.json` is formatted."""
+    one = json.dumps(obj, ensure_ascii=False, separators=(", ", ": "))
+    pad, inner = " " * indent, " " * (indent + 2)
+    if not isinstance(obj, (dict, list)) or len(one) + indent <= 100 or not obj:
+        return one + ("\n" if indent == 0 else "")
+    if isinstance(obj, dict):
+        body = ",\n".join(f"{inner}{json.dumps(k)}: {dump_compact(v, indent + 2)}" for k, v in obj.items())
+        text = "{\n" + body + "\n" + pad + "}"
+    else:
+        body = ",\n".join(inner + dump_compact(v, indent + 2) for v in obj)
+        text = "[\n" + body + "\n" + pad + "]"
+    return text + ("\n" if indent == 0 else "")
 
 
 def without_colors(scene):
@@ -636,6 +671,7 @@ def main():
     scene = json.loads(SCENE.read_text())
     vocab0, pos0 = json.loads(VOCAB.read_text()), json.loads(POS.read_text())
     vocab, pos = updated_vocab(spec, vocab0), updated_pos(spec, pos0)
+    templates0 = json.loads(TEMPLATES.read_text())
 
     if args.check:
         # Rebuild from the committed board: it already carries a previous run's
@@ -648,10 +684,14 @@ def main():
             board.errors.append("vocabulary.json is missing spec tiles or labels: run --write")
         if pos != pos0:
             board.errors.append("parts_of_speech.json is missing spec tiles: run --write")
+        if board.templates(templates0) != templates0:
+            board.errors.append("page_templates.json systemRow differs from the spec: run --write")
     else:
         board = Board(spec, scene, vocab)
         out = board.build()
 
+    for n in board.notes:
+        print("note:", n)
     for e in board.errors:
         print("ERROR:", e)
     if args.html:
@@ -663,7 +703,10 @@ def main():
         SCENE.write_text(dump(out))
         VOCAB.write_text(dump(vocab))
         POS.write_text(dump(pos))
-        print("wrote core_first.json, vocabulary.json, parts_of_speech.json — now run resolve_link_colors.py --write")
+        if board.templates(templates0) != templates0:
+            TEMPLATES.write_text(dump_compact(board.templates(templates0)))
+        print("wrote core_first.json, vocabulary.json, parts_of_speech.json, page_templates.json"
+              " — now run resolve_link_colors.py --write")
     elif not args.check:
         changed = [p["key"] for p, q in zip(out["pages"], scene["pages"] + [None] * 99) if q is None or p != q]
         print(f"{len(changed)} page(s) would change: {', '.join(changed)}")

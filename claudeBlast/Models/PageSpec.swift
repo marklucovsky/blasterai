@@ -152,7 +152,7 @@ struct TileEntry: Codable, Hashable, Identifiable {
     ///
     /// ## Why hold the cell rather than remove the tile
     ///
-    /// Motor planning — the same argument that pins Home to cell 0. Removing a
+    /// Motor planning — the same argument that pins Home to the rail. Removing a
     /// word reflows the board and moves every other word with it, so a child who
     /// had learned where `want` lives has to find it again. Concealing moves
     /// nothing. That makes conceal the normal way to take a word off a board and
@@ -178,7 +178,7 @@ struct TileEntry: Codable, Hashable, Identifiable {
     /// The value is decided once, by whoever authored the link, and written
     /// down. Recomputing it at render would mean a folder changing color because
     /// a caregiver added three nouns to the page behind it — the same motor
-    /// planning argument that pins Home to cell 0 and that makes `isConcealed`
+    /// planning argument that pins Home to the rail and that makes `isConcealed`
     /// hold the cell. Colors are as much an invariant as positions.
     ///
     /// `"auto"` is an *authoring* instruction, never a stored value:

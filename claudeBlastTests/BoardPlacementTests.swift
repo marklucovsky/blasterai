@@ -19,7 +19,9 @@ extension SerialTests {
 ///
 /// Session 14 rebuilt BlasterAI 60 from `tools/board_spec/blasterai60.json`
 /// (`tools/build_core_board.py`): a system row on every page, folders in
-/// columns 11–12, and a word on a page and its folder in the same cell. The
+/// columns 9–10, and a word on a page and its folder in the same cell. The
+/// row is inherited rather than stored (10 × 6, Mark 2026-10-27), so a page's
+/// tiles start at r2c1. The
 /// session-8 decisions survive it. Opposites still sit side by side, answer
 /// rows still line up, and Home's verbs keep their Home cells, now across the
 /// folders a page was split into rather than across one long page.
@@ -37,13 +39,13 @@ struct BoardPlacementTests {
 
     private func keys(_ tiles: [TileEntry]?) -> [String] { (tiles ?? []).map(\.key) }
 
-    /// Row 1, the same eleven folders on every page.
-    private static let rowLength = PageTemplate.cols - 1
-
-    /// A page's words and folders below the system row, gaps left out.
+    /// A page's words and folders, gaps left out. Row 1 is not on the page.
     private func body(_ tiles: [TileEntry]?) -> [String] {
-        (tiles ?? []).dropFirst(Self.rowLength).filter { !$0.isSpacer }.map(\.key)
+        (tiles ?? []).filter { !$0.isSpacer }.map(\.key)
     }
+
+    /// The tiles one screen holds under the system row.
+    private static let screen = PageTemplate.cols * (PageTemplate.rows - 1)
 
     /// The pages a category was split into, the category first.
     private func family(_ b: [String: [TileEntry]], _ category: String) -> [[String]] {
@@ -85,14 +87,13 @@ struct BoardPlacementTests {
         #expect(folders.contains { $0.hasPrefix("food_") }, "Food opens its folders")
     }
 
-    /// Food fits one 12×5 page with its system row since it split into
-    /// folders (session 14), so it left `systemRowExempt`. `meals`, a category
-    /// word, lives in Lunch & dinner.
+    /// Food fits one screen under the system row since it split into folders
+    /// (session 14). `meals`, a category word, lives in Lunch & dinner.
     @Test func foodFitsOnePage() {
         let b = board()
         let food = keys(b["food"])
-        #expect(food.count <= 12 * 5 - 1, "Food is \(food.count) words")
-        #expect(food.prefix(Self.rowLength).contains("people"), "Food opens with the system row")
+        #expect(food.count <= Self.screen, "Food is \(food.count) words")
+        #expect(!food.contains("people"), "Food stores no system row")
         #expect(body(b["food"]).contains("hungry") && body(b["food"]).contains("more"))
         #expect(!food.contains("meals"))
         #expect(keys(b["food_lunch_dinner"]).contains("meals"))
@@ -105,24 +106,21 @@ struct BoardPlacementTests {
 
     /// Answer rows, at the same reach on every page that has one.
     ///
-    /// Home answers yes / all done / no at the start of its bottom row (cell
-    /// 48), and Describe puts right / okay / wrong in the same cells. Food,
-    /// being full, answers yummy / all done / yucky there too. The shorter pages
-    /// put theirs at the start of the row after their words: cell 36 since the
-    /// system row moved those pages down one row (cell 24 before). Cell 0 is
-    /// Home, so cell N is the page's tile N−1.
+    /// Home answers yes / all done / no at the start of its bottom row (r6c1,
+    /// the page's tile 40), and Describe, Food, Drinks and Social answer in the
+    /// same cells. Time's always / sometimes / never start its fourth row.
     @Test func answerRowsSitAtTheSameReach() {
         let b = board()
-        func cells(_ page: String, _ cell: Int) -> [String] {
+        func cells(_ page: String, _ index: Int) -> [String] {
             let words = keys(b[page])
-            return Array(words[(cell - 1)..<min(cell + 2, words.count)])
+            return Array(words[index..<min(index + 3, words.count)])
         }
-        #expect(cells("home", 48) == ["yes", "all_done", "no"])
-        #expect(cells("describe", 48) == ["right", "okay_", "wrong"])
-        #expect(cells("food", 48) == ["yummy", "all_done", "yucky"])
-        #expect(cells("drinks", 36) == ["yummy", "all_done", "yucky"])
-        #expect(cells("social", 36) == ["yes", "i_dont_know", "no"])
-        #expect(cells("time_when", 36) == ["always", "sometimes", "never"])
+        #expect(cells("home", 40) == ["yes", "all_done", "no"])
+        #expect(cells("describe", 40) == ["right", "okay_", "wrong"])
+        #expect(cells("food", 40) == ["yummy", "all_done", "yucky"])
+        #expect(cells("drinks", 40) == ["yummy", "all_done", "yucky"])
+        #expect(cells("social", 40) == ["yes", "i_dont_know", "no"])
+        #expect(cells("time_when", 20) == ["always", "sometimes", "never"])
         // true · maybe · false moved to What it's like, still a row.
         #expect(isRun(["true", "maybe", "false"], in: [keys(b["describe_what_its_like"])]))
     }
@@ -168,19 +166,19 @@ struct BoardPlacementTests {
         for word in ["big", "good", "hot_", "wet", "full", "yummy", "same", "smart"] {
             #expect(describe.contains(word), "\(word) on Describe")
         }
-        #expect(describe.count <= 12 * 5 - 1)
+        #expect(describe.count <= Self.screen)
     }
 
-    /// A verb that is on Home keeps its Home cell on Actions — eat and drink in
-    /// cells 17–18, come / go in 15–16, want in 28 — so the reach learned on
-    /// Home works on Actions. A Home word in columns 11–12 (`stop`) is the
+    /// A verb that is on Home keeps its Home cell on Actions — come / go /
+    /// eat / drink across r2c4–7, want in r3c5 — so the reach learned on Home
+    /// works on Actions. A Home word in columns 9–10 (`stop`) is the
     /// exception: there those columns hold Actions' folders.
     @Test func actionsKeepsHomesVerbsInTheirHomeCells() {
         let b = board()
         let home = keys(b["home"]), actions = keys(b["actions"])
         let cols = PageTemplate.cols
         let shared = home.enumerated().filter { index, word in
-            index >= Self.rowLength && (index + 1) % cols < cols - 2 && actions.contains(word)
+            index % cols < cols - 2 && actions.contains(word)
         }
         #expect(shared.count >= 12, "\(shared.count) of Home's words on Actions")
         for (index, word) in shared {
@@ -195,13 +193,15 @@ struct BoardPlacementTests {
         let actions = keys(b["actions"])
         var checked = 0
         for (folder, tiles) in b where folder.hasPrefix("actions_") {
-            for (index, tile) in tiles.enumerated() where index >= Self.rowLength && tile.link.isEmpty {
+            for (index, tile) in tiles.enumerated() where tile.link.isEmpty {
                 guard let cell = actions.firstIndex(of: tile.key) else { continue }
                 #expect(cell == index, "\(folder)/\(tile.key)")
                 checked += 1
             }
         }
-        #expect(checked >= 20, "only \(checked) shared words checked")
+        // 18 since the 10 × 6 board: sleep, work, try, wait and finish left
+        // Actions' eight columns for its folders.
+        #expect(checked >= 15, "only \(checked) shared words checked")
     }
 
     @Test func actionsKeepsItsClusters() {
@@ -250,12 +250,13 @@ struct BoardPlacementTests {
 
     /// Body & Health was laid out by hand: head to toe, then the toileting
     /// words together, then how it feels, then who helps. It split into Body
-    /// and Health in session 14 with the clusters kept.
+    /// and Health in session 14 with the clusters kept; head to hand is two
+    /// runs of five now that a row holds eight words.
     @Test func bodyHealthKeepsItsClusters() {
         let b = board()
         let body = self.body(b["body"]), health = self.body(b["health"])
-        #expect(Array(body.prefix(10)) == ["head", "hair", "face", "eye", "ear", "nose",
-                                           "mouth", "tooth", "arm", "hand"])
+        #expect(isRun(["head", "hair", "face", "eye", "ear"], in: [body]))
+        #expect(isRun(["nose", "mouth", "tooth", "arm", "hand"], in: [body]))
         #expect(isRun(["leg", "knee", "foot"], in: [body]))
         for run in [["potty", "pee", "poop", "bathroom", "toilet"],
                     ["sick", "hurt", "tired"], ["medicine", "bandaid", "doctor"]] {

@@ -4,30 +4,30 @@
 //  PagePlacer.swift
 //  claudeBlast
 //
-//  The page scheme (iPad 12 × 5), and laying a page's words into it.
+//  The page scheme (iPad 10 × 6), and laying a page's words into it.
 //
-//        c1    c2    c3    c4    c5    c6    c7    c8    c9    c10  │ c11   c12
-//  r1    HOME  ─────────── blue system row ───────────  ·     │  ·     ⌨
-//  r2    I     ·     ·     ·     go→   ·     ·     ·     ·     more │  L1    don't
-//  r3    ·     ·     ·     ·     want  ·     ·     ·     ·     ·    │  L2    stop
-//  r4    you   ·     ·     help  ·     ·     ·     ·     ·     ·    │  L3    not
-//  r5    yes   done  no    ·     ·     ·     ·     ·     ·     ·    │  L4    L5
+//        c1    c2    c3    c4    c5    c6    c7    c8   │ c9    c10
+//  r1    ─────────── system row: ten folders, inherited ───────────
+//  r2    I     ·     ·     ·     go→   ·     ·     ·    │ L1    don't
+//  r3    ·     ·     ·     ·     want  ·     ·     ·    │ more  stop
+//  r4    you   ·     ·     help  ·     ·     ·     ·    │ L2    not
+//  r5    ·     ·     ·     ·     ·     ·     ·     ·    │ L3    L5
+//  r6    yes   done  no    ·     ·     ·     ·     ·    │ L4    ·
 //
-//  - Row 1 is Home and BlasterAI 60's folders, as `<system>:` links, so a
-//    scene opens the core board's own pages (see `TileToken.systemPrefix`).
-//    The keyboard is pinned to column 12, with a gap before it.
+//  - Row 1 is BlasterAI 60's folders, and no page stores it: the board draws
+//    it on every page of a scene on a current grid (`BoardChrome`). Home,
+//    Back and the keyboard are on the control rail, outside the grid. So a
+//    page's tiles start at r2c1: content index i is cell i + cols.
 //  - A scene's home page keeps the core words where BlasterAI 60 has them —
 //    a child who knows where "want" is finds it in the same place on every
-//    board — and the don't / stop / not cluster in column 12. A frame word
+//    board — and the don't / stop / not cluster in column 10. A frame word
 //    that is a doorway there ("go" → Places, "I" → the I page) is one here too.
 //  - The page's own links fill L1–L4, then L5; a sixth takes `not`, a seventh
 //    `don't`. `stop` is never displaced.
-//  - Words fill columns 1–10, top to bottom, in Fitzgerald bands left to
-//    right: pronouns, people, actions, describing, social, things. A scene's
-//    home has 31 free cells there and the budget is 25, so adding a page never
-//    moves a word.
-//  - A leaf page has the system row and no frame; its links take column 12,
-//    then 11, and its bands start fresh columns with a gap when there is room.
+//  - Words fill columns 1–8, top to bottom, in Fitzgerald bands left to
+//    right: pronouns, people, actions, describing, social, things.
+//  - A leaf page has no frame; its links take column 10, then 9, and its
+//    bands start fresh columns with a gap when there is room.
 //
 //  The shape — grid, frame words, cluster, link slots, band order — is
 //  `Resources/page_templates.json`. The frame's cells come from BlasterAI 60's
@@ -62,11 +62,25 @@ struct PageScheme: Decodable {
         var spreadBands: Bool
     }
 
+    /// One folder of the system row.
+    struct ChromeEntry: Decodable, Equatable {
+        /// The folder's tile.
+        var key: String
+        /// The BlasterAI 60 page it opens.
+        var page: String
+        /// Its BlasterAI 60 level; absent shows at every level.
+        var level: Int?
+        /// The colour of the page it opens (`resolve_link_colors.py`).
+        var linkColor: String?
+    }
+
     var version: Int
     var designedFor: String
     var cols: Int
     var rows: Int
-    var keyboard: String
+    /// Row 1 of every page, drawn by the board (`BoardChrome`). Written by
+    /// `tools/build_core_board.py` from the BlasterAI 60 spec.
+    var systemRow: [ChromeEntry]
     var bands: [String]
     var templates: [String: Template]
 
@@ -93,7 +107,9 @@ struct PageScheme: Decodable {
     struct Invalid: Error, CustomStringConvertible { var description: String }
 
     func validate() throws {
-        _ = try cell(keyboard)
+        if systemRow.isEmpty {
+            throw Invalid(description: "systemRow is empty")
+        }
         if bands.sorted() != PagePlacer.Band.allCases.map(\.rawValue).sorted() {
             throw Invalid(description: "bands must list each of \(PagePlacer.Band.allCases.map(\.rawValue)) once")
         }
@@ -110,11 +126,12 @@ struct PageScheme: Decodable {
         }
     }
 
-    /// `"r2c11"` → its cell number (row-major from 0; Home is r1c1).
+    /// `"r2c9"` → its cell number (row-major from 0). Row 1 is the inherited
+    /// system row, which nothing is placed in.
     func cell(_ name: String) throws -> Int {
         let parts = name.dropFirst().split(separator: "c")
         guard name.first == "r", parts.count == 2, let r = Int(parts[0]), let c = Int(parts[1]),
-              (1...rows).contains(r), (1...cols).contains(c), r > 1 || c > 1 else {
+              (2...rows).contains(r), (1...cols).contains(c) else {
             throw Invalid(description: "\(name) is not a cell on a \(rows) × \(cols) grid")
         }
         return (r - 1) * cols + (c - 1)
@@ -126,9 +143,9 @@ struct PageScheme: Decodable {
 
 enum PageTemplate {
     enum Kind: String, Codable, CaseIterable {
-        /// A scene's home page: system row, core frame, cluster.
+        /// A scene's home page: core frame and cluster under the system row.
         case home
-        /// Any other page: system row only.
+        /// Any other page: the system row only.
         case leaf
 
         /// Core words the page already has, which the model is told to leave out.
@@ -145,10 +162,11 @@ enum PageTemplate {
     /// BlasterAI 60's level-1 words that are words on its home (eat, drink and
     /// play are folders there). `tools/eval/prompts.py` reads the same file.
     static var homeFrame: [String] { scheme.template(.home).frame }
-    /// The keyboard's cell: the same place on every page.
-    static var keyboardCell: Int { try! scheme.cell(scheme.keyboard) }
-
     static func cell(row: Int, col: Int) -> Int { row * cols + col }
+
+    /// A cell of the grid → its place in a page's tiles. Row 1 is inherited,
+    /// so the page's first tile is r2c1.
+    static func contentIndex(ofCell cell: Int) -> Int { cell - cols }
 
     /// Where the page's own links go, in order, before any displacement.
     static func linkSlots(_ kind: Kind) -> [Int] {
@@ -177,63 +195,28 @@ enum PageTemplate {
     /// pack, every word of a class) stays a flat page the grid pages through.
     static var leafCapacity: Int { wordColumns(.leaf).count * (rows - 1) }
 
-    /// The template `page` was laid out on, read from the page itself: a
-    /// templated page opens with the system row, so cell 1 is a `<system>:`
-    /// link. Nil for a flat page — BlasterAI 60's own, an older scene's, a
-    /// pack page too long to place.
-    static func kind(of page: PageSpec, homePageKey: String) -> Kind? {
-        guard let first = page.tiles.first, TileToken.systemPageKey(first.link) != nil,
-              !first.isAudible else { return nil }
-        return page.key == homePageKey ? .home : .leaf
-    }
-
-    /// Whether `scene`'s pages are built on the scheme: its home page is.
-    static func isTemplated(_ pages: [PageSpec], homePageKey: String) -> Bool {
-        pages.first { $0.key == homePageKey }.flatMap { kind(of: $0, homePageKey: homePageKey) } == .home
+    /// The template a page of a scene on the scheme is laid out on. A scene
+    /// is on the scheme when it inherits the system row (`BoardChrome`):
+    /// nothing on the page itself says so any more, since row 1 is not stored.
+    static func kind(of page: PageSpec, homePageKey: String) -> Kind {
+        page.key == homePageKey ? .home : .leaf
     }
 }
 
 /// What a templated page takes from BlasterAI 60's home.
 struct PageFrame {
-    /// Row 1 after Home: the core board's silent folders, as `<system>:`
-    /// links. Its audible links (eat, drink, play) are words that also open a
-    /// page, and belong in the word area, not here.
-    var systemRow: [TileEntry]
-    /// Cell → row-1 entry: the folders from cell 1 on, the keyboard in the
-    /// last column so it is in the same place on every page.
-    var rowOne: [Int: TileEntry] {
-        var cells: [Int: TileEntry] = [:]
-        var next = 1
-        for entry in systemRow {
-            if TileToken.systemPageKey(entry.link) == "keyboard" {
-                cells[PageTemplate.keyboardCell] = entry
-            } else {
-                cells[next] = entry
-                next += 1
-            }
-        }
-        return cells
-    }
+    /// The system row's folders, which the page inherits rather than stores.
+    var systemRow: [TileEntry] { BoardChrome.row(inSystemScene: false) }
     /// Cell → core word, for the home template's frame and cluster.
     var fixed: [Int: TileEntry]
 
     init(systemHome: PageSpec?, kind: PageTemplate.Kind) {
         let tiles = systemHome?.tiles ?? []
-        systemRow = tiles
-            .filter { !$0.link.isEmpty && !$0.isAudible && !$0.isSpacer }
-            .prefix(PageTemplate.cols - 1)
-            .map { entry in
-                var link = TileEntry(key: entry.key, link: TileToken.systemLink(to: entry.link),
-                                     isAudible: false, linkColor: entry.linkColor,
-                                     linkColorIsAuto: false)
-                link.revealLevel = entry.revealLevel
-                return link
-            }
         fixed = [:]
         let template = PageTemplate.scheme.template(kind)
         let wanted = Set(template.frame + template.cluster)
         guard !wanted.isEmpty else { return }
-        // List index i is cell i + 1: Home is cell 0 and not in the list.
+        // List index i is cell i + cols: BlasterAI 60's home stores no row 1.
         // Both keep BlasterAI 60's levels, so the chrome grows the way the
         // core board does; a scene that wants none turns levels off.
         //
@@ -244,15 +227,14 @@ struct PageFrame {
         // folders had them and would have dropped `go` and `I` from every new
         // scene once they became doorways.
         for (index, entry) in tiles.enumerated()
-        where wanted.contains(entry.key) && (entry.link.isEmpty || entry.isAudible)
-            && index + 1 > PageTemplate.cols - 1 {
+        where wanted.contains(entry.key) && (entry.link.isEmpty || entry.isAudible) {
             let opens = entry.link.isEmpty ? template.frameLinks[entry.key] : entry.link
             var word = opens.map {
                 TileEntry(key: entry.key, link: TileToken.systemLink(to: $0), isAudible: true,
                           linkColor: entry.linkColor ?? "verb", linkColorIsAuto: false)
             } ?? TileEntry(key: entry.key, link: "", isAudible: true)
             word.revealLevel = entry.revealLevel
-            fixed[index + 1] = word
+            fixed[index + PageTemplate.cols] = word
         }
     }
 
@@ -280,14 +262,13 @@ enum PagePlacer {
 
     /// Lay `words` (rank order) and `links` into one page of the scheme.
     ///
-    /// Returns the page's entries for cells 1…59 — Home is cell 0 and is drawn
-    /// by the board — with `TileEntry.spacer()` in every empty cell before the
+    /// Returns the page's entries from r2c1 on — row 1 is the inherited
+    /// system row — with `TileEntry.spacer()` in every empty cell before the
     /// last placed one, so each word sits in its cell.
     static func place(words: [GeneratedTile], links: [GeneratedTile],
                       kind: PageTemplate.Kind, frame: PageFrame,
                       lookup: [String: TileModel]) -> [TileEntry] {
         var grid: [Int: TileEntry] = frame.fixed
-        grid.merge(frame.rowOne) { _, row in row }
 
         // Links take the template's slots first; any more wait for the words.
         var pendingLinks = links[...]
@@ -306,9 +287,9 @@ enum PagePlacer {
             : Array(PageTemplate.wordCells(kind, excluding: Set(grid.keys)).prefix(ordered.count))
         for (cell, word) in zip(cells, ordered) { grid[cell] = entry(word) }
         // Words past the word area take whatever cells are left in columns
-        // 11–12 rather than vanish. The budget keeps this from happening.
+        // 9–10 rather than vanish. The budget keeps this from happening.
         if ordered.count > cells.count {
-            let rest = (1..<PageTemplate.rows * PageTemplate.cols).filter { grid[$0] == nil }
+            let rest = (PageTemplate.cols..<PageTemplate.rows * PageTemplate.cols).filter { grid[$0] == nil }
             for (cell, word) in zip(rest, ordered.dropFirst(cells.count)) { grid[cell] = entry(word) }
         }
 
@@ -326,33 +307,35 @@ enum PagePlacer {
         let overflow = pendingLinks.map { entry($0) }
 
         guard let last = grid.keys.max() else { return overflow }
-        return (1...last).map { grid[$0] ?? .spacer() } + overflow
+        return (PageTemplate.cols...last).map { grid[$0] ?? .spacer() } + overflow
     }
 
     /// Add `link` to a page already laid out on `kind`, the way `place` would
     /// have: the first free link slot, then any empty cell below row 1, then
     /// (on a scene's home) `not`'s cell, then `don't`'s. Only a full page sends
     /// it to the end, onto a second screen, so a link is never lost. `tiles` is
-    /// cells 1…n, as `place` returns them.
+    /// the page from r2c1 on, as `place` returns them.
     static func insertLink(_ link: TileEntry, into tiles: [TileEntry],
                            kind: PageTemplate.Kind) -> [TileEntry] {
         var cells = tiles
-        let isFree = { (cell: Int) in cell > cells.count || cells[cell - 1].isSpacer }
+        let index = PageTemplate.contentIndex(ofCell:)
+        let isFree = { (cell: Int) in index(cell) >= cells.count || cells[index(cell)].isSpacer }
         var target = PageTemplate.linkSlots(kind).first(where: isFree)
             ?? PageTemplate.spareLinkCells.first(where: isFree)
         if target == nil {
             target = PageTemplate.scheme.template(kind).displaceable.lazy.compactMap { key in
                 cells.indices.first {
                     cells[$0].key == key && cells[$0].link.isEmpty
-                        && ($0 + 1) % PageTemplate.cols == PageTemplate.cols - 1
-                }.map { $0 + 1 }
+                        && $0 % PageTemplate.cols == PageTemplate.cols - 1
+                }.map { $0 + PageTemplate.cols }
             }.first
         }
         guard let cell = target else { return cells + [link] }
-        if cell > cells.count {
-            cells += Array(repeating: TileEntry.spacer(), count: cell - cells.count)
+        let at = index(cell)
+        if at >= cells.count {
+            cells += Array(repeating: TileEntry.spacer(), count: at - cells.count + 1)
         }
-        cells[cell - 1] = link
+        cells[at] = link
         return cells
     }
 

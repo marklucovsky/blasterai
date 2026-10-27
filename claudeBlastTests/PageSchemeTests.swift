@@ -76,9 +76,10 @@ struct PageSchemeTests {
                      system: system)
     }
 
-    /// The home page as built: cell → entry, Home at 0 not included.
+    /// A page as built: cell → entry. Row 1 is the inherited system row, so
+    /// the page's first tile is r2c1.
     private func cells(_ page: PageSpec) -> [Int: TileEntry] {
-        Dictionary(uniqueKeysWithValues: page.tiles.enumerated().map { ($0.offset + 1, $0.element) })
+        Dictionary(uniqueKeysWithValues: page.tiles.enumerated().map { ($0.offset + PageTemplate.cols, $0.element) })
     }
 
     private func placedHome(_ json: String, links: [GeneratedTile] = [], _ b: Board) throws -> PageSpec {
@@ -96,9 +97,9 @@ struct PageSchemeTests {
         let b = board()
         let grid = cells(try placedHome(Self.bluey, b))
         let expected: [(Int, Int, String)] = [
-            (1, 0, "i"), (1, 4, "go"), (1, 9, "more"), (2, 4, "want"), (3, 0, "you"),
-            (3, 3, "help"), (4, 0, "yes"), (4, 1, "all_done"), (4, 2, "no"),
-            (1, 11, "don't"), (2, 11, "stop"), (3, 11, "not"),
+            (1, 0, "i"), (1, 4, "go"), (2, 8, "more"), (2, 4, "want"), (3, 0, "you"),
+            (3, 3, "help"), (5, 0, "yes"), (5, 1, "all_done"), (5, 2, "no"),
+            (1, 9, "don't"), (2, 9, "stop"), (3, 9, "not"),
         ]
         for (row, col, key) in expected {
             #expect(grid[Self.cell(row, col)]?.key == key, "r\(row + 1) c\(col + 1) should be \(key)")
@@ -124,23 +125,19 @@ struct PageSchemeTests {
 
     // MARK: - BlasterAI 60's hierarchy (tools/board_spec/blasterai60.json)
 
-    /// Pages that would overflow one screen with the row on top, from the spec's
-    /// `systemRowExempt`. Each leaves the list when it is split into folders.
-    private static let systemRowExempt: Set<String> = ["food"]
-
-    /// Avaz's bottom bar, on top: every page opens with the same folders, so a
-    /// child can reach any category from anywhere.
-    @Test func everyCorePageOpensWithTheSystemRow() throws {
+    /// Row 1 is drawn, not stored: no BlasterAI 60 page carries the system
+    /// row, and every page fits the screen under it.
+    @Test func noCorePageStoresTheSystemRow() throws {
         let b = board()
-        let home = try #require(b.home)
-        let row = Array(home.tiles.prefix(PageTemplate.cols - 1))
-        #expect(row.allSatisfy { !$0.link.isEmpty && !$0.isAudible })
-        #expect(row.last?.key == "keyboard")
+        #expect(b.system.designedFor == PageTemplate.designedFor)
+        #expect(BoardChrome.inherits(b.system))
+        let row = Set(BoardChrome.pageKeys)
         var checked = 0
-        for page in b.system.pages where !Self.systemRowExempt.contains(page.key) {
-            #expect(Array(page.tiles.prefix(row.count)).map(\.key) == row.map(\.key),
-                    "\(page.key) does not open with the system row")
-            #expect(page.tiles.count <= PageTemplate.rows * PageTemplate.cols - 1,
+        for page in b.system.pages {
+            let first = page.tiles.first
+            #expect(!(first.map { row.contains($0.link) && !$0.isAudible } ?? false),
+                    "\(page.key) still opens with the system row")
+            #expect(page.tiles.count <= PageTemplate.cols * (PageTemplate.rows - 1),
                     "\(page.key) overflows one screen")
             checked += 1
         }
@@ -186,36 +183,49 @@ struct PageSchemeTests {
     /// How much is here.
     @Test func theWayHereEndsAtThePageShowing() {
         let b = board()
+        let row = BoardChrome.rowPages(of: b.system)
         let keys = WordPlaces.trailKeys(to: "describe_how_much", pages: b.system.pages,
-                                        homeKey: b.system.homePageKey)
+                                        homeKey: b.system.homePageKey, row: row)
         #expect(keys == ["describe", "describe_how_much"])
         #expect(WordPlaces.trailKeys(to: b.system.homePageKey, pages: b.system.pages,
-                                     homeKey: b.system.homePageKey).isEmpty)
+                                     homeKey: b.system.homePageKey, row: row).isEmpty)
     }
 
-    @Test func rowOneIsTheCoreBoardsFolders() throws {
+    /// A templated page stores none of row 1: the board draws the core
+    /// board's folders over it, the same ten on every page of every scene.
+    @Test func theSystemRowIsInheritedNotStored() throws {
         let b = board()
-        let grid = cells(try placedHome(Self.bluey, b))
-        let row = (1..<PageTemplate.cols).compactMap { grid[$0] }.filter { !$0.isSpacer }
-        #expect(!row.isEmpty)
+        let page = try placedHome(Self.bluey, b)
+        #expect(!page.tiles.contains { TileToken.systemPageKey($0.link) != nil && !$0.isAudible })
+        let row = BoardChrome.row(inSystemScene: false)
+        #expect(row.count == PageTemplate.cols)
         #expect(row.allSatisfy { TileToken.systemPageKey($0.link) != nil && !$0.isAudible })
-        // The keyboard is pinned to column 12. The row is full since Feelings
-        // and Small words joined it (session 14): there is no gap before it.
-        #expect(grid[PageTemplate.cols - 1]?.link == TileToken.systemLink(to: "keyboard"))
-        #expect(grid[PageTemplate.cols - 2]?.link == TileToken.systemLink(to: "small_words"))
+        // In the spec's order (`tools/board_spec/blasterai60.json`, `systemRow`).
+        #expect(row.map(\.key) == PageTemplate.scheme.systemRow.map(\.key))
+        #expect(row.contains { $0.link == TileToken.systemLink(to: "small_words") })
+        // The keyboard is on the rail now, not in the row.
+        #expect(!row.contains { $0.key == "keyboard" })
         // Eat, drink and play speak as well as open a page: words, not row 1.
         #expect(!row.contains { $0.key == "eat" })
-        #expect(row.allSatisfy { !$0.linkColorIsAuto })
+        #expect(row.allSatisfy { !$0.linkColorIsAuto && $0.linkColor != nil })
+        // On BlasterAI 60 itself the folders open its own pages.
+        #expect(BoardChrome.row(inSystemScene: true).first?.link == "people")
     }
 
-    @Test func theWordsStayInColumnsOneToTen() throws {
+    /// Words fill columns 1–8; 9 and 10 are the links and the cluster. The
+    /// frame's `more` is the one word there, where BlasterAI 60 has it.
+    @Test func theWordsStayInColumnsOneToEight() throws {
         let b = board()
         let page = try placedHome(Self.bluey, b)
         let grid = cells(page)
-        for row in 1..<PageTemplate.rows {
-            #expect(grid[Self.cell(row, 10)]?.isSpacer ?? true, "column 11 holds only links")
-        }
         let frame = Set(PageTemplate.homeFrame + PageTemplate.scheme.template(.home).cluster)
+        for row in 1..<PageTemplate.rows {
+            for col in 8..<PageTemplate.cols {
+                let entry = grid[Self.cell(row, col)]
+                #expect(entry.map { $0.isSpacer || !$0.link.isEmpty || frame.contains($0.key) } ?? true,
+                        "r\(row + 1) c\(col + 1) holds a word")
+            }
+        }
         let words = page.tiles.filter { !$0.isSpacer && $0.link.isEmpty && !frame.contains($0.key) }
         #expect(words.count == TopicWordsService.budget)
     }
@@ -237,26 +247,26 @@ struct PageSchemeTests {
         let links = (1...7).map { GeneratedTile(key: "page_p\($0)", isAudible: false, link: "p\($0)") }
         let home = try placedHome(Self.bluey, links: links, b)
         let grid = cells(home)
-        let slots = [Self.cell(1, 10), Self.cell(2, 10), Self.cell(3, 10), Self.cell(4, 10), Self.cell(4, 11)]
+        let slots = [Self.cell(1, 8), Self.cell(3, 8), Self.cell(4, 8), Self.cell(5, 8), Self.cell(4, 9)]
         for (n, slot) in slots.enumerated() {
             #expect(grid[slot]?.link == "p\(n + 1)", "link \(n + 1) goes to cell \(slot)")
         }
         // Past the slots, links take empty cells; the cluster keeps its words.
         let rest = home.tiles.filter { ["p6", "p7"].contains($0.link) }
         #expect(rest.count == 2)
-        #expect(home.tiles.count < PageTemplate.cols * PageTemplate.rows)
-        #expect(grid[Self.cell(1, 11)]?.key == "don't")
-        #expect(grid[Self.cell(2, 11)]?.key == "stop")
-        #expect(grid[Self.cell(3, 11)]?.key == "not")
+        #expect(home.tiles.count <= PageTemplate.cols * (PageTemplate.rows - 1))
+        #expect(grid[Self.cell(1, 9)]?.key == "don't")
+        #expect(grid[Self.cell(2, 9)]?.key == "stop")
+        #expect(grid[Self.cell(3, 9)]?.key == "not")
     }
 
     @Test func aFewLinksLeaveTheClusterAlone() throws {
         let b = board()
         let links = [GeneratedTile(key: "page_p1", isAudible: false, link: "p1")]
         let grid = cells(try placedHome(Self.bluey, links: links, b))
-        #expect(grid[Self.cell(1, 10)]?.link == "p1")
-        #expect(grid[Self.cell(1, 11)]?.key == "don't")
-        #expect(grid[Self.cell(3, 11)]?.key == "not")
+        #expect(grid[Self.cell(1, 8)]?.link == "p1")
+        #expect(grid[Self.cell(1, 9)]?.key == "don't")
+        #expect(grid[Self.cell(3, 9)]?.key == "not")
     }
 
     // MARK: - The scheme file
@@ -270,17 +280,18 @@ struct PageSchemeTests {
         }
         #expect(home.cluster.contains("stop"))
         #expect(!home.displaceable.contains("stop"), "stop is never displaced")
-        #expect(PageTemplate.keyboardCell == PageTemplate.cols - 1, "keyboard ends row 1")
-        #expect(PageTemplate.designedFor == "ipad-12x5")
+        #expect(PageTemplate.designedFor == "ipad-10x6")
+        #expect(PageTemplate.cols == 10 && PageTemplate.rows == 6)
     }
 
     @Test func aBadSchemeIsRejected() throws {
         let url = try #require(Bundle.main.url(forResource: "page_templates", withExtension: "json"))
         let good = try String(contentsOf: url, encoding: .utf8)
         #expect(throws: Never.self) { try PageScheme.load(Data(good.utf8)) }
-        for (bad, replacement) in [("\"r5c12\"]", "\"r6c12\"]"),               // off the grid
+        for (bad, replacement) in [("\"r6c9\"]", "\"r7c9\"]"),                 // off the grid
+                                   ("\"r2c9\"", "\"r1c9\""),                  // row 1 is inherited
                                    ("\"noun\"]", "\"nouns\"]"),                // unknown band
-                                   ("\"wordColumns\": [1, 10]", "\"wordColumns\": [1, 13]"),
+                                   ("\"wordColumns\": [1, 8]", "\"wordColumns\": [1, 13]"),
                                    ("\"displaceable\": [\"not\"", "\"displaceable\": [\"maybe\""),
                                    ("\"home\": {", "\"house\": {")] {          // no home template
             let text = good.replacingOccurrences(of: bad, with: replacement)
@@ -291,7 +302,7 @@ struct PageSchemeTests {
 
     // MARK: - The leaf template
 
-    @Test func aLeafPageHasTheSystemRowAndNoFrame() throws {
+    @Test func aLeafPageHasNoFrame() throws {
         let b = board()
         let response = try TopicWordsService.parse(content: Self.playground)
         let frame = PageFrame(systemHome: b.home, kind: .leaf)
@@ -299,12 +310,12 @@ struct PageSchemeTests {
         let tiles = PagePlacer.place(words: selection.page, links: [], kind: .leaf,
                                      frame: frame, lookup: b.lookup)
         let grid = cells(PageSpec(key: "playground", tiles: tiles))
-        #expect(grid[1].map { TileToken.systemPageKey($0.link) != nil } == true)
+        #expect(!tiles.contains { TileToken.systemPageKey($0.link) != nil })
         #expect(!tiles.contains { $0.key == "i" })
         // Bands start columns: the first word is at the top of column 1.
         #expect(grid[Self.cell(1, 0)]?.isSpacer == false)
         for row in 1..<PageTemplate.rows {
-            for col in 10..<PageTemplate.cols {
+            for col in 8..<PageTemplate.cols {
                 #expect(grid[Self.cell(row, col)]?.isSpacer ?? true)
             }
         }
@@ -332,7 +343,7 @@ struct PageSchemeTests {
         var home = try placedHome(Self.bluey, b).tiles
         let link = { (n: Int) in TileEntry(key: "page_p\(n)", link: "p\(n)", isAudible: false) }
         home = PagePlacer.insertLink(link(1), into: home, kind: .home)
-        #expect(cells(PageSpec(key: "home", tiles: home))[Self.cell(1, 10)]?.link == "p1")
+        #expect(cells(PageSpec(key: "home", tiles: home))[Self.cell(1, 8)]?.link == "p1")
         // Five slots full, the next links take empty cells, nearest the link
         // columns, and the cluster keeps its words.
         for n in 2...6 { home = PagePlacer.insertLink(link(n), into: home, kind: .home) }
@@ -342,31 +353,40 @@ struct PageSchemeTests {
         home = PagePlacer.insertLink(link(7), into: home, kind: .home)
         grid = cells(PageSpec(key: "home", tiles: home))
         #expect(grid[target]?.link == "p7")
-        #expect(grid[Self.cell(1, 11)]?.key == "don't")
-        #expect(grid[Self.cell(3, 11)]?.key == "not")
+        #expect(grid[Self.cell(1, 9)]?.key == "don't")
+        #expect(grid[Self.cell(3, 9)]?.key == "not")
         // Out of empty cells: not's cell goes, then don't's; stop stays.
         var n = 100
-        while PageTemplate.spareLinkCells.contains(where: { $0 > home.count || home[$0 - 1].isSpacer }) {
+        let index = PageTemplate.contentIndex(ofCell:)
+        while PageTemplate.spareLinkCells.contains(where: { index($0) >= home.count || home[index($0)].isSpacer }) {
             n += 1
             home = PagePlacer.insertLink(link(n), into: home, kind: .home)
         }
         home = PagePlacer.insertLink(link(8), into: home, kind: .home)
         home = PagePlacer.insertLink(link(9), into: home, kind: .home)
         grid = cells(PageSpec(key: "home", tiles: home))
-        #expect(grid[Self.cell(3, 11)]?.link == "p8")
-        #expect(grid[Self.cell(1, 11)]?.link == "p9")
-        #expect(grid[Self.cell(2, 11)]?.key == "stop")
+        #expect(grid[Self.cell(3, 9)]?.link == "p8")
+        #expect(grid[Self.cell(1, 9)]?.link == "p9")
+        #expect(grid[Self.cell(2, 9)]?.key == "stop")
         // A full page: the link still lands, at the end.
         home = PagePlacer.insertLink(link(10), into: home, kind: .home)
         #expect(home.last?.link == "p10")
     }
 
-    @Test func onlyAPageOnTheSchemeIsTemplated() throws {
+    /// A scene is on the scheme when it declares a grid this build knows:
+    /// those inherit the system row. A 12 × 5 scene from before, or an
+    /// undeclared flat pack, draws its pages as they are.
+    @Test func onlyASceneOnACurrentGridInheritsTheRow() throws {
         let b = board()
-        let home = try placedHome(Self.bluey, b)
-        #expect(PageTemplate.kind(of: home, homePageKey: "home") == .home)
-        #expect(PageTemplate.kind(of: try #require(b.home), homePageKey: b.system.homePageKey) == nil)
-        #expect(PageTemplate.isTemplated([home], homePageKey: "home"))
+        let context = TestStore.container.mainContext
+        let generated = try TopicWordsService.scene(
+            from: try TopicWordsService.parse(content: Self.bluey),
+            systemHome: b.home, allTiles: b.tiles)
+        let built = try SceneBuilder.build(from: generated, tileLookup: b.lookup, context: context)
+        #expect(BoardChrome.inherits(built))
+        #expect(!BoardChrome.inherits(designedFor: "ipad-12x5"))
+        #expect(!BoardChrome.inherits(designedFor: ""))
+        #expect(BoardChrome.inherits(designedFor: "phone-4x6"))
     }
 
     @Test func aTemplatedScenesOtherPagesAreLeafPages() throws {
@@ -381,12 +401,13 @@ struct PageSchemeTests {
         scene.pages += [GeneratedPage(key: "few", tiles: few), GeneratedPage(key: "many", tiles: many)]
         let placed = scene.placedPages(systemHome: b.home, lookup: b.lookup)
         #expect(PageTemplate.kind(of: placed[1], homePageKey: "home") == .leaf)
-        #expect(PageTemplate.kind(of: placed[2], homePageKey: "home") == nil)
+        // Too many for the leaf template: a flat list the grid pages through.
         #expect(placed[2].tiles.count == many.count)
-        // A link added to the leaf page goes to column 12, top.
+        #expect(!placed[2].tiles.contains { $0.isSpacer })
+        // A link added to the leaf page goes to column 10, top.
         let leaf = PagePlacer.insertLink(TileEntry(key: "page_x", link: "x", isAudible: false),
                                          into: placed[1].tiles, kind: .leaf)
-        #expect(cells(PageSpec(key: "few", tiles: leaf))[Self.cell(1, 11)]?.link == "x")
+        #expect(cells(PageSpec(key: "few", tiles: leaf))[Self.cell(1, 9)]?.link == "x")
     }
 
     @Test func anAddedPageLeavesOutTheSystemRow() throws {

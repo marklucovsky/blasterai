@@ -29,8 +29,8 @@ enum SceneNavigation {
     /// Symbolic link token resolved at navigation time to the active scene's
     /// homePageKey (see `TileGridView`).
     ///
-    /// **Nothing authors this any more.** Every page renders a Home control at
-    /// cell 0 (`HomeGridCell`), so a back-to-home tile inside the grid is
+    /// **Nothing authors this any more.** Every board has a Home control on its
+    /// rail (`ControlRail`), so a back-to-home tile inside the grid is
     /// redundant by construction — it costs a vocabulary slot to duplicate a
     /// control that is already there, and gives the child two things to learn
     /// for one action.
