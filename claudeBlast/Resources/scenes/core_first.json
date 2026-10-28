@@ -458,22 +458,14 @@
         {
           "keys": [
             "write",
-            "draw"
-          ]
-        },
-        {
-          "space": 1
-        },
-        {
-          "keys": [
+            "draw",
+            "color",
             "help",
             "like",
             "read",
-            "put"
+            "put",
+            "try"
           ]
-        },
-        {
-          "space": 1
         },
         {
           "link": "folder_doing",
@@ -520,21 +512,17 @@
         {
           "keys": [
             "sit",
-            "stand"
-          ]
-        },
-        {
-          "space": 2
-        },
-        {
-          "keys": [
+            "stand",
+            "sleep",
+            "wait",
             "make",
             "look",
-            "see"
+            "see",
+            "hear"
           ]
         },
         {
-          "space": 2
+          "space": 1
         },
         {
           "link": "folder_playing",
@@ -849,18 +837,22 @@
       "tiles": [
         {
           "keys": [
-            "car",
-            "bus",
-            "train",
-            "bicycle",
-            "airplane",
-            "boat",
             "home_",
-            "house"
+            "house",
+            "bedroom",
+            "kitchen"
           ]
         },
         {
           "space": 1
+        },
+        {
+          "keys": [
+            "bathroom",
+            "outside",
+            "yard",
+            "grandmas_house"
+          ]
         },
         {
           "link": "folder_house",
@@ -871,17 +863,21 @@
         {
           "keys": [
             "school",
-            "park",
-            "playground",
-            "store",
-            "restaurant",
-            "doctors_office",
-            "outside",
-            "bathroom"
+            "class",
+            "speech",
+            "therapy"
           ]
         },
         {
           "space": 1
+        },
+        {
+          "keys": [
+            "playground",
+            "library",
+            "gym",
+            "bus_stop"
+          ]
         },
         {
           "link": "folder_school",
@@ -891,18 +887,22 @@
         },
         {
           "keys": [
-            "bedroom",
-            "kitchen",
-            "church",
-            "library",
-            "pool",
-            "beach",
+            "park",
             "zoo",
-            "farm"
+            "farm",
+            "beach"
           ]
         },
         {
           "space": 1
+        },
+        {
+          "keys": [
+            "pool",
+            "movie",
+            "party",
+            "camp"
+          ]
         },
         {
           "link": "folder_fun_places",
@@ -912,23 +912,59 @@
         },
         {
           "keys": [
-            "therapy",
-            "speech",
-            "class",
-            "movie",
-            "mall",
+            "store",
             "grocery_store",
-            "lunch"
+            "mall",
+            "restaurant"
           ]
         },
         {
-          "space": 2
+          "space": 1
+        },
+        {
+          "keys": [
+            "doctors_office",
+            "hospital",
+            "church"
+          ]
+        },
+        {
+          "space": 1
         },
         {
           "link": "folder_out_and_about",
           "to": "places_out_and_about",
           "audible": false,
           "linkColor": "noun"
+        },
+        {
+          "keys": [
+            "car",
+            "bus",
+            "train",
+            "bicycle"
+          ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "keys": [
+            "airplane",
+            "boat"
+          ]
+        },
+        {
+          "link": "ride",
+          "to": "vehicles",
+          "audible": true,
+          "linkColor": "verb"
+        },
+        {
+          "link": "drive",
+          "to": "vehicles",
+          "audible": true,
+          "linkColor": "verb"
         }
       ]
     },
@@ -1266,11 +1302,24 @@
           "linkColor": "question"
         },
         {
+          "space": 1
+        },
+        {
           "keys": [
             "why",
             "how",
             "which",
-            "how_many"
+            "whose"
+          ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "keys": [
+            "how_many",
+            "how_much",
+            "what_time"
           ]
         },
         {
@@ -1278,11 +1327,30 @@
         },
         {
           "keys": [
-            "how_much",
-            "whose",
-            "what_time",
-            "can_i",
-            "is_it"
+            "do",
+            "can",
+            "could",
+            "will"
+          ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "keys": [
+            "is_it",
+            "can_i"
+          ]
+        },
+        {
+          "space": 3
+        },
+        {
+          "keys": [
+            "is",
+            "are",
+            "was",
+            "would"
           ]
         }
       ]
@@ -2078,9 +2146,9 @@
             "wash_hair",
             "brush",
             "brush_teeth",
-            "sleep",
-            "nap",
-            "bathe"
+            "bathe",
+            "shower",
+            "dry"
           ]
         },
         {
@@ -2088,8 +2156,6 @@
         },
         {
           "keys": [
-            "shower",
-            "dry",
             "dress_up"
           ]
         },
@@ -2104,7 +2170,9 @@
             "polish_nails",
             "clean",
             "wipe",
-            "sweep"
+            "sweep",
+            "wake_up",
+            "feed"
           ]
         },
         {
@@ -2118,10 +2186,17 @@
         },
         {
           "keys": [
-            "wake_up",
-            "feed",
             "fix",
             "vacuum"
+          ]
+        },
+        {
+          "space": 20
+        },
+        {
+          "keys": [
+            "sleep",
+            "nap"
           ]
         }
       ]
@@ -2342,14 +2417,13 @@
       "tiles": [
         {
           "keys": [
-            "hear",
             "smell",
             "taste",
             "touch"
           ]
         },
         {
-          "space": 14
+          "space": 15
         },
         {
           "link": "folder_senses",
@@ -2371,7 +2445,8 @@
         {
           "keys": [
             "look",
-            "see"
+            "see",
+            "hear"
           ]
         }
       ]
@@ -2382,14 +2457,14 @@
       "tiles": [
         {
           "keys": [
-            "wait",
             "finish",
             "buy",
             "shop",
             "use",
-            "try",
             "work",
-            "hit"
+            "hit",
+            "line_up",
+            "lets"
           ]
         },
         {
@@ -2397,23 +2472,26 @@
         },
         {
           "keys": [
-            "line_up",
-            "lets",
             "live",
-            "get",
             "shopping"
           ]
         },
         {
-          "space": 11
+          "space": 1
         },
         {
           "keys": [
-            "put"
+            "get"
           ]
         },
         {
-          "space": 1
+          "space": 12
+        },
+        {
+          "keys": [
+            "put",
+            "try"
+          ]
         },
         {
           "link": "folder_doing",
@@ -2442,10 +2520,11 @@
           ]
         },
         {
-          "space": 6
+          "space": 5
         },
         {
           "keys": [
+            "wait",
             "make"
           ]
         }
@@ -2493,26 +2572,32 @@
       "name": "How it feels",
       "tiles": [
         {
+          "space": 2
+        },
+        {
           "keys": [
-            "sticky",
-            "sharp",
             "hot_",
-            "cold__",
-            "smelly",
-            "stinky",
-            "uncomfortable",
-            "gentle"
+            "cold__"
           ]
         },
         {
-          "space": 2
+          "space": 1
+        },
+        {
+          "keys": [
+            "smelly",
+            "stinky"
+          ]
+        },
+        {
+          "space": 3
         },
         {
           "keys": [
             "rough",
             "smooth",
             "bumpy",
-            "slippery"
+            "sharp"
           ]
         },
         {
@@ -2527,16 +2612,20 @@
         {
           "keys": [
             "wet",
-            "dry_"
+            "dry_",
+            "sticky",
+            "slippery"
           ]
         },
         {
-          "space": 13
+          "space": 11
         },
         {
           "keys": [
             "soft",
-            "hard"
+            "hard",
+            "gentle",
+            "uncomfortable"
           ]
         }
       ]
@@ -2549,50 +2638,62 @@
           "keys": [
             "excellent",
             "terrific",
-            "cute",
             "fine",
-            "terrible",
+            "terrible"
+          ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "keys": [
             "good",
             "bad",
-            "smart"
+            "smart",
+            "dumb"
           ]
         },
         {
-          "space": 2
+          "space": 1
         },
         {
           "keys": [
-            "exciting",
-            "dumb",
             "crazy",
-            "favorite",
-            "weird",
+            "gross"
+          ]
+        },
+        {
+          "space": 3
+        },
+        {
+          "keys": [
             "nice",
             "mean",
-            "funny_"
+            "funny_",
+            "weird"
           ]
         },
         {
-          "space": 2
+          "space": 1
         },
         {
           "keys": [
-            "gross",
             "real",
             "fake"
           ]
         },
         {
-          "space": 2
+          "space": 3
         },
         {
           "keys": [
             "fun",
-            "boring"
+            "boring",
+            "exciting"
           ]
         },
         {
-          "space": 2
+          "space": 1
         },
         {
           "link": "folder_opinions",
@@ -2601,10 +2702,12 @@
           "linkColor": "adjective"
         },
         {
-          "space": 7
+          "space": 5
         },
         {
           "keys": [
+            "favorite",
+            "cute",
             "pretty",
             "ugly"
           ]
@@ -2721,15 +2824,23 @@
       "tiles": [
         {
           "keys": [
-            "fixed",
-            "cheap",
-            "expensive",
-            "quick",
-            "messy",
-            "busy",
+            "awake",
             "asleep",
-            "dark"
+            "sleepy",
+            "busy"
           ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "keys": [
+            "cheap",
+            "expensive"
+          ]
+        },
+        {
+          "space": 1
         },
         {
           "link": "folder_what_its_like",
@@ -2742,18 +2853,27 @@
         },
         {
           "keys": [
-            "sleepy",
-            "stuck",
-            "careful",
-            "awake",
-            "noisy"
+            "quick",
+            "noisy",
+            "dark",
+            "careful"
           ]
         },
         {
-          "space": 17
+          "space": 8
         },
         {
           "keys": [
+            "fixed"
+          ]
+        },
+        {
+          "space": 7
+        },
+        {
+          "keys": [
+            "messy",
+            "stuck",
             "broken",
             "closed"
           ]
@@ -2768,13 +2888,20 @@
           ]
         },
         {
-          "space": 3
+          "space": 1
         },
         {
           "keys": [
             "true",
             "maybe",
-            "false",
+            "false"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "keys": [
             "new",
             "old",
             "young"
@@ -2788,18 +2915,16 @@
       "tiles": [
         {
           "keys": [
-            "living_room",
-            "dining_room",
-            "backyard",
-            "closet",
-            "laundry",
-            "toilet",
             "home_",
-            "house"
+            "house",
+            "bedroom",
+            "kitchen",
+            "living_room",
+            "bathroom",
+            "dining_room",
+            "yard",
+            "grandmas_house"
           ]
-        },
-        {
-          "space": 1
         },
         {
           "link": "folder_house",
@@ -2809,14 +2934,14 @@
         },
         {
           "keys": [
+            "backyard",
+            "closet",
+            "laundry",
+            "toilet",
             "garage",
             "basement",
             "stairs",
-            "porch",
-            "yard",
-            "grandmas_house",
-            "friends_house",
-            "bathroom"
+            "porch"
           ]
         },
         {
@@ -2824,8 +2949,7 @@
         },
         {
           "keys": [
-            "bedroom",
-            "kitchen"
+            "friends_house"
           ]
         }
       ]
@@ -2836,18 +2960,19 @@
       "tiles": [
         {
           "keys": [
-            "gym",
             "cafeteria",
-            "office",
-            "bus_stop"
+            "office"
           ]
         },
         {
-          "space": 6
+          "space": 8
         },
         {
           "keys": [
-            "school"
+            "school",
+            "class",
+            "speech",
+            "therapy"
           ]
         },
         {
@@ -2855,35 +2980,17 @@
         },
         {
           "keys": [
-            "playground"
+            "playground",
+            "library",
+            "gym",
+            "bus_stop"
           ]
-        },
-        {
-          "space": 6
         },
         {
           "link": "folder_school",
           "to": "places_school",
           "audible": false,
           "linkColor": "noun"
-        },
-        {
-          "space": 3
-        },
-        {
-          "keys": [
-            "library"
-          ]
-        },
-        {
-          "space": 6
-        },
-        {
-          "keys": [
-            "therapy",
-            "speech",
-            "class"
-          ]
         }
       ]
     },
@@ -2895,50 +3002,40 @@
           "keys": [
             "lake",
             "ocean",
-            "camp",
             "bowling_alley",
-            "party",
             "picnic",
             "circus",
-            "museum"
+            "museum",
+            "garden"
           ]
         },
         {
-          "space": 2
+          "space": 13
         },
         {
           "keys": [
-            "garden",
-            "park"
-          ]
-        },
-        {
-          "space": 12
-        },
-        {
-          "keys": [
-            "pool",
-            "beach",
+            "park",
             "zoo",
-            "farm"
+            "farm",
+            "beach"
           ]
         },
         {
           "space": 1
         },
         {
+          "keys": [
+            "pool",
+            "movie",
+            "party",
+            "camp"
+          ]
+        },
+        {
           "link": "folder_fun_places",
           "to": "places_fun",
           "audible": false,
           "linkColor": "noun"
-        },
-        {
-          "space": 3
-        },
-        {
-          "keys": [
-            "movie"
-          ]
         }
       ]
     },
@@ -2951,10 +3048,10 @@
             "airport",
             "building",
             "dentists_office",
-            "hospital",
             "gas_station",
             "bank",
             "pizza_place",
+            "outside",
             "ice_cream_shop"
           ]
         },
@@ -2968,35 +3065,28 @@
           ]
         },
         {
-          "space": 1
+          "space": 18
         },
         {
           "keys": [
             "store",
-            "restaurant",
-            "doctors_office",
-            "outside"
+            "grocery_store",
+            "mall",
+            "restaurant"
           ]
         },
         {
-          "space": 5
+          "space": 1
         },
         {
           "keys": [
+            "doctors_office",
+            "hospital",
             "church"
           ]
         },
         {
-          "space": 11
-        },
-        {
-          "keys": [
-            "mall",
-            "grocery_store"
-          ]
-        },
-        {
-          "space": 3
+          "space": 1
         },
         {
           "link": "folder_out_and_about",
