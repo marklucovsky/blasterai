@@ -20,8 +20,10 @@ struct TemplateBoardGrid<Cell: View>: View {
         let content = PageTemplate.cols * (PageTemplate.rows - 1)
         let cells = BoardChrome.row(inSystemScene: false) + page.tiles
             + Array(repeating: TileEntry.spacer(), count: max(0, content - page.tiles.count))
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4),
-                                 count: PageTemplate.cols), spacing: 6) {
+        // The board's own gaps: the square tiles sit 2pt apart.
+        let gap: CGFloat = TileLook.current() == .square ? TileLayout.gap : 4
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: gap),
+                                 count: PageTemplate.cols), spacing: gap) {
             ForEach(Array(cells.enumerated()), id: \.offset) { _, entry in
                 if entry.isSpacer {
                     Color.clear.aspectRatio(1, contentMode: .fit)

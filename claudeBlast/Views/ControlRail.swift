@@ -79,6 +79,12 @@ enum RailProfile: Equatable {
              .one(.childMode), .one(.keyboard)]
         }
     }
+
+    /// Any slot holding two controls, which the bottom rail makes tall enough
+    /// for two touch targets.
+    var hasPairs: Bool {
+        slots.contains { if case .pair = $0 { true } else { false } }
+    }
 }
 
 /// The level dial drawn inline in a half slot: − N +.

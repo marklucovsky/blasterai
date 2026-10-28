@@ -270,17 +270,21 @@
         {
           "keys": [
             "hello",
-            "bye",
-            "goodbye",
-            "goodnight",
-            "i_love_it",
-            "i_love_you",
-            "awesome",
-            "be_quiet"
+            "whats_up",
+            "how_are_you",
+            "nice_to_meet"
           ]
         },
         {
           "space": 1
+        },
+        {
+          "keys": [
+            "i_love_you",
+            "i_love_it",
+            "me_too",
+            "give_me_five"
+          ]
         },
         {
           "link": "folder_sounds",
@@ -289,60 +293,89 @@
           "linkColor": "interjection"
         },
         {
+          "space": 2
+        },
+        {
           "keys": [
-            "break",
+            "goodnight",
+            "night_night"
+          ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "keys": [
+            "awesome",
             "cool",
-            "don't",
-            "excuse_me",
-            "funny",
             "great",
-            "how_are_you",
-            "maybe"
+            "funny"
           ]
         },
         {
-          "space": 2
+          "space": 1
         },
         {
           "keys": [
-            "nice_to_meet",
-            "no_way",
-            "oh_my",
-            "okay",
-            "please",
-            "problem",
-            "sorry",
-            "thank_you"
-          ]
-        },
-        {
-          "space": 2
-        },
-        {
-          "keys": [
-            "uh_oh",
-            "whats_up",
-            "youre_welcome",
-            "me_too",
-            "my_turn",
-            "your_turn",
+            "bye",
+            "goodbye",
             "see_you_later",
             "never_mind"
           ]
         },
         {
-          "space": 2
+          "space": 1
+        },
+        {
+          "keys": [
+            "oh",
+            "oh_my",
+            "uh_oh",
+            "no_way"
+          ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "keys": [
+            "please",
+            "thank_you",
+            "youre_welcome",
+            "sorry"
+          ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "keys": [
+            "excuse_me",
+            "problem",
+            "my_turn",
+            "your_turn"
+          ]
+        },
+        {
+          "space": 1
         },
         {
           "keys": [
             "yes",
             "i_dont_know",
             "no",
-            "really",
+            "maybe"
+          ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "keys": [
+            "okay",
             "sounds_good",
-            "oh",
-            "night_night",
-            "give_me_five"
+            "really",
+            "break"
           ]
         }
       ]
@@ -518,12 +551,18 @@
           "keys": [
             "big",
             "little",
+            "hot_",
+            "cold__"
+          ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "keys": [
             "good",
             "bad",
-            "hot_",
-            "cold__",
-            "loud",
-            "quiet"
+            "smart"
           ]
         },
         {
@@ -540,14 +579,20 @@
         },
         {
           "keys": [
+            "loud",
+            "quiet",
             "fast",
-            "slow",
-            "new",
-            "old",
-            "clean_",
-            "dirty",
-            "wet",
-            "dry_"
+            "slow"
+          ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "keys": [
+            "nice",
+            "mean",
+            "funny_"
           ]
         },
         {
@@ -564,18 +609,22 @@
         },
         {
           "keys": [
-            "full",
-            "empty",
-            "easy",
-            "hard",
-            "yummy",
-            "yucky",
-            "fun",
-            "boring"
+            "wet",
+            "dry_",
+            "clean_",
+            "dirty"
           ]
         },
         {
           "space": 1
+        },
+        {
+          "keys": [
+            "fun",
+            "boring",
+            "yummy",
+            "yucky"
+          ]
         },
         {
           "link": "folder_opinions",
@@ -585,18 +634,22 @@
         },
         {
           "keys": [
-            "nice",
-            "mean",
-            "same",
-            "different",
-            "pretty",
-            "ugly",
+            "full",
+            "empty",
             "broken",
-            "busy"
+            "closed"
           ]
         },
         {
           "space": 1
+        },
+        {
+          "keys": [
+            "easy",
+            "hard",
+            "pretty",
+            "ugly"
+          ]
         },
         {
           "link": "folder_where",
@@ -609,15 +662,19 @@
             "right",
             "okay_",
             "wrong",
-            "smart",
-            "soft",
-            "maybe",
-            "funny_",
-            "closed"
+            "maybe"
           ]
         },
         {
           "space": 1
+        },
+        {
+          "keys": [
+            "new",
+            "old",
+            "same",
+            "different"
+          ]
         },
         {
           "link": "folder_how_much",
@@ -1236,54 +1293,90 @@
         {
           "keys": [
             "happy",
-            "sad",
-            "angry",
-            "scared",
-            "afraid",
-            "okay_",
-            "mad",
-            "nervous"
-          ]
-        },
-        {
-          "space": 2
-        },
-        {
-          "keys": [
             "excited",
-            "calm",
             "silly",
-            "proud",
-            "bored",
-            "confused",
-            "embarrassed",
-            "shy"
+            "proud"
           ]
         },
         {
-          "space": 2
+          "space": 1
         },
         {
           "keys": [
-            "frustrated",
-            "upset",
-            "worried",
-            "lonely",
-            "surprised",
-            "disappointed",
-            "curious",
+            "angry",
+            "mad",
+            "grumpy",
+            "frustrated"
+          ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "keys": [
+            "okay_",
+            "calm",
+            "safe",
             "brave"
           ]
         },
         {
-          "space": 2
+          "space": 1
+        },
+        {
+          "keys": [
+            "sad",
+            "upset",
+            "lonely",
+            "disappointed"
+          ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "keys": [
+            "scared",
+            "afraid",
+            "nervous",
+            "worried"
+          ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "keys": [
+            "jealous",
+            "bored",
+            "curious",
+            "strong"
+          ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "keys": [
+            "shy",
+            "embarrassed",
+            "surprised",
+            "confused"
+          ]
+        },
+        {
+          "space": 1
         },
         {
           "keys": [
             "sick",
             "hurt",
-            "tired"
+            "dizzy",
+            "weak"
           ]
+        },
+        {
+          "space": 1
         },
         {
           "link": "hungry",
@@ -1299,22 +1392,19 @@
         },
         {
           "keys": [
-            "grumpy",
-            "safe",
-            "jealous"
+            "tired",
+            "feel"
           ]
         },
         {
-          "space": 2
+          "space": 1
         },
         {
           "keys": [
-            "strong",
-            "weak",
-            "dizzy",
-            "feel",
             "a_little",
-            "kind_of"
+            "kind_of",
+            "very",
+            "too"
           ]
         }
       ]
@@ -1678,10 +1768,25 @@
         {
           "keys": [
             "am",
-            "need",
-            "love",
-            "have"
+            "was",
+            "will",
+            "gonna"
           ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "link": "eat",
+          "to": "food",
+          "audible": true,
+          "linkColor": "verb"
+        },
+        {
+          "link": "drink",
+          "to": "drinks",
+          "audible": true,
+          "linkColor": "verb"
         },
         {
           "link": "go",
@@ -1690,11 +1795,7 @@
           "linkColor": "verb"
         },
         {
-          "keys": [
-            "don't",
-            "will",
-            "was"
-          ]
+          "space": 1
         },
         {
           "link": "folder_toys",
@@ -1703,21 +1804,22 @@
           "linkColor": "noun"
         },
         {
-          "link": "eat",
-          "to": "food",
-          "audible": false,
-          "linkColor": "noun"
+          "keys": [
+            "want",
+            "wanna",
+            "need",
+            "have_to"
+          ]
+        },
+        {
+          "space": 1
         },
         {
           "keys": [
-            "think",
-            "know",
-            "cant",
-            "gonna",
-            "want",
-            "wanna",
+            "could",
             "can",
-            "have_to"
+            "cant",
+            "would"
           ]
         },
         {
@@ -1727,35 +1829,45 @@
           "linkColor": "noun"
         },
         {
-          "link": "drink",
-          "to": "drinks",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
           "keys": [
-            "let_me",
-            "could",
-            "would",
-            "help",
-            "like"
+            "think",
+            "know",
+            "don't",
+            "help"
           ]
         },
         {
-          "space": 4
+          "space": 1
         },
         {
-          "link": "play",
-          "to": "play_activities",
-          "audible": false,
-          "linkColor": "noun"
-        },
-        {
-          "space": 9
+          "keys": [
+            "like",
+            "love",
+            "have",
+            "let_me"
+          ]
         },
         {
           "link": "folder_snacks",
           "to": "food_snacks",
+          "audible": false,
+          "linkColor": "noun"
+        },
+        {
+          "space": 5
+        },
+        {
+          "link": "play",
+          "to": "play_activities",
+          "audible": true,
+          "linkColor": "verb"
+        },
+        {
+          "space": 3
+        },
+        {
+          "link": "folder_fruit",
+          "to": "food_fruit",
           "audible": false,
           "linkColor": "noun"
         },
@@ -1775,15 +1887,6 @@
           "keys": [
             "see"
           ]
-        },
-        {
-          "space": 2
-        },
-        {
-          "link": "folder_fruit",
-          "to": "food_fruit",
-          "audible": false,
-          "linkColor": "noun"
         }
       ]
     },
@@ -2393,10 +2496,10 @@
           "keys": [
             "sticky",
             "sharp",
-            "smelly",
-            "stinky",
             "hot_",
             "cold__",
+            "smelly",
+            "stinky",
             "uncomfortable",
             "gentle"
           ]
@@ -2413,16 +2516,7 @@
           ]
         },
         {
-          "space": 2
-        },
-        {
-          "keys": [
-            "wet",
-            "dry_"
-          ]
-        },
-        {
-          "space": 1
+          "space": 5
         },
         {
           "link": "folder_how_it_feels",
@@ -2431,19 +2525,18 @@
           "linkColor": "adjective"
         },
         {
-          "space": 3
-        },
-        {
           "keys": [
-            "hard"
+            "wet",
+            "dry_"
           ]
         },
         {
-          "space": 20
+          "space": 13
         },
         {
           "keys": [
-            "soft"
+            "soft",
+            "hard"
           ]
         }
       ]
@@ -2456,66 +2549,11 @@
           "keys": [
             "excellent",
             "terrific",
-            "good",
-            "bad",
             "cute",
             "fine",
             "terrible",
-            "exciting"
-          ]
-        },
-        {
-          "space": 2
-        },
-        {
-          "keys": [
-            "dumb",
-            "crazy",
-            "favorite",
-            "weird",
-            "gross",
-            "real",
-            "fake"
-          ]
-        },
-        {
-          "space": 9
-        },
-        {
-          "keys": [
-            "fun",
-            "boring"
-          ]
-        },
-        {
-          "space": 1
-        },
-        {
-          "link": "folder_opinions",
-          "to": "describe_opinions",
-          "audible": false,
-          "linkColor": "adjective"
-        },
-        {
-          "keys": [
-            "nice",
-            "mean"
-          ]
-        },
-        {
-          "space": 2
-        },
-        {
-          "keys": [
-            "pretty",
-            "ugly"
-          ]
-        },
-        {
-          "space": 7
-        },
-        {
-          "keys": [
+            "good",
+            "bad",
             "smart"
           ]
         },
@@ -2524,7 +2562,51 @@
         },
         {
           "keys": [
+            "exciting",
+            "dumb",
+            "crazy",
+            "favorite",
+            "weird",
+            "nice",
+            "mean",
             "funny_"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "keys": [
+            "gross",
+            "real",
+            "fake"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "keys": [
+            "fun",
+            "boring"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "link": "folder_opinions",
+          "to": "describe_opinions",
+          "audible": false,
+          "linkColor": "adjective"
+        },
+        {
+          "space": 7
+        },
+        {
+          "keys": [
+            "pretty",
+            "ugly"
           ]
         }
       ]
@@ -2644,9 +2726,9 @@
             "expensive",
             "quick",
             "messy",
+            "busy",
             "asleep",
-            "dark",
-            "sleepy"
+            "dark"
           ]
         },
         {
@@ -2660,17 +2742,24 @@
         },
         {
           "keys": [
+            "sleepy",
             "stuck",
             "careful",
-            "new",
-            "old",
-            "young",
             "awake",
             "noisy"
           ]
         },
         {
-          "space": 15
+          "space": 17
+        },
+        {
+          "keys": [
+            "broken",
+            "closed"
+          ]
+        },
+        {
+          "space": 3
         },
         {
           "keys": [
@@ -2679,23 +2768,16 @@
           ]
         },
         {
-          "space": 2
-        },
-        {
-          "keys": [
-            "broken",
-            "busy"
-          ]
-        },
-        {
-          "space": 6
+          "space": 3
         },
         {
           "keys": [
             "true",
             "maybe",
             "false",
-            "closed"
+            "new",
+            "old",
+            "young"
           ]
         }
       ]
@@ -4190,12 +4272,12 @@
           "keys": [
             "ouch",
             "shh",
+            "be_quiet",
             "wow",
             "yay",
             "oops",
             "peekaboo",
-            "yum_yum",
-            "meow"
+            "yum_yum"
           ]
         },
         {
@@ -4209,14 +4291,14 @@
         },
         {
           "keys": [
+            "meow",
             "woof",
             "moo",
             "quack",
             "oink",
             "baa",
             "neigh",
-            "cockadoodledoo",
-            "vroom"
+            "cockadoodledoo"
           ]
         },
         {
@@ -4224,16 +4306,9 @@
         },
         {
           "keys": [
+            "vroom",
             "choo_choo",
             "beep"
-          ]
-        },
-        {
-          "space": 8
-        },
-        {
-          "keys": [
-            "uh_oh"
           ]
         }
       ]

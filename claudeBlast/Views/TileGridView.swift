@@ -48,6 +48,15 @@ struct TileGridView: View {
     @State private var showCaregiverMenu = false
     /// The caregiver rail's Edit menu, opened off the Edit button.
     @State private var showEditMenu = false
+    /// The grid's tiles and the side rail on screen, for the tray to line up
+    /// with. Measured on iPad only: the phone's tray is its own design.
+    @State private var gridFrame: CGRect = .zero
+    @State private var railFrame: CGRect?
+
+    private var railAlignment: RailAlignment? {
+        guard !isCompact, gridFrame.width > 0 else { return nil }
+        return RailAlignment(grid: gridFrame, rail: railFrame)
+    }
     @State private var currentDisplayPage: Int? = 0
     @AppStorage("tile_speech_enabled") private var tileSpeechEnabled: Bool = true
     @State private var haptic = UIImpactFeedbackGenerator(style: .heavy)
@@ -194,6 +203,7 @@ struct TileGridView: View {
             SingleWordTrayView(
                 onRemove: { index in engine.removeStripWord(at: index) },
                 onClear: { engine.clearStrip() },
+                railAlignment: railAlignment
             )
             .padding(.top, 8)
     }
@@ -247,7 +257,8 @@ struct TileGridView: View {
                 },
                 onPlaySingle: {
                     engine.playSingleTile()
-                }
+                },
+                railAlignment: railAlignment
             )
             .padding(.top, 8)
     }
@@ -257,7 +268,6 @@ struct TileGridView: View {
     private var gridContent: some View {
         if let page = currentPage {
             pagedGrid(for: page)
-                .environment(\.tileLook, tileLook)
                 // Keyed by page, so a page change is an insertion and a removal
                 // — which is what gives the transition below something to
                 // animate — and so no tile view is ever reused across pages.
@@ -452,7 +462,9 @@ struct TileGridView: View {
         GeometryReader { geo in
             let isLandscape = geo.size.width > geo.size.height
             let isPhone = GridLayoutCalculator.isPhone(screenSize: GridLayoutCalculator.deviceScreenSize)
-            let rail: RailPlacement = !isPhone && isLandscape ? .side : .bottom(slots: railProfile.slots.count)
+            let rail: RailPlacement = !isPhone && isLandscape
+                ? .side
+                : .bottom(slots: railProfile.slots.count, pairs: railProfile.hasPairs)
             let spec = GridLayoutCalculator.compute(
                 screenSize: GridLayoutCalculator.deviceScreenSize,
                 geo: CGSize(width: geo.size.width, height: geo.size.height - Self.pathLineHeight),
@@ -506,22 +518,42 @@ struct TileGridView: View {
                 .frame(height: contentHeight)
             }
             VStack(alignment: .leading, spacing: 0) {
+                // On the grid's first column, with the tray's first chip.
                 pathLine
                     .frame(height: Self.pathLineHeight)
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, isSide ? 16 : max(16, gridPadding))
                 if isSide {
-                    HStack(alignment: .top, spacing: GridLayoutCalculator.railGap) {
+                    HStack(alignment: .top, spacing: 0) {
                         board.frame(width: gridWidth)
-                        controlRail(spec: spec, cellHeight: cellH, vertical: true)
+                            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) }
+                                action: { gridFrame = $0 }
+                        // Spare width goes to the rail, as wider buttons,
+                        // rather than to margins or a gap: an iPad mini's tiles
+                        // are bound by its height, and centring its narrower
+                        // grid left a band down each edge; a wide gap instead
+                        // left one in the middle (Mark 2026-10-27).
+                        Spacer(minLength: GridLayoutCalculator.railGap)
+                            .frame(maxWidth: GridLayoutCalculator.railGap)
+                        controlRail(spec: spec, cellHeight: cellH, vertical: true,
+                                    width: max(spec.tileSize,
+                                               geo.size.width - 32 - gridWidth - GridLayoutCalculator.railGap))
+                            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) }
+                                action: { railFrame = $0 }
                     }
                     .padding(.horizontal, 16)
-                    .frame(maxWidth: .infinity)
                 } else {
                     board
+                        .onGeometryChange(for: CGRect.self) {
+                            $0.frame(in: .global).insetBy(dx: gridPadding, dy: 0)
+                        } action: { gridFrame = $0 }
                     Spacer(minLength: GridLayoutCalculator.railGap)
                     controlRail(spec: spec, cellHeight: cellH, vertical: false)
                         .frame(maxWidth: .infinity)
                         .padding(.bottom, 4)
+                        // Not on disappear of the side rail: every page change
+                        // rebuilds the board, and the old one leaves after the
+                        // new one has measured.
+                        .onAppear { railFrame = nil }
                 }
             }
             .onChange(of: isLandscape) { _, _ in
@@ -707,11 +739,15 @@ struct TileGridView: View {
 
     // MARK: - Rail
 
-    private func controlRail(spec: GridLayoutSpec, cellHeight: CGFloat, vertical: Bool) -> some View {
+    /// - Parameter width: the side rail's width, when the grid leaves it more
+    ///   than a tile.
+    private func controlRail(spec: GridLayoutSpec, cellHeight: CGFloat, vertical: Bool,
+                             width: CGFloat? = nil) -> some View {
         let slots = railProfile.slots
-        let size = vertical
+        var size = vertical
             ? GridLayoutCalculator.sideRailSlot(spec, slots: slots.count, cellHeight: cellHeight)
-            : CGSize(width: spec.railSlot, height: spec.railSlot)
+            : CGSize(width: spec.railSlotWidth, height: spec.railSlot)
+        if vertical, let width { size.width = width }
         return ControlRail(slots: slots, slot: size,
                            spacing: vertical ? spec.verticalSpacing : TileLayout.gap,
                            vertical: vertical,

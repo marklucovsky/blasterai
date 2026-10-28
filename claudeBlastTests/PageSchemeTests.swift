@@ -389,6 +389,31 @@ struct PageSchemeTests {
         #expect(BoardChrome.inherits(designedFor: "phone-4x6"))
     }
 
+    /// A bundled starter takes the path a fresh generation does: its words
+    /// around the frame on the home template, and the scene declares the grid,
+    /// so it inherits the system row.
+    @Test func aStarterSceneLandsOnTheTemplate() throws {
+        let b = board()
+        let context = TestStore.container.mainContext
+        let starters = StarterSceneCatalog.all
+        try #require(!starters.isEmpty)
+        for starter in starters {
+            let loaded = try #require(starter.loadPreview(), "\(starter.id)")
+            let placed = ScenePreviewView.reselected(loaded.scene, template: .home,
+                                                     systemHome: b.home, lookup: b.lookup)
+            let scene = try #require(starter.importBundle(context: context), "\(starter.id)")
+            let tiles = try context.fetch(FetchDescriptor<TileModel>())
+            SceneBuilder.lay(placed, onto: scene,
+                             lookup: Dictionary(tiles.map { ($0.key, $0) }, uniquingKeysWith: { a, _ in a }),
+                             context: context)
+            #expect(BoardChrome.inherits(scene), "\(starter.id)")
+            let home = try #require(scene.page(withKey: scene.homePageKey))
+            let topic = Set(loaded.scene.pages.flatMap(\.tiles).map(\.key))
+            #expect(home.tiles.contains { topic.contains($0.key) }, "\(starter.id) lost its words")
+            #expect(home.tiles.count <= PageTemplate.cols * (PageTemplate.rows - 1), "\(starter.id)")
+        }
+    }
+
     @Test func aTemplatedScenesOtherPagesAreLeafPages() throws {
         let b = board()
         var scene = try TopicWordsService.scene(from: try TopicWordsService.parse(content: Self.bluey),

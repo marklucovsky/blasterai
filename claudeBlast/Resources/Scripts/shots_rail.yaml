@@ -1,5 +1,5 @@
 name: Screenshots — Rail
-description: The board under the system row with its control rail, on Home, a category and a folder page.
+description: The board under the system row with its control rail, on Home, a category and a folder page, with the way marks.
 scene: "<default>"   # the bundled board, whatever it is named
 audio: off
 provider: mock
@@ -21,9 +21,12 @@ script:
     - <places>
   - screenshot: rail-04-places
   - tiles:
+    - <places_house>
+  - screenshot: rail-04b-house
+  - tiles:
     - <home>
   - tiles:
-    - i
     - want
-    - go
+    - help
+    - more
   - screenshot: rail-05-sentence

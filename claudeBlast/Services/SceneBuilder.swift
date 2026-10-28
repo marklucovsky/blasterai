@@ -71,31 +71,7 @@ enum SceneBuilder {
                 }
             }
 
-            // A templated scene's pages are laid into the scheme on BlasterAI
-            // 60's home. A tile with no vocabulary entry is dropped from a flat
-            // page, and becomes a gap on a placed one so no later cell moves.
-            let system = systemScene(in: context)
-            scene.pages = generated.placedPages(systemHome: system.flatMap { $0.page(withKey: $0.homePageKey) },
-                                                lookup: lookup)
-                .map { page in
-                    var page = page
-                    let placed = generated.template != nil
-                    page.tiles = page.tiles.compactMap { entry in
-                        if entry.isSpacer || lookup[entry.key] != nil { return entry }
-                        return placed ? .spacer() : nil
-                    }
-                    return page
-                }
-            if generated.template != nil {
-                scene.designedFor = PageTemplate.designedFor
-                // The system row and core words carry BlasterAI 60's levels, so
-                // the scene starts with its levels, at its level. The scene's
-                // own words are level 0 and show at every level.
-                if let system, system.revealLevelCount > 0 {
-                    scene.setRevealLevelCount(system.revealLevelCount)
-                    scene.setRevealLevel(system.revealLevel)
-                }
-            }
+            lay(generated, onto: scene, lookup: lookup, context: context)
 
             scene.ensureIdentity(authorID: DeviceProfileStore.ensureAuthorID(context: context),
                                  authorName: DeviceProfileStore.authorName(context: context))
@@ -103,6 +79,39 @@ enum SceneBuilder {
         }
 
         return scene
+    }
+
+    /// `generated`'s pages as `scene`'s. A templated scene's pages are laid
+    /// into the scheme on BlasterAI 60's home, and the scene declares the grid,
+    /// so it inherits the system row. A tile with no vocabulary entry is
+    /// dropped from a flat page, and becomes a gap on a placed one so no later
+    /// cell moves.
+    ///
+    /// Also how a bundled starter, imported for its identity, gets the layout a
+    /// fresh generation would have.
+    static func lay(_ generated: GeneratedScene, onto scene: BlasterScene,
+                    lookup: [String: TileModel], context: ModelContext) {
+        let system = systemScene(in: context)
+        scene.pages = generated.placedPages(systemHome: system.flatMap { $0.page(withKey: $0.homePageKey) },
+                                            lookup: lookup)
+            .map { page in
+                var page = page
+                let placed = generated.template != nil
+                page.tiles = page.tiles.compactMap { entry in
+                    if entry.isSpacer || lookup[entry.key] != nil { return entry }
+                    return placed ? .spacer() : nil
+                }
+                return page
+            }
+        guard generated.template != nil else { return }
+        scene.designedFor = PageTemplate.designedFor
+        // The system row and core words carry BlasterAI 60's levels, so the
+        // scene starts with its levels, at its level. The scene's own words are
+        // level 0 and show at every level.
+        if let system, system.revealLevelCount > 0 {
+            scene.setRevealLevelCount(system.revealLevelCount)
+            scene.setRevealLevel(system.revealLevel)
+        }
     }
 
     /// BlasterAI 60's home page, which a templated page takes its system row

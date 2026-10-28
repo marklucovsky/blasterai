@@ -1611,7 +1611,8 @@ private struct PagePreviewView: View {
             generatedCell(entry.key)
         } else if let tile = tileLookup[entry.key] {
             GeneratedTileCell(key: tile.bundleImage, displayName: tile.displayName,
-                              wordClass: tile.wordClass, link: entry.link)
+                              wordClass: tile.wordClass, link: entry.link,
+                              linkColor: entry.linkColor, isAudible: entry.isAudible)
         } else {
             Color.clear.aspectRatio(1, contentMode: .fit)
         }
@@ -1728,62 +1729,6 @@ private struct PageRefineInputSheet: View {
             } catch {
                 await MainActor.run { self.error = OpenAIFailure.caregiverMessage(for: error); isRefining = false }
             }
-        }
-    }
-}
-
-// Lightweight tile cell for AI preview grids (no SwiftData dependency).
-private struct GeneratedTileCell: View {
-    let key: String
-    let displayName: String
-    let wordClass: String
-    let link: String
-    var isNew: Bool = false
-    var imageData: Data? = nil
-
-    private var isNav: Bool { !link.isEmpty }
-
-    var body: some View {
-        VStack(spacing: 2) {
-            ZStack(alignment: .bottomTrailing) {
-                Group {
-                    if let imageData, let ui = UIImage(data: imageData) {
-                        Image(uiImage: ui).resizable().scaledToFit()
-                    } else {
-                        TileImageView(key: key, wordClass: wordClass)
-                    }
-                }
-                .aspectRatio(1, contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(isNav ? Color.blue.opacity(0.6) : Color.clear, lineWidth: 2)
-                )
-                .overlay(alignment: .topLeading) {
-                    if isNew {
-                        Text("NEW")
-                            .font(.system(size: 7, weight: .bold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 4)
-                            .padding(.vertical, 1)
-                            .background(Capsule().fill(.purple))
-                            .padding(3)
-                    }
-                }
-                .shadow(color: .black.opacity(0.1), radius: 1, y: 1)
-
-                if isNav {
-                    Image(systemName: "arrow.right.circle.fill")
-                        .font(.caption2)
-                        .foregroundStyle(.white, .blue)
-                        .padding(3)
-                }
-            }
-
-            Text(displayName)
-                .font(.system(size: 9, weight: .medium))
-                .lineLimit(1)
-                .foregroundStyle(.secondary)
         }
     }
 }
