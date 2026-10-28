@@ -55,7 +55,7 @@ struct ScenePreviewBoardView: View {
             Group {
                 if let page = currentPage {
                     GeometryReader { geo in
-                        let spec = GridLayoutCalculator.compute(geo: geo.size, grid: grid)
+                        let spec = GridLayoutCalculator.compute(geo: geo.size, grid: grid, look: TileLook.current())
                         // The system row on every screen, as the board draws it.
                         let chrome = BoardChrome.inherits(scene)
                             ? BoardChrome.row(for: scene, level: scene.effectiveRevealLevel) : []
@@ -141,44 +141,10 @@ struct ScenePreviewBoardView: View {
             let dest = entry.link == "<home>" ? scene.homePageKey : entry.link
             if scene.page(withKey: dest) != nil { go(to: dest) }
         } label: {
-            // Same rule as the board: part of speech, or blue for a nav tile.
-            // A preview whose colors are a 12% wash of the real ones cannot be
-            // used to check the one thing a preview is for — whether the board
-            // reads correctly before a child ever sees it.
-            let accent = isLink
-                ? TileColorResolver.linkColor(slotRawValue: entry.linkColor, isAudible: entry.isAudible)
-                : TileColorResolver.color(for: tile)
-            VStack(spacing: 0) {
-                // Badge bottom-right, as on the board. A preview exists to be
-                // checked against what the child will see.
-                ZStack(alignment: .bottomTrailing) {
-                    TileImageView(key: tile?.bundleImage ?? entry.key,
-                                  wordClass: tile?.wordClass ?? "")
-                        .padding(2)
-                        .aspectRatio(1, contentMode: .fit)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 5))
-                        .padding(5)
-                    if isLink {
-                        let badge = TileColorResolver.marker(on: accent)
-                        Image(systemName: "arrow.right.circle.fill")
-                            .font(.caption)
-                            .symbolRenderingMode(.palette)
-                            .foregroundStyle(TileColorResolver.label(on: badge), badge)
-                            .padding(3)
-                    }
-                }
-                Text(tile?.displayName ?? entry.key)
-                    .font(.system(size: labelFontSize, weight: .semibold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
-                    .foregroundStyle(TileColorResolver.label(on: accent))
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 3)
-                    .padding(.vertical, GridLayoutCalculator.labelBandPadding)
-            }
-            .background(accent)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+            // The board's own tile. A preview exists to be checked against
+            // what the child will see, colours and folder badges included.
+            TileFace(tile: tile, key: entry.key, link: entry.link, linkColor: entry.linkColor,
+                     isAudible: entry.isAudible, labelFontSize: labelFontSize)
         }
         .buttonStyle(.plain)
     }

@@ -328,6 +328,41 @@ struct GridLayoutCalculatorTests {
         #expect(portrait.railSlot > 0)
     }
 
+    /// A half-height control on the caregiver's bottom rail is a whole touch
+    /// target: about 38pt in iPad portrait and 29pt on a phone, before the
+    /// rail was given a floor.
+    @Test func bottomRailHalvesClearTheTouchMinimum() {
+        let cases: [(CGSize, CGSize)] = [
+            (miniPortrait, CGSize(width: 744, height: 940)),
+            (iPad11, CGSize(width: 834, height: 1020)),
+            (phonePortrait, CGSize(width: 393, height: 640)),
+        ]
+        for (screen, geo) in cases {
+            let s = GridLayoutCalculator.compute(screenSize: screen, geo: geo, look: .square,
+                                                 rail: .bottom(slots: 6, pairs: true))
+            let half = (s.railSlot - TileLayout.gap) / 2
+            #expect(half >= GridLayoutCalculator.minTarget, "\(screen): half \(half)")
+            #expect(s.railSlotWidth * 6 <= geo.width, "\(screen): rail overflows")
+        }
+    }
+
+    /// The child's rail has no pairs, so it keeps square slots and gives the
+    /// grid every point it can.
+    @Test func childBottomRailStaysSquare() {
+        let s = GridLayoutCalculator.compute(screenSize: phonePortrait,
+                                             geo: CGSize(width: 393, height: 640),
+                                             look: .square, rail: .bottom(slots: 6))
+        #expect(s.railSlot == s.railSlotWidth)
+        #expect(RailProfile.caregiver.hasPairs && !RailProfile.child.hasPairs)
+    }
+
+    /// The side rail's halves on the smallest iPad, in landscape.
+    @Test func sideRailHalvesClearTheTouchMinimumOnTheMini() {
+        let s = landscapeBoard(miniPortrait, look: .square, rail: .side)
+        let slot = GridLayoutCalculator.sideRailSlot(s, slots: 6, cellHeight: s.tileSize)
+        #expect((slot.height - s.verticalSpacing) / 2 >= GridLayoutCalculator.minTarget)
+    }
+
     // MARK: - Degenerate geometry
 
     /// A zero-height proposal happens during transitions. It must not return a

@@ -1,0 +1,47 @@
+{
+  "_doc": "Session 14 word pass 2: words BlasterAI 60 needs that have no art yet, collected while clustering Social and Feelings against Avaz (Mark 2026-10-27). 'pages' is ready for tools/apply_word_pass.py once the art exists. Social and Feelings are laid out by `at` rows, so apply_word_pass's append would land a word in the empty column 5: after applying, move each word to its 'cell' in that page's `at` instead. 'waitingForRoom' are words the page has no cell for yet; each needs a cell freed (or a folder) before it is applied.",
+  "pages": [
+    {
+      "page": "social",
+      "pos": "social",
+      "wordClass": "social",
+      "words": [
+        "good_morning|good morning",
+        "good_afternoon|good afternoon"
+      ],
+      "cell": {
+        "good_morning": "r3c1",
+        "good_afternoon": "r3c2"
+      }
+    }
+  ],
+  "waitingForRoom": [
+    {
+      "page": "social",
+      "pos": "social",
+      "wordClass": "social",
+      "words": [
+        "good_evening|good evening",
+        "hi",
+        "hey",
+        "no_problem|no problem",
+        "take_care|take care",
+        "good_luck|good luck",
+        "happy_birthday|happy birthday"
+      ],
+      "_why": "Social's 40 cells are full. 'problem' is drawn as a problem (a broken toy), not Avaz's 'no problem'. Moving the reactions (awesome, cool, great, funny, oh, oh my, uh oh, no way) into a folder beside Sounds would make room."
+    },
+    {
+      "page": "feelings",
+      "pos": "adjective",
+      "wordClass": "feeling",
+      "words": [
+        "anxious",
+        "restless",
+        "starving",
+        "awkward"
+      ],
+      "_why": "Feelings' 40 cells are full: two blocks of four either side of column 5."
+    }
+  ]
+}

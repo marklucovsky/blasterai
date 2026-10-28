@@ -59,12 +59,15 @@ struct CoverageGridView: View {
 
     @Environment(\.horizontalSizeClass) private var sizeClass
 
+    /// The board's gap between tiles, for its look.
+    private var gap: CGFloat { TileLook.current() == .square ? TileLayout.gap : 4 }
+
     /// The board's own width, so a word is about the size it is on the board.
     /// A phone cannot fit ten readable tiles, so there it is as many as fit.
     private var columns: [GridItem] {
         sizeClass == .compact
-            ? [GridItem(.adaptive(minimum: 64, maximum: 96), spacing: 4)]
-            : Array(repeating: GridItem(.flexible(), spacing: 4), count: PageTemplate.cols)
+            ? [GridItem(.adaptive(minimum: 64, maximum: 96), spacing: gap)]
+            : Array(repeating: GridItem(.flexible(), spacing: gap), count: PageTemplate.cols)
     }
 
     var body: some View {
@@ -75,7 +78,7 @@ struct CoverageGridView: View {
                 if let board {
                     boardScreens(board)
                 } else {
-                    LazyVGrid(columns: columns, spacing: 4) {
+                    LazyVGrid(columns: columns, spacing: gap) {
                         ForEach(keys, id: \.self) { key in
                             cell(for: key)
                         }
@@ -125,7 +128,7 @@ struct CoverageGridView: View {
     /// How to read the grid. Above it, always.
     private var readingNote: String {
         if let board {
-            return "Dimmed tiles have never been pressed on this page, folders included. Drawn on the board's own \(board.grid.cols) × \(board.grid.rows) grid, with Home in the corner."
+            return "Dimmed tiles have never been pressed on this page, folders included. Drawn on the board's own \(board.grid.cols) × \(board.grid.rows) grid, under the system row."
         }
         return "Dimmed words have never been pressed. Listed alphabetically — a part of speech can appear anywhere within a scene."
     }
@@ -143,7 +146,7 @@ struct CoverageGridView: View {
         // Row 1 of every screen is the system row, as on the board.
         let perScreen = max(1, board.grid.cols * board.grid.rows - (board.chrome.isEmpty ? 0 : board.grid.cols))
         let screens = drawn(board).chunked(into: perScreen)
-        let gridColumns = Array(repeating: GridItem(.flexible(), spacing: 4),
+        let gridColumns = Array(repeating: GridItem(.flexible(), spacing: gap),
                                 count: board.grid.cols)
         ForEach(Array(screens.enumerated()), id: \.offset) { index, cells in
             VStack(alignment: .leading, spacing: 6) {
@@ -152,7 +155,7 @@ struct CoverageGridView: View {
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                 }
-                LazyVGrid(columns: gridColumns, spacing: 4) {
+                LazyVGrid(columns: gridColumns, spacing: gap) {
                     ForEach(Array(board.chrome.prefix(board.grid.cols).enumerated()), id: \.offset) { _, entry in
                         boardCell(entry)
                             .allowsHitTesting(false)
@@ -181,49 +184,18 @@ struct CoverageGridView: View {
     private func styledTile(_ entry: TileEntry, isUsed: Bool) -> some View {
         let tile = lookup[entry.key]
         let isLink = !entry.link.isEmpty
-        let accent = isLink
-            ? TileColorResolver.linkColor(slotRawValue: entry.linkColor, isAudible: entry.isAudible)
-            : TileColorResolver.color(for: tile)
-        // Drawn the way the board draws it — art on white, the word in a
-        // band of its Fitzgerald color, folders badged — because that is the
-        // picture a caregiver and an SLP already carry of the board. The
-        // scrim lies over the whole tile, colour included, so an unpressed
-        // cell still reads as *that* cell, only quieter.
-        ZStack {
-            VStack(spacing: 0) {
-                ZStack(alignment: .bottomTrailing) {
-                    TileImageView(key: tile?.bundleImage ?? entry.key,
-                                  wordClass: tile?.wordClass ?? "")
-                        .padding(1)
-                        .aspectRatio(1, contentMode: .fit)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 3))
-                        .padding(3)
-                    if isLink {
-                        let badge = TileColorResolver.marker(on: accent)
-                        Image(systemName: "arrow.right.circle.fill")
-                            .font(.system(size: 8))
-                            .symbolRenderingMode(.palette)
-                            .foregroundStyle(TileColorResolver.label(on: badge), badge)
-                            .padding(2)
-                    }
+        // The board's own tile, because that is the picture a caregiver and an
+        // SLP already carry of the board. The scrim lies over the whole tile,
+        // colour included, so an unpressed cell still reads as *that* cell,
+        // only quieter.
+        TileFace(tile: tile, key: entry.key, link: entry.link, linkColor: entry.linkColor,
+                 isAudible: entry.isAudible, labelFontSize: 9)
+            .overlay {
+                if !isUsed {
+                    RoundedRectangle(cornerRadius: TileFace.radius(TileLook.current()))
+                        .fill(Color(.systemBackground).opacity(0.62))
                 }
-                Text(tile?.displayName ?? entry.key)
-                    .font(.system(size: 9, weight: .semibold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.5)
-                    .foregroundStyle(TileColorResolver.label(on: accent))
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 2)
-                    .padding(.bottom, 2)
             }
-            .background(accent)
-            .clipShape(RoundedRectangle(cornerRadius: 6))
-            if !isUsed {
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(Color(.systemBackground).opacity(0.62))
-            }
-        }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(tile?.displayName ?? entry.key)\(isLink ? ", folder" : ""), \(isUsed ? "used" : "never used")")
     }

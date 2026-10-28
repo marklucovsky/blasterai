@@ -78,6 +78,10 @@ struct TileGridEditor<Cell: View>: View {
     @State private var anchorMode: AnchorMove?
     enum AnchorMove { case before, after }
 
+    /// The board's look, so the editor's grid is spaced and shaped like it.
+    private var look: TileLook { TileLook.current() }
+    private var radius: CGFloat { TileFace.radius(look) }
+
     private var columns: [GridItem] {
         [GridItem(.adaptive(minimum: minTile, maximum: maxTile), spacing: 10)]
     }
@@ -115,7 +119,7 @@ struct TileGridEditor<Cell: View>: View {
     @ViewBuilder
     private func boardPages(_ grid: (cols: Int, rows: Int), width: CGFloat) -> some View {
         let spec = GridLayoutCalculator.compute(geo: CGSize(width: width, height: 1),
-                                                grid: grid, fitHeight: false)
+                                                grid: grid, fitHeight: false, look: look)
         let perScreen = max(1, spec.perPage - (chrome.isEmpty ? 0 : spec.cols))
         let chunks = tiles.chunked(into: perScreen)
         let pages = chunks.isEmpty ? [[]] : chunks
@@ -129,7 +133,7 @@ struct TileGridEditor<Cell: View>: View {
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, spec.horizontalPadding)
                 }
-                LazyVGrid(columns: columns, spacing: 10) {
+                LazyVGrid(columns: columns, spacing: spec.verticalSpacing) {
                     ForEach(Array(chrome.prefix(spec.cols).enumerated()), id: \.offset) { _, entry in
                         chromeCell(entry)
                     }
@@ -164,7 +168,7 @@ struct TileGridEditor<Cell: View>: View {
         let selected = isSelecting && selectedKeys.contains(key)
         cell(entry)
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: radius)
                     .strokeBorder(Color.accentColor,
                                   lineWidth: (dropTarget == key || selected) ? 3 : 0)
             )
@@ -177,7 +181,7 @@ struct TileGridEditor<Cell: View>: View {
                         .padding(4)
                 }
             }
-            .contentShape(RoundedRectangle(cornerRadius: 12))
+            .contentShape(RoundedRectangle(cornerRadius: radius))
             .onTapGesture {
                 if let mode = anchorMode {
                     // Anchor pick: only a non-selected tile is a valid drop anchor.
@@ -206,14 +210,7 @@ struct TileGridEditor<Cell: View>: View {
 
     /// The face of the Add cell, shared by both of its forms.
     private var addCellFace: some View {
-        VStack(spacing: 3) {
-            RoundedRectangle(cornerRadius: 10)
-                .strokeBorder(style: StrokeStyle(lineWidth: 2, dash: [6]))
-                .foregroundStyle(.tertiary)
-                .aspectRatio(1, contentMode: .fit)
-                .overlay(Image(systemName: "plus").font(.title2).foregroundStyle(.secondary))
-            Text("Add").font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
-        }
+        DashedCell(systemImage: "plus", label: "Add", look: look)
     }
 
     /// Add, in the grid where the caregiver is already looking.

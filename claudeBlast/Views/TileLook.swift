@@ -32,12 +32,6 @@ enum TileLook: String, CaseIterable, Identifiable {
     }
 }
 
-extension EnvironmentValues {
-    /// Set once by the board, read by every cell in it, so Home and the
-    /// spacers can never disagree with the tiles about the shape of a cell.
-    @Entry var tileLook: TileLook = .square
-}
-
 /// How a square tile holds its picture. Each image set declares one
 /// (`ImageSetID.tileLayout`), because what works depends on the art.
 enum TileLayout: Equatable {

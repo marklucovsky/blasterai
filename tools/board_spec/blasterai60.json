@@ -229,43 +229,61 @@
     },
     "i_page": {
       "parent": "home",
-      "words": [
-        "am",
-        "want",
-        "need",
-        "like",
-        "love",
-        "feel",
-        "see",
-        "have",
-        "can",
-        "don't",
-        "will",
-        "was",
-        "think",
-        "know",
-        "go",
-        "help",
-        "cant",
-        "gonna",
-        "wanna",
-        "have_to",
-        "let_me",
-        "could",
-        "would"
-      ],
+      "words": [],
+      "at": {
+        "r2c1": [
+          "am",
+          "was",
+          "will",
+          "gonna"
+        ],
+        "r2c6": [
+          "eat",
+          "drink",
+          "go"
+        ],
+        "r3c1": [
+          "want",
+          "wanna",
+          "need",
+          "have_to"
+        ],
+        "r3c6": [
+          "could",
+          "can",
+          "cant",
+          "would"
+        ],
+        "r4c1": [
+          "think",
+          "know",
+          "don't",
+          "help"
+        ],
+        "r4c6": [
+          "like",
+          "love",
+          "have",
+          "let_me"
+        ],
+        "r5c6": [
+          "play"
+        ],
+        "r6c4": [
+          "feel"
+        ],
+        "r6c7": [
+          "see"
+        ]
+      },
       "folders": [
         {
-          "key": "eat",
-          "page": "food"
+          "key": "folder_toys",
+          "page": "play_toys"
         },
         {
-          "key": "drink",
-          "page": "drinks"
-        },
-        {
-          "key": "play",
-          "page": "play_activities"
+          "key": "folder_games",
+          "page": "play_games"
         },
         {
           "key": "folder_snacks",
@@ -274,14 +292,6 @@
         {
           "key": "folder_fruit",
           "page": "food_fruit"
-        },
-        {
-          "key": "folder_toys",
-          "page": "play_toys"
-        },
-        {
-          "key": "folder_games",
-          "page": "play_games"
         }
       ]
     },
@@ -684,75 +694,7 @@
     },
     "describe": {
       "parent": "home",
-      "words": [
-        [
-          "big",
-          "little"
-        ],
-        [
-          "good",
-          "bad"
-        ],
-        [
-          "hot_",
-          "cold__"
-        ],
-        [
-          "loud",
-          "quiet"
-        ],
-        [
-          "fast",
-          "slow"
-        ],
-        [
-          "new",
-          "old"
-        ],
-        [
-          "clean_",
-          "dirty"
-        ],
-        [
-          "wet",
-          "dry_"
-        ],
-        [
-          "full",
-          "empty"
-        ],
-        [
-          "easy",
-          "hard"
-        ],
-        [
-          "yummy",
-          "yucky"
-        ],
-        [
-          "fun",
-          "boring"
-        ],
-        [
-          "nice",
-          "mean"
-        ],
-        [
-          "same",
-          "different"
-        ],
-        [
-          "pretty",
-          "ugly"
-        ],
-        "broken",
-        "busy",
-        "smart",
-        "soft",
-        "maybe",
-        "funny_",
-        "closed"
-      ],
+      "words": [],
       "folders": [
         {
           "key": "folder_size",
@@ -958,7 +900,18 @@
             "careful",
             "awake",
             "noisy"
-          ]
+          ],
+          "at": {
+            "r5c8": [
+              "same",
+              "different"
+            ],
+            "r6c6": [
+              "new",
+              "old",
+              "young"
+            ]
+          }
         },
         {
           "key": "colors",
@@ -1002,10 +955,63 @@
         }
       ],
       "at": {
+        "r2c1": [
+          "big",
+          "little",
+          "hot_",
+          "cold__"
+        ],
+        "r2c6": [
+          "good",
+          "bad",
+          "smart"
+        ],
+        "r3c1": [
+          "loud",
+          "quiet",
+          "fast",
+          "slow"
+        ],
+        "r3c6": [
+          "nice",
+          "mean",
+          "funny_"
+        ],
+        "r4c1": [
+          "wet",
+          "dry_",
+          "clean_",
+          "dirty"
+        ],
+        "r4c6": [
+          "fun",
+          "boring",
+          "yummy",
+          "yucky"
+        ],
+        "r5c1": [
+          "full",
+          "empty",
+          "broken",
+          "closed"
+        ],
+        "r5c6": [
+          "easy",
+          "hard",
+          "pretty",
+          "ugly"
+        ],
         "r6c1": [
           "right",
           "okay_",
-          "wrong"
+          "wrong",
+          "maybe"
+        ],
+        "r6c6": [
+          "new",
+          "old",
+          "same",
+          "different"
         ]
       }
     },
@@ -2137,54 +2143,65 @@
     },
     "social": {
       "parent": "home",
-      "words": [
-        "awesome",
-        "be_quiet",
-        "break",
-        [
+      "words": [],
+      "at": {
+        "r2c1": [
           "hello",
+          "whats_up",
+          "how_are_you",
+          "nice_to_meet"
+        ],
+        "r2c6": [
+          "i_love_you",
+          "i_love_it",
+          "me_too",
+          "give_me_five"
+        ],
+        "r3c3": [
+          "goodnight",
+          "night_night"
+        ],
+        "r3c6": [
+          "awesome",
+          "cool",
+          "great",
+          "funny"
+        ],
+        "r4c1": [
           "bye",
           "goodbye",
-          "goodnight"
+          "see_you_later",
+          "never_mind"
         ],
-        "cool",
-        "don't",
-        "excuse_me",
-        "funny",
-        "great",
-        "how_are_you",
-        [
-          "i_love_it",
-          "i_love_you"
+        "r4c6": [
+          "oh",
+          "oh_my",
+          "uh_oh",
+          "no_way"
         ],
-        "maybe",
-        "nice_to_meet",
-        "no_way",
-        "oh_my",
-        "okay",
-        "please",
-        "problem",
-        "sorry",
-        "thank_you",
-        "uh_oh",
-        "whats_up",
-        "youre_welcome",
-        "me_too",
-        "my_turn",
-        "your_turn",
-        "see_you_later",
-        "never_mind",
-        "really",
-        "sounds_good",
-        "oh",
-        "night_night",
-        "give_me_five"
-      ],
-      "at": {
+        "r5c1": [
+          "please",
+          "thank_you",
+          "youre_welcome",
+          "sorry"
+        ],
+        "r5c6": [
+          "excuse_me",
+          "problem",
+          "my_turn",
+          "your_turn"
+        ],
         "r6c1": [
           "yes",
           "i_dont_know",
-          "no"
+          "no",
+          "maybe"
+        ],
+        "r6c6": [
+          "okay",
+          "sounds_good",
+          "really",
+          "break"
         ]
       },
       "folders": [
@@ -2192,9 +2209,9 @@
           "key": "folder_sounds",
           "page": "social_sounds",
           "words": [
-            "uh_oh",
             "ouch",
             "shh",
+            "be_quiet",
             "wow",
             "yay",
             "oops",
@@ -2270,54 +2287,69 @@
     },
     "feelings": {
       "parent": "home",
-      "words": [
-        [
+      "words": [],
+      "at": {
+        "r2c1": [
           "happy",
-          "sad",
-          "angry",
-          "scared",
-          "afraid"
-        ],
-        [
           "excited",
-          "calm",
           "silly",
-          "proud",
-          "bored"
+          "proud"
         ],
-        [
-          "frustrated",
+        "r2c6": [
+          "angry",
+          "mad",
+          "grumpy",
+          "frustrated"
+        ],
+        "r3c1": [
+          "okay_",
+          "calm",
+          "safe",
+          "brave"
+        ],
+        "r3c6": [
+          "sad",
           "upset",
-          "worried",
           "lonely",
-          "surprised"
+          "disappointed"
         ],
-        [
+        "r4c1": [
+          "scared",
+          "afraid",
+          "nervous",
+          "worried"
+        ],
+        "r4c6": [
+          "jealous",
+          "bored",
+          "curious",
+          "strong"
+        ],
+        "r5c1": [
+          "shy",
+          "embarrassed",
+          "surprised",
+          "confused"
+        ],
+        "r5c6": [
           "sick",
           "hurt",
-          "tired",
-          "hungry",
-          "thirsty"
+          "dizzy",
+          "weak"
         ],
-        "okay_",
-        "feel",
-        "mad",
-        "nervous",
-        "confused",
-        "embarrassed",
-        "shy",
-        "disappointed",
-        "curious",
-        "brave",
-        "grumpy",
-        "safe",
-        "jealous",
-        "strong",
-        "weak",
-        "dizzy",
-        "a_little",
-        "kind_of"
-      ]
+        "r6c1": [
+          "hungry",
+          "thirsty",
+          "tired",
+          "feel"
+        ],
+        "r6c6": [
+          "a_little",
+          "kind_of",
+          "very",
+          "too"
+        ]
+      }
     }
   },
   "_newTiles": "Vocabulary entries the spec needs that vocabulary.json may not have yet. build_core_board.py --write adds any that are missing; it never edits an existing entry except to set a label listed in relabel.",

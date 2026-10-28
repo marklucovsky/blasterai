@@ -19,12 +19,17 @@ struct SingleWordTrayView: View {
     @Environment(SentenceEngine.self) private var engine
 
     @ScaledMetric(relativeTo: .caption) private var promptSize: CGFloat = 13
+    @Environment(\.colorScheme) private var colorScheme
 
     /// Remove one word from the strip (its chip was tapped).
     let onRemove: (Int) -> Void
     /// Clear the whole strip.
     let onClear: () -> Void
-    /// Return to the active scene's home page.
+    /// The board's grid and side rail on screen: the strip then spans the grid
+    /// from its first column, and Clear stands over the rail at its width. See
+    /// `SentenceTrayView`.
+    var railAlignment: RailAlignment? = nil
+    @State private var trayFrame: CGRect = .zero
 
     private var strip: [TileSelection] { engine.spokenStrip }
 
@@ -45,6 +50,37 @@ struct SingleWordTrayView: View {
     static let stripHeight: CGFloat = 88
 
     var body: some View {
+        Group {
+            if let align = railAlignment, trayFrame.width > 0 {
+                HStack(spacing: 0) {
+                    stripCard
+                        .frame(maxWidth: align.rail == nil ? .infinity : align.grid.width)
+                    Spacer(minLength: GridLayoutCalculator.railGap)
+                    // Side by side when both show: stacked, each would be
+                    // shorter than a touch target.
+                    let both = !engine.trayShowsPictures
+                    let column = align.rail?.width ?? (both ? 122 : 60)
+                    let w = both ? (column - TileLayout.gap) / 2 : column
+                    HStack(spacing: TileLayout.gap) {
+                        if both {
+                            StripPlayButton(width: w, isEnabled: !strip.isEmpty) { engine.speakStrip() }
+                        }
+                        ClearButton(width: w, isEnabled: !strip.isEmpty, action: onClear)
+                    }
+                    .frame(width: column)
+                }
+                .padding(.leading, max(0, align.grid.minX - trayFrame.minX))
+                .padding(.trailing, max(0, trayFrame.maxX - (align.rail?.maxX ?? align.grid.maxX)))
+                .padding(.vertical, 4)
+            } else {
+                standaloneRow
+            }
+        }
+        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { trayFrame = $0 }
+        .animation(.easeInOut(duration: 0.2), value: strip.count)
+    }
+
+    private var standaloneRow: some View {
         HStack(spacing: 8) {
             stripCard
                 .frame(maxWidth: .infinity)
@@ -67,10 +103,15 @@ struct SingleWordTrayView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 4)
-        .animation(.easeInOut(duration: 0.2), value: strip.count)
     }
 
     // MARK: - Strip
+
+    /// The square look: a white strip whatever the appearance, its words bare
+    /// pictures (`PlainTrayPicture`), as in the sentence tray.
+    private var isFlush: Bool {
+        railAlignment != nil && engine.trayShowsPictures && TileLook.current() == .square
+    }
 
     private var stripCard: some View {
         ScrollViewReader { proxy in
@@ -86,7 +127,8 @@ struct SingleWordTrayView: View {
                     } else {
                         ForEach(Array(strip.enumerated()), id: \.offset) { idx, tile in
                             WordChip(tile: tile,
-                                     showsPicture: engine.trayShowsPictures) {
+                                     showsPicture: engine.trayShowsPictures,
+                                     side: isFlush ? Self.stripHeight : nil) {
                                 onRemove(idx)
                             }
                                 .overlay(alignment: .topTrailing) {
@@ -109,7 +151,7 @@ struct SingleWordTrayView: View {
                     }
                 }
                 .padding(.horizontal, 8)
-                .padding(.vertical, 6)
+                .padding(.vertical, isFlush ? 0 : 6)
                 // Fixed height so the tray doesn't grow when the first word
                 // lands (empty-hint and filled states must be the same height).
                 .frame(height: Self.stripHeight)
@@ -124,14 +166,19 @@ struct SingleWordTrayView: View {
                 }
             }
         }
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(.ultraThinMaterial)
-        )
+        .clipShape(RoundedRectangle(cornerRadius: isFlush ? TileLayout.cornerRadius : 14))
+        .background {
+            if isFlush {
+                RoundedRectangle(cornerRadius: TileLayout.cornerRadius).fill(Color.white)
+            } else {
+                RoundedRectangle(cornerRadius: 14).fill(.ultraThinMaterial)
+            }
+        }
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+            RoundedRectangle(cornerRadius: isFlush ? TileLayout.cornerRadius : 14)
+                .strokeBorder(Color.primary.opacity(isFlush ? 0 : 0.08), lineWidth: 1)
         )
+        .environment(\.colorScheme, isFlush ? .light : colorScheme)
     }
 }
 
@@ -162,6 +209,9 @@ private struct WordChip: View {
     /// there — so honouring the stage in one of them honours it in neither
     /// mode the child might actually be in.
     var showsPicture: Bool = true
+    /// A bare picture and its word this tall, on the white strip. Nil draws
+    /// the classic chip.
+    var side: CGFloat? = nil
     let onTap: () -> Void
 
     /// The card's square picture area — unchanged, so the strip did not have to
@@ -193,7 +243,17 @@ private struct WordChip: View {
             .contentShape(Rectangle())
     }
 
+    @ViewBuilder
     private var card: some View {
+        if let side {
+            PlainTrayPicture(tile: tile, labelSize: 12)
+                .frame(width: 70, height: side)
+        } else {
+            classicCard
+        }
+    }
+
+    private var classicCard: some View {
             VStack(spacing: 0) {
                 TileImageView(key: tile.key, wordClass: tile.wordClass)
                     .padding(2)
@@ -232,6 +292,7 @@ private struct StripPlayButton: View {
     @ScaledMetric(relativeTo: .caption2) private var labelSize: CGFloat = 10
 
     var height: CGFloat = SingleWordTrayView.stripHeight
+    var width: CGFloat = 60
     let isEnabled: Bool
     let action: () -> Void
 
@@ -246,7 +307,7 @@ private struct StripPlayButton: View {
                     .minimumScaleFactor(0.6)
             }
             .foregroundStyle(isEnabled ? Color.accentColor : .secondary)
-            .frame(width: 60, height: height)
+            .frame(width: width, height: height)
             .background(TrayCardBackground(cornerRadius: 12))
             .opacity(isEnabled ? 1 : 0.5)
         }
@@ -262,6 +323,7 @@ private struct ClearButton: View {
 
     /// Matches `SingleWordTrayView.stripHeight` so the row reads as one band.
     var height: CGFloat = SingleWordTrayView.stripHeight
+    var width: CGFloat = 60
     let isEnabled: Bool
     let action: () -> Void
 
@@ -276,7 +338,7 @@ private struct ClearButton: View {
                     .minimumScaleFactor(0.6)
             }
             .foregroundStyle(isEnabled ? .red : .secondary)
-            .frame(width: 60, height: height)
+            .frame(width: width, height: height)
             .background(TrayCardBackground(cornerRadius: 12))
             .opacity(isEnabled ? 1 : 0.5)
         }

@@ -37,16 +37,18 @@ are tedious and error-prone by hand:
    path one level down, it is not a topic toolbar. A folder page does not repeat
    its siblings (Mark 2026-10-25: Describe › How much showing Size, Where… made
    deep, confusing chains). What a folder page keeps is **its own tile, in the
-   cell its parent shows it in**: the app draws it as "you are here" (a striped
-   ring and a red dot) and it does nothing when pressed, so a child who cannot
+   cell its parent shows it in**: the app draws it as "you are here" (a dark
+   bar along its bottom edge and a veiled picture) and it does nothing when pressed, so a child who cannot
    read sees the tile they just pressed, where they pressed it. The rest of the
    column is empty unless the page has folders of its own, declared as
    `folders` inside the folder.
 
 4. **Same word, same cell** (Avaz, Mark 2026-10-25: *teacher* sits in one cell on
    People and on School people). A word on a page and on one of its ancestors
-   takes the ancestor's cell, nearest ancestor first. Only words in columns 1–8
-   pin: a cell in the folder column is a folder on the page below. Up-front words
+   takes the ancestor's cell, nearest ancestor first. Words in columns 1–8
+   pin; a word `at` put in columns 9–10 takes its cell when the page below
+   leaves it empty. Home's columns 9–10 are its don't · stop · not cluster
+   and do not pin. Up-front words
    on Actions take their Home cells, and Moving's take Actions'.
 
 Everything else fills columns 1–8 row by row, in spec order.
@@ -64,7 +66,8 @@ LAYING OUT A PAGE
 An entry in a page's `words` is a word or a **run**, a list kept side by side in
 one row (`["fast", "slow"]`). A run that holds an inherited word grows out from
 that word's cell. `at` places a run by hand (`{"r5c1": ["right", "okay_",
-"wrong"]}`). Everything else takes the first free cells, row by row.
+"wrong"]}`), and is the one way onto a cell of columns 9–10 the page's folders
+leave empty. Everything else takes the first free cells, row by row.
 
 THE CHECKS
 ----------
@@ -236,14 +239,20 @@ class Board:
         # Same word, same cell: nearest ancestor first. Only pages the spec lays
         # out have cells to inherit; `things` sits under the Things hub, a page
         # of folders the spec does not own.
-        lineage = [self.layout(a) for a in self.ancestors(key) if a in self.pages]
-        inherited = {}
+        lineage = [(a, self.layout(a)) for a in self.ancestors(key) if a in self.pages]
+        inherited, spare = {}, {}
         for w in flat:
-            for anc in lineage:
+            for a, anc in lineage:
                 c = next((c for c, e in anc.items() if e["key"] == w), None)
                 if c is not None:
                     if c >= COLS and c % COLS in WORD_COLS:
                         inherited[w] = c
+                    elif c >= COLS and a != "home" and not (anc[c].get("to") and not anc[c]["audible"]):
+                        # A word `at` put in columns 9–10 (Describe's ugly,
+                        # beside pretty): its cell when this page's folders
+                        # leave it empty, else an ordinary placement. Home's
+                        # columns 9–10 are its cluster, not cells to inherit.
+                        spare[w] = c
                     break
 
         def free(c):
@@ -253,11 +262,14 @@ class Board:
             grid[c] = self.word(w, key)
 
         # `at` places a run by hand: Describe's right · okay · wrong under Home's
-        # yes · all done · no.
+        # yes · all done · no. It may use a cell of columns 9–10 the page's
+        # folders leave empty, so two blocks of four can stand either side of
+        # an empty column (Feelings, Social: Mark 2026-10-27).
         for name, run in page.get("at", {}).items():
             r, c = int(name[1:].split("c")[0]) - 1, int(name.split("c")[1]) - 1
             for j, w in enumerate(run):
-                if not free(cell(r, c + j)):
+                x = cell(r, c + j)
+                if c + j >= COLS or x < COLS or x in grid:
                     self.errors.append(f"{key}: {name} cannot hold {run}")
                     break
                 put(w, cell(r, c + j))
@@ -270,6 +282,11 @@ class Board:
                 placed.add(w)
             elif w not in placed:
                 self.errors.append(f"{key}: {w} cannot take its cell {c} (taken)")
+        for w, c in spare.items():
+            if w not in placed and c not in grid:
+                put(w, c)
+                placed.add(w)
+                inherited[w] = c
 
         def span(start, n):
             cells = [start + j for j in range(n)]
@@ -555,10 +572,7 @@ def render_html(board, vocab, pos, path):
                 cls += " path"
         pic = f'<img src="{img}" alt="">' if img else '<span class="ph">new art</span>'
         pic = f'<div class="pic">{pic}</div>'
-        if "here" in cls or "path" in cls:
-            pic = f'<div class="frame">{pic}</div>'
-        badge = ('<span class="dot"></span>' if "here" in cls
-                 else '<span class="arrow">↗</span>' if "door" in cls else "")
+        badge = '<span class="arrow">↗</span>' if "door" in cls else ""
         return (f'<div class="cell {cls}" style="--c:{color}">{badge}{pic}'
                 f'<div class="lbl">{html.escape(name)}</div></div>')
 
@@ -605,11 +619,8 @@ h1 { font-size:26px; margin:0 0 6px; } h3 { font-size:17px; margin:34px 0 2px; }
 .cell { position:relative; aspect-ratio:1/1.12; border-radius:8px; background:var(--c); display:flex; flex-direction:column; overflow:hidden; min-width:0; }
 .cell.empty { background:transparent; border:1.5px dashed var(--line); }
 .cell.pin { box-shadow:0 0 0 3px var(--fg); }
-.frame { flex:1; display:flex; margin:1px 1px 0; padding:3px; border-radius:7px; min-height:0;
-  background:repeating-linear-gradient(45deg, #111 0 6px, #ffd600 6px 12px); }
-.here .frame .pic { opacity:.55; }
-.frame .pic { margin:0; }
-.dot { position:absolute; top:1px; left:1px; width:12px; height:12px; border-radius:50%; background:#e5262b; box-shadow:0 0 0 2px #fff; z-index:2; }
+.here::after, .path::after { content:""; position:absolute; left:0; right:0; bottom:0; height:5px; background:#1a1a1a; }
+.here .pic { opacity:.45; }
 .arrow { position:absolute; top:2px; right:4px; font-size:13px; font-weight:800; color:#111; z-index:1; }
 .pic { flex:1; margin:4px 4px 0; background:#fff; border-radius:6px; display:flex; align-items:center; justify-content:center; overflow:hidden; min-height:0; }
 .pic img { width:100%; height:100%; object-fit:contain; }
@@ -624,7 +635,7 @@ h1 { font-size:26px; margin:0 0 6px; } h3 { font-size:17px; margin:34px 0 2px; }
 <p class="lede">Built from <code>tools/board_spec/blasterai60.json</code> by <code>tools/build_core_board.py</code>.
 Row 1 is the system row, inherited by every page rather than stored on it. Blue tiles are folders; a ↗ marks a doorway, a word that speaks and opens a page.
 A ringed cell holds the same word in the same cell as on the page above it.
-A blue-and-green striped tile is on the way to this page; with a red dot, it is this page (pressing it does nothing).</p>{body}</main></body></html>"""
+A dark bar along a tile's bottom edge marks the way to this page; with its picture veiled, it is this page (pressing it does nothing).</p>{body}</main></body></html>"""
     Path(path).write_text(doc)
 
 

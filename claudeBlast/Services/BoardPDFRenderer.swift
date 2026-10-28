@@ -89,7 +89,7 @@ struct BoardPrintOptions: Equatable {
     var paper: PaperSize = .usLetter
     /// **Landscape, to match the board.**
     ///
-    /// The app's grid is landscape and twelve columns wide, and a printed board
+    /// The app's grid is landscape and ten columns wide, and a printed board
     /// that is neither is a second layout for the same vocabulary. A child who
     /// has learned where `want` sits has learned a position, not a word, and a
     /// portrait sheet moves every position on it.
@@ -111,6 +111,8 @@ struct BoardPrintOptions: Equatable {
     /// a low density — a setting, not a separate layout.
     var cutLines = false
     var filter = BoardPrintFilter()
+    /// The tile the sheet draws: the board's own look, read when the sheet is set up.
+    var look: TileLook = TileLook.current()
 
     /// A tile larger than this outruns the 512 px source art and visibly softens.
     static let maxTileInches: CGFloat = 3.0
@@ -738,16 +740,23 @@ enum BoardPDFRenderer {
         // tint, nothing to say where one tile stopped and the next began. That
         // reads as a contact sheet, not a board, and it throws away the
         // wordClass color a child and caregiver have already learned on screen.
-        // The card, its tint, its border and the link indicator all mirror
-        // `TileView.tileCard` so the laminated sheet and the iPad agree.
-        let radius = max(3, card.width * 0.09)
+        // The card, its tint and the link indicator mirror `TileFace` so the
+        // laminated sheet and the iPad agree. On the square look that is the
+        // board's own tint with the picture on a white card, the way a square
+        // tile holds a picture that was not cut out, and no border: the colour
+        // is the edge. The word stays on top and the link names its page —
+        // those are for paper, not for the look.
+        let square = options.look == .square
+        let radius = square ? max(2, card.width * 0.06) : max(3, card.width * 0.09)
         let border = max(1.0, card.width * 0.028)
-        let accent = navigates
-            ? UIColor(TileColorResolver.linkColor(slotRawValue: entry.linkColor, isAudible: entry.isAudible))
-            : UIColor(TileColorResolver.color(for: tile))
+        let accentColor = navigates
+            ? TileColorResolver.linkColor(slotRawValue: entry.linkColor, isAudible: entry.isAudible)
+            : TileColorResolver.color(for: tile)
+        let accent = UIColor(accentColor)
 
         let cardPath = UIBezierPath(roundedRect: card, cornerRadius: radius)
-        accent.withAlphaComponent(0.14).setFill()
+        (square ? UIColor(TileColorResolver.tint(accentColor, mix: TileLayout.tintMix))
+                : accent.withAlphaComponent(0.14)).setFill()
         cardPath.fill()
 
         // Label across the top, inside the card.
@@ -801,6 +810,10 @@ enum BoardPDFRenderer {
         // key found nothing and the cover printed blank — while the app and the
         // OBZ, which both go through `bundleImage`, showed it correctly.
         let artKey = tile?.bundleImage.isEmpty == false ? tile!.bundleImage : entry.key
+        if square {
+            UIColor.white.setFill()
+            UIBezierPath(roundedRect: artRect, cornerRadius: 1.5).fill()
+        }
         if let cg = images.image(for: artKey, in: imageSet, pointSize: layout.imageSide),
            let ctx = UIGraphicsGetCurrentContext() {
             // CoreGraphics draws images bottom-up; a UIKit PDF context is
@@ -846,6 +859,7 @@ enum BoardPDFRenderer {
         }
         UIGraphicsGetCurrentContext()?.restoreGState()
 
+        guard !square else { return }
         accent.withAlphaComponent(0.75).setStroke()
         let borderPath = UIBezierPath(roundedRect: card.insetBy(dx: border / 2, dy: border / 2),
                                       cornerRadius: radius)

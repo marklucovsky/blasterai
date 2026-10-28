@@ -38,6 +38,10 @@ struct GridLayoutSpec: Equatable {
     /// One slot of the control rail (`ControlRail`): a tile wide on the side
     /// rail, and as tall as the bottom one. 0 when there is no rail.
     var railSlot: CGFloat = 0
+    /// A bottom rail slot's width: a tile, or less when the slots would not
+    /// fit across. Its height (`railSlot`) can be more, to keep a half-height
+    /// control a whole touch target.
+    var railSlotWidth: CGFloat = 0
 
     var perPage: Int { cols * rows }
 }
@@ -47,9 +51,10 @@ enum RailPlacement: Equatable {
     case none
     /// iPad landscape: a column one tile wide at the right of the grid.
     case side
-    /// iPad portrait and iPhone: a row under the grid of `slots` square slots,
-    /// a tile tall at most.
-    case bottom(slots: Int)
+    /// iPad portrait and iPhone: a row under the grid of `slots` slots, a tile
+    /// wide at most. `pairs` when a slot holds two controls over/under, which
+    /// sets a floor on its height (`GridLayoutCalculator.minTarget`).
+    case bottom(slots: Int, pairs: Bool = false)
 }
 
 /// The three board layouts a device can show, as fixed grids.
@@ -205,6 +210,12 @@ enum GridLayoutCalculator {
     /// Between the grid and the control rail: a little more than the tiles'
     /// own gap, so the rail reads as a separate strip of controls.
     static let railGap: CGFloat = 6
+
+    /// The smallest touch target the rail draws, half-height controls included:
+    /// Apple's 44pt minimum. A pair of them on the bottom rail is two of these
+    /// and a gap tall, even where a tile is shorter — about 38pt halves in iPad
+    /// portrait and 29pt on a phone before this floor.
+    static let minTarget: CGFloat = 44
 
     /// Vertical padding above and below the word in its colored label band.
     ///
@@ -376,9 +387,9 @@ enum GridLayoutCalculator {
                 // One more column, a little further off.
                 tile = min(tile, renderTile(forCols: grid.cols + 1,
                                             availW: availW - (railGap - spacing), spacing: spacing))
-            case .bottom(let slots):
+            case .bottom(let slots, let pairs):
                 tile = min(tile, largestTile(fittingRows: grid.rows,
-                                             availH: availH - bottomRail(slots: slots, tile: tile,
+                                             availH: availH - bottomRail(slots: slots, pairs: pairs, tile: tile,
                                                                          availW: availW) - railGap,
                                              textScale: textScale, look: look))
             }
@@ -398,8 +409,8 @@ enum GridLayoutCalculator {
         // The rail's room comes out of the height first: off the designed
         // orientation the board sizes tiles, and the rail is one more row.
         func usableH(_ tileW: CGFloat) -> CGFloat {
-            if case .bottom(let slots) = rail {
-                return availH - bottomRail(slots: slots, tile: tileW, availW: availW) - railGap
+            if case .bottom(let slots, let pairs) = rail {
+                return availH - bottomRail(slots: slots, pairs: pairs, tile: tileW, availW: availW) - railGap
             }
             return availH
         }
@@ -452,9 +463,16 @@ enum GridLayoutCalculator {
                       screenSize: screenSize, geo: geo, layout: layout, look: look, rail: rail)
     }
 
-    /// The bottom rail's height: square slots a tile tall, or smaller when
-    /// `slots` of them would not fit across.
-    private static func bottomRail(slots: Int, tile: CGFloat, availW: CGFloat) -> CGFloat {
+    /// The bottom rail's height: as tall as its slots are wide, and tall
+    /// enough for two whole touch targets when a slot holds a pair.
+    private static func bottomRail(slots: Int, pairs: Bool, tile: CGFloat, availW: CGFloat) -> CGFloat {
+        let width = bottomRailWidth(slots: slots, tile: tile, availW: availW)
+        return pairs ? max(width, minTarget * 2 + TileLayout.gap) : width
+    }
+
+    /// A bottom rail slot's width: a tile, or narrower when `slots` of them
+    /// would not fit across.
+    private static func bottomRailWidth(slots: Int, tile: CGFloat, availW: CGFloat) -> CGFloat {
         min(tile, renderTile(forCols: max(1, slots), availW: availW, spacing: TileLayout.gap))
     }
 
@@ -467,11 +485,13 @@ enum GridLayoutCalculator {
         let spacing = Self.spacing(look)
         let result = (cols: cols, rows: rows, tileW: tileW)
         let availW = max(0, geo.width - hPad)
-        let railSlot: CGFloat = {
+        let (railSlot, railSlotWidth): (CGFloat, CGFloat) = {
             switch rail {
-            case .none: return 0
-            case .side: return tileW
-            case .bottom(let slots): return bottomRail(slots: slots, tile: tileW, availW: availW)
+            case .none: return (0, 0)
+            case .side: return (tileW, tileW)
+            case .bottom(let slots, let pairs):
+                return (bottomRail(slots: slots, pairs: pairs, tile: tileW, availW: availW),
+                        bottomRailWidth(slots: slots, tile: tileW, availW: availW))
             }
         }()
         // The grid's own width: the side rail stands beside it.
@@ -506,7 +526,8 @@ enum GridLayoutCalculator {
             verticalSpacing: vSpacing,
             horizontalSpacing: isEven ? even : spacing,
             horizontalPadding: isEven ? even : hPad / 2,
-            railSlot: railSlot
+            railSlot: railSlot,
+            railSlotWidth: railSlotWidth
         )
 
         #if DEBUG

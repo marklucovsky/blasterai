@@ -54,6 +54,9 @@ private let kActiveImageSize: CGFloat = kActiveCardHeight - (kCardVerticalPaddin
 /// identifies a chip by its image, and the full word is one tap away.
 private let kActiveCardWidth: CGFloat = kActiveImageSize + 12
 
+/// A bare tray picture's width: its picture, and room for most words.
+private let kPlainChipWidth: CGFloat = 76
+
 private let kPlayButtonWidth: CGFloat = 82
 /// Compact (phone) width for the Play / Clear column.
 private let kCompactButtonWidth: CGFloat = 60
@@ -168,6 +171,14 @@ struct SentenceTrayView: View {
         !engine.activeGroup.tiles.isEmpty
     }
 
+    /// Where the board's grid and side rail are. The tray then lines up with
+    /// them: the card over the grid, its first chip on the first column, and
+    /// Speak and Clear over the rail at its width, so they read as the rail's
+    /// top slot (Mark 2026-10-27: they belong to the tray, and only line up
+    /// with the rail). Nil before the board has been measured.
+    var railAlignment: RailAlignment? = nil
+    @State private var trayFrame: CGRect = .zero
+
     // Caregiver editor sheets (refine / hand-type override of a generated sentence).
     @State private var editSheet: TrayEditSheet?
     @State private var handTypeDraft = ""
@@ -177,14 +188,8 @@ struct SentenceTrayView: View {
     // MARK: - Body
 
     var body: some View {
-        activeRow
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color(.systemGray6))
-        )
-        .padding(.horizontal)
+        trayContent
+        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { trayFrame = $0 }
         .sheet(item: $editSheet) { sheet in
             switch sheet {
             case .refine:
@@ -224,8 +229,64 @@ struct SentenceTrayView: View {
     /// is gone and Home moved out of the tray (it is on the rail), which left an entire
     /// 38pt row carrying one small card. Folding Favorites up here deletes that
     /// row — the tray is shorter, which is the whole point of the exercise.
+    /// The square look's tray: white whatever the appearance, its words bare
+    /// pictures with no card behind them (Avaz, Mark 2026-10-27). A row of
+    /// coloured cards over a board of coloured tiles read as a second row of
+    /// buttons, and its hard edges showed every point it missed the grid by.
+    private var isSquare: Bool { TileLook.current() == .square }
+
+    @ViewBuilder
+    private var trayContent: some View {
+        if let align = railAlignment, trayFrame.width > 0 {
+            HStack(spacing: 0) {
+                Group {
+                    if isSquare {
+                        activeCard
+                            .frame(height: kCardHeight)
+                            .background(RoundedRectangle(cornerRadius: TileLayout.cornerRadius)
+                                .fill(Color.white))
+                            // White in dark mode too, so its words and sentence
+                            // are drawn as on a light page.
+                            .environment(\.colorScheme, .light)
+                    } else {
+                        activeCard
+                            .frame(height: kActiveRowHeight)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(RoundedRectangle(cornerRadius: 16).fill(Color(.systemGray6)))
+                    }
+                }
+                .frame(maxWidth: align.rail == nil ? .infinity : align.grid.width)
+                Spacer(minLength: GridLayoutCalculator.railGap)
+                playColumn(width: align.rail?.width)
+            }
+            .padding(.leading, max(0, align.grid.minX - trayFrame.minX))
+            .padding(.trailing, max(0, trayFrame.maxX - (align.rail?.maxX ?? align.grid.maxX)))
+        } else {
+            activeRow
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color(.systemGray6))
+                )
+                .padding(.horizontal)
+        }
+    }
+
     private var activeRow: some View {
         HStack(alignment: .center, spacing: 12) {
+            activeCard
+
+            // Play and Clear handle their own enabled/disabled rendering —
+            // no outer opacity wrap so they stay visible even when the
+            // active group is empty (matches the iPhone tray).
+            playColumn()
+        }
+        .frame(height: kActiveRowHeight)
+    }
+
+    private var activeCard: some View {
             ActiveTrayCard(
                 tiles: engine.activeGroup.tiles,
                 sentence: engine.activeGroup.sentence,
@@ -235,16 +296,10 @@ struct SentenceTrayView: View {
                 onBubbleLongPress: { showBubbleActions = true },
                 onBackspace: { engine.removeLastSelectedTile() },
                 isSuppressed: engine.activeIsSuppressed,
-                showsPictures: engine.trayShowsPictures
+                showsPictures: engine.trayShowsPictures,
+                isFlush: railAlignment != nil && isSquare
             )
             .frame(maxWidth: .infinity, alignment: .leading)
-
-            // Play and Clear handle their own enabled/disabled rendering —
-            // no outer opacity wrap so they stay visible even when the
-            // active group is empty (matches the iPhone tray).
-            playColumn
-        }
-        .frame(height: kActiveRowHeight)
     }
 
     /// Play button + Done (commit) button stacked vertically. Total height = kCardHeight.
@@ -253,7 +308,8 @@ struct SentenceTrayView: View {
     /// the top stage lost Play and with it any way to hear the thing being
     /// built. The controls are the same three at every stage — clear, backspace,
     /// play — and only backspace moves, into the text area where the words are.
-    private var playColumn: some View {
+    /// - Parameter width: the rail's, when the column stands over it.
+    private func playColumn(width: CGFloat? = nil) -> some View {
         VStack(spacing: kPlayDoneSpacing) {
             PrimaryPlayButton(
                 canFire: canFire,
@@ -261,7 +317,8 @@ struct SentenceTrayView: View {
                 isReplay: canReplay,
                 replayCount: engine.repetitionCount,
                 isSingleWord: isSingleTile,
-                action: primaryAction
+                action: primaryAction,
+                columnWidth: width
             )
             .allowsHitTesting(canFire)
             .opacity(canFire ? 1 : 0.45)
@@ -269,19 +326,31 @@ struct SentenceTrayView: View {
             if isSingleTile {
                 SingleWordPlayButton(
                     escalationCount: singleWordEscalation,
-                    action: onPlaySingle
+                    action: onPlaySingle,
+                    columnWidth: width
                 )
             } else {
                 DoneButton(
                     isEnabled: hasActiveContent,
                     isNudge: engine.isDoneNudge && hasActiveContent,
-                    action: onCommitActive
+                    action: onCommitActive,
+                    columnWidth: width
                 )
             }
         }
         .frame(height: kCardHeight)
     }
 
+}
+
+/// Where the board's grid and its side rail are on screen, for the tray to
+/// line up with: its first chip on the grid's first column, its Speak/Clear
+/// column over the rail, or at the grid's right edge when the rail is below.
+nonisolated struct RailAlignment: Equatable, Sendable {
+    /// The grid's tiles, in global coordinates.
+    let grid: CGRect
+    /// The side rail, in global coordinates. Nil when the rail is below.
+    var rail: CGRect?
 }
 
 // MARK: - iPad bottom-row sizing
@@ -318,6 +387,9 @@ private struct ActiveTrayCard: View {
     /// environment here so the width arithmetic below and the chips themselves
     /// cannot disagree about which shape is being drawn.
     var showsPictures: Bool = true
+    /// Bare pictures on the white tray, as tall as it. See
+    /// `SentenceTrayView.isSquare`.
+    var isFlush: Bool = false
 
     var body: some View {
         // Measured, because "is there room for the sentence" is a question
@@ -355,7 +427,7 @@ private struct ActiveTrayCard: View {
     private func sentenceWidth(in width: CGFloat) -> CGFloat {
         let spacing: CGFloat = showsPictures ? 8 : 5
         let chips: CGFloat = showsPictures
-            ? CGFloat(tiles.count) * kActiveCardWidth
+            ? CGFloat(tiles.count) * (isFlush ? kPlainChipWidth : kActiveCardWidth)
             : tiles.reduce(0) { $0 + Self.wordWidth(of: $1.value) }
         let total = chips
             + CGFloat(max(0, tiles.count - 1)) * spacing
@@ -392,7 +464,8 @@ private struct ActiveTrayCard: View {
                 // gappy list rather than a sentence.
                 HStack(spacing: showsPictures ? 8 : 5) {
                     ForEach(Array(tiles.enumerated()), id: \.offset) { index, tile in
-                        ActiveTileCard(tile: tile, showsPicture: showsPictures) {
+                        ActiveTileCard(tile: tile, showsPicture: showsPictures,
+                                       side: isFlush ? kCardHeight : nil) {
                             onTileTap(index)
                         }
                             .transition(.scale.combined(with: .opacity))
@@ -697,6 +770,9 @@ private struct ActiveTileCard: View {
     /// False at Stage IV+, where the chip is the word alone — see
     /// `BrownsStage.showsPicturesInTray`.
     var showsPicture: Bool = true
+    /// A bare picture and its word this tall, on the white tray. Nil draws
+    /// the classic chip.
+    var side: CGFloat? = nil
     let onTap: () -> Void
 
     /// The selection carries the part of speech it was created with, so a chip
@@ -743,7 +819,17 @@ private struct ActiveTileCard: View {
             .contentShape(Rectangle())
     }
 
+    @ViewBuilder
     private var picture: some View {
+        if let side {
+            PlainTrayPicture(tile: tile, labelSize: 13)
+                .frame(width: kPlainChipWidth, height: side)
+        } else {
+            classicPicture
+        }
+    }
+
+    private var classicPicture: some View {
             VStack(spacing: 0) {
                 TileImageView(key: tile.key, wordClass: tile.wordClass)
                     // maxHeight, not height. The label is laid out at whatever
@@ -779,6 +865,30 @@ private struct ActiveTileCard: View {
             .background(accent)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .shadow(color: .black.opacity(0.10), radius: 3, y: 1)
+    }
+}
+
+/// A word in the tray as Avaz draws it: the picture alone, cut off its white
+/// where the set allows, and the word under it in ink. No card and no colour:
+/// the tray is a line being said, not a second row of tiles. Shared by both
+/// trays.
+struct PlainTrayPicture: View {
+    let tile: TileSelection
+    var labelSize: CGFloat = 12
+
+    var body: some View {
+        VStack(spacing: 2) {
+            TileImageView(key: tile.key, wordClass: tile.wordClass, drawsOnTint: true)
+                .aspectRatio(1, contentMode: .fit)
+                .frame(maxHeight: .infinity)
+            Text(tile.value)
+                .font(.system(size: labelSize, weight: .medium))
+                .foregroundStyle(Color(white: 0.1))
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+        }
+        .padding(.vertical, 6)
+        .contentShape(Rectangle())
     }
 }
 
@@ -863,6 +973,8 @@ struct PrimaryPlayButton: View {
     /// give ground.
     @ScaledMetric(relativeTo: .caption) private var compactButtonWidth: CGFloat = kCompactButtonWidth
     @ScaledMetric(relativeTo: .caption) private var padButtonWidth: CGFloat = kPlayButtonWidth
+    /// The rail's width, when the column stands over the control rail.
+    var columnWidth: CGFloat? = nil
 
     /// Growth is capped at 1.6x. Uncapped, the column reached ~150pt of a
     /// 393pt phone at the largest accessibility setting, and the tray beside it
@@ -874,6 +986,7 @@ struct PrimaryPlayButton: View {
     /// Past the cap the label gives way rather than the column growing further;
     /// `ViewThatFits` above already knows how.
     private var buttonWidth: CGFloat {
+        if let columnWidth { return columnWidth }
         let base = compact ? kCompactButtonWidth : kPlayButtonWidth
         let scaled = compact ? compactButtonWidth : padButtonWidth
         return min(scaled, base * 1.6)
@@ -1057,6 +1170,8 @@ struct DoneButton: View {
     /// give ground.
     @ScaledMetric(relativeTo: .caption) private var compactButtonWidth: CGFloat = kCompactButtonWidth
     @ScaledMetric(relativeTo: .caption) private var padButtonWidth: CGFloat = kPlayButtonWidth
+    /// The rail's width, when the column stands over the control rail.
+    var columnWidth: CGFloat? = nil
 
     /// Growth is capped at 1.6x. Uncapped, the column reached ~150pt of a
     /// 393pt phone at the largest accessibility setting, and the tray beside it
@@ -1068,6 +1183,7 @@ struct DoneButton: View {
     /// Past the cap the label gives way rather than the column growing further;
     /// `ViewThatFits` above already knows how.
     private var buttonWidth: CGFloat {
+        if let columnWidth { return columnWidth }
         let base = compact ? kCompactButtonWidth : kPlayButtonWidth
         let scaled = compact ? compactButtonWidth : padButtonWidth
         return min(scaled, base * 1.6)
@@ -1257,6 +1373,8 @@ struct SingleWordPlayButton: View {
     /// give ground.
     @ScaledMetric(relativeTo: .caption) private var compactButtonWidth: CGFloat = kCompactButtonWidth
     @ScaledMetric(relativeTo: .caption) private var padButtonWidth: CGFloat = kPlayButtonWidth
+    /// The rail's width, when the column stands over the control rail.
+    var columnWidth: CGFloat? = nil
 
     /// Growth is capped at 1.6x. Uncapped, the column reached ~150pt of a
     /// 393pt phone at the largest accessibility setting, and the tray beside it
@@ -1268,6 +1386,7 @@ struct SingleWordPlayButton: View {
     /// Past the cap the label gives way rather than the column growing further;
     /// `ViewThatFits` above already knows how.
     private var buttonWidth: CGFloat {
+        if let columnWidth { return columnWidth }
         let base = compact ? kCompactButtonWidth : kPlayButtonWidth
         let scaled = compact ? compactButtonWidth : padButtonWidth
         return min(scaled, base * 1.6)

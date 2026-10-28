@@ -478,15 +478,49 @@ struct PageEditorView: View {
 /// moved or removed.
 struct SpacerCell: View {
     var body: some View {
-        VStack(spacing: 3) {
-            RoundedRectangle(cornerRadius: 10)
+        DashedCell(label: "space", look: TileLook.current())
+    }
+}
+
+/// A cell the child never sees — a gap, the editor's Add — drawn as a dashed
+/// outline the shape of a tile, so it lines up with the tiles around it: the
+/// whole square on the square look, the picture with its word under it on the
+/// classic one.
+struct DashedCell: View {
+    var systemImage: String? = nil
+    let label: String
+    let look: TileLook
+
+    var body: some View {
+        if look == .square {
+            RoundedRectangle(cornerRadius: TileFace.radius(look))
                 .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
                 .foregroundStyle(.tertiary)
                 .aspectRatio(1, contentMode: .fit)
-            Text("space")
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(.tertiary)
-                .frame(maxWidth: .infinity)
+                .overlay {
+                    VStack(spacing: 2) {
+                        if let systemImage {
+                            Image(systemName: systemImage).font(.title2).foregroundStyle(.secondary)
+                        }
+                        Text(label).font(.system(size: 10, weight: .medium)).foregroundStyle(.tertiary)
+                    }
+                }
+        } else {
+            VStack(spacing: 3) {
+                RoundedRectangle(cornerRadius: 10)
+                    .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
+                    .foregroundStyle(.tertiary)
+                    .aspectRatio(1, contentMode: .fit)
+                    .overlay {
+                        if let systemImage {
+                            Image(systemName: systemImage).font(.title2).foregroundStyle(.secondary)
+                        }
+                    }
+                Text(label)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.tertiary)
+                    .frame(maxWidth: .infinity)
+            }
         }
     }
 }
@@ -507,69 +541,15 @@ struct PageTileCell: View {
     /// because that is what the child at that level sees.
     var isAbovePreview: Bool = false
 
-    /// Same rule as the board: part of speech for a word, the link's own slot
-    /// for a folder.
-    ///
-    /// **This has to go through `TileColorResolver.linkColor` and not straight
-    /// to `navigation`.** It did the latter, which was correct while every
-    /// folder was blue and became a lie the moment they were not: the editor
-    /// drew twelve identical blue folders for a board that renders them in six
-    /// colors, so a caregiver arranging by color was arranging against a picture
-    /// that does not exist. Same reason the label joined the card here.
-    private var accent: Color {
-        link.isEmpty
-            ? TileColorResolver.color(for: tile)
-            : TileColorResolver.linkColor(slotRawValue: linkColor, isAudible: isAudible)
-    }
-
     var body: some View {
-        // The editor draws the tile the way the child will see it.
-        //
-        // It was a bare picture, which was survivable while color was a hairline
-        // nobody arranged by. Now that color means part of speech, a caregiver
-        // grouping the board into color blocks — the whole point of a Fitzgerald
-        // layout — was doing it blind here and only finding out on the board.
-        //
-        // The label joined the card for the same reason it did on the board: the
-        // arrangement being edited here has to look like the arrangement being
-        // read there, or the editor is showing a different object.
-        VStack(spacing: 0) {
-            // `.bottomTrailing` to match `TileView`, which is where the badge
-            // actually lives for a child. This drew it top-right, so the one
-            // mark that says "this opens something" sat in a different corner
-            // in the editor than on the board — a difference nobody chose, and
-            // one that survived because the badge used to be redundant with an
-            // unmistakable blue.
-            ZStack(alignment: .bottomTrailing) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 5)
-                        .fill(Color.white)
-                        .padding(6)
-                    TileImageView(key: tile.bundleImage, wordClass: tile.wordClass)
-                        .padding(8)
-                }
-                .aspectRatio(1, contentMode: .fit)
-
-                if !link.isEmpty {
-                    let badge = TileColorResolver.marker(on: accent)
-                    Image(systemName: "arrow.right.circle.fill")
-                        .font(.caption2)
-                        .foregroundStyle(TileColorResolver.label(on: badge), badge)
-                        .padding(4)
-                }
-            }
-
-            Text(tile.displayName)
-                .font(.system(size: 10, weight: .semibold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-                .foregroundStyle(TileColorResolver.label(on: accent))
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 3)
-                .padding(.vertical, GridLayoutCalculator.labelBandPadding)
-        }
-        .background(accent)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        // The editor draws the tile the way the child will see it: the board's
+        // own face, so a caregiver grouping the page into colour blocks — the
+        // whole point of a Fitzgerald layout — sees the blocks the child will.
+        // It once drew every folder blue for a board that renders them in six
+        // colours, and a caregiver arranging by colour was arranging against a
+        // picture that did not exist.
+        TileFace(tile: tile, key: tile.key, link: link, linkColor: linkColor,
+                 isAudible: isAudible, labelFontSize: 10)
         .opacity(isConcealed || isAbovePreview ? 0.32 : 1)
         // Outside the muting, and pinned to the square rather than the whole
         // card: the badge says "this word is hidden", so it must stay legible on
@@ -600,7 +580,6 @@ struct PageTileCell: View {
                     .accessibilityLabel("Appears from level \(revealLevel)")
             }
         }
-        .shadow(color: .black.opacity(0.1), radius: 2, y: 1)
     }
 }
 

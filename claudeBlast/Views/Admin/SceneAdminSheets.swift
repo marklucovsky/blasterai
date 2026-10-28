@@ -477,10 +477,16 @@ struct SceneGeneratorSheet: View {
     /// Show a cached starter in the shared Scene Preview (no API call). Accept
     /// imports the bundle (preserving its art); Refine turns it into a live scene.
     private func loadCachedStarter(_ starter: StarterScene) {
-        guard let loaded = starter.loadPreview() else {
+        guard var loaded = starter.loadPreview() else {
             generationError = "Couldn't load the example."
             return
         }
+        // On the page scheme, as a fresh generation is: its words around
+        // BlasterAI 60's frame, under the system row.
+        let lookup = Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
+        loaded.scene = ScenePreviewView.reselected(loaded.scene, template: .home,
+                                                   systemHome: SceneBuilder.systemHome(in: modelContext),
+                                                   lookup: lookup)
         cachedStarter = starter
         cachedPreviewImages = loaded.images
         if demoMode {
@@ -518,7 +524,17 @@ struct SceneGeneratorSheet: View {
         if let starter = cachedStarter {
             if let scene = starter.importBundle(context: modelContext) {
                 scene.creationSummary = "⚡ Served from cache — instant, no tokens used"
-                scene.applyStructure(structure)
+                if generated.template != nil {
+                    // The preview's pages, structure folded in, laid on the
+                    // template against the vocabulary the import just added.
+                    let tiles = (try? modelContext.fetch(FetchDescriptor<TileModel>())) ?? allTiles
+                    SceneBuilder.lay(generated, onto: scene,
+                                     lookup: Dictionary(tiles.map { ($0.key, $0) },
+                                                        uniquingKeysWith: { first, _ in first }),
+                                     context: modelContext)
+                } else {
+                    scene.applyStructure(structure)
+                }
                 logBrief(for: scene)
                 try? modelContext.save()
                 onAccept(scene)
@@ -983,60 +999,3 @@ struct SceneRefineInputSheet: View {
     }
 }
 
-// Lightweight tile cell for AI-generated preview grids (no SwiftData dependency).
-// Renders existing tiles and proposed-new words alike; `isNew` adds a badge and
-// the word renders as its letter placeholder (no art until generated/added).
-private struct GeneratedTileCell: View {
-    let key: String
-    let displayName: String
-    let wordClass: String
-    let link: String
-    var isNew: Bool = false
-    var imageData: Data? = nil
-
-    private var isNav: Bool { !link.isEmpty }
-
-    var body: some View {
-        VStack(spacing: 2) {
-            ZStack(alignment: .bottomTrailing) {
-                Group {
-                    if let imageData, let ui = UIImage(data: imageData) {
-                        Image(uiImage: ui).resizable().scaledToFit()
-                    } else {
-                        TileImageView(key: key, wordClass: wordClass)
-                    }
-                }
-                .aspectRatio(1, contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(isNav ? Color.blue.opacity(0.6) : Color.clear, lineWidth: 2)
-                )
-                .overlay(alignment: .topLeading) {
-                    if isNew {
-                        Text("NEW")
-                            .font(.system(size: 7, weight: .bold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 4)
-                            .padding(.vertical, 1)
-                            .background(Capsule().fill(.purple))
-                            .padding(3)
-                    }
-                }
-                .shadow(color: .black.opacity(0.1), radius: 1, y: 1)
-
-                if isNav {
-                    Image(systemName: "arrow.right.circle.fill")
-                        .font(.caption2)
-                        .foregroundStyle(.white, .blue)
-                        .padding(3)
-                }
-            }
-
-            Text(displayName)
-                .font(.system(size: 9, weight: .medium))
-                .lineLimit(1)
-                .foregroundStyle(.secondary)
-        }
-    }
-}
