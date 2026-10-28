@@ -1,5 +1,5 @@
 {
-  "_doc": "Session 14 word pass 2: words BlasterAI 60 needs that have no art yet, collected while clustering Social and Feelings against Avaz (Mark 2026-10-27). 'pages' is ready for tools/apply_word_pass.py once the art exists. Social and Feelings are laid out by `at` rows, so apply_word_pass's append would land a word in the empty column 5: after applying, move each word to its 'cell' in that page's `at` instead. 'waitingForRoom' are words the page has no cell for yet; each needs a cell freed (or a folder) before it is applied.",
+  "_doc": "Session 14 word pass 2: words BlasterAI 60 needs that have no art yet, collected while clustering Social and Feelings against Avaz (Mark 2026-10-27). 'pages' is ready for tools/apply_word_pass.py once the art exists. Social, Feelings and Questions are laid out by `at` rows, so apply_word_pass's append would land a word in the empty column 5: after applying, move each word to its 'cell' in that page's `at` instead. 'waitingForRoom' are words the page has no cell for yet; each needs a cell freed (or a folder) before it is applied.",
   "pages": [
     {
       "page": "social",
@@ -12,6 +12,31 @@
       "cell": {
         "good_morning": "r3c1",
         "good_afternoon": "r3c2"
+      }
+    },
+    {
+      "page": "questions",
+      "pos": "question",
+      "wordClass": "question",
+      "words": [
+        "how_old|how old",
+        "are_you|are you",
+        "do_you|do you",
+        "can_you|can you",
+        "what_happened|what happened",
+        "whats_that|what's that",
+        "whats_wrong|what's wrong",
+        "why_not|why not"
+      ],
+      "cell": {
+        "how_old": "r3c4",
+        "are_you": "r4c3",
+        "do_you": "r4c4",
+        "can_you": "r5c1",
+        "what_happened": "r5c2",
+        "whats_that": "r5c3",
+        "whats_wrong": "r5c4",
+        "why_not": "r5c6"
       }
     }
   ],

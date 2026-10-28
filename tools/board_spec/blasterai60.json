@@ -397,10 +397,6 @@
           "have"
         ],
         [
-          "write",
-          "draw"
-        ],
-        [
           "give",
           "take"
         ],
@@ -422,20 +418,6 @@
           "do"
         ],
         [
-          "walk",
-          "run",
-          "jump"
-        ],
-        [
-          "am",
-          "are",
-          "was"
-        ],
-        [
-          "sit",
-          "stand"
-        ],
-        [
           "help",
           "like",
           "read",
@@ -451,10 +433,12 @@
         ],
         [
           "look",
-          "see"
+          "see",
+          "hear"
         ],
         "stop",
-        "make"
+        "make",
+        "try"
       ],
       "folders": [
         {
@@ -690,7 +674,30 @@
             "shopping"
           ]
         }
-      ]
+      ],
+      "at": {
+        "r2c1": [
+          "walk",
+          "run",
+          "jump"
+        ],
+        "r3c1": [
+          "am",
+          "are",
+          "was"
+        ],
+        "r4c1": [
+          "write",
+          "draw",
+          "color"
+        ],
+        "r6c1": [
+          "sit",
+          "stand",
+          "sleep",
+          "wait"
+        ]
+      }
     },
     "describe": {
       "parent": "home",
@@ -756,7 +763,35 @@
             "smooth",
             "bumpy",
             "slippery"
-          ]
+          ],
+          "at": {
+            "r2c3": [
+              "hot_",
+              "cold__"
+            ],
+            "r2c6": [
+              "smelly",
+              "stinky"
+            ],
+            "r3c1": [
+              "rough",
+              "smooth",
+              "bumpy",
+              "sharp"
+            ],
+            "r4c1": [
+              "wet",
+              "dry_",
+              "sticky",
+              "slippery"
+            ],
+            "r5c6": [
+              "soft",
+              "hard",
+              "gentle",
+              "uncomfortable"
+            ]
+          }
         },
         {
           "key": "folder_opinions",
@@ -795,7 +830,46 @@
             "gross",
             "real",
             "fake"
-          ]
+          ],
+          "at": {
+            "r2c1": [
+              "excellent",
+              "terrific",
+              "fine",
+              "terrible"
+            ],
+            "r2c6": [
+              "good",
+              "bad",
+              "smart",
+              "dumb"
+            ],
+            "r3c1": [
+              "crazy",
+              "gross"
+            ],
+            "r3c6": [
+              "nice",
+              "mean",
+              "funny_",
+              "weird"
+            ],
+            "r4c1": [
+              "real",
+              "fake"
+            ],
+            "r4c6": [
+              "fun",
+              "boring",
+              "exciting"
+            ],
+            "r5c6": [
+              "favorite",
+              "cute",
+              "pretty",
+              "ugly"
+            ]
+          }
         },
         {
           "key": "folder_where",
@@ -902,9 +976,39 @@
             "noisy"
           ],
           "at": {
+            "r2c1": [
+              "awake",
+              "asleep",
+              "sleepy",
+              "busy"
+            ],
+            "r2c6": [
+              "cheap",
+              "expensive"
+            ],
+            "r3c1": [
+              "quick",
+              "noisy",
+              "dark",
+              "careful"
+            ],
+            "r4c3": [
+              "fixed"
+            ],
+            "r5c1": [
+              "messy",
+              "stuck",
+              "broken",
+              "closed"
+            ],
             "r5c8": [
               "same",
               "different"
+            ],
+            "r6c1": [
+              "true",
+              "maybe",
+              "false"
             ],
             "r6c6": [
               "new",
@@ -1017,43 +1121,7 @@
     },
     "places": {
       "parent": "home",
-      "words": [
-        "home_",
-        "house",
-        "school",
-        "park",
-        "playground",
-        "store",
-        "restaurant",
-        "doctors_office",
-        "outside",
-        "bathroom",
-        "bedroom",
-        "kitchen",
-        "church",
-        "library",
-        "pool",
-        "beach",
-        "zoo",
-        "farm",
-        "therapy",
-        "speech",
-        "class",
-        "movie",
-        "mall",
-        "grocery_store",
-        "lunch",
-        [
-          "car",
-          "bus",
-          "train"
-        ],
-        [
-          "bicycle",
-          "airplane",
-          "boat"
-        ]
-      ],
+      "words": [],
       "folders": [
         {
           "key": "folder_house",
@@ -1139,7 +1207,68 @@
             "pharmacy"
           ]
         }
-      ]
+      ],
+      "at": {
+        "r2c1": [
+          "home_",
+          "house",
+          "bedroom",
+          "kitchen"
+        ],
+        "r2c6": [
+          "bathroom",
+          "outside",
+          "yard",
+          "grandmas_house"
+        ],
+        "r3c1": [
+          "school",
+          "class",
+          "speech",
+          "therapy"
+        ],
+        "r3c6": [
+          "playground",
+          "library",
+          "gym",
+          "bus_stop"
+        ],
+        "r4c1": [
+          "park",
+          "zoo",
+          "farm",
+          "beach"
+        ],
+        "r4c6": [
+          "pool",
+          "movie",
+          "party",
+          "camp"
+        ],
+        "r5c1": [
+          "store",
+          "grocery_store",
+          "mall",
+          "restaurant"
+        ],
+        "r5c6": [
+          "doctors_office",
+          "hospital",
+          "church"
+        ],
+        "r6c1": [
+          "car",
+          "bus",
+          "train",
+          "bicycle"
+        ],
+        "r6c6": [
+          "airplane",
+          "boat",
+          "ride",
+          "drive"
+        ]
+      }
     },
     "people": {
       "parent": "home",
@@ -2267,23 +2396,42 @@
     },
     "questions": {
       "parent": "home",
-      "words": [
-        [
+      "words": [],
+      "at": {
+        "r2c1": [
           "who",
           "what",
           "where",
-          "when",
+          "when"
+        ],
+        "r2c6": [
           "why",
           "how",
-          "which"
+          "which",
+          "whose"
         ],
-        "how_many",
-        "how_much",
-        "whose",
-        "what_time",
-        "can_i",
-        "is_it"
-      ]
+        "r3c1": [
+          "how_many",
+          "how_much",
+          "what_time"
+        ],
+        "r3c6": [
+          "do",
+          "can",
+          "could",
+          "will"
+        ],
+        "r4c1": [
+          "is_it",
+          "can_i"
+        ],
+        "r4c6": [
+          "is",
+          "are",
+          "was",
+          "would"
+        ]
+      }
     },
     "feelings": {
       "parent": "home",
