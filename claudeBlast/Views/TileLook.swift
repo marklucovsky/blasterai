@@ -59,3 +59,9 @@ enum TileLayout: Equatable {
     /// The picture's margin inside the tile, above and at the sides.
     static let margin: CGFloat = 4
 }
+
+extension EnvironmentValues {
+    /// A square-look tile's width over its height: 1 everywhere but a phone on
+    /// its side (`GridLayoutSpec.tileHeight`).
+    @Entry var tileAspect: CGFloat = 1
+}

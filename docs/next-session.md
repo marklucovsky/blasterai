@@ -2,7 +2,7 @@
 # Handoff: the end of session 14 and what comes next
 
 Rewritten 2026-10-28, partway through session 14, replacing the sessions 12–16
-plan of 2026-10-19. Read this first.
+plan of 2026-10-19; updated 2026-10-29 at the session's close. Read this first.
 
 ## Where things stand
 
@@ -19,6 +19,10 @@ Session 14, worktree `cb-vocab-tree` (PRs #150–#158):
 | #156 | The 10×6 board with a control rail; row 1 is inherited by every page, never stored |
 | #157 | Square tiles on every board surface; the tray lines up with the grid; underline way markers; Social, Feelings, I and Describe clustered |
 | #158 | Questions, Places, Actions and Describe's folder pages clustered |
+| #159 | The screen check and the phone: column bands, phone landscape, Tools, fixes (below) |
+
+**Mark, 2026-10-29: this is the 1.0 build**, before word pass 2. Session 15
+ships it.
 
 **Clustering** follows Avaz: two blocks of four either side of an empty column
 5, each row a cluster, folders in columns 9–10. Actions is the exception: Home's
@@ -48,43 +52,47 @@ was online.
   OpenAI key, and nothing is sold.
 - 2.3.6: the age rating claims In-App Controls; it should say None.
 
-## Session 14, the rest: screen check, phone limping
+## Session 14, the rest: done (#159)
 
-We did the screen work in this session, so we finish it here.
+Every surface #155–#158 touched was checked: iPad landscape and portrait, the
+iPad mini, the iPhone in both orientations, the tray in both modes, the page
+editor, scene preview, coverage and the board PDF.
 
-### Screen check
+**Bugs fixed**
+- Edit → Settings crashed (`AttributeGraph precondition failure: setting
+  value during update`): `TileImageResolver`'s caches were observed and
+  filled from view bodies. They are `@ObservationIgnored` now.
+- The phone tray still drew the boxed chips; it is the white tray now.
+- Coverage never lit the system row; a press on it from the page counts now.
+- Coverage drew a page at full width and scrolled; each screen fits now.
 
-Go through every surface #155–#158 touched:
-- the tray with words in it, and sentence mode
-- iPad portrait (the rail goes to the bottom)
-- the iPad mini
-- the phone
-- the page editor, scene preview, coverage and print
+**The phone**
+- **Portrait:** row 1 scrolls sideways (a chevron and a one-time slide hint
+  at launch). The page scrolls in 4-wide column bands of the iPad page
+  (`ColumnBands`). Only blank columns *before* a band are skipped; a blank
+  inside a band is kept, so a 3-wide cluster keeps its trailing break
+  (Seasons) and the next cluster starts its own band.
+- **Landscape:** the iPad's 10×6 page, scaled, with the side rail. Square
+  tiles go wide to fill the width (as Avaz does), the link marker moves to
+  the tile's corner, the path line is hidden, and the single-word strip is
+  64pt. Tiles are about 70×54pt on a Pro Max.
+- Family, Cooking, Senses, Taking care, Talking and Sounds were laid out for
+  the phone's bands.
 
-**Sort what turns up into two lists.** Fix the *bugs* now. Write down what
-*should be done better* for the editor work.
+**The rail.** Tools replaces Levels and Edit everywhere but iPad landscape:
+Topics over Search, then Tools, whose menu carries the level stepper and the
+Edit menu. Long-press Home now offers only Caregiver Controls (in Child mode)
+and Settings. The "Caregiver Menu Quick Actions" setting is gone.
 
-### Phone limping
-
-Today's phone layout is a stopgap from #156: a scrolling chrome strip, a 4×5
-grid and a bottom bar. Mark's direction:
-
-- **Row 1 stays, and scrolls sideways.** A strip of about 8 visible cells over
-  the 10 system folders, pinned at the top and never scrolled away.
-- **Content scrolls in 4-wide column bands of the iPad landscape page.** The
-  phone's 4×5 content grid is exactly one block of the iPad's 4 · gap · 4
-  clusters (rows 2–6, columns 1–4 or 6–9), so a page becomes:
-  - its left block
-  - its right block
-  - its folder columns (9–10)
-- **Empty columns are skipped**, so the column-5 gap and empty folder columns
-  cost no screen.
-- That fixes scroll order once for every page: band by band, left to right.
-  Page-dot paging works the same way.
-- Check pages that don't use the split (Actions, Home, folder pages that flow)
-  against N = 4. A band can cut a run in two (walk · run · jump | come ·
-  go…); decide whether that matters before making N a setting.
-- Out of scope: a trimmed phone board (BlasterAI 20) and a phone editor.
+**Do better, with the editor work or on feedback**
+- Page editor sizing.
+- Sentence-mode controls in phone landscape: Play over Done needs the 94pt
+  tray. Defer until testers say.
+- The empty band between the grid and the bottom rail in iPad portrait.
+- Home's third phone band holds only columns 9–10.
+- A band can cut a run on a page that doesn't use the split (Actions).
+- The iPhone 16e is unchecked; its landscape tiles will be smaller again.
+- **Per-tile audio**, starting with Social › Sounds (GLP feedback).
 
 ## Session 15: new UI to testers on TestFlight
 

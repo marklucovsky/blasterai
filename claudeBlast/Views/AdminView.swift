@@ -61,7 +61,6 @@ struct AdminView: View {
         BoardLayout.current().rawValue
     @AppStorage(AppSettingsKey.honorSceneLayouts) var honorSceneLayouts = true
     @AppStorage(AppSettingsKey.tileLook) var tileLookRaw: String = TileLook.square.rawValue
-    @AppStorage(AppSettingsKey.quickActionsEnabled) var quickActionsEnabled = true
     @AppStorage(AppSettingsKey.imageSet) var imageSetRaw: String = ImageSetID.defaultSet.rawValue
 
     // Sentence tray timeline settings

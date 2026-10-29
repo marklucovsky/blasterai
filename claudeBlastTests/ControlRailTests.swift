@@ -52,6 +52,18 @@ struct ControlRailTests {
         ])
     }
 
+    /// A phone on its side or an iPad in portrait: the level dial and Edit fold
+    /// into one full-size Tools, and every rail keeps Home first, Keyboard last
+    /// (Mark 2026-10-29).
+    @Test func theCompactCaregiversRailFoldsLevelsAndEditIntoTools() {
+        let slots = RailProfile.caregiver.slots(compact: true)
+        #expect(slots == [
+            .one(.home), .one(.back), .pair(.topics, .search), .one(.tools),
+            .one(.childMode), .one(.keyboard),
+        ])
+        #expect(RailProfile.child.slots(compact: true) == RailProfile.child.slots)
+    }
+
     /// Until a therapist settles which stage drops the tray's pictures, the
     /// stage only sets the default: a caregiver can pick either way.
     @Test func trayPicturesFollowTheStageUntilChosen() {

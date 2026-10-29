@@ -2144,15 +2144,28 @@
             "wash",
             "wash_hands",
             "wash_hair",
+            "bathe"
+          ]
+        },
+        {
+          "space": 6
+        },
+        {
+          "keys": [
             "brush",
             "brush_teeth",
-            "bathe",
             "shower",
             "dry"
           ]
         },
         {
-          "space": 2
+          "space": 5
+        },
+        {
+          "link": "folder_taking_care",
+          "to": "actions_taking_care",
+          "audible": false,
+          "linkColor": "verb"
         },
         {
           "keys": [
@@ -2168,33 +2181,27 @@
         {
           "keys": [
             "polish_nails",
-            "clean",
-            "wipe",
-            "sweep",
-            "wake_up",
             "feed"
           ]
         },
         {
-          "space": 1
-        },
-        {
-          "link": "folder_taking_care",
-          "to": "actions_taking_care",
-          "audible": false,
-          "linkColor": "verb"
+          "space": 6
         },
         {
           "keys": [
-            "fix",
+            "clean",
+            "wipe",
+            "sweep",
             "vacuum"
           ]
         },
         {
-          "space": 20
+          "space": 6
         },
         {
           "keys": [
+            "wake_up",
+            "fix",
             "sleep",
             "nap"
           ]
@@ -2210,34 +2217,52 @@
             "talk",
             "say",
             "ask",
-            "answer",
-            "speak",
-            "tell",
-            "listen",
-            "call"
+            "answer"
           ]
         },
         {
-          "space": 2
+          "space": 6
         },
         {
           "keys": [
-            "email",
-            "meet",
-            "show",
-            "knock",
-            "bring",
-            "visit"
+            "speak",
+            "tell",
+            "listen"
           ]
         },
         {
-          "space": 13
+          "space": 7
+        },
+        {
+          "keys": [
+            "call",
+            "email"
+          ]
+        },
+        {
+          "space": 7
         },
         {
           "link": "folder_talking",
           "to": "actions_talking",
           "audible": false,
           "linkColor": "verb"
+        },
+        {
+          "keys": [
+            "show",
+            "bring",
+            "meet",
+            "visit"
+          ]
+        },
+        {
+          "space": 6
+        },
+        {
+          "keys": [
+            "knock"
+          ]
         }
       ]
     },
@@ -2370,10 +2395,21 @@
           "keys": [
             "bite",
             "chew",
-            "cut",
-            "pour",
-            "cook"
+            "lick",
+            "taste"
           ]
+        },
+        {
+          "space": 4
+        },
+        {
+          "link": "folder_cooking",
+          "to": "actions_cooking",
+          "audible": false,
+          "linkColor": "verb"
+        },
+        {
+          "space": 1
         },
         {
           "link": "eat",
@@ -2388,25 +2424,23 @@
           "linkColor": "verb"
         },
         {
+          "space": 18
+        },
+        {
           "keys": [
-            "taste"
+            "pour",
+            "mix",
+            "bake",
+            "cook"
           ]
         },
         {
-          "link": "folder_cooking",
-          "to": "actions_cooking",
-          "audible": false,
-          "linkColor": "verb"
-        },
-        {
-          "space": 1
+          "space": 6
         },
         {
           "keys": [
-            "lick",
             "spill",
-            "bake",
-            "mix"
+            "cut"
           ]
         }
       ]
@@ -2416,14 +2450,7 @@
       "name": "Senses",
       "tiles": [
         {
-          "keys": [
-            "smell",
-            "taste",
-            "touch"
-          ]
-        },
-        {
-          "space": 15
+          "space": 18
         },
         {
           "link": "folder_senses",
@@ -2436,11 +2463,14 @@
         },
         {
           "keys": [
-            "watch"
+            "watch",
+            "smell",
+            "taste",
+            "touch"
           ]
         },
         {
-          "space": 10
+          "space": 7
         },
         {
           "keys": [
@@ -3102,18 +3132,14 @@
       "tiles": [
         {
           "keys": [
-            "brother",
-            "sister",
-            "baby",
-            "parent",
-            "aunt",
-            "uncle",
             "mom",
-            "dad"
+            "dad",
+            "brother",
+            "sister"
           ]
         },
         {
-          "space": 1
+          "space": 5
         },
         {
           "link": "folder_family",
@@ -3123,14 +3149,32 @@
         },
         {
           "keys": [
+            "grandma",
+            "grandpa",
+            "baby",
+            "family"
+          ]
+        },
+        {
+          "space": 16
+        },
+        {
+          "keys": [
+            "aunt",
+            "uncle",
             "cousin",
+            "parent"
+          ]
+        },
+        {
+          "space": 6
+        },
+        {
+          "keys": [
             "son",
             "daughter",
             "stepmom",
-            "stepdad",
-            "grandma",
-            "grandpa",
-            "family"
+            "stepdad"
           ]
         }
       ]
@@ -4361,17 +4405,13 @@
         {
           "keys": [
             "ouch",
-            "shh",
-            "be_quiet",
-            "wow",
-            "yay",
             "oops",
-            "peekaboo",
-            "yum_yum"
+            "shh",
+            "be_quiet"
           ]
         },
         {
-          "space": 1
+          "space": 5
         },
         {
           "link": "folder_sounds",
@@ -4381,10 +4421,28 @@
         },
         {
           "keys": [
+            "wow",
+            "yay",
+            "yum_yum",
+            "peekaboo"
+          ]
+        },
+        {
+          "space": 6
+        },
+        {
+          "keys": [
             "meow",
             "woof",
             "moo",
-            "quack",
+            "quack"
+          ]
+        },
+        {
+          "space": 6
+        },
+        {
+          "keys": [
             "oink",
             "baa",
             "neigh",
@@ -4392,7 +4450,7 @@
           ]
         },
         {
-          "space": 2
+          "space": 6
         },
         {
           "keys": [

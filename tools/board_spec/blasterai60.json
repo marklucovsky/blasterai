@@ -513,7 +513,39 @@
             "feed",
             "fix",
             "vacuum"
-          ]
+          ],
+          "at": {
+            "r2c1": [
+              "wash",
+              "wash_hands",
+              "wash_hair",
+              "bathe"
+            ],
+            "r3c1": [
+              "brush",
+              "brush_teeth",
+              "shower",
+              "dry"
+            ],
+            "r4c1": [
+              "dress_up",
+              "wear",
+              "polish_nails",
+              "feed"
+            ],
+            "r5c1": [
+              "clean",
+              "wipe",
+              "sweep",
+              "vacuum"
+            ],
+            "r6c1": [
+              "wake_up",
+              "fix",
+              "sleep",
+              "nap"
+            ]
+          }
         },
         {
           "key": "folder_talking",
@@ -537,7 +569,33 @@
             "knock",
             "bring",
             "visit"
-          ]
+          ],
+          "at": {
+            "r2c1": [
+              "talk",
+              "say",
+              "ask",
+              "answer"
+            ],
+            "r3c1": [
+              "speak",
+              "tell",
+              "listen"
+            ],
+            "r4c1": [
+              "call",
+              "email"
+            ],
+            "r5c1": [
+              "show",
+              "bring",
+              "meet",
+              "visit"
+            ],
+            "r6c1": [
+              "knock"
+            ]
+          }
         },
         {
           "key": "folder_thinking",
@@ -620,7 +678,29 @@
             "spill",
             "bake",
             "mix"
-          ]
+          ],
+          "at": {
+            "r2c1": [
+              "bite",
+              "chew",
+              "lick",
+              "taste"
+            ],
+            "r3c1": [
+              "eat",
+              "drink"
+            ],
+            "r5c1": [
+              "pour",
+              "mix",
+              "bake",
+              "cook"
+            ],
+            "r6c1": [
+              "spill",
+              "cut"
+            ]
+          }
         },
         {
           "key": "folder_senses",
@@ -635,7 +715,20 @@
             "smell",
             "taste",
             "touch"
-          ]
+          ],
+          "at": {
+            "r5c5": [
+              "watch",
+              "smell",
+              "taste",
+              "touch"
+            ],
+            "r6c6": [
+              "look",
+              "see",
+              "hear"
+            ]
+          }
         },
         {
           "key": "folder_doing",
@@ -1351,7 +1444,33 @@
             "daughter",
             "stepmom",
             "stepdad"
-          ]
+          ],
+          "at": {
+            "r2c1": [
+              "mom",
+              "dad",
+              "brother",
+              "sister"
+            ],
+            "r3c1": [
+              "grandma",
+              "grandpa",
+              "baby",
+              "family"
+            ],
+            "r5c1": [
+              "aunt",
+              "uncle",
+              "cousin",
+              "parent"
+            ],
+            "r6c1": [
+              "son",
+              "daughter",
+              "stepmom",
+              "stepdad"
+            ]
+          }
         },
         {
           "key": "school_people",
@@ -2357,7 +2476,38 @@
             "vroom",
             "choo_choo",
             "beep"
-          ]
+          ],
+          "at": {
+            "r2c1": [
+              "ouch",
+              "oops",
+              "shh",
+              "be_quiet"
+            ],
+            "r3c1": [
+              "wow",
+              "yay",
+              "yum_yum",
+              "peekaboo"
+            ],
+            "r4c1": [
+              "meow",
+              "woof",
+              "moo",
+              "quack"
+            ],
+            "r5c1": [
+              "oink",
+              "baa",
+              "neigh",
+              "cockadoodledoo"
+            ],
+            "r6c1": [
+              "vroom",
+              "choo_choo",
+              "beep"
+            ]
+          }
         }
       ]
     },

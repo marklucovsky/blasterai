@@ -47,6 +47,15 @@ struct CoverageGridView: View {
         let grid: (cols: Int, rows: Int)
         /// The system row over every screen; empty when the scene has none.
         var chrome: [TileEntry] = []
+        /// Links pressed on this page — see `PageCoverage.linksTaken`.
+        var linksTaken: Set<String> = []
+
+        /// A system-row folder was pressed from this page: matched on its key
+        /// or the page it opens, as the page's own folders are.
+        func chromeUsed(_ entry: TileEntry) -> Bool {
+            linksTaken.contains(entry.key) || linksTaken.contains(entry.link)
+                || TileToken.systemPageKey(entry.link).map(linksTaken.contains) == true
+        }
     }
 
     private var isPositional: Bool { board != nil }
@@ -70,13 +79,22 @@ struct CoverageGridView: View {
             : Array(repeating: GridItem(.flexible(), spacing: gap), count: PageTemplate.cols)
     }
 
+    /// The header's measured height, so a screen of the board can be fitted
+    /// into what is left under it.
+    @State private var headerHeight: CGFloat = 60
+
     var body: some View {
+        GeometryReader { geo in
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 header
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { headerHeight = $0 }
 
                 if let board {
-                    boardScreens(board)
+                    boardScreens(board, fitting: CGSize(
+                        width: geo.size.width - 32,
+                        height: geo.size.height - 32 - 14 - headerHeight
+                            - (screenCount(board) > 1 ? 22 : 0)))
                 } else {
                     LazyVGrid(columns: columns, spacing: gap) {
                         ForEach(keys, id: \.self) { key in
@@ -93,6 +111,7 @@ struct CoverageGridView: View {
                 }
             }
             .padding(16)
+        }
         }
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
@@ -141,12 +160,26 @@ struct CoverageGridView: View {
         TileEntry.holdingHiddenCells(board.entries) { lookup[$0]?.isHiddenFromChild == true }
     }
 
+    /// Row 1 of every screen is the system row, as on the board.
+    private func perScreen(_ board: Board) -> Int {
+        max(1, board.grid.cols * board.grid.rows - (board.chrome.isEmpty ? 0 : board.grid.cols))
+    }
+
+    private func screenCount(_ board: Board) -> Int {
+        max(1, (drawn(board).count + perScreen(board) - 1) / perScreen(board))
+    }
+
+    /// Each screen scaled to fit the view, as the board fits the device,
+    /// rather than tiles at their full width and a screen to scroll through
+    /// (Mark 2026-10-29). Only a page of several screens scrolls, a screen at
+    /// a time.
     @ViewBuilder
-    private func boardScreens(_ board: Board) -> some View {
-        // Row 1 of every screen is the system row, as on the board.
-        let perScreen = max(1, board.grid.cols * board.grid.rows - (board.chrome.isEmpty ? 0 : board.grid.cols))
-        let screens = drawn(board).chunked(into: perScreen)
-        let gridColumns = Array(repeating: GridItem(.flexible(), spacing: gap),
+    private func boardScreens(_ board: Board, fitting space: CGSize) -> some View {
+        let screens = drawn(board).chunked(into: perScreen(board))
+        let cols = CGFloat(board.grid.cols), rows = CGFloat(board.grid.rows)
+        let tile = max(24, min((space.width - (cols - 1) * gap) / cols,
+                               (space.height - (rows - 1) * gap) / rows))
+        let gridColumns = Array(repeating: GridItem(.fixed(tile), spacing: gap),
                                 count: board.grid.cols)
         ForEach(Array(screens.enumerated()), id: \.offset) { index, cells in
             VStack(alignment: .leading, spacing: 6) {
@@ -155,9 +188,9 @@ struct CoverageGridView: View {
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                 }
-                LazyVGrid(columns: gridColumns, spacing: gap) {
+                LazyVGrid(columns: gridColumns, alignment: .leading, spacing: gap) {
                     ForEach(Array(board.chrome.prefix(board.grid.cols).enumerated()), id: \.offset) { _, entry in
-                        boardCell(entry)
+                        boardCell(entry, isUsed: board.chromeUsed(entry))
                             .allowsHitTesting(false)
                     }
                     ForEach(Array(cells.enumerated()), id: \.offset) { _, entry in
@@ -169,11 +202,11 @@ struct CoverageGridView: View {
     }
 
     @ViewBuilder
-    private func boardCell(_ entry: TileEntry) -> some View {
+    private func boardCell(_ entry: TileEntry, isUsed: Bool? = nil) -> some View {
         if entry.isEmptyCell {
             Color.clear.aspectRatio(1, contentMode: .fit)
         } else {
-            styledTile(entry, isUsed: usedKeys.contains(entry.key))
+            styledTile(entry, isUsed: isUsed ?? usedKeys.contains(entry.key))
         }
     }
 

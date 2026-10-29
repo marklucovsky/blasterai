@@ -124,6 +124,10 @@ struct CoverageReport {
         /// column reads as a reaching problem rather than a vocabulary one.
         var keys: [String] = []
         var usedKeys: Set<String> = []
+        /// Every link pressed on this page, by the key pressed and by the page
+        /// it opened. The system row is not the page's own cells, so it is not
+        /// in `usedKeys`; this is what lights it.
+        var linksTaken: Set<String> = []
 
         var id: String { pageKey }
         var neverUsed: Int { available - used }
@@ -403,7 +407,8 @@ extension CoverageReport {
                 linkCount: cells.filter { !$0.link.isEmpty }.count,
                 entries: page.tiles,
                 keys: cells.map(\.key),
-                usedKeys: reached
+                usedKeys: reached,
+                linksTaken: opened.union(landed)
             )
         }
         .sorted {

@@ -100,6 +100,24 @@ struct NavigationLogTests {
         #expect(report.sceneWordCount == 1)
     }
 
+    /// The system row is not the page's cells, so it never counted and was
+    /// always dimmed (Mark 2026-10-29). A press on it from this page lights it,
+    /// matched on its key or on a `<system>:` link, without changing the page's
+    /// own figure.
+    @Test func aSystemRowFolderPressedFromThePageIsLit() {
+        let pages = [page("places", [TileEntry(key: "park")])]
+        let report = CoverageReport.make(
+            sceneName: "S", pages: pages, inWindow: [], allTime: [],
+            navigations: [nav("places", "actions"), nav("places", "people", link: "people")])
+        let places = try! #require(report.usageByPage.first)
+        #expect(places.used == 0)
+        let board = CoverageGridView.Board(entries: places.entries, grid: (10, 6),
+                                           linksTaken: places.linksTaken)
+        #expect(board.chromeUsed(TileEntry(key: "people", link: TileToken.systemLink(to: "people"), isAudible: false)))
+        #expect(board.chromeUsed(TileEntry(key: "actions", link: TileToken.systemLink(to: "actions"), isAudible: false)))
+        #expect(!board.chromeUsed(TileEntry(key: "feelings", link: TileToken.systemLink(to: "feelings"), isAudible: false)))
+    }
+
     /// A press is credited to the page it was made on. Opening Food from Groups
     /// says nothing about Home's Food folder.
     @Test func aFolderOpenedFromElsewhereDoesNotCount() {
