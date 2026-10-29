@@ -1,171 +1,189 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# Handoff — sessions 12 to 16
+# Handoff: the end of session 14 and what comes next
 
-Rewritten 2026-10-19 at the end of session 11, building on the sessions 10–14
-plan (`47484ec`). Read this first.
+Rewritten 2026-10-28, partway through session 14, replacing the sessions 12–16
+plan of 2026-10-19; updated 2026-10-29 at the session's close. Read this first.
 
 ## Where things stand
 
-Session 11 (PRs #128–#132):
+Session 14, worktree `cb-vocab-tree` (PRs #150–#158):
 
-- **Editor lag fixed**, with permanent perf signposts (#128).
-- **Graded reveal** — boards that grow with the child (#129). A scene declares
-  a level count and carries a current level, which syncs; each placement has a
-  `revealLevel` in `pagesData`. BlasterAI 60 ships a demo map: L1 13 first
-  words, L2 the rest of Home, L3 the folders, L4 everything.
-- **Caregiver Menu quick actions** — mode, level, scene, tile style; a
-  long-press on Home no longer also goes Home (#130).
-- **Find Word** — search from the Home menu; the board goes to the page and
-  highlights the word (#131).
-- **Vocal Flair 60 comparison** — `tools/compare_levels.py` and
-  `docs/vocabulary-gaps-2026-10-19.md` (#132). Vocal Flair levels only its
-  home board; we share 83% of our words with it; ~90 core words are worth
-  adding.
+| PR | What |
+|---|---|
+| #150 | BlasterAI 60 gets a visible hierarchy: a system row, doorway words (go → Places), static folders |
+| #151 | Word pass 1: 405 words into the folders |
+| #152 | Art for pass 1 in all five styles; a word-class audit; hidden words hold their cell |
+| #153 | Classic art cut off its white ground, for the tinted look |
+| #154 | Main-actor isolation warnings fixed (vt0r) |
+| #155 | The square tile look, behind a Classic/Square setting |
+| #156 | The 10×6 board with a control rail; row 1 is inherited by every page, never stored |
+| #157 | Square tiles on every board surface; the tray lines up with the grid; underline way markers; Social, Feelings, I and Describe clustered |
+| #158 | Questions, Places, Actions and Describe's folder pages clustered |
+| #159 | The screen check and the phone: column bands, phone landscape, Tools, fixes (below) |
 
-**TestFlight 0.9.0 (8)** uploaded 2026-10-19 (`v0.9.0-8`), What to Test written.
-The two `CD_BlasterScene` level fields were deployed to Production first.
-Build 7 is in App Review.
+**Mark, 2026-10-29: this is the 1.0 build**, before word pass 2. Session 15
+ships it.
 
-**Levels go to testers as a prototype**, to provoke comment rather than to
-recommend a clinical map. Find Word should tell us which missing words matter.
+**Clustering** follows Avaz: two blocks of four either side of an empty column
+5, each row a cluster, folders in columns 9–10. Actions is the exception: Home's
+column 5 (go, want, like, watch, make) keeps its Home cells there. Pages are
+hand-tuned through `at` rows in `tools/board_spec/blasterai60.json`.
+`tools/board_spec/word_pass_2.json` lists the words that need art, with the
+cells held for them: good morning and good afternoon on Social, and eight
+question phrases.
+
+**Field feedback, 2026-10-28.** Aubrey's SLP saw the new layout, and Brandi
+was online.
+- What resonated most: **extending the system board** with cheap topic
+  scenes, for sharing or for one child.
+- **Gestalt language processing.** The SLP starts every child on about 30
+  phrases. For these children the phrase's melody is the meaning, so she wants a
+  **recorded voice override per tile**.
+- **Free** matters: one child waits until January for a trial device, then up
+  to six months more. She suggested Android for the Fire tablet.
+- Brandi's projects:
+  - **Malawi AAC.** P3D's people drawn with a Malawian look, recorded
+    voices, no sentence generation.
+  - **A Sunday School board**, by a pastor who uses AAC.
+
+**App Review rejected 0.9.0 (7)** on 2026-10-28 for three things:
+- 2.3.7: "free" in the subtitle.
+- 2.1(b): questions about the business model; the answer is bring your own
+  OpenAI key, and nothing is sold.
+- 2.3.6: the age rating claims In-App Controls; it should say None.
+
+## Session 14, the rest: done (#159)
+
+Every surface #155–#158 touched was checked: iPad landscape and portrait, the
+iPad mini, the iPhone in both orientations, the tray in both modes, the page
+editor, scene preview, coverage and the board PDF.
+
+**Bugs fixed**
+- Edit → Settings crashed (`AttributeGraph precondition failure: setting
+  value during update`): `TileImageResolver`'s caches were observed and
+  filled from view bodies. They are `@ObservationIgnored` now.
+- The phone tray still drew the boxed chips; it is the white tray now.
+- Coverage never lit the system row; a press on it from the page counts now.
+- Coverage drew a page at full width and scrolled; each screen fits now.
+
+**The phone**
+- **Portrait:** row 1 scrolls sideways (a chevron and a one-time slide hint
+  at launch). The page scrolls in 4-wide column bands of the iPad page
+  (`ColumnBands`). Only blank columns *before* a band are skipped; a blank
+  inside a band is kept, so a 3-wide cluster keeps its trailing break
+  (Seasons) and the next cluster starts its own band.
+- **Landscape:** the iPad's 10×6 page, scaled, with the side rail. Square
+  tiles go wide to fill the width (as Avaz does), the link marker moves to
+  the tile's corner, the path line is hidden, and the single-word strip is
+  64pt. Tiles are about 70×54pt on a Pro Max.
+- Family, Cooking, Senses, Taking care, Talking and Sounds were laid out for
+  the phone's bands.
+
+**The rail.** Tools replaces Levels and Edit everywhere but iPad landscape:
+Topics over Search, then Tools, whose menu carries the level stepper and the
+Edit menu. Long-press Home now offers only Caregiver Controls (in Child mode)
+and Settings. The "Caregiver Menu Quick Actions" setting is gone.
+
+**Do better, with the editor work or on feedback**
+- Page editor sizing.
+- Sentence-mode controls in phone landscape: Play over Done needs the 94pt
+  tray. Defer until testers say.
+- The empty band between the grid and the bottom rail in iPad portrait.
+- Home's third phone band holds only columns 9–10.
+- A band can cut a run on a page that doesn't use the split (Actions).
+- The iPhone 16e is unchecked; its landscape tiles will be smaller again.
+- **Per-tile audio**, starting with Social › Sounds (GLP feedback).
+
+## Session 15: new UI to testers on TestFlight
+
+- Bump the build number.
+- Check that no CloudKit schema change is pending. #156 changed only
+  `designedFor` strings.
+- Write What to Test and the tester PDF (`BlasterAI-TestFlight-build<N>.pdf`).
+- **Use the same build for the resubmission.**
+
+### Parallel track: the resubmission (its own session if needed)
+
+- **New screenshots**, all of them, from the new UI. They must show real
+  captures. No price words in any screenshot.
+- **Copy:**
+  - Take "free" out of the subtitle. It may go in the description.
+  - Answer the four 2.1(b) questions in Reply to App Review, and put the
+    bring-your-own-key model at the top of the review notes.
+- **Age rating:** set Parental Controls and Age Assurance to None.
+- Then resubmit the build from session 15.
+
+## Session 16: prototype mountable scenes
+
+Extending the system board is the high-value move, and we need a scene story
+around it.
+
+**Already in place:**
+- `<system>:` links.
+- Scenes built on the template inherit row 1 and the rail.
+- The rail has a Topics/My slot, disabled until now.
+
+**Two levels to prototype:**
+1. **Topics hub.** Topics/My opens a page of mounted topics. A topic is a small
+   scene whose pages inherit row 1 and the rail, so the child never leaves the
+   system board.
+2. **Extensions.** A topic adds a folder to a free folder slot (columns 9–10) on
+   a system page, for example People › My family or Places › Grandma's. That is
+   the folder rule as it stands: the folder extends the path, and the system
+   page itself is unchanged.
+
+**Decide:**
+- Where the mount list lives. A local setting is enough for the prototype;
+  sync needs a schema change.
+- How a topic is made: AI, by hand, or from a URL.
+- What happens when two topics want the same slot.
+- How create / mount / share reads to a caregiver.
+
+**Test cases:** the SLP's 30 starter phrases; the Sunday School board.
+
+## After that
+
+- **Per-tile recorded voice.** It serves GLP phrases, Malawi and any
+  language without TTS. Audio sits on the tile like `userImageData`, as a
+  CloudKit asset, which is a schema change.
+- **Word pass 2.** Art for the cells held in `word_pass_2.json`, where
+  generation spends Mark's key, so ask first. A Reactions folder beside Sounds
+  would make room on Social. Phase 2 depth (actions, feelings, describe,
+  places, people) comes from a school-age frequency list; ask Brandi for one.
+- **Sharing boards.** URL scene install and a first `blasterai.app/boards`.
+  Bugfixes in the same pass:
+  - Scene share drops `linkColor` / `linkColorIsAuto` (`SceneExporter.swift`).
+  - Prompt for scenes that were never imported.
+  - Tell the importer the file's level when "Replace Mine" takes it.
+- **Editor revisit.** A grid-first page editor on landscape iPad and Mac, plus
+  the "do better" list from the screen check.
+- **Malawi image set.** A P3D derivative with its own style prompt and
+  reference pack. Show Brandi a small sample first.
 
 ## Deadlines
 
 | Date | What | Status |
 |---|---|---|
-| 2026-10-23 | `gpt-image-1` retires | Done: builds 6+ draw with `gpt-image-2` |
-| **2027-01-14** | `gpt-4o`, `gpt-4o-mini`, `gpt-4.1*` retire — **every text call** | Sessions 12–14 |
-
-Every text call is `gpt-4o-mini`: sentences (`CacheKeyPolicy.modelID`),
-`SceneGeneratorService`, `PageGeneratorService`, `SceneRefinerService`,
-`TileSuggestionService`, `WordModerationService`, and `ModelPricing`. The eval
-judge is `gpt-4o`, retiring too. `tools/audit_openai_models.py` lists every
-tool that names a model. OpenAI's replacement is **GPT-6 Luna**, starting at
-reasoning effort `none`.
-
-## The plan
-
-The Luna work stays first: it has a hard date, and its baseline can only be
-measured while gpt-4o-mini exists. Tester feedback on build 8 arrives in the
-meantime and feeds session 14.
-
-### Session 12 — eval harness: baseline on gpt-4o-mini
-
-Unchanged from the last plan.
-
-- **Sentences:** cases per Brown's Stage, single-word mode, escalation,
-  grammar (am / are / was, pronoun case — "she + pool" must not become "She, I
-  want…"), homographs.
-- **Generation:** scene, page, refine, tile suggestions. Structural Tier-1
-  (valid JSON, new words declared and used, minimum counts, no core-board
-  leakage) and a Tier-2 judge rubric. "Potty Training" must produce potty /
-  pee / poop.
-- **Moderation:** cases that must pass and must be held.
-- **Record** quality, latency and cost per call type. Move the judge off
-  `gpt-4o`; keep subject and judge separate.
-
-### Session 13 — Luna migration, TestFlight build
-
-- Read the GPT-6 developer guide first (temperature, reasoning effort,
-  verbosity).
-- One place for model IDs, not seven.
-- Run the harness against Luna at `none`; tune prompts and effort; retest.
-- Update `ModelPricing`. The sentence cache is keyed by model, so it resets
-  on the switch — worth a release note.
-- Allow-listed OpenAI projects must allow the new model, the reviewer key's
-  included (the gpt-image-2 lesson). Update the key guide and the site.
-- **Ship to TestFlight** at the end of the session: for a BYOK app with no
-  server, that is the gradual rollout.
-
-### Session 14 — the vocabulary round: double the board, give it folders
-
-Sessions 12 and 13 ran as one (#142, #143: build 9 on GPT-6), so this is the
-next session. That session closed 2026-10-25 with the page scheme too:
-#145 system links, #146 scene creation on the template, #147 sentence prompt
-v9, #148 add page on the template, #149 templates as data
-(`Resources/page_templates.json`) and chrome that keeps BlasterAI 60's levels. Brandi (2026-10-23): the board is too small to be taken
-seriously, or to show it grows with the child. The draft is
-`docs/vocab-expansion-2026-10-23.md`, checked against Wordbank's CDI data
-(`tools/wordbank_coverage.py`) and Avaz's folder tree. It is intrusive and
-large — most pages change — which is why it gets a session, not a PR on the
-side.
-
-- **We make the first pass ourselves** (Mark, 2026-10-25): Brandi is looking
-  to us for an expansion that shows we are serious, not a toy, and won't
-  review a draft first. The Avaz structure and the Wordbank/CDI scoring set
-  the word list; name the judgement calls for her rather than block on the
-  draft's six questions. **Vocab comes first in the session.**
-- **Verb links** like eat/drink: I → a new "I" page, go/come → Places,
-  feel → Feelings.
-- **Static subcategory folders** on every crowded page (Places, Actions,
-  Describe, Food, Groups) — the bulk of the page for top words, folders in
-  the right columns for the rest. Link targets are fixed pages, never
-  generated from what was pressed.
-- **~130+ new words with art**, mostly the concrete nouns the CDI says we
-  lack (household, animals, clothing, outside, furniture, sounds). Folded in:
-  `docs/vocabulary-gaps-2026-10-19.md` (days of the week drawn in code, the
-  small words, feelings, "I need a break") and build 8/9 tester reports.
-- **Link colours** (Mark, 2026-10-25): an audible link is coloured as a
-  regular tile, by its own part of speech, not as a link. A silent link is
-  blue, or takes the colour of the page it opens. Today `alwaysWayfinding`
-  paints eat/drink blue (`TileColorResolver.linkColor`), and the scheme's
-  `go` is hard-coded verb (`PageFrame`).
-- **Level map with Brandi** — redo it over the new board: finer early steps?
-  some folders before the rest of Home? If BlasterAI 60 follows Vocal Flair's
-  map, credit OpenAAC/CoughDrop (CC BY) in NOTICE and the scene description.
-- **Not in scope:** phrase tiles (a separate discussion — "it's
-  complicated"), and the grammar bubble (came / comes / coming), which waits
-  behind a grammar flag.
-- **Then templates and chrome** — once the vocab is in good shape, decide
-  whether to finish here or split it into its own session:
-  - BlasterAI 60's home onto the page scheme.
-  - Live system chrome: pin the template's cells, re-apply the current
-    template at load when a scene's stored fingerprint matches, Repair/Reset
-    in the editor when it doesn't.
-  - Canned starter scenes and scenes built from collections still skip the
-    template and the system links; every creation path goes through the
-    placer.
-- **Submit the GPT-6 build** to App Review once TestFlight has soaked — aim
-  for mid-November, mid-December at the latest, so App Review and the
-  holidays can't squeeze January 14.
-
-### Session 15 — sharing boards: URL install, plus the import bugfixes
-
-- **URL scene install** and a first `blasterai.app/boards` page. The vocab-pack
-  route for domain boards (church, school, a hospital stay): we don't ship
-  them canned; AI builds them, and URL install lets caregivers and domain
-  experts share them.
-- **One bugfix PR** in the same session:
-  - Scene share drops `linkColor` / `linkColorIsAuto`
-    (`SceneExporter.swift`).
-  - Prompt for scenes that were never imported.
-  - Tell the importer the file's level when "Replace Mine" takes it.
-
-### Session 16 — editing revisit
-
-- **Grid-first page editor** on landscape iPad and Mac: grid in the right
-  two-thirds, a word well on the left; drag a word to a cell; insert N words
-  into N selected cells. Portrait and phone keep the overlay.
-- **Phone page editor**: a 12×5 page draws as tiny pills; draw cells the way
-  Coverage does.
-- Pilot testers want specialised scenes (a child with a brain injury; a
-  14-year-old who struggles with his device): hand-authoring has to get easier.
-
-Sessions 12 and 13 merged into one. Sessions 15 and 16 can swap.
+| **2027-01-14** | `gpt-4o`, `gpt-4o-mini`, `gpt-4.1*` retire | Done: build 9 moved to GPT-6 |
 
 ## Later, not time-bound
 
+- **Android or a web player** for Fire tablets: a port versus a player. The
+  player is far cheaper and covers a child waiting for a device.
 - **BlasterAI 40** by a transform from the 60, and **BlasterAI On the Go**
   for iPhone (20 cells).
-- **Spanish localization** — `docs/localization-impact.md`;
-  `TileModel.key` stays language-neutral.
-- **Keyboard and grammar** — prefixes (some-/any-/every-), word endings
-  (-s/-ed/-ing), word forms. With clinical guidance.
-- **Voice selection guide** on the site: steer families to enhanced and
-  premium voices.
-- **A web player** — player only, launched from a `.blasterscene`.
-- **OBZ import, maybe** — import an OBZ's vocabulary, laid out here.
-- **Small PRs:** drop runtime tone chaining; scene word-sense hints
-  ("shears" → scissors); remove promoted-tile leftovers; rebuild the header
-  image.
-- **Next App Store listing round:** one word in all five styles.
+- **Spanish localization**: `docs/localization-impact.md`; `TileModel.key`
+  stays language-neutral.
+- **Keyboard and grammar**:
+  - prefixes (some- / any- / every-)
+  - word endings (-s / -ed / -ing)
+  - word forms, including the inflection bubble
+  - all with clinical guidance
+- **Level map with Brandi**, over the new board.
+- **Voice selection guide** on the site.
+- **OBZ import, maybe.**
+- **Small PRs:**
+  - drop runtime tone chaining
+  - scene word-sense hints ("shears" → scissors)
+  - remove promoted-tile leftovers
+  - rebuild the header image

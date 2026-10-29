@@ -539,14 +539,6 @@ extension AdminView {
                         .tag(set.id.rawValue)
                 }
             }
-            Toggle(isOn: $quickActionsEnabled) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Caregiver Menu Quick Actions")
-                    Text("Long-press Home to change mode, level, scene or tile style without opening Admin. Off, the menu offers Admin only. A child's device always offers Admin only.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
         }
         .onChange(of: imageSetRaw) {
             // Resolved, not raw: a stored id this build cannot resolve must fall

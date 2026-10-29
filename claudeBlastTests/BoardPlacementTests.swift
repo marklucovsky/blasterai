@@ -208,7 +208,7 @@ struct BoardPlacementTests {
         let pages = family(board(), "actions")
         for run in [["catch", "throw", "kick"], ["walk", "run", "jump"], ["come", "go"],
                     ["give", "take"], ["find", "lose"], ["sit", "stand"], ["close", "open"],
-                    ["talk", "say", "ask", "answer", "speak"], ["draw", "color", "paint"],
+                    ["talk", "say", "ask", "answer"], ["tell", "listen"], ["draw", "color", "paint"],
                     ["know", "think", "remember", "forget"], ["wash", "wash_hands", "wash_hair"],
                     ["am", "are", "was"], ["bite", "chew"]] {
             #expect(isRun(run, in: pages), "\(run)")

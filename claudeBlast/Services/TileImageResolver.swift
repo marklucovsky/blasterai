@@ -40,35 +40,41 @@ final class TileImageResolver {
     /// not observable on their own, so this is the explicit invalidation signal.
     private(set) var revision = 0
 
+    // Every cache below is filled lazily from inside view bodies (a tile face
+    // asks for its image while it renders), so none may be observed: a tracked
+    // write during an update aborts — "AttributeGraph precondition failure:
+    // setting value during update", tapping Settings on iPhone (2026-10-29).
+    // `revision` is the one thing views watch.
+
     /// In-memory cache for non-asset-catalog images (keyed by "setID:tileKey").
-    private var cache = NSCache<NSString, UIImage>()
+    @ObservationIgnored private var cache = NSCache<NSString, UIImage>()
 
     /// SwiftData context used to fetch per-tile photo overrides
     /// (`TileModel.userImageData`). Wired via `configure` at launch, mirroring
     /// `ChildProfileResolver`. Nil before configuration → overrides are skipped.
-    private var context: ModelContext?
+    @ObservationIgnored private var context: ModelContext?
 
     /// Decoded photo overrides, keyed "override:<tileKey>".
-    private var overrideCache = NSCache<NSString, UIImage>()
+    @ObservationIgnored private var overrideCache = NSCache<NSString, UIImage>()
 
     /// Keys known to have NO photo override. Without this negative cache every
     /// render of every photo-less tile (the vast majority) would issue a fetch.
-    private var overrideMisses = Set<String>()
+    @ObservationIgnored private var overrideMisses = Set<String>()
 
     /// Decoded custom per-style art (TileArtVariant), keyed "variant:<set>:<key>"
     /// (and "variant:any:<key>" for the cross-style fallback), plus a negative
     /// cache of "<set>:<key>" / "any:<key>" with no variant — so bundled tiles
     /// never fetch.
-    private var variantCache = NSCache<NSString, UIImage>()
-    private var variantMisses = Set<String>()
+    @ObservationIgnored private var variantCache = NSCache<NSString, UIImage>()
+    @ObservationIgnored private var variantMisses = Set<String>()
 
     /// Word key → the key its ART lives under (`TileModel.bundleImage`).
     ///
     /// Only holds entries that actually differ, so the common case costs one
     /// dictionary miss. `aliasesLoaded` distinguishes "no aliases" from "not
     /// looked yet", which a bare empty dictionary cannot.
-    private var aliasMap: [String: String] = [:]
-    private var aliasesLoaded = false
+    @ObservationIgnored private var aliasMap: [String: String] = [:]
+    @ObservationIgnored private var aliasesLoaded = false
 
     init() {
         cache.countLimit = 600 // ~500 tiles + headroom

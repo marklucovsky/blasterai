@@ -1,0 +1,46 @@
+name: Screenshots — Screen Check
+description: Every board surface the square look and the rail touched, with words in the sentence tray, for a sweep across orientations and devices.
+scene: "<default>"   # the bundled board, whatever it is named
+mode: sentence
+audio: off
+provider: mock
+tileWait: .fast
+sentenceWait: .fast
+
+script:
+  - tileSet: classic
+  - tiles:
+    - <home>
+  - screenshot: check-01-home
+  - tiles:
+    - <social>
+  - screenshot: check-02-social
+  - tiles:
+    - <questions>
+  - screenshot: check-03-questions
+  - tiles:
+    - <places>
+  - screenshot: check-04-places
+  - tiles:
+    - <places_house>
+  - screenshot: check-05-house
+  - tiles:
+    - <actions>
+  - screenshot: check-06-actions
+  - tiles:
+    - <describe_opinions>
+  - screenshot: check-07-opinions
+  # One row (comma-separated): each list item is its own utterance, and the
+  # next one commits the last to history. Paced like shots_appstore.
+  - tiles:
+    - <home>, want, help, more
+  - wait: 2s
+  - screenshot: check-08-sentence-tray
+  - clear
+  - screen: admin/scenes
+  - wait: 1s
+  - screenshot: check-09-admin-scenes
+  - screen: admin/scenes/vocabulary
+  - wait: 1s
+  - screenshot: check-10-vocabulary
+  - screen: board

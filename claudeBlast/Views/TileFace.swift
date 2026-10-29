@@ -54,6 +54,7 @@ struct TileFace: View {
 
     @AppStorage(AppSettingsKey.tileLook) private var lookRaw: String = TileLook.square.rawValue
     @Environment(TileImageResolver.self) private var resolver
+    @Environment(\.tileAspect) private var tileAspect
 
     /// A tile as a page holds it, coloured the way the board colours it: part
     /// of speech for a word, the link's own slot for a folder.
@@ -141,13 +142,16 @@ struct TileFace: View {
             let side = geo.size.width
             let band = GridLayoutCalculator.squareLabelHeight(forFont: labelFontSize)
             let m = TileLayout.margin
-            let art = max(1, side - band - m)
+            // A wide tile keeps a square picture, centred, as tall as fits.
+            let art = max(1, min(side - band - m, geo.size.height - band - m))
             ZStack(alignment: .top) {
                 squareGround
                 squarePicture
                     .opacity(pictureOpacity)
                     .frame(width: art, height: art)
-                    .overlay(alignment: .bottomTrailing) { badge(on: squareGround, padding: 2) }
+                    .overlay(alignment: .bottomTrailing) {
+                        if !isWide { badge(on: squareGround, padding: 2) }
+                    }
                     .padding(.top, m)
                 Text(label)
                     .font(.system(size: labelFontSize, weight: layout == .plate ? .semibold : .medium))
@@ -160,9 +164,18 @@ struct TileFace: View {
                     // takes the overlap.
                     .offset(y: m + art - (wayMark == nil ? 0 : WayMark.bar - 1))
             }
+            // A wide tile has room beside its picture: the marker goes in the
+            // corner, off the picture, where it sat over the middle of it
+            // (Mark 2026-10-29).
+            .overlay(alignment: .topTrailing) {
+                if isWide { badge(on: squareGround, padding: 3) }
+            }
         }
-        .aspectRatio(1, contentMode: .fit)
+        .aspectRatio(tileAspect, contentMode: .fit)
     }
+
+    /// Wider than tall: a phone on its side (`tileAspect`).
+    private var isWide: Bool { tileAspect > 1.05 }
 
     @ViewBuilder
     private var squarePicture: some View {

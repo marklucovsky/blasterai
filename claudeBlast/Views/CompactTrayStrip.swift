@@ -240,15 +240,24 @@ private struct ActiveCard: View {
         .frame(height: kCompactTrayCardHeight)
         .padding(.horizontal, 5)
         .padding(.vertical, 3)
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(.ultraThinMaterial)
-        )
+        .background {
+            if isSquare {
+                RoundedRectangle(cornerRadius: TileLayout.cornerRadius).fill(Color.white)
+            } else {
+                RoundedRectangle(cornerRadius: 14).fill(.ultraThinMaterial)
+            }
+        }
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+            RoundedRectangle(cornerRadius: isSquare ? TileLayout.cornerRadius : 14)
+                .strokeBorder(Color.primary.opacity(isSquare ? 0 : 0.08), lineWidth: 1)
         )
+        // The square look's tray is the iPad's: white whatever the appearance,
+        // its words bare pictures, so it is drawn as on a light page.
+        .environment(\.colorScheme, isSquare ? .light : colorScheme)
     }
+
+    @Environment(\.colorScheme) private var colorScheme
+    private var isSquare: Bool { TileLook.current() == .square }
 
     /// Chips take what is left after the sentence is served, down to a floor.
     /// Past the floor they stop shrinking and the sentence gives way instead —
@@ -287,7 +296,8 @@ private struct ActiveCard: View {
                     .padding(.horizontal, 8)
             } else {
                 ChipsRow(tiles: tiles, chipSize: chip,
-                         showsPictures: showsPictures, onTap: onTileTap)
+                         showsPictures: showsPictures, isPlain: isSquare,
+                         onTap: onTileTap)
                 if isSuppressed {
                     CompactMutedBubble()
                         .layoutPriority(1)
@@ -334,6 +344,9 @@ private struct ChipsRow: View {
     /// against whatever width the sentence still needs. Same size, different
     /// content, so no layout arithmetic changes.
     var showsPictures: Bool = true
+    /// The square look: the picture and its word bare on the white tray
+    /// (`PlainTrayPicture`), as on the iPad, instead of a coloured chip.
+    var isPlain: Bool = false
     let onTap: (Int) -> Void
 
     private let cornerRadius: CGFloat = 8
@@ -355,7 +368,10 @@ private struct ChipsRow: View {
                     // picture with a hairline border, which on a phone sat
                     // directly under a board of solid cards and read as a
                     // different kind of object.
-                    if showsPictures {
+                    if showsPictures && isPlain {
+                        PlainTrayPicture(tile: tile, labelSize: 11)
+                            .frame(width: chipSize, height: kCompactTrayCardHeight)
+                    } else if showsPictures {
                         TileImageView(key: tile.key, wordClass: tile.wordClass)
                             .padding(2)
                             .background(Color.white)

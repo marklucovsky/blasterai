@@ -1,0 +1,23 @@
+name: Screenshots — Screen Check (single word)
+description: The single-word strip with a word in it, on Home and a category page.
+scene: "<default>"   # the bundled board, whatever it is named
+mode: singleword
+audio: off
+provider: mock
+tileWait: .fast
+sentenceWait: .fast
+
+script:
+  - tileSet: classic
+  - tiles:
+    - <home>
+  - tiles:
+    - more
+  - wait: 1s
+  - screenshot: word-01-home
+  - tiles:
+    - <feelings>
+  - tiles:
+    - happy
+  - wait: 1s
+  - screenshot: word-02-feelings

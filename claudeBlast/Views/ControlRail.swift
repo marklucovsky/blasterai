@@ -11,7 +11,7 @@ import SwiftUI
 
 /// One control on the rail.
 enum RailItem: String, CaseIterable {
-    case home, back, topics, keyboard, search, edit, levels, childMode
+    case home, back, topics, keyboard, search, edit, levels, childMode, tools
 
     var title: String {
         switch self {
@@ -23,6 +23,7 @@ enum RailItem: String, CaseIterable {
         case .edit: "Edit"
         case .levels: "Level"
         case .childMode: "Child mode"
+        case .tools: "Tools"
         }
     }
 
@@ -36,6 +37,7 @@ enum RailItem: String, CaseIterable {
         case .edit: "pencil"
         case .levels: "stairs"
         case .childMode: "lock.fill"
+        case .tools: "slider.horizontal.3"
         }
     }
 }
@@ -70,10 +72,20 @@ enum RailProfile: Equatable {
         role == .caregiver && !childLock ? .caregiver : .child
     }
 
-    var slots: [RailSlot] {
+    var slots: [RailSlot] { slots(compact: false) }
+
+    /// - Parameter compact: every rail but iPad landscape's, whose slots are
+    ///   short or narrow (Mark 2026-10-29). There the level dial in half
+    ///   a slot is too small to use, so it and Edit fold into one full-size
+    ///   Tools button, whose menu carries both; Topics and Search keep their
+    ///   halves (Mark 2026-10-29).
+    func slots(compact: Bool) -> [RailSlot] {
         switch self {
         case .child:
             [.one(.home), .one(.back), .one(.topics), .empty, .empty, .one(.keyboard)]
+        case .caregiver where compact:
+            [.one(.home), .one(.back), .pair(.topics, .search), .one(.tools),
+             .one(.childMode), .one(.keyboard)]
         case .caregiver:
             [.one(.home), .one(.back), .pair(.levels, .topics), .pair(.search, .edit),
              .one(.childMode), .one(.keyboard)]
@@ -164,7 +176,7 @@ struct ControlRail<Menu: View, EditMenu: View>: View {
                          arrowEdge: vertical ? .trailing : .bottom) {
                     menu().presentationCompactAdaptation(.popover)
                 }
-        } else if item == .edit {
+        } else if item == .edit || item == .tools {
             RailButton(item: item, half: half, slot: side, isEnabled: isEnabled(item),
                        action: { isEditMenuOpen = true })
                 .popover(isPresented: $isEditMenuOpen,

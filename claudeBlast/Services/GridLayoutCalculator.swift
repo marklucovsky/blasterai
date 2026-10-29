@@ -42,6 +42,10 @@ struct GridLayoutSpec: Equatable {
     /// fit across. Its height (`railSlot`) can be more, to keep a half-height
     /// control a whole touch target.
     var railSlotWidth: CGFloat = 0
+    /// A square-look tile's height when it is shorter than `tileSize` wide:
+    /// a phone on its side, whose ten columns would otherwise leave a band of
+    /// screen either side of a grid bound by its height. Nil: square.
+    var tileHeight: CGFloat? = nil
 
     var perPage: Int { cols * rows }
 }
@@ -349,7 +353,11 @@ enum GridLayoutCalculator {
             return iPadBaseSize
         }()
         let isPhone = screenMin < phoneMinDimMax
-        let grid = layout.grid(phone: isPhone)
+        // A phone on its side with the rail beside the board runs the iPad's
+        // grid, scaled down — what other AAC apps do there (Mark 2026-10-29).
+        // Every word is where it is on the iPad, so nothing bands or scrolls.
+        let isPhoneLandscape = isPhone && rail == .side
+        let grid = layout.grid(phone: isPhone && !isPhoneLandscape)
         // Off the designed orientation, a larger layout means larger tiles in
         // proportion: Large on an iPad is 10 columns where Standard is 12.
         let standardCols = BoardLayout.standard.grid(phone: isPhone).cols
@@ -374,7 +382,8 @@ enum GridLayoutCalculator {
         // the words stay in their cells, only smaller (Mark 2026-10-27). A
         // board sized to the window instead had eight columns there, and every
         // word after the first row moved.
-        let isDesignedOrientation = isPhone ? availH > availW : (rail != .none || availW >= availH)
+        let isDesignedOrientation = isPhoneLandscape
+            || (isPhone ? availH > availW : (rail != .none || availW >= availH))
         if isDesignedOrientation {
             var tile = min(maxTileSize,
                            renderTile(forCols: grid.cols, availW: availW, spacing: spacing),
@@ -392,6 +401,22 @@ enum GridLayoutCalculator {
                                              availH: availH - bottomRail(slots: slots, pairs: pairs, tile: tile,
                                                                          availW: availW) - railGap,
                                              textScale: textScale, look: look))
+            }
+            // A phone on its side: tiles as wide as the screen allows and as
+            // tall as the rows allow, so the board fills it side to side as
+            // Avaz's does there (Mark 2026-10-29). Only the square look,
+            // whose tile is a band of colour; capped so a word still reads
+            // as a tile rather than a strip.
+            if isPhoneLandscape, look == .square {
+                let wide = min(tile * 1.6, renderTile(forCols: grid.cols + 1,
+                                                      availW: availW - (railGap - spacing), spacing: spacing))
+                if wide > tile {
+                    var spec = finish(cols: grid.cols, rows: grid.rows, tileW: wide,
+                                      availH: availH, textScale: textScale,
+                                      screenSize: screenSize, geo: geo, layout: layout, look: look, rail: rail)
+                    spec.tileHeight = tile
+                    return spec
+                }
             }
             return finish(cols: grid.cols, rows: grid.rows, tileW: tile,
                           availH: availH, textScale: textScale,

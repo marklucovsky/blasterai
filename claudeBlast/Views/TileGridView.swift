@@ -71,7 +71,6 @@ struct TileGridView: View {
     /// `WayMark`. Worked out once per page, not once per tile.
     @State private var wayTrail: [String] = []
     @AppStorage(AppSettingsKey.demoMode) private var demoMode = false
-    @AppStorage(AppSettingsKey.quickActionsEnabled) private var quickActionsEnabled = true
     @AppStorage(AppSettingsKey.imageSet) private var imageSetRaw: String = ImageSetID.defaultSet.rawValue
     @Environment(TileImageResolver.self) private var imageResolver
     /// A scene switch the menu could not make, or made with a caveat — the same
@@ -79,7 +78,6 @@ struct TileGridView: View {
     @State private var sceneNotice: SceneNotice?
     @State private var showFindWord = false
     /// Set by the menu's Find Word row; the sheet opens once the popover is gone.
-    @State private var findWordAfterMenu = false
     /// The word Find Word went to. It breathes until any tap on the board.
     @State private var findHighlight: FindHighlight?
 
@@ -107,11 +105,17 @@ struct TileGridView: View {
     @AppStorage(AppSettingsKey.railChildLock) private var railChildLock = false
 
     @Environment(\.horizontalSizeClass) private var hSizeClass
+    @Environment(\.verticalSizeClass) private var vSizeClass
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var compactOverlay: CompactOverlay = .none
     @State private var overlayEpoch: Int = 0
 
-    private var isCompact: Bool { hSizeClass == .compact }
+    /// The phone's portrait design: its own tray and a bottom rail.
+    private var isCompact: Bool { hSizeClass == .compact && !isPhoneLandscape }
+    /// A phone on its side — the only place the height is compact. It runs
+    /// the iPad's landscape board scaled down: the 10×6 grid, the side rail,
+    /// and the iPad's tray lined up over them (Mark 2026-10-29).
+    private var isPhoneLandscape: Bool { vSizeClass == .compact }
 
     /// How a page change animates: not at all.
     ///
@@ -203,9 +207,10 @@ struct TileGridView: View {
             SingleWordTrayView(
                 onRemove: { index in engine.removeStripWord(at: index) },
                 onClear: { engine.clearStrip() },
-                railAlignment: railAlignment
+                railAlignment: railAlignment,
+                height: isPhoneLandscape ? SingleWordTrayView.shortStripHeight : SingleWordTrayView.stripHeight
             )
-            .padding(.top, 8)
+            .padding(.top, isPhoneLandscape ? 2 : 8)
     }
 
     private var compactTray: some View {
@@ -260,7 +265,7 @@ struct TileGridView: View {
                 },
                 railAlignment: railAlignment
             )
-            .padding(.top, 8)
+            .padding(.top, isPhoneLandscape ? 2 : 8)
     }
 
     /// The board itself, or an empty state when no scene is active.
@@ -338,16 +343,6 @@ struct TileGridView: View {
         // menu offers besides unlocking the caregiver's.
         .alert(item: $sceneNotice) { notice in
             Alert(title: Text(notice.title), message: Text(notice.message))
-        }
-        .onChange(of: showCaregiverMenu) { _, isOpen in
-            guard !isOpen, findWordAfterMenu else { return }
-            findWordAfterMenu = false
-            // A sheet asked for while the popover is still animating away is
-            // dropped on iPad; wait it out.
-            Task {
-                try? await Task.sleep(for: .milliseconds(350))
-                showFindWord = true
-            }
         }
         .sheet(isPresented: $showFindWord) {
             if let scene = activeScene {
@@ -449,7 +444,7 @@ struct TileGridView: View {
 
     /// A cell's height: the tile, and on the classic look its label beneath.
     private func cellHeight(_ spec: GridLayoutSpec) -> CGFloat {
-        tileLook == .square ? spec.tileSize : spec.tileSize + spec.labelHeight
+        tileLook == .square ? spec.tileHeight ?? spec.tileSize : spec.tileSize + spec.labelHeight
     }
 
     /// The board: the path line, the system row, the page, and the rail.
@@ -462,12 +457,14 @@ struct TileGridView: View {
         GeometryReader { geo in
             let isLandscape = geo.size.width > geo.size.height
             let isPhone = GridLayoutCalculator.isPhone(screenSize: GridLayoutCalculator.deviceScreenSize)
-            let rail: RailPlacement = !isPhone && isLandscape
+            let rail: RailPlacement = isLandscape && (!isPhone || isPhoneLandscape)
                 ? .side
                 : .bottom(slots: railProfile.slots.count, pairs: railProfile.hasPairs)
+            // A phone on its side has no height to spare for the path line.
+            let pathHeight = isPhoneLandscape ? 0 : Self.pathLineHeight
             let spec = GridLayoutCalculator.compute(
                 screenSize: GridLayoutCalculator.deviceScreenSize,
-                geo: CGSize(width: geo.size.width, height: geo.size.height - Self.pathLineHeight),
+                geo: CGSize(width: geo.size.width, height: geo.size.height - pathHeight),
                 // The scene's declared grid on a matching device, else this
                 // device's own. See `GridLayoutCalculator.liveLayout`.
                 layout: GridLayoutCalculator.liveLayout(
@@ -487,7 +484,6 @@ struct TileGridView: View {
             // every screen of every page; the rest of the grid is the page.
             let inherits = activeScene.map(BoardChrome.inherits) ?? false
             let contentRows = inherits ? max(1, spec.rows - 1) : spec.rows
-            let perScreen = max(1, spec.cols * contentRows)
             // Nothing is filtered out: a hidden word, a concealed placement and
             // a spacer all keep their cell and draw empty. Removing any of them
             // would reflow the board and move every word the child had learned.
@@ -495,8 +491,15 @@ struct TileGridView: View {
                 lookup[$0]?.isHiddenFromChild == true
             }
             // Always at least one chunk, so an empty page still draws a board
-            // with its rail — the rail's Home is the way into Admin.
-            let chunkedTiles = visible.isEmpty ? [[]] : visible.chunked(into: perScreen)
+            // with its rail — the rail's Home is the way into Admin. A grid
+            // narrower than the scene's (a phone) shows the page in bands of
+            // its columns, not re-wrapped: see `ColumnBands`.
+            let chunkedTiles = ColumnBands.board(visible, designed: activeScene?.designedLayout?.grid,
+                                                 cols: spec.cols, contentRows: contentRows,
+                                                 inherits: inherits)
+            let screen: (_ of: String) -> Int? = { key in
+                chunkedTiles.firstIndex { $0.contains { $0.key == key } }
+            }
             let cellH = cellHeight(spec)
             let contentHeight = CGFloat(contentRows) * cellH + CGFloat(contentRows - 1) * spec.verticalSpacing
             let isSide = rail == .side
@@ -517,11 +520,14 @@ struct TileGridView: View {
                 }
                 .frame(height: contentHeight)
             }
+            .environment(\.tileAspect, spec.tileHeight.map { spec.tileSize / $0 } ?? 1)
             VStack(alignment: .leading, spacing: 0) {
                 // On the grid's first column, with the tray's first chip.
-                pathLine
-                    .frame(height: Self.pathLineHeight)
-                    .padding(.horizontal, isSide ? 16 : max(16, gridPadding))
+                if pathHeight > 0 {
+                    pathLine
+                        .frame(height: pathHeight)
+                        .padding(.horizontal, isSide ? 16 : max(16, gridPadding))
+                }
                 if isSide {
                     HStack(alignment: .top, spacing: 0) {
                         board.frame(width: gridWidth)
@@ -534,20 +540,26 @@ struct TileGridView: View {
                         // left one in the middle (Mark 2026-10-27).
                         Spacer(minLength: GridLayoutCalculator.railGap)
                             .frame(maxWidth: GridLayoutCalculator.railGap)
-                        controlRail(spec: spec, cellHeight: cellH, vertical: true,
-                                    width: max(spec.tileSize,
-                                               geo.size.width - 32 - gridWidth - GridLayoutCalculator.railGap))
+                        // Not on a phone, whose tiles already widen to take
+                        // the spare width: its rail is one tile.
+                        // Tools everywhere but iPad landscape, whose half slots
+                        // are full touch targets (Mark 2026-10-29).
+                        controlRail(spec: spec, cellHeight: cellH, vertical: true, compact: isPhone,
+                                    width: isPhone ? spec.tileSize
+                                        : max(spec.tileSize,
+                                              geo.size.width - 32 - gridWidth - GridLayoutCalculator.railGap))
                             .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) }
                                 action: { railFrame = $0 }
                     }
                     .padding(.horizontal, 16)
+                    .frame(maxWidth: .infinity)
                 } else {
                     board
                         .onGeometryChange(for: CGRect.self) {
                             $0.frame(in: .global).insetBy(dx: gridPadding, dy: 0)
                         } action: { gridFrame = $0 }
                     Spacer(minLength: GridLayoutCalculator.railGap)
-                    controlRail(spec: spec, cellHeight: cellH, vertical: false)
+                    controlRail(spec: spec, cellHeight: cellH, vertical: false, compact: true)
                         .frame(maxWidth: .infinity)
                         .padding(.bottom, 4)
                         // Not on disappear of the side rail: every page change
@@ -564,8 +576,7 @@ struct TileGridView: View {
             // its first screen rather than racing it.
             .task(id: findHighlight?.token) {
                 guard let target = findHighlight, target.pageKey == page.key,
-                      let idx = visible.firstIndex(where: { $0.key == target.key }) else { return }
-                let chunk = idx / perScreen
+                      let chunk = screen(target.key) else { return }
                 if currentDisplayPage != chunk {
                     withAnimation { currentDisplayPage = chunk }
                 }
@@ -575,9 +586,7 @@ struct TileGridView: View {
                 // holds the just-tapped tile so the tap is visible even when it's off
                 // the current page. (The script navigates to the tile's board page
                 // first, so the tile is always somewhere on `page`.)
-                guard let key,
-                      let idx = page.tiles.firstIndex(where: { $0.key == key }) else { return }
-                let chunk = idx / perScreen
+                guard let key, let chunk = screen(key) else { return }
                 if currentDisplayPage != chunk {
                     withAnimation { currentDisplayPage = chunk }
                 }
@@ -602,10 +611,11 @@ struct TileGridView: View {
             ForEach(row, id: \.key) { entry in
                 tileCellView(for: entry, labelFontSize: spec.labelFontSize, lookup: lookup)
                     .frame(width: spec.tileSize, height: cellHeight(spec))
+                    .id(entry.key)
             }
         }
         if row.count > spec.cols {
-            ScrollView(.horizontal, showsIndicators: false) {
+            ScrollingChromeRow(keys: row.map(\.key), nudge: scriptRunner.state == .idle) {
                 cells.padding(.horizontal, padding)
             }
             .frame(height: cellHeight(spec))
@@ -741,9 +751,11 @@ struct TileGridView: View {
 
     /// - Parameter width: the side rail's width, when the grid leaves it more
     ///   than a tile.
+    /// - Parameter compact: fold the level dial and Edit into Tools — see
+    ///   `RailProfile.slots(compact:)`.
     private func controlRail(spec: GridLayoutSpec, cellHeight: CGFloat, vertical: Bool,
-                             width: CGFloat? = nil) -> some View {
-        let slots = railProfile.slots
+                             compact: Bool, width: CGFloat? = nil) -> some View {
+        let slots = railProfile.slots(compact: compact)
         var size = vertical
             ? GridLayoutCalculator.sideRailSlot(spec, slots: slots.count, cellHeight: cellHeight)
             : CGSize(width: spec.railSlotWidth, height: spec.railSlot)
@@ -755,7 +767,7 @@ struct TileGridView: View {
                            isMenuOpen: $showCaregiverMenu,
                            menu: { caregiverMenuContent },
                            isEditMenuOpen: $showEditMenu,
-                           editMenu: { editMenuContent },
+                           editMenu: { editMenuContent(withLevel: compact) },
                            level: railLevel)
     }
 
@@ -766,7 +778,7 @@ struct TileGridView: View {
         // Mounting topic scenes comes with the scene editor work.
         case .topics: false
         case .keyboard, .search: activeScene != nil
-        case .edit: activeScene != nil
+        case .edit, .tools: activeScene != nil
         case .levels, .childMode: true
         }
     }
@@ -791,7 +803,7 @@ struct TileGridView: View {
             if recorder.state == .recording { recorder.recordNavigate(pageKey: key) }
         case .search:
             showFindWord = true
-        case .edit:
+        case .edit, .tools:
             showEditMenu = true
         case .childMode:
             railChildLock = true
@@ -873,8 +885,7 @@ struct TileGridView: View {
             // It keeps its full cell. That is the whole feature: the board does
             // not reflow, so every other word stays exactly where the child
             // learned it.
-            Color.clear
-                .aspectRatio(1, contentMode: .fit)
+            EmptyCell()
                 .frame(maxWidth: .infinity)
                 .accessibilityHidden(true)
         } else if let tile = lookup[entry.key] {
@@ -954,51 +965,10 @@ struct TileGridView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
                 .padding(.bottom, 4)
-            if showsQuickActions {
-                // Only the switch *into* sentences is gated.
-                //
-                // Leaving sentence mode never needs anything, but entering it on
-                // a device with no usable key was a dead button: the tap set the
-                // override, `interactionMode` overrode it straight back to
-                // single-word, and nothing on screen changed or explained why.
-                // Disabled and saying so beats enabled and inert.
-                if engine.interactionMode == .singleWord && !engine.canGenerateSentences {
-                    caregiverMenuRow("AI Sentences need a key",
-                                     systemImage: "key.slash",
-                                     enabled: false) { }
-                } else {
-                    caregiverMenuRow(
-                        engine.interactionMode == .singleWord ? "Switch to AI Sentences" : "Switch to Single Words",
-                        systemImage: "arrow.left.arrow.right"
-                    ) {
-                        showCaregiverMenu = false
-                        toggleInteractionMode()
-                    }
-                }
-                Divider()
-                // The level dial stays open after a step on purpose: the board
-                // redraws under the popover, which is how a caregiver finds the
-                // level that fits — step, look, step again.
-                if let scene = activeScene, BoardLevels(scene: scene, system: systemScene).count > 0 {
-                    RevealLevelControl(scene: scene, compact: true)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                    Divider()
-                }
-                if activeScene != nil {
-                    caregiverMenuRow("Find Word", systemImage: "magnifyingglass") {
-                        findWordAfterMenu = true
-                        showCaregiverMenu = false
-                    }
-                    Divider()
-                }
-                if allScenes.count > 1 {
-                    sceneSwitcher
-                    Divider()
-                }
-                tileStyleSwitcher
-                Divider()
-            }
+            // Only the way back from Child mode and the way into Settings
+            // (Mark 2026-10-29). Mode, level, Find Word, scenes and tile style
+            // all moved to the rail — Search, and Tools or Edit — so a long
+            // press is never the only way to anything a caregiver uses daily.
             // TileScript is deliberately NOT here. It lives in Admin ->
             // Device -> TileScript, which is one door instead of two and is the
             // path that actually works: reached from this menu the runner is
@@ -1017,7 +987,7 @@ struct TileGridView: View {
                 }
                 Divider()
             }
-            caregiverMenuRow("Admin", systemImage: "lock.fill") {
+            caregiverMenuRow("Settings", systemImage: "gearshape") {
                 showCaregiverMenu = false
                 caregiverMenu.requested = .admin
             }
@@ -1033,14 +1003,20 @@ struct TileGridView: View {
     /// on a caregiver device in Child mode.
     /// The caregiver rail's Edit menu: what changes how this board looks and
     /// behaves, in one place, beside the button.
-    private var editMenuContent: some View {
+    /// - Parameter withLevel: the Tools menu, which carries the level dial the
+    ///   compact rail has no room for.
+    private func editMenuContent(withLevel: Bool) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Edit")
+            Text(withLevel ? "Tools" : "Edit")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
                 .padding(.bottom, 4)
+            if withLevel, let level = railLevel {
+                levelRow(level)
+                Divider()
+            }
             if allScenes.count > 1 {
                 sceneSwitcher
                 Divider()
@@ -1114,8 +1090,6 @@ struct TileGridView: View {
                       systemImage: "text.bubble")
         }
     }
-
-    private var showsQuickActions: Bool { quickActionsEnabled && railProfile == .caregiver }
 
     private func isFindTarget(_ entry: TileEntry) -> Bool {
         findHighlight?.key == entry.key && findHighlight?.pageKey == identityPageKey
@@ -1224,6 +1198,23 @@ struct TileGridView: View {
         imageResolver.activeSet = resolved
     }
 
+    /// The level dial at menu size: full-height − and + either side of it.
+    private func levelRow(_ level: RailLevel) -> some View {
+        HStack(spacing: 12) {
+            Label("Level", systemImage: RailItem.levels.systemImage)
+                .font(.body)
+            Spacer()
+            Stepper(value: Binding(get: { level.level }, set: { level.step($0) }),
+                    in: 1...max(1, level.count)) {
+                Text("\(level.level) of \(level.count)")
+                    .font(.body.monospacedDigit())
+            }
+            .fixedSize()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+    }
+
     private func caregiverMenuRow(_ title: String, systemImage: String,
                                   enabled: Bool = true,
                                   action: @escaping () -> Void) -> some View {
@@ -1311,6 +1302,72 @@ struct TileGridView: View {
             }
         }
     }
+}
+
+/// The system row on a grid narrower than its ten folders (iPhone, iPad
+/// Large and Largest): it scrolls sideways, and has to say so. A chevron
+/// stands on each edge that has more folders past it, and once a launch the
+/// row slides to its end and back, so a child (or a parent) sees there is
+/// more of it (Mark 2026-10-28). Not while a script runs: the slide would
+/// land in its screenshots.
+/// A cell with nothing in it, the shape of a tile — which on a phone on its
+/// side is wider than tall (`tileAspect`).
+private struct EmptyCell: View {
+    @Environment(\.tileAspect) private var tileAspect
+    var body: some View { Color.clear.aspectRatio(tileAspect, contentMode: .fit) }
+}
+
+private struct ScrollingChromeRow<Content: View>: View {
+    let keys: [String]
+    let nudge: Bool
+    @ViewBuilder let content: () -> Content
+
+    @State private var moreBefore = false
+    @State private var moreAfter = true
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                content()
+            }
+            .onScrollGeometryChange(for: [Bool].self) { g in
+                [g.contentOffset.x > 4,
+                 g.contentOffset.x + g.containerSize.width < g.contentSize.width - 4]
+            } action: { _, edges in
+                withAnimation(.easeOut(duration: 0.2)) {
+                    moreBefore = edges[0]
+                    moreAfter = edges[1]
+                }
+            }
+            .overlay(alignment: .leading) { chevron("chevron.left", shown: moreBefore) }
+            .overlay(alignment: .trailing) { chevron("chevron.right", shown: moreAfter) }
+            .task {
+                guard nudge, !ChromeRowNudge.done, let first = keys.first, let last = keys.last else { return }
+                ChromeRowNudge.done = true
+                try? await Task.sleep(for: .milliseconds(800))
+                withAnimation(.easeInOut(duration: 0.7)) { proxy.scrollTo(last, anchor: .trailing) }
+                try? await Task.sleep(for: .milliseconds(1300))
+                withAnimation(.easeInOut(duration: 0.7)) { proxy.scrollTo(first, anchor: .leading) }
+            }
+        }
+    }
+
+    private func chevron(_ name: String, shown: Bool) -> some View {
+        Image(systemName: name)
+            .font(.system(size: 13, weight: .bold))
+            .foregroundStyle(.secondary)
+            .frame(width: 22, height: 22)
+            .background(.regularMaterial, in: Circle())
+            .padding(.horizontal, 2)
+            .opacity(shown ? 1 : 0)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+}
+
+/// Whether the scrolling system row has shown it scrolls since launch.
+@MainActor private enum ChromeRowNudge {
+    static var done = false
 }
 
 extension Array {

@@ -657,5 +657,42 @@ struct BoardPrintTests {
         #expect(BoardPDFRenderer.fittedLabelSize("", requested: 9, available: 40) == 9)
         #expect(BoardPDFRenderer.fittedLabelSize("eat", requested: 9, available: 0) == 9)
     }
+
+    /// Mark 2026-10-29: the PDF follows the board, not the order pages were
+    /// stored — Home, the row's folders left to right, each with its own
+    /// folders under it and titled by path.
+    @Test func printedPagesFollowTheBoard() {
+        func folder(_ to: String) -> TileEntry { TileEntry(key: "f_\(to)", link: to, isAudible: false) }
+        let pages = [
+            PageSpec(key: "orphan", tiles: []),
+            PageSpec(key: "time_seasons", displayName: "Seasons & months", tiles: []),
+            PageSpec(key: "people", tiles: []),
+            PageSpec(key: "time", tiles: [folder("time_seasons"), folder("home")]),
+            PageSpec(key: "food", tiles: []),
+            PageSpec(key: "home", tiles: [folder("food")]),
+        ]
+        let walked = BoardPagination.boardOrder(pages, homeKey: "home",
+                                                roots: [folder("people"), folder("time")])
+        #expect(walked.map(\.key) == ["home", "people", "time", "time_seasons", "food", "orphan"])
+        #expect(walked[3].title == "Time › Seasons & months")
+        #expect(walked[2].title == "Time")
+    }
+
+    /// A page's name in print is the label on the folder that opens it, and a
+    /// folder shared by two pages belongs to the one with its key's prefix.
+    @Test func printedPathsUseFolderLabelsAndOwners() {
+        func folder(_ to: String) -> TileEntry { TileEntry(key: "f_\(to)", link: to, isAudible: false) }
+        let pages = [
+            PageSpec(key: "home", tiles: [TileEntry(key: "i", link: "i_page", isAudible: true),
+                                          TileEntry(key: "play", link: "play_activities", isAudible: true)]),
+            PageSpec(key: "i_page", tiles: [folder("play_toys")]),
+            PageSpec(key: "play_activities", tiles: [folder("play_toys")]),
+            PageSpec(key: "play_toys", tiles: []),
+        ]
+        let labels = ["f_play_toys": "Toys", "play": "Play", "i": "I"]
+        let walked = BoardPagination.boardOrder(pages, homeKey: "home", roots: [],
+                                                label: { labels[$0.key] })
+        #expect(walked.map(\.title) == ["Home", "I", "Play", "Play › Toys"])
+    }
 }
 }

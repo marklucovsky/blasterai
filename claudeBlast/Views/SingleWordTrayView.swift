@@ -48,6 +48,13 @@ struct SingleWordTrayView: View {
     /// strip's own 6pt above and below: 56 + 19 + 12 = 87, rounded to 88.
     /// The picture did not shrink; only the label's ground grew.
     static let stripHeight: CGFloat = 88
+    /// A phone on its side, where every point of height is a board row's
+    /// (Mark 2026-10-29). Clear stays a whole touch target; the pictures shrink.
+    static let shortStripHeight: CGFloat = 64
+
+    /// This strip's height: `stripHeight`, or `shortStripHeight` on a phone on
+    /// its side.
+    var height: CGFloat = SingleWordTrayView.stripHeight
 
     var body: some View {
         Group {
@@ -63,9 +70,9 @@ struct SingleWordTrayView: View {
                     let w = both ? (column - TileLayout.gap) / 2 : column
                     HStack(spacing: TileLayout.gap) {
                         if both {
-                            StripPlayButton(width: w, isEnabled: !strip.isEmpty) { engine.speakStrip() }
+                            StripPlayButton(height: height, width: w, isEnabled: !strip.isEmpty) { engine.speakStrip() }
                         }
-                        ClearButton(width: w, isEnabled: !strip.isEmpty, action: onClear)
+                        ClearButton(height: height, width: w, isEnabled: !strip.isEmpty, action: onClear)
                     }
                     .frame(width: column)
                 }
@@ -94,12 +101,12 @@ struct SingleWordTrayView: View {
             // not it parses. Mark: *"in word mode, we TTS the collection of
             // words which may or may not make sense."*
             if !engine.trayShowsPictures {
-                StripPlayButton(isEnabled: !strip.isEmpty) {
+                StripPlayButton(height: height, isEnabled: !strip.isEmpty) {
                     engine.speakStrip()
                 }
             }
 
-            ClearButton(isEnabled: !strip.isEmpty, action: onClear)
+            ClearButton(height: height, isEnabled: !strip.isEmpty, action: onClear)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 4)
@@ -110,7 +117,7 @@ struct SingleWordTrayView: View {
     /// The square look: a white strip whatever the appearance, its words bare
     /// pictures (`PlainTrayPicture`), as in the sentence tray.
     private var isFlush: Bool {
-        railAlignment != nil && engine.trayShowsPictures && TileLook.current() == .square
+        engine.trayShowsPictures && TileLook.current() == .square
     }
 
     private var stripCard: some View {
@@ -128,7 +135,7 @@ struct SingleWordTrayView: View {
                         ForEach(Array(strip.enumerated()), id: \.offset) { idx, tile in
                             WordChip(tile: tile,
                                      showsPicture: engine.trayShowsPictures,
-                                     side: isFlush ? Self.stripHeight : nil) {
+                                     side: isFlush ? height : nil) {
                                 onRemove(idx)
                             }
                                 .overlay(alignment: .topTrailing) {
@@ -154,9 +161,9 @@ struct SingleWordTrayView: View {
                 .padding(.vertical, isFlush ? 0 : 6)
                 // Fixed height so the tray doesn't grow when the first word
                 // lands (empty-hint and filled states must be the same height).
-                .frame(height: Self.stripHeight)
+                .frame(height: height)
             }
-            .frame(height: Self.stripHeight)
+            .frame(height: height)
             .onChange(of: strip.count) { _, _ in
                 // Keep the newest word in view on the right.
                 if let last = strip.indices.last {
