@@ -386,6 +386,98 @@
               "another"
             ]
           ]
+        },
+        {
+          "key": "folder_phrases",
+          "page": "small_phrases",
+          "words": [
+            [
+              "thats_a_big_one",
+              "oh_no_its_stuck",
+              "check_it_out"
+            ],
+            [
+              "i_need_help",
+              "help_me",
+              "its_not_working",
+              "this_is_tricky"
+            ],
+            [
+              "whats_next",
+              "its_time_for",
+              "something_different"
+            ],
+            [
+              "i_dont_like_it",
+              "stop_doing_that",
+              "dont_touch_it",
+              "thats_enough"
+            ],
+            [
+              "i_love_it",
+              "so_much_fun",
+              "im_so_happy"
+            ],
+            [
+              "do_it_again",
+              "we_did_it",
+              "put_it_down"
+            ],
+            [
+              "we_gotta_go",
+              "thats_so_loud",
+              "is_the_best"
+            ],
+            [
+              "this_is_new",
+              "whats_going_to_happen",
+              "something_else"
+            ]
+          ],
+          "at": {
+            "r2c1": [
+              "thats_a_big_one",
+              "oh_no_its_stuck",
+              "check_it_out"
+            ],
+            "r2c6": [
+              "i_need_help",
+              "help_me",
+              "its_not_working",
+              "this_is_tricky"
+            ],
+            "r3c1": [
+              "whats_next",
+              "its_time_for",
+              "something_different"
+            ],
+            "r3c6": [
+              "i_dont_like_it",
+              "stop_doing_that",
+              "dont_touch_it",
+              "thats_enough"
+            ],
+            "r4c1": [
+              "i_love_it",
+              "so_much_fun",
+              "im_so_happy"
+            ],
+            "r4c6": [
+              "do_it_again",
+              "we_did_it",
+              "put_it_down"
+            ],
+            "r5c1": [
+              "we_gotta_go",
+              "thats_so_loud",
+              "is_the_best"
+            ],
+            "r5c6": [
+              "this_is_new",
+              "whats_going_to_happen",
+              "something_else"
+            ]
+          }
         }
       ]
     },
@@ -2819,6 +2911,11 @@
     {
       "key": "folder_school_tech",
       "label": "School & tech"
+    },
+    {
+      "key": "folder_phrases",
+      "label": "Phrases",
+      "bundleImage": "say"
     }
   ],
   "relabel": {

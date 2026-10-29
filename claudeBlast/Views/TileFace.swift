@@ -153,16 +153,36 @@ struct TileFace: View {
                         if !isWide { badge(on: squareGround, padding: 2) }
                     }
                     .padding(.top, m)
-                Text(label)
-                    .font(.system(size: labelFontSize, weight: layout == .plate ? .semibold : .medium))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
-                    .foregroundStyle(squareInk)
-                    .padding(.horizontal, 3)
-                    .frame(width: side, height: band)
-                    // Lifted clear of the way bar; the picture's own margin
-                    // takes the overlap.
-                    .offset(y: m + art - (wayMark == nil ? 0 : WayMark.bar - 1))
+                // Lifted clear of the way bar; the picture's own margin takes
+                // the overlap.
+                let lift: CGFloat = wayMark == nil ? 0 : WayMark.bar - 1
+                if Self.labelOverflows(label, fontSize: labelFontSize, width: side) {
+                    // A phrase ("Wanna do something different?") that one
+                    // line would shrink past reading: two lines on the tile's
+                    // own ground, rising over the foot of the picture. A size down,
+                    // so the plate covers as little of the picture as it can.
+                    let small = (labelFontSize * 0.8).rounded()
+                    let plate = 2 * GridLayoutCalculator.squareLabelHeight(forFont: small)
+                    Text(label)
+                        .font(.system(size: small, weight: .semibold))
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.6)
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(squareInk)
+                        .padding(.horizontal, 3)
+                        .frame(width: side, height: plate)
+                        .background(squareGround)
+                        .offset(y: m + art + band - plate - lift)
+                } else {
+                    Text(label)
+                        .font(.system(size: labelFontSize, weight: layout == .plate ? .semibold : .medium))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                        .foregroundStyle(squareInk)
+                        .padding(.horizontal, 3)
+                        .frame(width: side, height: band)
+                        .offset(y: m + art - lift)
+                }
             }
             // A wide tile has room beside its picture: the marker goes in the
             // corner, off the picture, where it sat over the middle of it
@@ -172,6 +192,14 @@ struct TileFace: View {
             }
         }
         .aspectRatio(tileAspect, contentMode: .fit)
+    }
+
+    /// True when one line would clip `label` even at the band's smallest scale
+    /// (0.6), so the square tile gives it two lines instead.
+    static func labelOverflows(_ label: String, fontSize: CGFloat, width: CGFloat) -> Bool {
+        let font = UIFont.systemFont(ofSize: fontSize, weight: .medium)
+        let natural = (label as NSString).size(withAttributes: [.font: font]).width
+        return natural * 0.6 > width - 6
     }
 
     /// Wider than tall: a phone on its side (`tileAspect`).
@@ -304,6 +332,17 @@ struct GeneratedTileCell: View {
                 }
             }
     }
+}
+
+#Preview("Long phrases") {
+    HStack(spacing: 2) {
+        TileFace(imageKey: "different", label: "Wanna do something different?", wordClass: "social", accent: .pink)
+        TileFace(imageKey: "then", label: "What's going to happen next?", wordClass: "social", accent: .pink)
+        TileFace(imageKey: "big", label: "That's a big one!", wordClass: "social", accent: .pink)
+        TileFace(imageKey: "i_love_it", label: "I love it", wordClass: "social", accent: .pink)
+    }
+    .frame(width: 400)
+    .previewEnvironment()
 }
 
 #Preview("Way marks") {

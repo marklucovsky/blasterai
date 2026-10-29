@@ -9,7 +9,9 @@ Each entry names a page and the words it gains. For every word this adds:
   class among the page's existing words, so a new animal is classed like the
   animals already there; an entry's `wordClass`, or `classOf` for one word,
   overrides it. Its label is written only when the key alone would not
-  spell it (`cant` → "can't", `monday` → "Monday").
+  spell it (`cant` → "can't", `monday` → "Monday"). `imageOf` maps a key to an
+  existing tile whose picture it borrows (`bundleImage`), the way an SLP reuses
+  *new* for "This is new"; a folder's `image` does the same for its tile.
 - a part of speech in `parts_of_speech.json`: the entry's `pos`, or `posOf` for
   that word. A key that already has one keeps it.
 - a place in `tools/board_spec/blasterai60.json`: appended to the page's
@@ -91,7 +93,10 @@ def main():
                 folder = {"key": f["key"], "page": key, "words": []}
                 parent.setdefault("folders", []).append(folder)
                 pages[key] = folder
-                spec.setdefault("newTiles", []).append({"key": f["key"], "label": f["label"]})
+                tile = {"key": f["key"], "label": f["label"]}
+                if "image" in f:
+                    tile["bundleImage"] = f["image"]
+                spec.setdefault("newTiles", []).append(tile)
         if key not in pages:
             sys.exit(f"{key}: not a page the spec lays out; adopt it into blasterai60.json first")
         page = pages[key]
@@ -114,6 +119,8 @@ def main():
                 tile = {"key": k, "wordClass": entry.get("classOf", {}).get(k, page_class)}
                 if label and label != k.rstrip("_").replace("_", " "):
                     tile["label"] = label
+                if k in entry.get("imageOf", {}):
+                    tile["bundleImage"] = entry["imageOf"][k]
                 vocab.append(tile)
                 classes[k] = tile["wordClass"]
                 added_tiles.append(k)

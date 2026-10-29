@@ -1,0 +1,53 @@
+{
+  "_doc": "Aubrey's SLP's Gestalt Language Processing starter phrases (session 15, 2026-10-29), as a Phrases folder on Small words. Each run is one of her eight groups: Commenting, Help, Transitions, Protests, Shared Joy, Action Routines, Sensory Motor, New Situations. She draws a phrase with a picture the board already has (*new* for \"This is new\"), so `imageOf` borrows existing art and no tile is generated. It's time for / We gotta go / is the best are carrier phrases: the child adds the word (bath, swing, music) and the sentence engine joins them. I love it was already on Social.",
+  "pages": [
+    {
+      "page": "small_phrases",
+      "folder": {
+        "parent": "small_words",
+        "key": "folder_phrases",
+        "label": "Phrases",
+        "image": "say"
+      },
+      "pos": "social",
+      "wordClass": "social",
+      "words": [
+        ["thats_a_big_one|That's a big one!", "oh_no_its_stuck|Oh no, it's stuck!", "check_it_out|Check it out!"],
+        ["i_need_help|I need some help", "help_me|Help me", "its_not_working|It's not working!", "this_is_tricky|This is tricky"],
+        ["whats_next|What's next?", "its_time_for|It's time for", "something_different|Wanna do something different?"],
+        ["i_dont_like_it|I don't like it!", "stop_doing_that|Stop doing that!", "dont_touch_it|Don't touch it!", "thats_enough|That's enough!"],
+        ["i_love_it", "so_much_fun|This is so much fun!", "im_so_happy|I'm so happy"],
+        ["do_it_again|Let's do it again!", "we_did_it|We did it!", "put_it_down|Put it down"],
+        ["we_gotta_go|We gotta go", "thats_so_loud|That's so loud", "is_the_best|is the best"],
+        ["this_is_new|This is new", "whats_going_to_happen|What's going to happen next?", "something_else|Let's do something else"]
+      ],
+      "imageOf": {
+        "thats_a_big_one": "big",
+        "oh_no_its_stuck": "stuck",
+        "check_it_out": "look",
+        "i_need_help": "help",
+        "help_me": "help",
+        "its_not_working": "broken",
+        "this_is_tricky": "hard",
+        "whats_next": "next",
+        "its_time_for": "time",
+        "something_different": "different",
+        "i_dont_like_it": "yucky",
+        "stop_doing_that": "stop",
+        "dont_touch_it": "touch",
+        "thats_enough": "all_done",
+        "so_much_fun": "fun",
+        "im_so_happy": "happy",
+        "do_it_again": "again",
+        "we_did_it": "finish",
+        "put_it_down": "down",
+        "we_gotta_go": "go",
+        "thats_so_loud": "loud",
+        "is_the_best": "best",
+        "this_is_new": "new",
+        "whats_going_to_happen": "then",
+        "something_else": "other"
+      }
+    }
+  ]
+}

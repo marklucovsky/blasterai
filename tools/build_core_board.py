@@ -513,7 +513,8 @@ def updated_vocab(spec, vocab):
     have = {t["key"] for t in vocab}
     for t in spec.get("newTiles", []):
         if t["key"] not in have:
-            vocab.append({"key": t["key"], "wordClass": NEW_TILE_CLASS, "label": t["label"]})
+            vocab.append({"key": t["key"], "wordClass": NEW_TILE_CLASS, "label": t["label"],
+                          **({"bundleImage": t["bundleImage"]} if "bundleImage" in t else {})})
     for t in vocab:
         if t["key"] in spec.get("relabel", {}):
             t["label"] = spec["relabel"][t["key"]]
@@ -550,6 +551,7 @@ def thumb(key):
 def render_html(board, vocab, pos, path):
     label = {t["key"]: t.get("label") or t["key"].rstrip("_").replace("_", " ") for t in vocab}
     part = {k: p for p, ks in pos.items() for k in ks}
+    art = {t["key"]: t.get("bundleImage") or t["key"] for t in vocab}
     titles = {"home": "Home"}
     for f in [f for p in board.spec["pages"].values() for f in p.get("folders", [])]:
         titles[f["page"]] = label.get(f["key"], f["key"])
@@ -560,7 +562,7 @@ def render_html(board, vocab, pos, path):
         else:
             k = e["key"]
             name = label.get(k, k)
-            img = thumb(k)
+            img = thumb(art.get(k, k))
             silent = "to" in e and not e["audible"]
             color = COLOR["link"] if silent else COLOR.get(part.get(k, "noun"), COLOR["noun"])
             cls = "nav" if silent else "door" if "to" in e else "word"
