@@ -2017,7 +2017,13 @@
           ]
         },
         {
-          "space": 2
+          "space": 1
+        },
+        {
+          "link": "folder_phrases",
+          "to": "small_phrases",
+          "audible": false,
+          "linkColor": "social"
         },
         {
           "keys": [
@@ -4457,6 +4463,97 @@
             "vroom",
             "choo_choo",
             "beep"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "small_phrases",
+      "name": "Phrases",
+      "tiles": [
+        {
+          "keys": [
+            "thats_a_big_one",
+            "oh_no_its_stuck",
+            "check_it_out"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "keys": [
+            "i_need_help",
+            "help_me",
+            "its_not_working",
+            "this_is_tricky"
+          ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "keys": [
+            "whats_next",
+            "its_time_for",
+            "something_different"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "keys": [
+            "i_dont_like_it",
+            "stop_doing_that",
+            "dont_touch_it",
+            "thats_enough"
+          ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "keys": [
+            "i_love_it",
+            "so_much_fun",
+            "im_so_happy"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "keys": [
+            "do_it_again",
+            "we_did_it",
+            "put_it_down"
+          ]
+        },
+        {
+          "space": 1
+        },
+        {
+          "link": "folder_phrases",
+          "to": "small_phrases",
+          "audible": false,
+          "linkColor": "social"
+        },
+        {
+          "keys": [
+            "we_gotta_go",
+            "thats_so_loud",
+            "is_the_best"
+          ]
+        },
+        {
+          "space": 2
+        },
+        {
+          "keys": [
+            "this_is_new",
+            "whats_going_to_happen",
+            "something_else"
           ]
         }
       ]

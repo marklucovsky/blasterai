@@ -4377,5 +4377,160 @@
     "key": "folder_school_tech",
     "wordClass": "navigation",
     "label": "School & tech"
+  },
+  {
+    "key": "thats_a_big_one",
+    "wordClass": "social",
+    "label": "That's a big one!",
+    "bundleImage": "big"
+  },
+  {
+    "key": "oh_no_its_stuck",
+    "wordClass": "social",
+    "label": "Oh no, it's stuck!",
+    "bundleImage": "stuck"
+  },
+  {
+    "key": "check_it_out",
+    "wordClass": "social",
+    "label": "Check it out!",
+    "bundleImage": "look"
+  },
+  {
+    "key": "i_need_help",
+    "wordClass": "social",
+    "label": "I need some help",
+    "bundleImage": "help"
+  },
+  {
+    "key": "help_me",
+    "wordClass": "social",
+    "label": "Help me",
+    "bundleImage": "help"
+  },
+  {
+    "key": "its_not_working",
+    "wordClass": "social",
+    "label": "It's not working!",
+    "bundleImage": "broken"
+  },
+  {
+    "key": "this_is_tricky",
+    "wordClass": "social",
+    "label": "This is tricky",
+    "bundleImage": "hard"
+  },
+  {
+    "key": "whats_next",
+    "wordClass": "social",
+    "label": "What's next?",
+    "bundleImage": "next"
+  },
+  {
+    "key": "its_time_for",
+    "wordClass": "social",
+    "label": "It's time for",
+    "bundleImage": "time"
+  },
+  {
+    "key": "something_different",
+    "wordClass": "social",
+    "label": "Wanna do something different?",
+    "bundleImage": "different"
+  },
+  {
+    "key": "i_dont_like_it",
+    "wordClass": "social",
+    "label": "I don't like it!",
+    "bundleImage": "yucky"
+  },
+  {
+    "key": "stop_doing_that",
+    "wordClass": "social",
+    "label": "Stop doing that!",
+    "bundleImage": "stop"
+  },
+  {
+    "key": "dont_touch_it",
+    "wordClass": "social",
+    "label": "Don't touch it!",
+    "bundleImage": "touch"
+  },
+  {
+    "key": "thats_enough",
+    "wordClass": "social",
+    "label": "That's enough!",
+    "bundleImage": "all_done"
+  },
+  {
+    "key": "so_much_fun",
+    "wordClass": "social",
+    "label": "This is so much fun!",
+    "bundleImage": "fun"
+  },
+  {
+    "key": "im_so_happy",
+    "wordClass": "social",
+    "label": "I'm so happy",
+    "bundleImage": "happy"
+  },
+  {
+    "key": "do_it_again",
+    "wordClass": "social",
+    "label": "Let's do it again!",
+    "bundleImage": "again"
+  },
+  {
+    "key": "we_did_it",
+    "wordClass": "social",
+    "label": "We did it!",
+    "bundleImage": "finish"
+  },
+  {
+    "key": "put_it_down",
+    "wordClass": "social",
+    "label": "Put it down",
+    "bundleImage": "down"
+  },
+  {
+    "key": "we_gotta_go",
+    "wordClass": "social",
+    "label": "We gotta go",
+    "bundleImage": "go"
+  },
+  {
+    "key": "thats_so_loud",
+    "wordClass": "social",
+    "label": "That's so loud",
+    "bundleImage": "loud"
+  },
+  {
+    "key": "is_the_best",
+    "wordClass": "social",
+    "bundleImage": "best"
+  },
+  {
+    "key": "this_is_new",
+    "wordClass": "social",
+    "label": "This is new",
+    "bundleImage": "new"
+  },
+  {
+    "key": "whats_going_to_happen",
+    "wordClass": "social",
+    "label": "What's going to happen next?",
+    "bundleImage": "then"
+  },
+  {
+    "key": "something_else",
+    "wordClass": "social",
+    "label": "Let's do something else",
+    "bundleImage": "other"
+  },
+  {
+    "key": "folder_phrases",
+    "wordClass": "navigation",
+    "label": "Phrases",
+    "bundleImage": "say"
   }
 ]

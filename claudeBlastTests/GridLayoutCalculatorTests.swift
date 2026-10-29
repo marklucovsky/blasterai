@@ -237,6 +237,18 @@ struct GridLayoutCalculatorTests {
         #expect(board.verticalSpacing == TileLayout.gap)
     }
 
+    /// A phrase too long for one line at the band's smallest scale gets two;
+    /// a word, or a short phrase, keeps the one-line band. Sized at an iPad
+    /// 11" landscape tile.
+    @Test func onlyPhrasesTooLongForOneLineGetTwo() {
+        let board = landscapeBoard(iPad11, look: .square)
+        let overflows = { TileFace.labelOverflows($0, fontSize: board.labelFontSize, width: board.tileSize) }
+        #expect(overflows("Wanna do something different?"))
+        #expect(overflows("What's going to happen next?"))
+        #expect(!overflows("hamburger"))
+        #expect(!overflows("I love it"))
+    }
+
     /// No label hangs under a square tile, so a height-bound board can only
     /// get bigger tiles from the change, never smaller ones.
     @Test func squareTilesAreNeverSmallerThanClassic() {
