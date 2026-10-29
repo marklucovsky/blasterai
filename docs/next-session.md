@@ -94,6 +94,21 @@ and Settings. The "Caregiver Menu Quick Actions" setting is gone.
 - The iPhone 16e is unchecked; its landscape tiles will be smaller again.
 - **Per-tile audio**, starting with Social › Sounds (GLP feedback).
 
+**The printed book.** The PDF prints in board order, with path titles (#159).
+Next, on feedback:
+- **Print a shared folder in both places.** Toys is opened from Play and from
+  I. A book could print it after each, so it's a few pages from wherever you
+  are. It makes the book longer, so make it a toggle.
+- **Edge tabs by section.** Put a coloured tab on the page edge, stepped down
+  for each row-1 folder, like a dictionary's thumb index. People, Actions,
+  Time and the others can then be found with the book closed.
+- **Page numbers and a contents page.** Number the sheets and add a contents
+  page. Each folder tile prints "→ p. 14", so a caregiver turns straight to
+  the page the folder opens.
+- **A cover,** with the board's name and the child's name.
+- **A binding gutter** for a ring binder or laminating, and an option for cut
+  lines.
+
 ## Session 15: new UI to testers on TestFlight
 
 - Bump the build number.
