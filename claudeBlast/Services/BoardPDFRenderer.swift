@@ -445,6 +445,58 @@ enum BoardPagination {
         return sheets
     }
 
+    /// The pages in the order a child walks them: Home, then each root (the
+    /// system row's folders, left to right), each followed by the folders it
+    /// opens, depth first in tile order; then Home's own links; then anything
+    /// no link reaches, in stored order. Stored order is the order pages were
+    /// added, which reads as random on paper (Mark 2026-10-29).
+    ///
+    /// Each page is titled by its path of folder labels, "Time › Seasons &
+    /// months": a page's own name when a caregiver gave it one, otherwise the
+    /// label (`label`) of the folder tile that opens it, otherwise its key.
+    static func boardOrder(_ pages: [PageSpec], homeKey: String, roots: [TileEntry],
+                           label: (TileEntry) -> String? = { _ in nil }) -> [PageSpec] {
+        let byKey = Dictionary(pages.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
+        let rootSet = Set(roots.map(\.link))
+        // A folder page reached from several pages belongs to the one it shares
+        // a key prefix with: Play › Toys, though I's page opens Toys first.
+        let prefix = { (key: String) in key.split(separator: "_").first.map(String.init) ?? key }
+        var owner: [String: String] = [:]
+        for page in pages {
+            for entry in page.tiles where !entry.isAudible && !entry.link.isEmpty
+                && entry.link != page.key && prefix(entry.link) == prefix(page.key) {
+                owner[entry.link] = owner[entry.link] ?? page.key
+            }
+        }
+        var seen: Set<String> = []
+        var ordered: [PageSpec] = []
+
+        func visit(_ key: String, path: [String], via folder: TileEntry? = nil, descend: Bool = true) {
+            guard var page = byKey[key], seen.insert(key).inserted else { return }
+            let name = !page.displayName.isEmpty ? page.displayName
+                : folder.flatMap(label).flatMap { $0.isEmpty ? nil : $0 } ?? page.title
+            let here = path + [name]
+            page.displayName = here.joined(separator: " › ")
+            ordered.append(page)
+            guard descend else { return }
+            // Folders only, and never into a root: a spoken word that also
+            // opens a page (go → Places) is a shortcut, not where Places lives.
+            for entry in page.tiles where !entry.link.isEmpty && !entry.isAudible
+                && entry.link != homeKey && !rootSet.contains(entry.link)
+                && (owner[entry.link] ?? page.key) == page.key {
+                visit(entry.link, path: here, via: entry)
+            }
+        }
+
+        visit(homeKey, path: [], descend: false)
+        for root in roots { visit(root.link, path: [], via: root) }
+        for entry in byKey[homeKey]?.tiles ?? [] where !entry.link.isEmpty {
+            visit(entry.link, path: [], via: entry)
+        }
+        for page in pages { visit(page.key, path: []) }
+        return ordered
+    }
+
     /// Apply the caregiver's filters before pagination, so sheet counts reflect
     /// what will actually print.
     static func filtered(_ pages: [PageSpec],
@@ -592,7 +644,11 @@ enum BoardPDFRenderer {
                                          orientation: options.orientation,
                                          columns: options.resolvedColumns,
                                          pinnedRows: options.pinnedRows)
-        let visible = BoardPagination.filtered(pages, filter: options.filter, tileLookup: tileLookup)
+        let rowPages = Set(BoardChrome.rowPages(of: scene))
+        let roots = BoardChrome.row(inSystemScene: true).filter { rowPages.contains($0.link) }
+        let walked = BoardPagination.boardOrder(pages, homeKey: scene.homePageKey, roots: roots,
+                                                label: { tileLookup[$0.key]?.displayName })
+        let visible = BoardPagination.filtered(walked, filter: options.filter, tileLookup: tileLookup)
         let chrome = options.matchesScreenLayout && BoardChrome.inherits(scene)
             ? Array(BoardChrome.row(for: scene, level: scene.effectiveRevealLevel).prefix(options.resolvedColumns))
             : []
