@@ -245,6 +245,7 @@ struct GridLayoutCalculatorTests {
         let overflows = { TileFace.labelOverflows($0, fontSize: board.labelFontSize, width: board.tileSize) }
         #expect(overflows("Wanna do something different?"))
         #expect(overflows("What's going to happen next?"))
+        #expect(overflows("Let's do something else"))
         #expect(!overflows("hamburger"))
         #expect(!overflows("I love it"))
     }
