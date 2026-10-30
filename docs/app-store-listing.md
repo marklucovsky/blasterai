@@ -220,16 +220,21 @@ build's *What's new* in `docs/beta-review-notes.md` §2.
 
 ### Screenshots
 
-Ten images, framed by `tools/frame_screenshots.py` from
-`tools/appstore/shots.json` into `build/shots/framed/`:
+Fourteen images, framed by `tools/frame_screenshots.py` from
+`tools/appstore/shots.json` into `build/shots/framed-1029/`:
 
 | Slot | iPad 13" (2752×2064) | iPhone 6.3" (1206×2622) — `iphone-1206x2622/` |
 |---|---|---|
 | 1 | `ipad/01-board.png` | `iphone/01-board.png` |
-| 2 | `ipad/02-art.png` | `iphone/02-art.png` |
-| 3 | `ipad/03-coverage.png` | `iphone/03-coverage.png` |
-| 4 | `ipad/04-ai-consent.png` | `iphone/04-ai-consent.png` |
-| 5 | `ipad/05-sentence.png` | `iphone/05-sentence.png` |
+| 2 | `ipad/02-folders.png` | `iphone/02-folders.png` |
+| 3 | `ipad/03-phrases.png` | `iphone/03-phrases.png` |
+| 4 | `ipad/04-sentence.png` | `iphone/04-sentence.png` |
+| 5 | `ipad/05-art.png` | `iphone/05-art.png` |
+| 6 | `ipad/06-coverage.png` | `iphone/06-coverage.png` |
+| 7 | `ipad/07-ai-consent.png` | `iphone/07-ai-consent.png` |
+
+No price words in any caption (App Review 2.3.7, 2026-10-28): shot 1 was
+"Modern. Familiar. *Free.*" and is "Modern. Familiar. *Ready.*"
 
 The Mac listing of a Designed-for-iPad app reuses the iPad set. How they were
 shot: `docs/release-runbook.md` §"App Store screenshots".

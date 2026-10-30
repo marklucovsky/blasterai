@@ -367,10 +367,13 @@ These are in App Store Connect, in a browser, and they are part of the loop:
 
 ### App Store screenshots
 
-Shot 2026-10-07 for 1.0: five per device, iPad 13" landscape and iPhone (rendered at 6.9", uploaded at the 6.3" slot's 1206×2622)
-portrait, dark mode, Classic Light except the art shot (Playful 3D). Framed by
+Shot 2026-10-29 for 1.0.0 (9): seven per device, captured by hand on an iPad
+11" (landscape, scaled into the 13" frame) and an iPhone 16 Pro (portrait,
+1206×2622), dark mode, Classic Light, board shots in Child mode. Framed by
 `tools/frame_screenshots.py` from `tools/appstore/shots.json`, which holds the
-order, captions and source paths; output lands in `build/shots/framed/`.
+order, captions and source paths; raws in `build/shots/raw/{ipad,iphone}-1029/`,
+output in `build/shots/framed-1029/`. The AI consent shots are live onboarding
+captures, not the over-the-board sheet (the trick below rarely works).
 
 **Real captures only.** Never frame an old site image or a mock-up — the first
 round did, in Playful 3D on a stale layout, and every decision about the frame

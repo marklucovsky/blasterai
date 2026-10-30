@@ -196,10 +196,14 @@ struct TileFace: View {
 
     /// True when one line would clip `label` even at the band's smallest scale
     /// (0.6), so the square tile gives it two lines instead.
+    ///
+    /// Measured at 0.7, not 0.6: SwiftUI stops short of the floor it is given,
+    /// and "Let's do something else" measured as fitting at 0.6 on an iPad 11"
+    /// and still drew as "Let's do something…" (2026-10-29).
     static func labelOverflows(_ label: String, fontSize: CGFloat, width: CGFloat) -> Bool {
         let font = UIFont.systemFont(ofSize: fontSize, weight: .medium)
         let natural = (label as NSString).size(withAttributes: [.font: font]).width
-        return natural * 0.6 > width - 6
+        return natural * 0.7 > width - 6
     }
 
     /// Wider than tall: a phone on its side (`tileAspect`).
