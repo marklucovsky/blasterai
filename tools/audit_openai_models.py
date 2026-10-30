@@ -49,7 +49,12 @@ MODEL_PATTERN = re.compile(
 
 # Literals that name a family in prose or match a price-table prefix rather than
 # naming a model a request is sent to.
-IGNORE = {"gpt-4o"}
+#
+# gpt-4o-mini is retired: build 9 moved every job to GPT-6 (62b87651). It stays
+# in `ModelPricing.rates` and `ModelCapabilities.table` only so usage rows
+# recorded before build 9 still price; no request names it, and a gifted key's
+# allowlist does not need it.
+IGNORE = {"gpt-4o", "gpt-4o-mini"}
 
 
 def declared_ids() -> dict[str, str]:
