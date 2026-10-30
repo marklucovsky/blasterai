@@ -7,7 +7,7 @@ the built-in styles are right.
 
 ## Switching style
 
-**Admin → Device → Image Set.** It changes every tile everywhere,
+**Settings → Device → Image Set.** It changes every tile everywhere,
 immediately. It's a per-device setting, not per-child or per-scene.
 
 Five sets ship:
@@ -24,8 +24,11 @@ cosmetic detail. Classic — Light is the default.
 vision, not a CVI set; see below for what it leaves out.
 
 All five cover the entire vocabulary — every word that ships with the app. At
-launch that is **619 core vocabulary words plus the words in the bundled packs,
-five sets over: 3,252 pieces of tile art.** Three were drawn in full; Classic
+1.0 that is **more than a thousand words — the BlasterAI 60 board and the
+bundled packs — five sets over: 5,472 pieces of tile art.** Letters and numbers
+are drawn by the app rather than painted, and a few whole phrases borrow a
+picture the board already has, the way an SLP reuses *new* for "This is new".
+Three sets were drawn in full; Classic
 Medium and Dark are Classic retoned, where a tile shows skin. All five sets were generated
 by us, so none of them carries licensing baggage. None is more
 "correct" than another: some children track photographic-ish 3D better, some
@@ -56,12 +59,23 @@ prompting.
 
 ## Tile size
 
-**Admin → Device → Board Layout** — Standard, Large or Largest. Fewer, bigger
+**Settings → Device → Board Layout** — Standard, Large or Largest. Fewer, bigger
 tiles per screen, or more, smaller ones. Per-device.
 
 The grid is fixed for each layout, so a word stays in the same place on every
 iPad, and overflow pages rather than reflowing. See
 [Board layout](board-layout.md).
+
+---
+
+## The tile
+
+Every tile is a square in a light tint of its part-of-speech colour, packed
+close, with the word in a band along the bottom. Each image set holds its
+picture its own way — Classic art sits cut out on the tint, Playful 3D on a
+white card, High Contrast on black. A label too long for one line, like
+*Wanna do something different?*, gets two lines in a smaller type on a plate of
+its own rather than being cut short.
 
 ---
 
@@ -72,7 +86,7 @@ only where color carries meaning. It covers the whole vocabulary rather than a
 subset — gaps in an accessibility style land on exactly the words a child uses
 most.
 
-Switch to it like any other style: **Admin → Device → Image Set**.
+Switch to it like any other style: **Settings → Device → Image Set**.
 
 **Color is adjustable per child.** The Fitzgerald part-of-speech palette can be
 changed — any part of speech, or a single word whose grammar you disagree with —

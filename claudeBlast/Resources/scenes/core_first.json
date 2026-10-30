@@ -3604,23 +3604,10 @@
       "tiles": [
         {
           "keys": [
-            "bingo",
-            "hide_and_seek",
-            "tag",
-            "puzzle",
+            "games",
+            "cards",
             "board_game",
-            "simon_says",
-            "pattycake"
-          ]
-        },
-        {
-          "space": 7
-        },
-        {
-          "keys": [
-            "ipad",
-            "phone",
-            "video_game"
+            "bingo"
           ]
         },
         {
@@ -3628,12 +3615,25 @@
         },
         {
           "keys": [
-            "games",
-            "cards"
+            "ipad",
+            "phone",
+            "video_game",
+            "puzzle"
           ]
         },
         {
-          "space": 4
+          "space": 6
+        },
+        {
+          "keys": [
+            "hide_and_seek",
+            "tag",
+            "simon_says",
+            "pattycake"
+          ]
+        },
+        {
+          "space": 5
         },
         {
           "link": "folder_games",
@@ -4517,11 +4517,12 @@
           "keys": [
             "i_love_it",
             "so_much_fun",
-            "im_so_happy"
+            "im_so_happy",
+            "thats_really_cool"
           ]
         },
         {
-          "space": 2
+          "space": 1
         },
         {
           "keys": [

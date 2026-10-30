@@ -150,7 +150,7 @@ struct GiftedKeyImportSheet: View {
 
             Section {
                 Text("Nothing else about this device changes. You can remove the key at any "
-                     + "time from **Admin → Device**.")
+                     + "time from **Settings → Device**.")
                 .font(.callout)
             }
         }
@@ -173,7 +173,7 @@ struct GiftedKeyImportSheet: View {
                 case .stored:
                     Text("The key for **\(payload.label)** was not installed, so the key already "
                          + "on this device is untouched. To use the new one instead, remove the "
-                         + "current key first: **Admin → Device → Remove API Key**.")
+                         + "current key first: **Settings → Device → Remove API Key**.")
                 case .environment:
                     // Unreachable in a shipping build, which has no override —
                     // and the copy names the variable, so it is compiled out.
@@ -215,7 +215,7 @@ struct GiftedKeyImportSheet: View {
                     Text("\(outcome.friendlyMessage) The key is saved — it will be tried again "
                          + "the next time the app needs it.")
                 } else {
-                    Text("AI features are on. If sentences ever stop working, **Admin → Device** "
+                    Text("AI features are on. If sentences ever stop working, **Settings → Device** "
                          + "says why.")
                 }
             }

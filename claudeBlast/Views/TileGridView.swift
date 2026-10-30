@@ -58,8 +58,10 @@ struct TileGridView: View {
         return RailAlignment(grid: gridFrame, rail: railFrame)
     }
     @State private var currentDisplayPage: Int? = 0
+    /// Set when the app, not the child, changes the screen, so the landscape
+    /// pager's settle haptic only answers a swipe. See `showScreen(_:)`.
+    @State private var quietSettle = false
     @AppStorage("tile_speech_enabled") private var tileSpeechEnabled: Bool = true
-    @State private var haptic = UIImpactFeedbackGenerator(style: .heavy)
     @State private var pendingNote: String = ""
     @State private var showNoteAlert: Bool = false
     /// The tile that most recently fired a press pulse — lifted above its grid
@@ -99,8 +101,7 @@ struct TileGridView: View {
     @AppStorage(AppSettingsKey.boardLayout) private var boardLayoutRaw: String =
         BoardLayout.current().rawValue
     @AppStorage(AppSettingsKey.honorSceneLayouts) private var honorSceneLayouts = true
-    @AppStorage(AppSettingsKey.tileLook) private var tileLookRaw: String = TileLook.square.rawValue
-    private var tileLook: TileLook { TileLook(rawValue: tileLookRaw) ?? .square }
+    private var tileLook: TileLook { TileLook.current() }
     /// Child mode on a caregiver device. See `RailProfile`.
     @AppStorage(AppSettingsKey.railChildLock) private var railChildLock = false
 
@@ -318,7 +319,7 @@ struct TileGridView: View {
                 Text("No scene is currently active. Activate one to show the board.")
             }
         } actions: {
-            Button("Open Admin") { caregiverMenu.requested = .admin }
+            Button("Open Settings") { caregiverMenu.requested = .admin }
                 .buttonStyle(.borderedProminent)
         }
     }
@@ -387,7 +388,7 @@ struct TileGridView: View {
             }
         }
         .task {
-            haptic.prepare()
+            BoardHaptics.prepare()
             coordinator.navigationPath = [activeScene?.homePageKey ?? "home"]
             coordinator.onPress = { [engine] from, to, linkKey in
                 engine.logNavigation(from: from, to: to, linkKey: linkKey)
@@ -395,7 +396,7 @@ struct TileGridView: View {
         }
         .onChange(of: activeScene?.id) {
             coordinator.navigateHome(homePageKey: activeScene?.homePageKey ?? "home")
-            currentDisplayPage = 0
+            showScreen(0)
             findHighlight = nil
             engine.clearSelection()
         }
@@ -405,17 +406,17 @@ struct TileGridView: View {
             // A system page belongs to BlasterAI 60, not to this scene.
             if TileToken.systemPageKey(key) == nil, !pageNames.contains(key) {
                 coordinator.navigateHome(homePageKey: activeScene?.homePageKey ?? "")
-                currentDisplayPage = 0
+                showScreen(0)
             }
         }
         .onChange(of: currentPage?.tiles.map(\.key)) { _, _ in
             // Reset display page position when tile count changes significantly
-            currentDisplayPage = 0
+            showScreen(0)
         }
         .onChange(of: coordinator.currentPageKey) { _, _ in
             // The lift belongs to the tap that caused it, and that tap is over.
             lastTappedKey = nil
-            currentDisplayPage = 0
+            showScreen(0)
             engine.currentPageKey = identityPageKey
         }
         .onChange(of: identityPageKey, initial: true) { _, key in
@@ -569,7 +570,7 @@ struct TileGridView: View {
                 }
             }
             .onChange(of: isLandscape) { _, _ in
-                currentDisplayPage = 0
+                showScreen(0)
             }
             // Find Word: page to the screen holding the found word. A task, not
             // an onChange, so it runs after navigation has reset the grid to
@@ -578,7 +579,7 @@ struct TileGridView: View {
                 guard let target = findHighlight, target.pageKey == page.key,
                       let chunk = screen(target.key) else { return }
                 if currentDisplayPage != chunk {
-                    withAnimation { currentDisplayPage = chunk }
+                    withAnimation { showScreen(chunk) }
                 }
             }
             .onChange(of: scriptRunner.tapPulseKey) { _, key in
@@ -588,7 +589,7 @@ struct TileGridView: View {
                 // first, so the tile is always somewhere on `page`.)
                 guard let key, let chunk = screen(key) else { return }
                 if currentDisplayPage != chunk {
-                    withAnimation { currentDisplayPage = chunk }
+                    withAnimation { showScreen(chunk) }
                 }
             }
         }
@@ -614,8 +615,10 @@ struct TileGridView: View {
                     .id(entry.key)
             }
         }
+        .scrollTargetLayout()
         if row.count > spec.cols {
-            ScrollingChromeRow(keys: row.map(\.key), nudge: scriptRunner.state == .idle) {
+            ScrollingChromeRow(keys: row.map(\.key), step: spec.tileSize + spec.horizontalSpacing,
+                               nudge: scriptRunner.state == .idle) {
                 cells.padding(.horizontal, padding)
             }
             .frame(height: cellHeight(spec))
@@ -647,6 +650,14 @@ struct TileGridView: View {
     private func showCompactOverlay(_ kind: CompactOverlay) {
         withAnimation(.spring(duration: 0.35)) { compactOverlay = kind }
         overlayEpoch &+= 1
+    }
+
+    /// Move the grid to a screen of the page for a reason other than a swipe —
+    /// navigation, a reset, Find Word — without the settle haptic, which would
+    /// land on top of the bump or thump the navigation already gave.
+    private func showScreen(_ index: Int) {
+        if currentDisplayPage != index { quietSettle = true }
+        currentDisplayPage = index
     }
 
     private func dismissCompactOverlay() {
@@ -705,7 +716,7 @@ struct TileGridView: View {
         }
         .tabViewStyle(.page(indexDisplayMode: .automatic))
         .onChange(of: currentDisplayPage) { _, _ in
-            haptic.impactOccurred()
+            if quietSettle { quietSettle = false } else { BoardHaptics.play(.screenSettled) }
         }
     }
 
@@ -741,8 +752,10 @@ struct TileGridView: View {
         .clipped()
         .scrollPosition(id: $currentDisplayPage)
         .onScrollPhaseChange { old, new in
-            if old != .idle && new == .idle {
-                haptic.impactOccurred()
+            // A finger's scroll, not one the app animated (a Find Word jump,
+            // a reset after navigating), which arrives as `.animating`.
+            if (old == .interacting || old == .decelerating) && new == .idle {
+                BoardHaptics.play(.screenSettled)
             }
         }
     }
@@ -787,11 +800,13 @@ struct TileGridView: View {
         switch item {
         case .home:
             guard isRailEnabled(.home) else { return }
+            BoardHaptics.play(.home)
             withAnimation(Self.pageChange) { coordinator.navigateToRoot() }
-            currentDisplayPage = 0
+            showScreen(0)
         case .back:
+            if coordinator.canGoBack { BoardHaptics.play(.back) }
             withAnimation(Self.pageChange) { coordinator.goBack() }
-            currentDisplayPage = 0
+            showScreen(0)
             // Recorded as `<back>`, which the runner replays as a Back.
             if recorder.state == .recording {
                 recorder.recordNavigate(pageKey: NavigationCoordinator.backPageKey)
@@ -1290,6 +1305,7 @@ struct TileGridView: View {
             }
         }
         if !resolvedLink.isEmpty {
+            BoardHaptics.play(.openPage)
             withAnimation(Self.pageChange) {
                 coordinator.navigate(to: resolvedLink, linkKey: key)
             }
@@ -1319,16 +1335,31 @@ private struct EmptyCell: View {
 
 private struct ScrollingChromeRow<Content: View>: View {
     let keys: [String]
+    /// One folder's width with its gap: how far the row moves per folder.
+    let step: CGFloat
     let nudge: Bool
     @ViewBuilder let content: () -> Content
 
     @State private var moreBefore = false
     @State private var moreAfter = true
+    /// The first folder showing, for the tick as each one passes.
+    @State private var leading = 0
+    /// The launch nudge moves the row on its own; it should not tick.
+    @State private var nudging = false
 
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
                 content()
+            }
+            // Folders land whole, one per tick, so the row can be counted:
+            // *places* is so many ticks along (Mark 2026-10-30).
+            .scrollTargetBehavior(.viewAligned)
+            .onScrollGeometryChange(for: Int.self) { g in
+                step > 0 ? Int((g.contentOffset.x / step).rounded()) : 0
+            } action: { _, index in
+                if index != leading, !nudging { BoardHaptics.play(.folderPassed) }
+                leading = index
             }
             .onScrollGeometryChange(for: [Bool].self) { g in
                 [g.contentOffset.x > 4,
@@ -1344,10 +1375,13 @@ private struct ScrollingChromeRow<Content: View>: View {
             .task {
                 guard nudge, !ChromeRowNudge.done, let first = keys.first, let last = keys.last else { return }
                 ChromeRowNudge.done = true
+                nudging = true
+                defer { nudging = false }
                 try? await Task.sleep(for: .milliseconds(800))
                 withAnimation(.easeInOut(duration: 0.7)) { proxy.scrollTo(last, anchor: .trailing) }
                 try? await Task.sleep(for: .milliseconds(1300))
                 withAnimation(.easeInOut(duration: 0.7)) { proxy.scrollTo(first, anchor: .leading) }
+                try? await Task.sleep(for: .milliseconds(800))
             }
         }
     }

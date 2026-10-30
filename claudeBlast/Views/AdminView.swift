@@ -56,11 +56,11 @@ struct AdminView: View {
     @AppStorage(AppSettingsKey.providerChoice) var providerChoice: String = "openai"
     @AppStorage(AppSettingsKey.audioEnabled) var audioEnabled: Bool = true
     @AppStorage(AppSettingsKey.tileSpeechEnabled) var tileSpeechEnabled: Bool = true
+    @AppStorage(AppSettingsKey.hapticsEnabled) var hapticsEnabled: Bool = true
     @AppStorage(AppSettingsKey.speechVoiceIdentifier) var voiceIdentifier: String = ""
     @AppStorage(AppSettingsKey.boardLayout) var boardLayoutRaw: String =
         BoardLayout.current().rawValue
     @AppStorage(AppSettingsKey.honorSceneLayouts) var honorSceneLayouts = true
-    @AppStorage(AppSettingsKey.tileLook) var tileLookRaw: String = TileLook.square.rawValue
     @AppStorage(AppSettingsKey.imageSet) var imageSetRaw: String = ImageSetID.defaultSet.rawValue
 
     // Sentence tray timeline settings

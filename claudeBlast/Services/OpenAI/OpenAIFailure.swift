@@ -136,7 +136,7 @@ extension OpenAIFailure {
                  + "once more credit is added or the spending limit resets."
         case .rejected:
             return "OpenAI refused this key. It may have been revoked or deleted. "
-                 + "Add a different key from Admin → Device."
+                 + "Add a different key from Settings → Device."
         case .capability(let model):
             let what = model.map { "the \($0) model" } ?? "a model it needs"
             return "This key cannot use \(what). Everything that doesn't need it still works."

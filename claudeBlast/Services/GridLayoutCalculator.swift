@@ -418,6 +418,19 @@ enum GridLayoutCalculator {
                     return spec
                 }
             }
+            // A phone upright: the same, so the board runs edge to edge under
+            // the tray and the system row instead of standing centred inside
+            // them (Mark 2026-10-30). Only on the phone for now.
+            if isPhone, !isPhoneLandscape, look == .square, case .bottom = rail {
+                let wide = min(tile * 1.6, renderTile(forCols: grid.cols, availW: availW, spacing: spacing))
+                if wide > tile {
+                    var spec = finish(cols: grid.cols, rows: grid.rows, tileW: wide,
+                                      availH: availH, textScale: textScale,
+                                      screenSize: screenSize, geo: geo, layout: layout, look: look, rail: rail)
+                    spec.tileHeight = tile
+                    return spec
+                }
+            }
             return finish(cols: grid.cols, rows: grid.rows, tileW: tile,
                           availH: availH, textScale: textScale,
                           screenSize: screenSize, geo: geo, layout: layout, look: look, rail: rail)

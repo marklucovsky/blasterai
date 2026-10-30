@@ -52,7 +52,6 @@ struct TileFace: View {
     /// This look rather than the setting. Previews and tests only.
     var look: TileLook? = nil
 
-    @AppStorage(AppSettingsKey.tileLook) private var lookRaw: String = TileLook.square.rawValue
     @Environment(TileImageResolver.self) private var resolver
     @Environment(\.tileAspect) private var tileAspect
 
@@ -84,7 +83,7 @@ struct TileFace: View {
         self.look = look
     }
 
-    var resolvedLook: TileLook { look ?? TileLook(rawValue: lookRaw) ?? .square }
+    var resolvedLook: TileLook { look ?? TileLook.current() }
 
     /// The corner every overlay on a tile has to follow.
     static func radius(_ look: TileLook) -> CGFloat {

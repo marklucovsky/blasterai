@@ -51,7 +51,7 @@ struct RailSceneEditor: View {
                 } else {
                     ContentUnavailableView("This Scene Can't Be Edited",
                                            systemImage: "pencil.slash",
-                                           description: Text("BlasterAI 60 is the system's board. Duplicate it in Admin › Scenes to change it."))
+                                           description: Text("BlasterAI 60 is the system's board. Duplicate it in Settings › Scenes to change it."))
                 }
             }
             .toolbar {

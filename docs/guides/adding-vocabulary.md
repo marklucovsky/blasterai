@@ -14,6 +14,11 @@ type, and adds it. Artwork is generated in the background.
 
 That's it. The other five routes are for volume or precision.
 
+**Check the board first.** BlasterAI 60 has more than a thousand words, and the
+one you want may already be a folder or two deep. **Search** on the caregiver's
+rail lists every place a word lives on the board, takes you there with a tap,
+and says why when a place can't be reached (above the child's level, hidden).
+
 ---
 
 ## The other five
@@ -118,7 +123,7 @@ to trigger it.
 
 ## Hiding a word without deleting it
 
-**Admin → Scenes → Manage Vocabulary.**
+**Settings → Scenes → Manage Vocabulary.**
 
 Search, filter by class, and scope to **All**, **Needs review**, **Hidden**, or
 **Added by you**. Per word: **Hide**, **Restore**, or **Keep**.

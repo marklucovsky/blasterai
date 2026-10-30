@@ -361,7 +361,7 @@ struct SceneGeneratorSheet: View {
 
                 if apiKey.isEmpty {
                     Section {
-                        Text("Add an OpenAI API key in Admin to generate custom scenes. The ready-made examples above work without a key.")
+                        Text("Add an OpenAI API key in Settings to generate custom scenes. The ready-made examples above work without a key.")
                             .font(.caption)
                             .foregroundStyle(.orange)
                     }

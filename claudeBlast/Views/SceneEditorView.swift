@@ -205,7 +205,7 @@ struct SceneEditorView: View {
                 Text("Art Coverage")
             } footer: {
                 if resolvedAPIKey.isEmpty {
-                    Text("Add an AI key in Admin to fill these in.")
+                    Text("Add an AI key in Settings to fill these in.")
                 } else {
                     Text("A style is only complete when every word on this board has art in it. Recoloring reuses the picture you already have, so the figure stays the same; drawing a style from scratch makes a new picture.")
                 }
@@ -1026,7 +1026,7 @@ private struct PageGeneratorSheet: View {
 
                 if apiKey.isEmpty {
                     Section {
-                        Text("Add an OpenAI API key in Admin to generate a custom page. The ready-made examples above work without a key.")
+                        Text("Add an OpenAI API key in Settings to generate a custom page. The ready-made examples above work without a key.")
                             .font(.caption)
                             .foregroundStyle(.orange)
                     }

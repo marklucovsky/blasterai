@@ -264,10 +264,10 @@ struct PatientTransitionSheet: View {
     @ViewBuilder
     private var pinPage: some View {
         VStack(spacing: 16) {
-            Text("Admin PIN")
+            Text("Settings PIN")
                 .font(.headline)
             Text(pinStage == .enter
-                 ? "Enter a 4–6 digit PIN. Used to unlock Admin\(Biometry.capability().hasHardware ? " when \(Biometry.displayName) isn't available" : "")."
+                 ? "Enter a 4–6 digit PIN. Used to unlock Settings\(Biometry.capability().hasHardware ? " when \(Biometry.displayName) isn't available" : "")."
                  : "Enter the same PIN again to confirm.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -334,7 +334,7 @@ struct PatientTransitionSheet: View {
         case .keep:
             return "The patient (or their family) will use the API key already on this device. Token usage bills to whoever owns that key."
         case .clear:
-            return "Generation falls back to Mock. The patient can add a key later from Admin → Sentence Provider."
+            return "Generation falls back to Mock. The patient can add a key later from Settings → Device."
         case .replace:
             return "Stored in this device's Keychain. Never synced via iCloud."
         }
@@ -565,13 +565,13 @@ struct CaregiverTransitionSheet: View {
             }
 
             Section {
-                Toggle("Keep admin protected", isOn: $keepGate)
+                Toggle("Keep Settings protected", isOn: $keepGate)
             } header: {
-                Text("Admin Gate")
+                Text("Settings Lock")
             } footer: {
                 Text(keepGate
                      ? "Face ID + PIN gate stays on. Recommended — your tuning work stays private even while the patient isn't using the device."
-                     : "Gate removed. Anyone can open Admin without authentication. The PIN is cleared.")
+                     : "Gate removed. Anyone can open Settings without authentication. The PIN is cleared.")
             }
 
             Section {

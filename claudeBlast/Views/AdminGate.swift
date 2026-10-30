@@ -107,7 +107,7 @@ struct AdminGate<Content: View>: View {
                 Image(systemName: "lock.shield.fill")
                     .font(.system(size: 64))
                     .foregroundStyle(.secondary)
-                Text("Admin is locked")
+                Text("Settings is locked")
                     .font(.title.bold())
                 Text(challengeSubtitle)
                     .font(.subheadline)
@@ -207,7 +207,7 @@ struct AdminGate<Content: View>: View {
         do {
             let ok = try await ctx.evaluatePolicy(
                 .deviceOwnerAuthentication,
-                localizedReason: "Reset the Blaster Admin PIN")
+                localizedReason: "Reset the BlasterAI Settings PIN")
             guard ok else { return }
             // Clear the old credential and the throttle it earned, then hand
             // straight to setup — a reset that leaves no PIN behind would turn
@@ -243,8 +243,8 @@ struct AdminGate<Content: View>: View {
         // device has no biometry" — telling a Mac owner to enrol Touch ID they
         // do not have is how a caregiver concludes they are locked out.
         return biometry.hasHardware
-            ? "\(name) isn't enrolled on this device. Set up a PIN to unlock Admin."
-            : "This device has no biometric unlock. Set up a PIN to unlock Admin."
+            ? "\(name) isn't enrolled on this device. Set up a PIN to unlock Settings."
+            : "This device has no biometric unlock. Set up a PIN to unlock Settings."
     }
 
     @ViewBuilder
@@ -375,7 +375,7 @@ struct AdminGate<Content: View>: View {
         case .enter:
             return biometry.hasHardware
                 ? "Choose a 4–6 digit PIN. Use it when \(biometry.displayName) isn't available."
-                : "Choose a 4–6 digit PIN. It is how you unlock Admin on this device."
+                : "Choose a 4–6 digit PIN. It is how you unlock Settings on this device."
         case .confirm: return "Enter the same PIN again to confirm."
         }
     }
@@ -402,7 +402,7 @@ struct AdminGate<Content: View>: View {
         do {
             let ok = try await ctx.evaluatePolicy(
                 .deviceOwnerAuthenticationWithBiometrics,
-                localizedReason: "Unlock Admin")
+                localizedReason: "Unlock Settings")
             if ok {
                 // Biometry proves the owner is present, so a throttle earned by
                 // wrong PINs has done its job and should not outlive it.
@@ -422,7 +422,7 @@ struct AdminGate<Content: View>: View {
         guard let device,
               device.adminPINHash != nil,
               device.adminPINSalt != nil else {
-            errorMessage = "PIN not set up yet — restart and re-enter Admin."
+            errorMessage = "PIN not set up yet — restart and re-enter Settings."
             return
         }
         guard !isThrottled else { return }

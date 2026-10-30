@@ -120,7 +120,7 @@ struct StageGuide: View {
 #Preview("Stage II-III") {
     Form {
         Section("Stage") {
-            StageIntro(stage: .twoThree, keyHint: "Add one in Admin → Device.")
+            StageIntro(stage: .twoThree, keyHint: "Add one in Settings → Device.")
             StageGuide()
         }
     }

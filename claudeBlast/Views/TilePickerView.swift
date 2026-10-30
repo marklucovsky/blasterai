@@ -858,7 +858,7 @@ struct TilePickerView: View {
             }
 
             if apiKey.isEmpty {
-                Text("Add an OpenAI API key in Admin to enable AI suggestions.")
+                Text("Add an OpenAI API key in Settings to enable AI suggestions.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

@@ -98,6 +98,9 @@ nonisolated enum AppSettingsKey {
     static let honorSceneLayouts     = "honor_scene_layouts"
     /// `TileLook.rawValue`: classic or square. Device-local.
     static let tileLook              = "tile_look"
+    /// The board's haptics (`BoardHaptics`). On unless a caregiver turns them
+    /// off. Device-local.
+    static let hapticsEnabled        = "haptics_enabled"
     /// Child mode on a caregiver device: the board shows the child's rail
     /// until the Admin gate turns it off (`RailProfile`). Device-local.
     static let railChildLock         = "rail_child_lock"

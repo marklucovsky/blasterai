@@ -355,7 +355,7 @@ struct OnboardingView: View {
                 .textFieldStyle(.roundedBorder)
                 .textInputAutocapitalization(.words)
                 .autocorrectionDisabled()
-            Text("Optional — skip for now and set it anytime in Admin → Scenes, before you first share.")
+            Text("Optional — skip for now and set it anytime in Settings → Scenes, before you first share.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -395,7 +395,7 @@ struct OnboardingView: View {
                 StageGuide()
                     .padding(.top, 4)
 
-                Text("You can change this at any time in Admin. It is not a test — pick where they are today.")
+                Text("You can change this at any time in Settings. It is not a test — pick where they are today.")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                 if childStage.allowsTileCapChoice {
@@ -483,7 +483,7 @@ struct OnboardingView: View {
                 Label("Someone sent me a key file", systemImage: "gift")
             }
             .font(.callout)
-            Text("Skip to start without a key — each tile speaks its word. You can add one later in Admin → Device.")
+            Text("Skip to start without a key — each tile speaks its word. You can add one later in Settings → Device.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -529,10 +529,10 @@ struct OnboardingView: View {
 
     private var pinSetupStep: some View {
         VStack(spacing: 20) {
-            Text("Set an Admin PIN")
+            Text("Set a Settings PIN")
                 .font(.title.bold())
                 .frame(maxWidth: .infinity, alignment: .leading)
-            Text("Used to unlock Admin\(Biometry.capability().hasHardware ? " when \(Biometry.displayName) isn't available" : ""). Pick a number you'll remember — recovering a forgotten PIN means reinstalling.")
+            Text("Used to unlock Settings\(Biometry.capability().hasHardware ? " when \(Biometry.displayName) isn't available" : ""). Pick a number you'll remember — recovering a forgotten PIN means reinstalling.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -605,7 +605,7 @@ struct OnboardingView: View {
                 ? "Your patient device is set up. Tap Open Blaster to start."
                 : "\(childName)'s device is ready. Tap Open Blaster to start."
         case .caregiver:
-            return "Caregiver mode is on. Your own profile is active; add child profiles anytime from Admin → Profiles."
+            return "Caregiver mode is on. Your own profile is active; add child profiles anytime from Settings → Profiles."
         }
     }
 
