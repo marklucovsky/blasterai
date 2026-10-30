@@ -5,8 +5,10 @@ Every field App Store Connect asks for on the App Store side, in the order its
 pages ask, with the reasoning wherever the answer is a judgment. The TestFlight
 side lives in `docs/beta-review-notes.md`.
 
-**Plan: a dry run.** Submit with **Manually release this version**, so an
-approval ships nothing until we press the button.
+**Plan: resubmit 1.0.0 (9)**, the build on TestFlight, after 0.9.0 (7) was
+rejected on 2026-10-28 (2.3.7 subtitle, 2.1(b) business model, 2.3.6 age
+rating; each fix is noted where its field is). Submit with **Manually release
+this version**.
 
 **To paste: `python3 tools/check_listing.py --export build/listing`** and copy
 from the files it writes. Copying out of a terminal dropped whole phrases
@@ -32,6 +34,11 @@ at save time; either way it is cheaper to know here.
    *Unverified:* whether a version left in Pending Developer Release blocks
    creating 1.0.0 until it is released or withdrawn — check App Store Connect's
    options at that point.
+   *Outcome:* 0.9.0 (7) was rejected, so the record never reached Pending
+   Developer Release. On 2026-10-30 swapping build 1.0.0 (9) into the rejected
+   0.9.0 record renamed it to 1.0.0 by itself, with no manual rename, and set it
+   back to Prepare for Submission. **To change a record's version, swap in a
+   build carrying the new version.**
 2. **Secondary category.** None proposed. **Medical** is where many AAC apps sit,
    and it invites the scrutiny that health-adjacent claims get. We make none, and
    the primary category does the work.
@@ -47,7 +54,7 @@ at save time; either way it is cheaper to know here.
 | Field | Value |
 |---|---|
 | **Name** | BlasterAI: AAC Communication |
-| **Subtitle** | Modern, familiar AAC — free |
+| **Subtitle** | Modern, familiar AAC |
 | **Primary category** | Education |
 | **Secondary category** | *(none — see Open decisions)* |
 | **Content rights** | Does not contain, show, or access third-party content |
@@ -57,6 +64,13 @@ at save time; either way it is cheaper to know here.
 configures, supplies a key, builds boards and reads the logs is an adult. The
 child is who the app is *for*. The Kids Category's parental-gate rule would also
 break the in-flow link to platform.openai.com that key setup depends on.
+
+**Subtitle — no price words.** It was "Modern, familiar AAC — free" until App
+Review rejected 0.9.0 (7) under 2.3.7 on 2026-10-28: "free" is a price
+reference, and price references are not allowed in the name, subtitle,
+keywords or screenshots. Apple allows it in the description and promotional
+text, but we leave it out of those too (2026-10-30): the store shows the
+price, and "no account, no registration" carries the rest.
 
 **Name:** "BlasterAI" alone tells a searcher nothing; the name field is indexed
 for search, and "AAC" and "Communication" are what a parent or SLP types.
@@ -83,6 +97,12 @@ medical or treatment information.
 **Step 7 — Age Categories and Override: Not Applicable.** Not *Made for Kids* —
 that is the Kids Category, declined above. No Age Suitability URL: at 4+ there
 is nothing to explain.
+
+**In-App Controls: Parental Controls — None. Age Assurance — None.** Rejected
+under 2.3.6 on 2026-10-28 for claiming In-App Controls that the reviewer could
+not find. The caregiver lock (Face ID / PIN) keeps a child out of Settings; it
+is not what Apple means by parental controls, which limit what a minor can
+reach in an app with content to limit. We have none, and no age check.
 
 ---
 
@@ -128,12 +148,13 @@ turn on AI features with your own OpenAI key." Nothing in the app would change.
 
 ---
 
-## Version 0.9.0 (dry run) → 1.0.0
+## Version 1.0.0
 
 ### Promotional Text (170)
 
-> A real AAC board from the first launch: core words up front, Fitzgerald colors,
-> five art styles. Free to use — no trial, no subscription, no account.
+> Core words up front, 1,000+ behind them, ready on first launch. Fitzgerald
+> colors, gestalt phrases, five art styles, iPad and iPhone. No account or
+> registration.
 
 Promotional text can be changed without a new version, so it is where a launch
 note or a new feature goes later.
@@ -142,16 +163,16 @@ note or a new feature goes later.
 
 In the pitch order of `docs/final-countdown-plan.md` §"The order of the pitch":
 a board an SLP recognizes first, then the data, then AI for the caregiver, and
-sentence generation last. "Free" leads, and never touches the AI features —
-see `project_free_positioning` in memory for the line not to cross.
+sentence generation last. No price words anywhere in the listing (decided
+2026-10-30, after the 2.3.7 rejection): "no account, no registration" says it,
+and the store already shows the price.
 
-> BlasterAI is a modern, familiar AAC app for children who don't yet speak —
-> and it's free. No trial that converts, no subscription, no account. A
-> complete board works from the first launch and can stay free forever.
+> BlasterAI is a modern, familiar AAC app for children who don't yet speak. No
+> account and no registration: a complete board works from the first launch.
 >
 > A BOARD THAT BEHAVES LIKE A BOARD
-> • BlasterAI 60: a core-word home board with 619 words behind it, ready on day
-> one.
+> • BlasterAI 60: a core-word home board with more than 1,000 words behind it,
+> ready on day one.
 > • Fitzgerald Key colors — the part-of-speech colors SLPs teach and other AAC
 > systems already use, so what a child learns here carries over.
 > • Words stay where they were learned. Every iPad shows the same grid, and Home
@@ -202,7 +223,8 @@ see `project_free_positioning` in memory for the line not to cross.
 > aac,autism,nonverbal,speech,symbols,core words,talker,speech therapy,slp,apraxia,picture,talk
 
 Not repeated from the name or subtitle ("BlasterAI", "AAC", "Communication",
-"Modern", "familiar", "free" are already indexed). Singular forms: the store
+"Modern", "familiar" are already indexed). No "free": a price word, not allowed
+in keywords (2.3.7). Singular forms: the store
 matches plurals.
 
 ### URLs and contact
@@ -251,49 +273,96 @@ and recorded in the ledger. See `docs/gifted-keys.md`.
 
 ### Notes (4,000)
 
+Rewritten for the resubmission (1.0.0 (9)). The bring-your-own-key model comes
+first, because 2.1(b) asked about it on 2026-10-28; the walkthrough follows the
+current build (rail, Settings), as in `docs/beta-review-notes.md` §1.
+
 > BlasterAI is an AAC (augmentative and alternative communication) app for
 > non-verbal children. A child touches picture tiles; the app speaks for them.
+>
+> Nothing is sold. There is no In-App Purchase, no subscription, no account and
+> no paid tier, in the app or anywhere else. Every feature works for every user.
+>
+> The optional AI features use the caregiver's own OpenAI API key, which they
+> get from OpenAI and pay OpenAI for directly. We sell no keys or credits, take
+> no share of that spending, and receive nothing from OpenAI. A key unlocks
+> nothing we sell; it only lets the device call OpenAI on the caregiver's behalf.
+> Without a key the whole board works: each tile speaks as it is tapped, as on a
+> conventional AAC device.
 >
 > No account, no sign-in, no server. Everything is stored on the device and
 > synced through the user's own iCloud.
 >
-> Nothing needs configuring to review it. First launch loads a complete 619-word
-> vocabulary and working boards. Tap a tile and it speaks.
->
-> AI features are optional and use the caregiver's own OpenAI key. They are off
-> until a caregiver accepts a disclosure that lists exactly what is sent to
-> OpenAI. Without a key, or with AI off, the app speaks each word as it is tapped
-> — how a conventional AAC device works. You do not need a key to review the app.
+> Nothing needs configuring to review it. First launch loads a complete board of
+> more than 1,000 words. Tap a tile and it speaks. You do not need a key.
 >
 > To try the AI features, use the attached AppStoreReviews.zip, which holds a key
 > we fund (App Store Connect does not accept the key's own file type). On the
 > iPad: save the zip to Files, tap it to expand, then tap
 > AppStoreReviews.blasterkey. It opens in BlasterAI, installs the key, and shows
-> the AI disclosure — choose Enable.
+> the AI disclosure, which lists exactly what is sent to OpenAI. Choose Enable.
 >
 > A five-minute walk with no key:
-> 1. At onboarding choose Caregiver, then Skip at the key step.
-> 2. Tap tiles on the home board — each speaks immediately.
-> 3. Tap a tile with a small arrow badge to open another page; the first cell of
-> every page returns home.
-> 4. Touch and hold the Home tile for about half a second to open the caregiver
-> menu, and choose Admin.
-> 5. Scenes → tap BlasterAI 60. It offers an editable copy, "BlasterAI 60 (1)",
-> and switches to it; accept. Supplied boards are read-only so an update never
-> overwrites a caregiver's work.
-> 6. In the copy, open a page → Select Tiles → tick a few → Conceal. Concealed
-> words stay for the caregiver and disappear for the child.
-> 7. Scenes → touch and hold a board → Share → Printable PDF.
-> 8. Device → Image Set → switch styles. Every word is drawn in every style.
-> 9. Activity → Coverage: which words and pages are reached.
+> 1. At onboarding choose Caregiver, then Not now at Enable AI Features (and Skip
+> if it asks for a key).
+> 2. Tap tiles on the home board. Each speaks immediately.
+> 3. Tap a tile with a small arrow badge to open another page. Home and Back are
+> on the rail beside the board.
+> 4. Touch and hold Home on the rail for about half a second to open the
+> caregiver menu, and choose Settings: tabs for Now, Profiles, Scenes, Device,
+> Activity.
+> 5. Scenes: tap BlasterAI 60. It offers an editable copy and switches to it;
+> accept. Supplied boards are read-only so an update never overwrites a
+> caregiver's work.
+> 6. In the copy, open a page, Select Tiles, tick a few, Conceal. Concealed words
+> stay for the caregiver and disappear for the child.
+> 7. Scenes: touch and hold a board, Share, Printable PDF.
+> 8. Device, Image Set: switch styles. Every word is drawn in every style.
+> 9. Activity: which words and pages are reached.
 >
 > Listed under Education, not Kids: the person who installs and configures the
 > app is an adult caregiver or speech-language pathologist. Caregiver settings
-> sit behind an optional Face ID / PIN gate, and a device can be set to a patient
-> mode that keeps a child inside the board.
+> sit behind an optional Face ID / PIN lock. The app has no parental controls or
+> age assurance in Apple's sense, and the age rating says so.
 >
 > Privacy: no data collected. https://blasterai.app/privacy/
 
+### Reply to App Review — 2.1(b)
+
+Paste into the rejected submission's Resolution Center thread before
+resubmitting. Apple asked four questions; answer each by number.
+
+> Thank you for the review. BlasterAI sells nothing, so the short answer to
+> each question is that there is no paid content.
+>
+> 1. Who are the users that will use the paid services in the app? There are no
+> paid services. The app is free, with no In-App Purchase, subscription, account
+> or paid tier. All users get every feature.
+>
+> 2. Where can users purchase the services that can be accessed in the app?
+> Nowhere: we sell nothing, inside or outside the app. The optional AI features
+> call OpenAI's API using a key the caregiver obtains from OpenAI and pays OpenAI
+> for directly, the way a user brings their own email account to a mail app. We
+> sell no keys or credits, take no share of that spending, and receive nothing
+> from OpenAI.
+>
+> 3. What specific types of previously purchased services can a user access in
+> the app? None. An OpenAI key is not a purchase from us and unlocks no content
+> or features we sell. It lets the device send the caregiver's own requests to
+> OpenAI, after a disclosure that lists exactly what is sent.
+>
+> 4. What paid content, subscriptions, or features are unlocked within your app
+> that do not use In-App Purchase? None. Without a key the full board, all
+> vocabulary, every art style, printing, sharing, iCloud sync and the activity
+> reports all work. The key only enables the optional AI features, which are off
+> by default.
+>
+> We have also removed "free" from the subtitle (2.3.7) and set Parental
+> Controls and Age Assurance to None in the age rating (2.3.6). The review
+> notes now open with this explanation, and a funded key is attached as
+> AppStoreReviews.zip if you would like to try the AI features.
+
 ### Version Release
 
-**Manually release this version.** This submission is a dry run.
+**Manually release this version.** Approval then ships nothing until we press
+the button, so the release day is ours to pick.
