@@ -94,7 +94,7 @@ struct ColorwayImportSheet: View {
                     Text("The colors that were in use have been saved as “\(preserved)”.")
                         .font(.callout)
                 } footer: {
-                    Text("Admin → Profiles → edit the profile → Colors → Start From… to go back to them, or to any other set you have saved.")
+                    Text("Settings → Profiles → edit the profile → Colors → Start From… to go back to them, or to any other set you have saved.")
                 }
             }
         }

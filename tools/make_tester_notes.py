@@ -112,7 +112,7 @@ def esc(text: str) -> str:
     # Typographic characters the source uses freely, folded to what Helvetica's
     # standard encoding reliably draws.
     for a, b in [("—", "-"), ("–", "-"), ("'", "'"), ("'", "'"),
-                 ("“", '"'), ("”", '"'), ("→", "->"), ("…", "...")]:
+                 ("“", '"'), ("”", '"'), ("→", "->"), ("…", "..."), ("›", ">")]:
         text = text.replace(a, b)
     return text.encode("latin-1", "replace").decode("latin-1")
 

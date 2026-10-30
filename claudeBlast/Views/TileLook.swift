@@ -13,8 +13,11 @@ import SwiftUI
 ///
 /// `.square` is the refresh (2026-10-26): a square tile in a light tint of its
 /// Fitzgerald colour, 2pt apart, the word in a band at the bottom of the square
-/// instead of under it. It sits behind a setting until it has been lived with
-/// on a device; `.classic` is the card-and-caption tile it replaces.
+/// instead of under it. `.classic` is the card-and-caption tile it replaced.
+///
+/// Square is the only tile from 1.0 (Mark 2026-10-30): the Tile Look setting
+/// is gone and a stored "classic" is ignored. `.classic` stays as code until
+/// its drawing paths are removed, so nothing reaches it from the UI.
 enum TileLook: String, CaseIterable, Identifiable {
     case classic, square
 
@@ -28,7 +31,7 @@ enum TileLook: String, CaseIterable, Identifiable {
     }
 
     static func current(_ defaults: UserDefaults = .standard) -> TileLook {
-        defaults.string(forKey: AppSettingsKey.tileLook).flatMap(TileLook.init(rawValue:)) ?? .square
+        .square
     }
 }
 

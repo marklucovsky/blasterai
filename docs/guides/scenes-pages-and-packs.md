@@ -29,15 +29,15 @@ every word the child has already learned exactly where it was. Reach for a new
 scene when the whole context is different, not when the topic is.
 
 **Page** — one collection of tappable tiles inside a scene. Not strictly one
-screenful: a page longer than the display scrolls, or pages across, depending on
-the tile size you have chosen. A scene for a therapy session might have a home
+screenful: a page longer than the grid pages across, depending on the Board
+Layout you have chosen. A scene for a therapy session might have a home
 page plus pages for feelings, food, and people. The child moves between them by
-tapping a navigation tile.
+tapping a link — see [Pages and navigation](pages-and-navigation.md).
 
 **This is what lets the same board live on a phone.** A page is a set of words,
 not a fixed grid, so BlasterAI lays it out for whatever screen it is on — the
 same page that shows sixty tiles on an iPad shows fewer at a time on an iPhone
-and scrolls for the rest. Nothing is dropped and nothing is rearranged: the
+and pages across for the rest. Nothing is dropped and nothing is rearranged: the
 words stay in the order the child learned them.
 
 That matters more than it sounds. It means the child's board is not stuck on
@@ -68,7 +68,7 @@ page. It's a source, not a thing you own.
 > A **scene** is the whole thing. A **page** is one screen of it.
 
 Almost every mix-up comes from calling a single page a scene. The child taps a
-navigation tile and lands on the feelings *page* — that is still the same
+folder and lands on the feelings *page* — that is still the same
 scene, and nothing has been switched.
 
 **A note on the word "board."** In everyday talk, "board" means both — people
@@ -88,8 +88,8 @@ Scene: "Tuesday speech session"
 ├── Page: home            ← the page the child starts on
 │   ├── Tile: i           speaks "I"
 │   ├── Tile: want        speaks "want"
-│   ├── Tile: feelings    opens the feelings page  ← navigation tile
-│   └── Tile: food        opens the food page      ← navigation tile
+│   ├── Tile: feelings    opens the feelings page  ← folder
+│   └── Tile: eat         says "eat", opens food    ← doorway
 │
 ├── Page: feelings
 │   └── happy, sad, angry, tired, scared …
@@ -108,24 +108,32 @@ it changes everywhere.
 
 The caregiver side is behind a gate the child can't stumble into.
 
-**Long-press the Home button** in the sentence tray → the caregiver menu →
-**Admin** (Face ID or PIN). Admin has five tabs; scenes live under **Scenes**.
+**Touch and hold Home** on the rail → **Settings** (Face ID or PIN).
+Settings has five tabs — Now, Scenes, Profiles, Activity and Device — and
+scenes live under **Scenes**: your list of scenes, plus **New Scene**,
+**Import Scene**, and **Manage Vocabulary**.
 
-That tab has your list of scenes, plus **New Scene**, **Import Scene**, and
-**Manage Vocabulary**.
+**On a caregiver device the rail does most of this without the trip.** Its
+**Edit** button (**Tools** on a narrower rail) opens one menu with the scene
+switcher, tile style, Single Words or Sentences, **Edit This Page**, **Edit
+This Scene**, and Settings. **Search** finds any word on the board and shows
+the path to it. **Child mode** hands the device over: it swaps in the child's
+shorter rail until someone gets back through the Settings lock.
 
 | To do this | Go here |
 |---|---|
-| Make a scene | Admin → Scenes → **New Scene** |
-| Edit a scene | Admin → Scenes → tap the scene |
-| Switch which scene the child sees | Admin → Scenes → swipe right on it → **Activate** |
+| Change the page the child is looking at | Rail → **Edit** → **Edit This Page** |
+| Switch which scene the child sees, quickly | Rail → **Edit** → pick the scene |
+| Make a scene | Settings → Scenes → **New Scene** |
+| Edit a scene | Settings → Scenes → tap the scene |
+| Switch which scene the child sees | Settings → Scenes → swipe right on it → **Activate** |
 | Add a page | Open the scene → **Add Page** |
 | Change which page is home | Open the scene → **Scene Info** → **Home Page** |
 | Add or remove tiles on a page | Open the scene → tap the page |
 | Add a new word to your vocabulary | Open any page → **+** → type the word |
-| Hide a word from the child | Admin → Scenes → **Manage Vocabulary** |
-| Send a scene to someone | Admin → Scenes → swipe left on it → **Share** |
-| Copy a scene before changing it | Admin → Scenes → swipe left → **Duplicate** |
+| Hide a word from the child | Settings → Scenes → **Manage Vocabulary** |
+| Send a scene to someone | Settings → Scenes → swipe left on it → **Share** |
+| Copy a scene before changing it | Settings → Scenes → swipe left → **Duplicate** |
 
 Duplicate and Share are swipe actions, which makes them easy to miss. If you're
 about to make a big change to a scene someone relies on, swipe left and
@@ -173,8 +181,6 @@ it.
 
 ## Next
 
-- **[Make your first scene](make-your-first-scene.md)** — three ways, including
-  one that works with AI mode off
 - **[Pages and navigation](pages-and-navigation.md)** — adding pages, linking
   them, choosing home
 - **[Adding vocabulary](adding-vocabulary.md)** — new words, bulk lists, and

@@ -8,10 +8,10 @@ when it's wrong.
 ## The two modes
 
 **There is no mode switch.** The mode is a consequence of the child's
-**Brown's Stage**, set per child in **Admin → Profiles**. Stage I is
+**Brown's Stage**, set per child in **Settings → Profiles**. Stage I is
 single-word; Stage II-III and IV+ are sentence mode. For a quick change
-mid-session there is a device-level override in the caregiver menu (long-press
-Home).
+mid-session there is a device-level override on the caregiver's rail: **Edit**
+(or **Tools** on a narrower rail) → **Single Words** or **Sentences**.
 
 **Stage I — single words.** Each tap speaks its word, and the words build a
 strip across the top. **No AI at all** — no network call, AI mode on or off, it
@@ -33,7 +33,7 @@ twice.
 
 When you want a different experience on a particular device — a session where
 you want to show a family what sentence mode looks like, say — the override in
-the caregiver menu gives you that, without changing what you've recorded about
+the rail's Edit menu gives you that, without changing what you've recorded about
 the child.
 
 ---
@@ -126,7 +126,7 @@ the same tiles again and your version comes back, and you can correct it then.
 In practice: if a sentence is wrong and you want it fixed, fix it before the
 tray clears, or re-tap the tiles and fix it then.
 
-**To find what to fix, use the activity log** (Admin → Activity). It records
+**To find what to fix, use the activity log** (Settings → Activity). It records
 every combination the child pressed, when, and the sentence that came back —
 so you can review a session afterwards, spot the ones that came out wrong, and
 go re-tap those tiles deliberately rather than trying to catch them live.
@@ -181,7 +181,7 @@ just speaks that word — no AI call, no sentence.
 
 ## Voice
 
-Admin → Now → voice, rate, and volume, per child.
+Settings → Now → voice, rate, and volume, per child.
 
 Worth doing once, properly: iOS ships a basic voice and offers **Enhanced** and
 **Premium** downloads that sound markedly better. iOS Settings →

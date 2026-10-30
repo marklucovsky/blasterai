@@ -169,7 +169,7 @@ extension AdminView {
                         pendingCaregiverTransition = true
                     }
                 }
-                Toggle("Lock Admin\(biometry.hasHardware ? " (\(biometry.displayName) or PIN)" : " with a PIN")",
+                Toggle("Lock Settings\(biometry.hasHardware ? " (\(biometry.displayName) or PIN)" : " with a PIN")",
                        isOn: Binding(
                         get: { device.requireFaceIDForAdmin },
                         set: { isOn in
@@ -230,11 +230,11 @@ extension AdminView {
                     }
                     .disabled(pinIsOnlyWayIn)
                     if pinIsOnlyWayIn {
-                        Text("This device has no biometric unlock, so the PIN is the only way into Admin. Turn off the Admin lock first if you want to remove it.")
+                        Text("This device has no biometric unlock, so the PIN is the only way into Settings. Turn off the Settings lock first if you want to remove it.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } else {
-                        Text("Removing the PIN means \(biometry.displayName) is the only way in. You'll be prompted to set a new one on next Admin entry if \(biometry.displayName) fails.")
+                        Text("Removing the PIN means \(biometry.displayName) is the only way in. You'll be prompted to set a new one the next time you open Settings if \(biometry.displayName) fails.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -244,8 +244,8 @@ extension AdminView {
                     // note that says it will happen to you later.
                     Button("Set a PIN") { isEnrollingPIN = true }
                     Text(biometry.hasHardware
-                         ? "No PIN set. Without one, \(biometry.displayName) is the only way into Admin."
-                         : "No PIN set. This device has no biometric unlock, so Admin cannot be opened until you set one.")
+                         ? "No PIN set. Without one, \(biometry.displayName) is the only way into Settings."
+                         : "No PIN set. This device has no biometric unlock, so Settings cannot be opened until you set one.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -502,6 +502,11 @@ extension AdminView {
             LabeledContent("Active Provider", value: sentenceEngine.provider.displayName)
             Toggle("Audio", isOn: $audioEnabled)
             Toggle("Tile Speech Preview", isOn: $tileSpeechEnabled)
+            // Only a phone has a haptic engine; on an iPad the switch would do
+            // nothing. See `BoardHaptics`.
+            if UIDevice.current.userInterfaceIdiom == .phone {
+                Toggle("Haptics", isOn: $hapticsEnabled)
+            }
             // A layout is a grid, the same on every device of a kind — so the
             // choice shows the grids, not a size. See `BoardLayout`.
             Picker("Board Layout", selection: $boardLayoutRaw) {
@@ -524,13 +529,6 @@ extension AdminView {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                }
-            }
-            // On trial: the square tile ships behind this until it has been
-            // lived with on a device. See `TileLook`.
-            Picker("Tile Look", selection: $tileLookRaw) {
-                ForEach(TileLook.allCases) { look in
-                    Text(look.title).tag(look.rawValue)
                 }
             }
             Picker("Image Set", selection: $imageSetRaw) {

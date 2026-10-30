@@ -7,7 +7,7 @@ device, and there's no account or server involved.
 
 ## Sending one
 
-**Admin → Scenes → swipe left on the scene → Share.** Or open the scene and tap
+**Settings → Scenes → swipe left on the scene → Share.** Or open the scene and tap
 the share icon in the toolbar.
 
 You get a `.blasterscene` file — plain JSON — through the normal iOS share
@@ -21,7 +21,7 @@ What doesn't travel is the *artwork* for words we ship, because the receiving
 device already has it. Only pictures for words you added yourself ride along,
 since those are the ones the other device has never seen.
 
-**Set your name first.** Admin → Scenes → **Author**. It's credited on
+**Set your name first.** Settings → Scenes → **Author**. It's credited on
 everything you share ("by Dr. Yalcin"), and it's how a family knows which
 therapist sent which scene. Do it before your first share; there's no going
 back and relabelling.
@@ -39,7 +39,7 @@ Use the **share** button on the attachment and pick **BlasterAI** from the
 share sheet. This trips people up, because the two cases look identical until
 the tap does nothing useful.
 
-**Either way**, Admin → Scenes → **Import Scene** always works: save the file
+**Either way**, Settings → Scenes → **Import Scene** always works: save the file
 first, then pick it from there.
 
 You get a preview before anything is created. Scene name, page count, tile

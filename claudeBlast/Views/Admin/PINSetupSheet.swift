@@ -89,7 +89,7 @@ struct PINSetupSheet: View {
             .padding(.top, 24)
             .frame(maxWidth: 420)
             .frame(maxWidth: .infinity)
-            .navigationTitle("Admin PIN")
+            .navigationTitle("Settings PIN")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -110,7 +110,7 @@ struct PINSetupSheet: View {
     private var subtitle: String {
         switch stage {
         case .enter:
-            return "4 to 6 digits. You'll need it to open Admin — and on a device with no Face ID or Touch ID, it is the only way in."
+            return "4 to 6 digits. You'll need it to open Settings — and on a device with no Face ID or Touch ID, it is the only way in."
         case .confirm:
             return "Enter the same PIN again to confirm."
         }

@@ -42,10 +42,9 @@ struct TileView: View {
     /// the press, which is the part that reads as a real button.
     @State private var isPressed = false
 
-    @AppStorage(AppSettingsKey.tileLook) private var lookRaw: String = TileLook.square.rawValue
     @Environment(TileImageResolver.self) private var resolver
 
-    private var look: TileLook { TileLook(rawValue: lookRaw) ?? .square }
+    private var look: TileLook { TileLook.current() }
     private var radius: CGFloat { TileFace.radius(look) }
 
     var body: some View {

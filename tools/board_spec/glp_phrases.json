@@ -16,7 +16,7 @@
         ["i_need_help|I need some help", "help_me|Help me", "its_not_working|It's not working!", "this_is_tricky|This is tricky"],
         ["whats_next|What's next?", "its_time_for|It's time for", "something_different|Wanna do something different?"],
         ["i_dont_like_it|I don't like it!", "stop_doing_that|Stop doing that!", "dont_touch_it|Don't touch it!", "thats_enough|That's enough!"],
-        ["i_love_it", "so_much_fun|This is so much fun!", "im_so_happy|I'm so happy"],
+        ["i_love_it", "so_much_fun|This is so much fun!", "im_so_happy|I'm so happy", "thats_really_cool|That's really cool"],
         ["do_it_again|Let's do it again!", "we_did_it|We did it!", "put_it_down|Put it down"],
         ["we_gotta_go|We gotta go", "thats_so_loud|That's so loud", "is_the_best|is the best"],
         ["this_is_new|This is new", "whats_going_to_happen|What's going to happen next?", "something_else|Let's do something else"]
@@ -38,6 +38,7 @@
         "thats_enough": "all_done",
         "so_much_fun": "fun",
         "im_so_happy": "happy",
+        "thats_really_cool": "cool",
         "do_it_again": "again",
         "we_did_it": "finish",
         "put_it_down": "down",

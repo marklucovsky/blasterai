@@ -4532,5 +4532,11 @@
     "wordClass": "navigation",
     "label": "Phrases",
     "bundleImage": "say"
+  },
+  {
+    "key": "thats_really_cool",
+    "wordClass": "social",
+    "label": "That's really cool",
+    "bundleImage": "cool"
   }
 ]
