@@ -33,6 +33,18 @@ import Foundation
 import Testing
 @testable import claudeBlast
 
+#if targetEnvironment(simulator)
+private let fixturesReachable = true
+#else
+private let fixturesReachable = false
+#endif
+
+/// Simulator only. The fixtures are read from the source tree through
+/// `#filePath`, which a simulator reaches because it shares the Mac's
+/// filesystem and a device does not: on an iPad every check failed with "No
+/// fixture" (2026-10-30). Skipped there, so a device run reads as clean rather
+/// than failing for files it was never going to see.
+@Suite(.enabled(if: fixturesReachable, "fixtures live in the source tree; run on a simulator"))
 @MainActor
 struct PromptFixtureTests {
 

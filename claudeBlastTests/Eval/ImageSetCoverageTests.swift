@@ -98,7 +98,7 @@ struct ImageSetCoverageTests {
 
         let resolver = TileImageResolver()
         for set in ImageSetCatalog.generationTargets.flatMap(\.setIDs) {
-            let missing = Set(keys.filter { resolver.image(for: $0, in: set) == nil })
+            let missing = Set(keys.filter { !resolver.hasArt(for: $0, in: set) })
             let unexpected = missing.subtracting(Self.extensionWordsWithoutArt).sorted()
             #expect(unexpected.isEmpty,
                     "Authored set \(set.rawValue) is missing art for \(unexpected.count) starter/pack word(s) — a caregiver picking that scene in \(set.displayName) mode sees the master-set fallback, not \(set.displayName): \(unexpected.prefix(20).joined(separator: ", "))")
@@ -113,7 +113,7 @@ struct ImageSetCoverageTests {
         for set in ImageSetCatalog.all.map(\.id) where set.isShippable {
             // Real art only — bypasses photo overrides, master-set backfill, and
             // placeholders by querying the specific set.
-            let missing = Set(keys.filter { resolver.image(for: $0, in: set) == nil })
+            let missing = Set(keys.filter { !resolver.hasArt(for: $0, in: set) })
             let allowed = Self.knownIncompleteShippable[set.rawValue] ?? []
             let unexpected = missing.subtracting(allowed).sorted()
             #expect(unexpected.isEmpty,
@@ -127,6 +127,24 @@ struct ImageSetCoverageTests {
         }
     }
 
+    /// The coverage checks ask `hasArt`, which looks for the file, not
+    /// `image(for:in:)`, which decodes it: decoding every tile in every set — about
+    /// 5,500 bitmaps of 512², three tests at once — got the test runner killed for
+    /// memory on an iPad mini (2026-10-30). So pin the two together on a sample,
+    /// a word in fifty per set, which decodes a hundred-odd images, not thousands.
+    @Test func hasArtAgreesWithDecodingOnASample() throws {
+        let keys = try vocabularyArtKeys()
+        let sample = stride(from: 0, to: keys.count, by: 50).map { keys[$0] }
+        let resolver = TileImageResolver()
+        for set in ImageSetCatalog.all.map(\.id) where set.isShippable {
+            for key in sample {
+                let decodes = autoreleasepool { resolver.image(for: key, in: set) != nil }
+                #expect(resolver.hasArt(for: key, in: set) == decodes,
+                        "hasArt disagrees with image(for:in:) for \(key) in \(set.rawValue)")
+            }
+        }
+    }
+
     /// Guards the inverse: if a set has no gaps, it ought to be marked shippable.
     /// Surfaces "High Contrast is now complete — flip isShippable" without a code
     /// dive. A soft signal (record, not a failure) so finishing art doesn't
@@ -135,7 +153,7 @@ struct ImageSetCoverageTests {
         let keys = try vocabularyKeys()
         let resolver = TileImageResolver()
         for set in ImageSetCatalog.all.map(\.id) where !set.isShippable {
-            let missing = keys.filter { resolver.image(for: $0, in: set) == nil }
+            let missing = keys.filter { !resolver.hasArt(for: $0, in: set) }
             if missing.isEmpty {
                 print("[eval] \(set.rawValue) now has full coverage — consider marking it isShippable.")
             }
