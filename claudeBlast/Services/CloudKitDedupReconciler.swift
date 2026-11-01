@@ -41,6 +41,7 @@ enum CloudKitDedupReconciler {
 
         deleted += dedupeTiles(context)
         deleted += dedupeSystemScenes(context)
+        deleted += dedupeMeScenes(context)
         deleted += dedupeSandbox(context)
         deleted += dedupeArtVariants(context)
         deleted += dedupeSentenceCache(context)
@@ -124,6 +125,18 @@ enum CloudKitDedupReconciler {
         return collapse(scenes, context: context,
                         keyOf: { $0.systemSceneKey.isEmpty ? nil : $0.systemSceneKey }) { a, b in
             if a.isActive != b.isActive { return a.isActive }
+            if a.lastModified != b.lastModified { return a.lastModified > b.lastModified }
+            return a.id < b.id
+        }.deleted.count
+    }
+
+    /// Collapse duplicate Me scenes by `sceneID`. Two devices that each made a
+    /// profile's Me page before syncing made the same id (`MeScene.sceneID`);
+    /// keep the one edited last, so a caregiver's buttons and topics survive.
+    static func dedupeMeScenes(_ context: ModelContext) -> Int {
+        guard let scenes = try? context.fetch(FetchDescriptor<BlasterScene>()) else { return 0 }
+        return collapse(scenes, context: context,
+                        keyOf: { MeScene.isMeScene($0) ? $0.sceneID : nil }) { a, b in
             if a.lastModified != b.lastModified { return a.lastModified > b.lastModified }
             return a.id < b.id
         }.deleted.count

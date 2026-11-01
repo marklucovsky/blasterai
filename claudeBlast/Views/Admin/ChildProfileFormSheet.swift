@@ -242,6 +242,10 @@ struct ChildProfileFormSheet: View {
 
                 colorSection
 
+                if case .edit(let profile) = mode {
+                    MeTopicsSection(profileID: profile.id)
+                }
+
                 if case .create = mode {
                     Section {
                         Toggle("Make this profile active", isOn: $makeActive)

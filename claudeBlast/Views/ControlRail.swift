@@ -11,13 +11,13 @@ import SwiftUI
 
 /// One control on the rail.
 enum RailItem: String, CaseIterable {
-    case home, back, topics, keyboard, search, edit, levels, childMode, tools
+    case home, back, me, keyboard, search, edit, levels, childMode, tools
 
     var title: String {
         switch self {
         case .home: "Home"
         case .back: "Back"
-        case .topics: "Topics"
+        case .me: "Me"
         case .keyboard: "Keyboard"
         case .search: "Search"
         case .edit: "Edit"
@@ -31,7 +31,7 @@ enum RailItem: String, CaseIterable {
         switch self {
         case .home: "house.fill"
         case .back: "arrowshape.backward.fill"
-        case .topics: "star.fill"
+        case .me: "heart.fill"
         case .keyboard: "keyboard"
         case .search: "magnifyingglass"
         case .edit: "pencil"
@@ -77,17 +77,17 @@ enum RailProfile: Equatable {
     /// - Parameter compact: every rail but iPad landscape's, whose slots are
     ///   short or narrow (Mark 2026-10-29). There the level dial in half
     ///   a slot is too small to use, so it and Edit fold into one full-size
-    ///   Tools button, whose menu carries both; Topics and Search keep their
+    ///   Tools button, whose menu carries both; Me and Search keep their
     ///   halves (Mark 2026-10-29).
     func slots(compact: Bool) -> [RailSlot] {
         switch self {
         case .child:
-            [.one(.home), .one(.back), .one(.topics), .empty, .empty, .one(.keyboard)]
+            [.one(.home), .one(.back), .one(.me), .empty, .empty, .one(.keyboard)]
         case .caregiver where compact:
-            [.one(.home), .one(.back), .pair(.topics, .search), .one(.tools),
+            [.one(.home), .one(.back), .pair(.me, .search), .one(.tools),
              .one(.childMode), .one(.keyboard)]
         case .caregiver:
-            [.one(.home), .one(.back), .pair(.levels, .topics), .pair(.search, .edit),
+            [.one(.home), .one(.back), .pair(.levels, .me), .pair(.search, .edit),
              .one(.childMode), .one(.keyboard)]
         }
     }
