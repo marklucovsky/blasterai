@@ -22,27 +22,49 @@ enum SystemLinks {
     /// - On a system page, a plain link names a page of the system scene, so it
     ///   gains the prefix — except a link to the system scene's own home, which
     ///   is Home: the child is in *their* scene, and Home means its home.
+    /// - A `<scene:ID>:` link is already a navigation key, and on a mounted
+    ///   scene's page a plain link names a page of that scene.
     /// - Anywhere else a plain link is a page of the active scene.
+    ///
+    /// `systemIsActive`: the board *is* BlasterAI 60, so its pages are the
+    /// active scene's and a `<system>:` link names one of them plainly. Only a
+    /// mounted page (a Me page doorway to `<system>:i_page`) can carry such a
+    /// link onto the system board; kept prefixed, it named a page nothing
+    /// could find and the board showed "This Scene Has No Home Page".
     static func destination(of link: String, fromPage: String,
-                            homePageKey: String, systemHomePageKey: String?) -> String {
+                            homePageKey: String, systemHomePageKey: String?,
+                            systemIsActive: Bool = false) -> String {
         if link == TileToken.home { return homePageKey }
-        if TileToken.systemPageKey(link) != nil { return link }
+        if let systemKey = TileToken.systemPageKey(link) {
+            guard systemIsActive else { return link }
+            return systemKey == systemHomePageKey ? homePageKey : systemKey
+        }
+        if TileToken.scenePageKey(link) != nil { return link }
+        if let mounted = TileToken.scenePageKey(fromPage) {
+            return TileToken.sceneLink(mounted.sceneID, to: link)
+        }
         if TileToken.systemPageKey(fromPage) != nil {
             return link == systemHomePageKey ? homePageKey : TileToken.systemLink(to: link)
         }
         return link
     }
 
-    /// The page a navigation key shows: the active scene's page, or for a
-    /// `<system>:` key, the system scene's.
+    /// The page a navigation key shows: the active scene's page, for a
+    /// `<system>:` key the system scene's, and for a `<scene:ID>:` key the
+    /// page of the mounted scene `mountedPages` finds for ID (nil when that
+    /// scene is gone, e.g. deleted on another device).
     ///
     /// A system page shows all its words. Graded reveal is set per scene, and
     /// the level a caregiver chose for BlasterAI 60 says nothing about a child
     /// who is using another board.
     static func page(forKey key: String, scenePages: [PageSpec],
-                     systemPages: [PageSpec]) -> PageSpec? {
+                     systemPages: [PageSpec],
+                     mountedPages: (String) -> [PageSpec]? = { _ in nil }) -> PageSpec? {
         if let systemKey = TileToken.systemPageKey(key) {
             return systemPages.first { $0.key == systemKey }
+        }
+        if let mounted = TileToken.scenePageKey(key) {
+            return mountedPages(mounted.sceneID)?.first { $0.key == mounted.page }
         }
         return scenePages.first { $0.key == key }
     }
@@ -52,6 +74,9 @@ enum SystemLinks {
     static func displayName(of link: String) -> String {
         if let systemKey = TileToken.systemPageKey(link) {
             return "BlasterAI › " + PageNaming.displayName(systemKey)
+        }
+        if let mounted = TileToken.scenePageKey(link) {
+            return PageNaming.displayName(mounted.page)
         }
         return PageNaming.displayName(link)
     }

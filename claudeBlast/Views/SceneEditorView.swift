@@ -359,6 +359,24 @@ struct SceneEditorView: View {
                     TextField("Optional description", text: $scene.descriptionText)
                         .multilineTextAlignment(.trailing)
                 }
+                // The picture that stands for this scene where it is mounted —
+                // a topic on My Topics. See `SceneCover`.
+                if !scene.isDefault, !MeScene.isMeScene(scene), !scene.sceneID.isEmpty {
+                    NavigationLink {
+                        SceneCoverView(scene: scene)
+                    } label: {
+                        LabeledContent("Cover") {
+                            // Not minted until someone opens it or adds the
+                            // scene as a topic; until then it is the default word.
+                            let key = SceneCover.key(for: scene)
+                            TileImageView(key: allTiles.contains { $0.key == key }
+                                              ? key : SceneCover.defaultWord(of: scene) ?? key,
+                                          wordClass: PageLink.wordClass)
+                                .frame(width: 32, height: 32)
+                                .clipShape(RoundedRectangle(cornerRadius: 6))
+                        }
+                    }
+                }
                 if !scene.pages.isEmpty {
                     Picker("Home Page", selection: $scene.homePageKey) {
                         ForEach(scene.pages, id: \.key) { page in

@@ -213,7 +213,7 @@ extension AdminView {
     var activeSceneSection: some View {
         if !scenes.isEmpty {
             Section("Active Scene") {
-                ForEach(scenes) { scene in
+                ForEach(scenes.filter { !MeScene.isMeScene($0) }) { scene in
                     Button {
                         activateScene(scene)
                     } label: {

@@ -122,6 +122,33 @@ enum TileToken {
     static func systemPageKey(_ link: String) -> String? {
         link.hasPrefix(systemPrefix) ? String(link.dropFirst(systemPrefix.count)) : nil
     }
+
+    /// Prefix for a page of a **mounted** scene: `<scene:ID>:home` opens the
+    /// home page of the scene whose `sceneID` is ID, without activating it.
+    ///
+    /// Mounting is how a child's own page and their topics extend the system
+    /// board instead of replacing it (field feedback, 2026-10-28): the active
+    /// scene keeps row 1 and the rail, and the mounted scene's pages draw
+    /// beneath them. Like `<system>:`, the prefix travels with navigation — a
+    /// plain folder on a mounted page opens that scene's page of the name.
+    nonisolated static let scenePrefix = "<scene:"
+
+    /// The link that opens `pageKey` of the scene whose `sceneID` is `sceneID`.
+    nonisolated static func sceneLink(_ sceneID: String, to pageKey: String) -> String {
+        scenePrefix + sceneID + ">:" + pageKey
+    }
+
+    /// The mounted scene and page a link or page key names, or nil when it is
+    /// not a mounted-scene key.
+    static func scenePageKey(_ link: String) -> (sceneID: String, page: String)? {
+        guard link.hasPrefix(scenePrefix) else { return nil }
+        let rest = link.dropFirst(scenePrefix.count)
+        guard let close = rest.range(of: ">:") else { return nil }
+        let sceneID = String(rest[..<close.lowerBound])
+        let page = String(rest[close.upperBound...])
+        guard !sceneID.isEmpty, !page.isEmpty else { return nil }
+        return (sceneID, page)
+    }
 }
 
 /// A single tile placement on a page. The vocabulary key identifies the
@@ -214,9 +241,18 @@ struct TileEntry: Codable, Hashable, Identifiable {
     /// `isConcealed` stays the caregiver's override and wins at every level.
     var revealLevel: Int
 
+    /// The label this placement shows instead of its word's. Nil for every
+    /// ordinary placement.
+    ///
+    /// For tiles that stand for something other than their word: a topic on
+    /// My Topics borrows a cover word's picture (`church`) and shows the
+    /// topic's name ("Sunday School"). The word is still what the key says, so
+    /// art, colour and coverage are unchanged.
+    var label: String?
+
     init(key: String, link: String = "", isAudible: Bool = true,
          isConcealed: Bool = false, linkColor: String? = nil,
-         linkColorIsAuto: Bool = true, revealLevel: Int = 0) {
+         linkColorIsAuto: Bool = true, revealLevel: Int = 0, label: String? = nil) {
         self.key = key
         self.link = link
         self.isAudible = isAudible
@@ -224,6 +260,7 @@ struct TileEntry: Codable, Hashable, Identifiable {
         self.linkColor = linkColor
         self.linkColorIsAuto = linkColorIsAuto
         self.revealLevel = revealLevel
+        self.label = label
     }
 
     /// Hidden by the board's level: above `level` and not always-shown. Nil
@@ -302,12 +339,13 @@ struct TileEntry: Codable, Hashable, Identifiable {
         linkColor = try container.decodeIfPresent(String.self, forKey: .linkColor)
         linkColorIsAuto = try container.decodeIfPresent(Bool.self, forKey: .linkColorIsAuto) ?? true
         revealLevel = try container.decodeIfPresent(Int.self, forKey: .revealLevel) ?? 0
+        label = try container.decodeIfPresent(String.self, forKey: .label)
     }
 
     /// Declared because both halves of Codable are hand-written, which stops
     /// Swift synthesizing it. A new field needs a case here too.
     private enum CodingKeys: String, CodingKey {
-        case key, link, isAudible, isConcealed, linkColor, linkColorIsAuto, revealLevel
+        case key, link, isAudible, isConcealed, linkColor, linkColorIsAuto, revealLevel, label
     }
 
     /// Hand-written only to leave `revealLevel` out when it is 0.
@@ -327,5 +365,6 @@ struct TileEntry: Codable, Hashable, Identifiable {
         try container.encodeIfPresent(linkColor, forKey: .linkColor)
         try container.encode(linkColorIsAuto, forKey: .linkColorIsAuto)
         if revealLevel != 0 { try container.encode(revealLevel, forKey: .revealLevel) }
+        try container.encodeIfPresent(label, forKey: .label)
     }
 }

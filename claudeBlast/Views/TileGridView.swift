@@ -180,8 +180,42 @@ struct TileGridView: View {
         let key = coordinator.currentPageKey ?? scene.homePageKey
         // The board at its level: words above it draw as concealed cells.
         // A core-board page follows the same dial (`BoardLevels`).
-        return SystemLinks.page(forKey: key, scenePages: scene.visiblePages,
-                                systemPages: BoardLevels(scene: scene, system: systemScene).systemPages)
+        guard var page = SystemLinks.page(forKey: key, scenePages: scene.visiblePages,
+                                          systemPages: BoardLevels(scene: scene, system: systemScene).systemPages,
+                                          mountedPages: { mountedScene($0)?.visiblePages })
+        else { return nil }
+        // A link into a mounted scene that is gone (deleted, perhaps on
+        // another device) is an empty cell, not a dead button.
+        page.tiles = page.tiles.map { entry in
+            guard let id = TileToken.scenePageKey(entry.link)?.sceneID,
+                  mountedScene(id) == nil else { return entry }
+            var held = entry
+            held.isConcealed = true
+            return held
+        }
+        return page
+    }
+
+    /// A scene a `<scene:ID>:` key names, which the board shows without
+    /// activating it: the child's Me page and their topics.
+    private func mountedScene(_ sceneID: String) -> BlasterScene? {
+        allScenes.first { $0.sceneID == sceneID }
+    }
+
+    /// Scenes the caregiver can make the board. A Me page is mounted, never
+    /// activated.
+    private var switchableScenes: [BlasterScene] {
+        allScenes.filter { !MeScene.isMeScene($0) }
+    }
+
+    /// The active profile's Me page, made on first use.
+    private func meScene() -> BlasterScene? {
+        guard let profile = profileResolver.active else { return nil }
+        let me = MeScene.ensure(profileID: profile.id, context: modelContext)
+        MeScene.refresh(in: me, scenes: Dictionary(
+            allScenes.filter { !$0.sceneID.isEmpty }.map { ($0.sceneID, $0) },
+            uniquingKeysWith: { first, _ in first }), context: modelContext)
+        return me
     }
 
     // MARK: - Tray
@@ -404,8 +438,19 @@ struct TileGridView: View {
             // If the current page was deleted or renamed, navigate home
             guard let pageNames, let key = coordinator.currentPageKey else { return }
             // A system page belongs to BlasterAI 60, not to this scene.
-            if TileToken.systemPageKey(key) == nil, !pageNames.contains(key) {
+            if TileToken.systemPageKey(key) == nil, TileToken.scenePageKey(key) == nil,
+               !pageNames.contains(key) {
                 coordinator.navigateHome(homePageKey: activeScene?.homePageKey ?? "")
+                showScreen(0)
+            }
+        }
+        .onChange(of: currentPage == nil) { _, gone in
+            // The page showing went away or never resolved (a topic removed
+            // while the child was on it, a link to a page nothing has): go
+            // home rather than strand them on "This Scene Has No Home Page",
+            // which is only true when home itself is missing.
+            if gone, coordinator.currentPageKey != nil {
+                coordinator.navigateHome(homePageKey: activeScene?.homePageKey ?? "home")
                 showScreen(0)
             }
         }
@@ -664,32 +709,108 @@ struct TileGridView: View {
         withAnimation(.easeOut(duration: 0.25)) { compactOverlay = .none }
     }
 
-    /// Where the child is in the hierarchy: `Home › Describe › How much`.
-    /// It reads left to right under the tray, aligned with the grid.
+    /// Where the child is, in two parts: a chip naming the scene that owns the
+    /// page — the board (⌂) or the Me page (♥), a topic on My Topics included
+    /// — then the route to the page inside it: `⌂  Describe › How much`,
+    /// `♥  My Topics › Farm Visit › Animals`.
+    ///
+    /// **Whose page, not how you got here** (Mark, 2026-11-01). Row 1 is on
+    /// every page, so Actions pressed from the Me page is the board's Actions
+    /// and the chip says ⌂. Back still retraces the history; Home clears it.
     @ViewBuilder
     private var pathLine: some View {
         if let scene = activeScene {
-            let key = coordinator.currentPageKey ?? scene.homePageKey
-            let trail: [String] = {
-                if let systemKey = TileToken.systemPageKey(key), let system = systemScene {
-                    let pages = BoardLevels(scene: scene, system: system).systemPages
-                    return WordPlaces.trail(to: systemKey, pages: pages, homeKey: system.homePageKey,
-                                            row: BoardChrome.rowPages(of: system))
-                }
-                return WordPlaces.trail(to: key, pages: scene.visiblePages, homeKey: scene.homePageKey,
-                                        row: BoardChrome.rowPages(of: scene))
-            }()
-            Text(trail.joined(separator: "  ›  "))
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .truncationMode(.head)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .allowsHitTesting(false)
-                .accessibilityLabel("You are on " + (trail.last ?? "Home"))
+            let place = pathPlace(scene: scene)
+            HStack(spacing: 8) {
+                ownerChip(place.owner)
+                Text(place.route.joined(separator: "  ›  "))
+                    .lineLimit(1)
+                    .truncationMode(.head)
+            }
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .allowsHitTesting(false)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(place.accessibilityLabel)
         } else {
             Color.clear
         }
+    }
+
+    /// The scene a page belongs to, as the path line shows it.
+    enum PathOwner: Equatable {
+        /// The active board, and BlasterAI 60's pages reached from it.
+        case board
+        case me
+        /// A mounted scene that is not on this child's My Topics.
+        case topic(name: String)
+    }
+
+    struct PathPlace {
+        let owner: PathOwner
+        /// Pages from the owner's home to this one, the home left out.
+        let route: [String]
+
+        var accessibilityLabel: String {
+            let ownerName: String
+            switch owner {
+            case .board: ownerName = "Home"
+            case .me: ownerName = "Me"
+            case .topic(let name): ownerName = name
+            }
+            return route.last.map { "You are on \($0), in \(ownerName)" } ?? "You are on " + ownerName
+        }
+    }
+
+    private func pathPlace(scene: BlasterScene) -> PathPlace {
+        let key = coordinator.currentPageKey ?? scene.homePageKey
+        if let mounted = TileToken.scenePageKey(key) {
+            guard let owner = mountedScene(mounted.sceneID) else { return PathPlace(owner: .board, route: []) }
+            let route = Array(WordPlaces.trail(to: mounted.page, pages: owner.visiblePages,
+                                               homeKey: owner.homePageKey).dropFirst())
+            if MeScene.isMeScene(owner) { return PathPlace(owner: .me, route: route) }
+            let me = profileResolver.active.flatMap {
+                MeScene.find(profileID: $0.id, context: modelContext)
+            }
+            // A topic on this child's list is part of their Me page: the route
+            // carries on from My Topics, so going in only ever adds a step.
+            if me.map({ MeScene.contains(owner, in: $0) }) == true {
+                return PathPlace(owner: .me, route: [MeScene.topicsFolderLabel, owner.name] + route)
+            }
+            return PathPlace(owner: .topic(name: owner.name), route: route)
+        }
+        if let systemKey = TileToken.systemPageKey(key), let system = systemScene {
+            let pages = BoardLevels(scene: scene, system: system).systemPages
+            return PathPlace(owner: .board, route: Array(WordPlaces.trail(
+                to: systemKey, pages: pages, homeKey: system.homePageKey,
+                row: BoardChrome.rowPages(of: system)).dropFirst()))
+        }
+        return PathPlace(owner: .board, route: Array(WordPlaces.trail(
+            to: key, pages: scene.visiblePages, homeKey: scene.homePageKey,
+            row: BoardChrome.rowPages(of: scene)).dropFirst()))
+    }
+
+    /// The owner as a small pill, drawn unlike the route so it reads as
+    /// "whose page" rather than as a step. The Me page is the rail's heart,
+    /// never the child's name (Mark, 2026-10-31).
+    private func ownerChip(_ owner: PathOwner) -> some View {
+        let label: Text = {
+            switch owner {
+            case .board:
+                return Text(Image(systemName: RailItem.home.systemImage))
+            case .me:
+                return Text(Image(systemName: RailItem.me.systemImage))
+            case .topic(let name):
+                return Text(name)
+            }
+        }()
+        return label
+            .lineLimit(1)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 2)
+            .background(Capsule().fill(.secondary.opacity(0.18)))
+            .fixedSize()
     }
 
     @ViewBuilder
@@ -788,8 +909,7 @@ struct TileGridView: View {
         switch item {
         case .home: coordinator.navigationPath.count > 1 || currentDisplayPage != 0
         case .back: coordinator.canGoBack
-        // Mounting topic scenes comes with the scene editor work.
-        case .topics: false
+        case .me: profileResolver.active != nil
         case .keyboard, .search: activeScene != nil
         case .edit, .tools: activeScene != nil
         case .levels, .childMode: true
@@ -822,7 +942,15 @@ struct TileGridView: View {
             showEditMenu = true
         case .childMode:
             railChildLock = true
-        case .topics, .levels:
+        case .me:
+            guard let me = meScene() else { return }
+            try? modelContext.save()
+            let key = TileToken.sceneLink(me.sceneID, to: me.homePageKey)
+            BoardHaptics.play(.openPage)
+            withAnimation(Self.pageChange) { coordinator.navigate(to: key, linkKey: RailItem.me.rawValue) }
+            showScreen(0)
+            if recorder.state == .recording { recorder.recordNavigate(pageKey: key) }
+        case .levels:
             break
         }
     }
@@ -834,6 +962,7 @@ struct TileGridView: View {
     private var editablePageKey: String? {
         guard let scene = activeScene, !scene.isDefault,
               TileToken.systemPageKey(identityPageKey) == nil,
+              TileToken.scenePageKey(identityPageKey) == nil,
               scene.page(withKey: identityPageKey) != nil else { return nil }
         return identityPageKey
     }
@@ -861,6 +990,12 @@ struct TileGridView: View {
     private func computeWayTrail() -> [String] {
         guard let scene = activeScene else { return [] }
         let key = identityPageKey
+        if let mounted = TileToken.scenePageKey(key) {
+            guard let scene = mountedScene(mounted.sceneID) else { return [key] }
+            return WordPlaces.trailKeys(to: mounted.page, pages: scene.visiblePages,
+                                        homeKey: scene.homePageKey)
+                .map { TileToken.sceneLink(mounted.sceneID, to: $0) }
+        }
         if let systemKey = TileToken.systemPageKey(key) {
             guard let system = systemScene else { return [key] }
             let pages = BoardLevels(scene: scene, system: system).systemPages
@@ -877,7 +1012,8 @@ struct TileGridView: View {
         entry.link.isEmpty ? "" : SystemLinks.destination(
             of: entry.link, fromPage: identityPageKey,
             homePageKey: activeScene?.homePageKey ?? "home",
-            systemHomePageKey: systemScene?.homePageKey)
+            systemHomePageKey: systemScene?.homePageKey,
+            systemIsActive: activeScene?.isDefault == true)
     }
 
     private func wayMark(for entry: TileEntry) -> WayMark? {
@@ -913,7 +1049,8 @@ struct TileGridView: View {
                 scriptPulseKey: scriptRunner.tapPulseKey,
                 scriptPulseCount: scriptRunner.tapPulseCount,
                 isHighlighted: isFindTarget(entry),
-                wayMark: wayMark(for: entry)
+                wayMark: wayMark(for: entry),
+                labelOverride: entry.label
             ) {
                 lastTappedKey = entry.key
                 handleTileTap(entry)
@@ -1032,7 +1169,7 @@ struct TileGridView: View {
                 levelRow(level)
                 Divider()
             }
-            if allScenes.count > 1 {
+            if switchableScenes.count > 1 {
                 sceneSwitcher
                 Divider()
             }
@@ -1123,7 +1260,7 @@ struct TileGridView: View {
     /// board goes to the new scene's Home, so there is nothing left to compare.
     private var sceneSwitcher: some View {
         Menu {
-            ForEach(allScenes) { scene in
+            ForEach(switchableScenes) { scene in
                 Button {
                     // Shared by the caregiver menu and the Edit menu.
                     showCaregiverMenu = false

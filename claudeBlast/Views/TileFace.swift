@@ -58,9 +58,10 @@ struct TileFace: View {
     /// A tile as a page holds it, coloured the way the board colours it: part
     /// of speech for a word, the link's own slot for a folder.
     init(tile: TileModel?, key: String, link: String = "", linkColor: String? = nil,
-         isAudible: Bool = true, labelFontSize: CGFloat = 11, wayMark: WayMark? = nil) {
+         isAudible: Bool = true, labelFontSize: CGFloat = 11, wayMark: WayMark? = nil,
+         labelOverride: String? = nil) {
         self.imageKey = tile?.bundleImage ?? key
-        self.label = tile?.displayName ?? key
+        self.label = labelOverride ?? tile?.displayName ?? key
         self.wordClass = tile?.wordClass ?? ""
         self.isLink = !link.isEmpty
         self.accent = link.isEmpty

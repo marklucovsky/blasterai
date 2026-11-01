@@ -41,13 +41,13 @@ struct ControlRailTests {
     /// no level, no way out of Child mode.
     @Test func theChildsRailHoldsNoCaregiverTools() {
         let items = Set(RailProfile.child.slots.flatMap(\.items))
-        #expect(items == [.home, .back, .topics, .keyboard])
+        #expect(items == [.home, .back, .me, .keyboard])
     }
 
     /// Mark's layout, top to bottom: Levels over Topics, Search over Edit.
     @Test func theCaregiversRailIsTheChosenOne() {
         #expect(RailProfile.caregiver.slots == [
-            .one(.home), .one(.back), .pair(.levels, .topics), .pair(.search, .edit),
+            .one(.home), .one(.back), .pair(.levels, .me), .pair(.search, .edit),
             .one(.childMode), .one(.keyboard),
         ])
     }
@@ -58,7 +58,7 @@ struct ControlRailTests {
     @Test func theCompactCaregiversRailFoldsLevelsAndEditIntoTools() {
         let slots = RailProfile.caregiver.slots(compact: true)
         #expect(slots == [
-            .one(.home), .one(.back), .pair(.topics, .search), .one(.tools),
+            .one(.home), .one(.back), .pair(.me, .search), .one(.tools),
             .one(.childMode), .one(.keyboard),
         ])
         #expect(RailProfile.child.slots(compact: true) == RailProfile.child.slots)

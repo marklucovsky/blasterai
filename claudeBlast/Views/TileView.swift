@@ -24,6 +24,8 @@ struct TileView: View {
     /// Find Word's target: the tile breathes until the caregiver taps anywhere.
     var isHighlighted: Bool = false
     var wayMark: WayMark? = nil
+    /// `TileEntry.label`: shown instead of the word's own label.
+    var labelOverride: String? = nil
     let onTap: () -> Void
 
     private var isNavigation: Bool { !link.isEmpty }
@@ -59,7 +61,8 @@ struct TileView: View {
             onTap()
         } label: {
             TileFace(tile: tile, key: tile.key, link: link, linkColor: linkColor,
-                     isAudible: isAudible, labelFontSize: labelFontSize, wayMark: wayMark)
+                     isAudible: isAudible, labelFontSize: labelFontSize, wayMark: wayMark,
+                     labelOverride: labelOverride)
             // A nav tile deepens under the finger: a scale change is read against
             // the edge as a reference, so a static edge is part of what made a
             // small scale hard to see. Opacity only — changing its width made the

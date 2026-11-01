@@ -101,7 +101,9 @@ extension AdminView {
     @ViewBuilder
     var scenesSection: some View {
         Section {
-            ForEach(scenes) { scene in
+            // A Me page is reached from its profile, and is mounted rather
+            // than activated, shared or duplicated.
+            ForEach(scenes.filter { !MeScene.isMeScene($0) }) { scene in
                 Group {
                     if scene.isSystemOwned {
                         // System scenes are immutable — the editor is the single
@@ -122,6 +124,7 @@ extension AdminView {
                 }
                 .swipeActions(edge: .leading) {
                     activateButton(scene)
+                    topicButton(scene)
                 }
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     deleteButton(scene)
@@ -137,6 +140,7 @@ extension AdminView {
                 // reachable only by a gesture nobody discovered.
                 .contextMenu {
                     activateButton(scene)
+                    topicButton(scene)
                     shareButton(scene)
                     duplicateButton(scene)
                     if isDeletable(scene) {
@@ -148,7 +152,7 @@ extension AdminView {
         } header: {
             Text("Scenes")
         } footer: {
-            Text("Swipe a board left to share, duplicate or delete it, or right to make it active. Touch and hold a board for the same actions.")
+            Text("Swipe a board left to share, duplicate or delete it, or right to make it active or add it to My Topics. Touch and hold a board for the same actions.")
         }
     }
 
@@ -172,6 +176,35 @@ extension AdminView {
                 Label("Activate", systemImage: "checkmark.circle")
             }
             .tint(.green)
+        }
+    }
+
+    /// Add to (or take off) the active child's My Topics, which mounts the
+    /// scene under their Me page instead of making it the board.
+    @ViewBuilder
+    func topicButton(_ scene: BlasterScene) -> some View {
+        if MeScene.isEligibleTopic(scene), let profile = profileResolver.active {
+            let me = MeScene.find(profileID: profile.id, context: modelContext)
+            if let me, MeScene.contains(scene, in: me) {
+                Button {
+                    MeScene.removeTopic(sceneID: scene.sceneID, from: me)
+                    try? modelContext.save()
+                } label: {
+                    Label("Remove from My Topics", systemImage: "heart.slash")
+                }
+                .tint(.pink)
+            } else {
+                Button {
+                    let me = MeScene.ensure(profileID: profile.id, context: modelContext)
+                    MeScene.addTopic(scene, to: me, context: modelContext)
+                    try? modelContext.save()
+                } label: {
+                    Label(profile.isSystem || profile.displayName.isEmpty
+                          ? "Add to My Topics" : "Add to \(profile.displayName)'s Topics",
+                          systemImage: "heart")
+                }
+                .tint(.pink)
+            }
         }
     }
 
@@ -278,6 +311,7 @@ extension AdminView {
             let scene = scenes[index]
             if scene.isDefault { continue }
             let wasActive = scene.isActive
+            MeScene.removeTopicEverywhere(sceneID: scene.sceneID, context: modelContext)
             modelContext.delete(scene)
             if wasActive {
                 // Restore default
@@ -292,6 +326,7 @@ extension AdminView {
     func deleteScene(_ scene: BlasterScene) {
         guard !scene.isDefault else { return }
         let wasActive = scene.isActive
+        MeScene.removeTopicEverywhere(sceneID: scene.sceneID, context: modelContext)
         modelContext.delete(scene)
         if wasActive {
             if let defaultScene = scenes.first(where: { $0.isDefault }) {
