@@ -125,6 +125,8 @@ struct ControlRail<Menu: View, EditMenu: View>: View {
     let spacing: CGFloat
     var vertical = true
     let isEnabled: (RailItem) -> Bool
+    /// Items wearing a dot: ♥ when the page showing has topics on Me.
+    var isBadged: (RailItem) -> Bool = { _ in false }
     let action: (RailItem) -> Void
     @Binding var isMenuOpen: Bool
     @ViewBuilder let menu: () -> Menu
@@ -165,6 +167,7 @@ struct ControlRail<Menu: View, EditMenu: View>: View {
             RailLevelControl(level: level, height: half ? (slot.height - spacing) / 2 : slot.height)
         } else if item == .home {
             RailButton(item: item, half: half, slot: side, isEnabled: isEnabled(item),
+                       isBadged: isBadged(item),
                        action: {
                            // A tap that ends the long-press must not also go Home
                            // under the menu it just opened.
@@ -178,6 +181,7 @@ struct ControlRail<Menu: View, EditMenu: View>: View {
                 }
         } else if item == .edit || item == .tools {
             RailButton(item: item, half: half, slot: side, isEnabled: isEnabled(item),
+                       isBadged: isBadged(item),
                        action: { isEditMenuOpen = true })
                 .popover(isPresented: $isEditMenuOpen,
                          arrowEdge: vertical ? .trailing : .bottom) {
@@ -185,6 +189,7 @@ struct ControlRail<Menu: View, EditMenu: View>: View {
                 }
         } else {
             RailButton(item: item, half: half, slot: side, isEnabled: isEnabled(item),
+                       isBadged: isBadged(item),
                        action: { action(item) })
         }
     }
@@ -197,6 +202,7 @@ private struct RailButton: View {
     let half: Bool
     let slot: CGFloat
     let isEnabled: Bool
+    var isBadged = false
     let action: () -> Void
     var onLongPress: (() -> Void)?
 
@@ -232,6 +238,14 @@ private struct RailButton: View {
                         .padding(.horizontal, 4)
                     }
                 }
+                .overlay(alignment: .topTrailing) {
+                    if isBadged {
+                        Circle()
+                            .fill(Color.pink)
+                            .frame(width: max(8, slot * 0.09), height: max(8, slot * 0.09))
+                            .padding(slot * 0.08)
+                    }
+                }
                 .opacity(isEnabled ? 1 : 0.35)
                 .scaleEffect(isPressed ? 0.94 : 1)
                 .animation(.spring(response: 0.25, dampingFraction: 0.6), value: isPressed)
@@ -243,6 +257,7 @@ private struct RailButton: View {
             including: onLongPress == nil ? .subviews : .all
         )
         .accessibilityLabel(item.title)
+        .accessibilityValue(isBadged ? "Topics for this page" : "")
     }
 }
 

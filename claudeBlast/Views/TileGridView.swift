@@ -186,6 +186,18 @@ struct TileGridView: View {
         else { return nil }
         // A link into a mounted scene that is gone (deleted, perhaps on
         // another device) is an empty cell, not a dead button.
+        // The Me home shows what is attached to the page the child came from:
+        // inlined words and folders, in its free cells (`MeScene.compose`).
+        if let mounted = TileToken.scenePageKey(key), let me = mountedScene(mounted.sceneID),
+           MeScene.isMeScene(me), mounted.page == me.homePageKey, let from = meContextKey {
+            let rowKeys = BoardChrome.inherits(scene)
+                ? Set(BoardChrome.row(for: scene, level: chromeLevel(scene)).map(\.key)) : []
+            page.tiles = MeScene.compose(
+                page.tiles,
+                items: MeScene.contextEntries(forNavKey: from, systemIsActive: scene.isDefault, in: me),
+                rowKeys: rowKeys,
+                words: { sourceWords($0.link, board: scene) })
+        }
         page.tiles = page.tiles.map { entry in
             guard let id = TileToken.scenePageKey(entry.link)?.sceneID,
                   mountedScene(id) == nil else { return entry }
@@ -194,6 +206,37 @@ struct TileGridView: View {
             return held
         }
         return page
+    }
+
+    /// The words on a context item's source page, as the board shows it: a
+    /// mounted scene's page, or a BlasterAI 60 page at the board's level.
+    private func sourceWords(_ link: String, board: BlasterScene) -> [TileEntry] {
+        if let source = TileToken.scenePageKey(link) {
+            return mountedScene(source.sceneID)?.visiblePages
+                .first { $0.key == source.page }?.tiles ?? []
+        }
+        guard let systemKey = TileToken.systemPageKey(link) else { return [] }
+        let pages = board.isDefault ? board.visiblePages
+            : BoardLevels(scene: board, system: systemScene).systemPages
+        return pages.first { $0.key == systemKey }?.tiles ?? []
+    }
+
+    private var meContextKey: String? { MeScene.contextKey(inHistory: coordinator.navigationPath) }
+
+    /// The active profile's Me scene if it exists yet. Never made here: this
+    /// is read while the board draws.
+    private var existingMe: BlasterScene? {
+        guard let profile = profileResolver.active else { return nil }
+        let id = MeScene.sceneID(forProfileID: profile.id)
+        return allScenes.first { $0.sceneID == id }
+    }
+
+    /// The ♥ wears a dot when the page showing has topics waiting on Me.
+    private func isRailBadged(_ item: RailItem) -> Bool {
+        guard item == .me, let me = existingMe, let key = coordinator.currentPageKey,
+              TileToken.scenePageKey(key) == nil else { return false }
+        return !MeScene.contextEntries(forNavKey: key, systemIsActive: activeScene?.isDefault == true,
+                                       in: me).isEmpty
     }
 
     /// A scene a `<scene:ID>:` key names, which the board shows without
@@ -553,7 +596,8 @@ struct TileGridView: View {
             let gridWidth = CGFloat(spec.cols) * spec.tileSize + CGFloat(spec.cols - 1) * spec.horizontalSpacing
             let board = VStack(spacing: spec.verticalSpacing) {
                 if inherits, let scene = activeScene {
-                    chromeRow(BoardChrome.row(for: scene, level: chromeLevel(scene)),
+                    chromeRow(BoardChrome.row(for: scene, level: chromeLevel(scene),
+                                              underMountedPage: TileToken.scenePageKey(identityPageKey) != nil),
                               spec: spec, lookup: lookup, padding: gridPadding)
                 }
                 Group {
@@ -897,7 +941,7 @@ struct TileGridView: View {
         return ControlRail(slots: slots, slot: size,
                            spacing: vertical ? spec.verticalSpacing : TileLayout.gap,
                            vertical: vertical,
-                           isEnabled: isRailEnabled, action: railAction,
+                           isEnabled: isRailEnabled, isBadged: isRailBadged, action: railAction,
                            isMenuOpen: $showCaregiverMenu,
                            menu: { caregiverMenuContent },
                            isEditMenuOpen: $showEditMenu,

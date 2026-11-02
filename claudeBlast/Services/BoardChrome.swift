@@ -48,8 +48,16 @@ enum BoardChrome {
 
     /// The row for `scene` at `level`: folders above it draw as empty cells,
     /// like any other word above the board's level.
-    static func row(for scene: BlasterScene, level: Int?) -> [TileEntry] {
-        row(inSystemScene: scene.isDefault).map { entry in
+    ///
+    /// `underMountedPage`: the page showing is a mounted scene's (the Me page,
+    /// a topic). The row is still the board's, but a plain link there names a
+    /// page of the *mounted* scene (`SystemLinks.destination`), so Actions
+    /// opened `<scene:me-…>:actions`, which does not exist, and the child was
+    /// sent Home. Under a mounted page the links keep the system prefix;
+    /// `destination` makes them plain again when BlasterAI 60 is the board.
+    static func row(for scene: BlasterScene, level: Int?,
+                    underMountedPage: Bool = false) -> [TileEntry] {
+        row(inSystemScene: scene.isDefault && !underMountedPage).map { entry in
             guard entry.isAboveLevel(level) else { return entry }
             var hidden = entry
             hidden.isConcealed = true
