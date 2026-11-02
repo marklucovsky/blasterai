@@ -119,11 +119,12 @@ enum MeScene {
                   isAudible: false, label: topic.name)
     }
 
+    /// Take `sceneID` off My Topics and off every context page.
     static func removeTopic(sceneID: String, from me: BlasterScene) {
         let entries = topicEntries(in: me)
         let kept = entries.filter { TileToken.scenePageKey($0.link)?.sceneID != sceneID }
-        guard kept.count != entries.count else { return }
-        setTopicEntries(kept, in: me)
+        if kept.count != entries.count { setTopicEntries(kept, in: me) }
+        setContexts([], forSceneID: sceneID, in: me) { _ in nil }
     }
 
     /// Take a deleted scene off every profile's My Topics.
@@ -146,6 +147,288 @@ enum MeScene {
             return e
         }
         if current != entries { setTopicEntries(current, in: me) }
+
+        // The same entries on the context pages, kept in step.
+        var pages = me.pages
+        var changed = false
+        for i in pages.indices where isContextPage(pages[i].key) {
+            let tiles = pages[i].tiles.map { entry -> TileEntry in
+                // Only an item for a topic's home stands for the topic; one
+                // for another of its pages keeps that page's picture and name.
+                guard let source = TileToken.scenePageKey(entry.link),
+                      let topic = scenes[source.sceneID],
+                      source.page == topic.homePageKey else { return entry }
+                var e = entry
+                e.key = SceneCover.ensure(for: topic, context: context).key
+                e.label = topic.name
+                return e
+            }
+            if tiles != pages[i].tiles { pages[i].tiles = tiles; changed = true }
+        }
+        if changed { me.pages = pages }
+    }
+
+    // MARK: - Contexts
+
+    /// A topic can also be shown *in context*: when the child presses ♥ from
+    /// a page of BlasterAI 60, the Me page shows the topics attached to it
+    /// (`withRegion`). The system page itself never changes (Mark, 2026-11-01).
+    ///
+    /// Each context is a page of the Me scene, `on:<system>:i_page`, whose
+    /// tiles are the topic links shown for that page. Being a page, it syncs
+    /// with the scene, and a caregiver orders it in the page editor and may
+    /// put any word or folder on it.
+    static let contextPrefix = "on:"
+
+    static func contextPageKey(for systemKey: String) -> String {
+        contextPrefix + TileToken.systemLink(to: systemKey)
+    }
+
+    static func isContextPage(_ key: String) -> Bool { key.hasPrefix(contextPrefix) }
+
+    /// The BlasterAI 60 page a context page is for.
+    static func systemKey(ofContextPage key: String) -> String? {
+        guard isContextPage(key) else { return nil }
+        return TileToken.systemPageKey(String(key.dropFirst(contextPrefix.count)))
+    }
+
+    /// The BlasterAI 60 pages `sceneID` is shown on.
+    static func contexts(of sceneID: String, in me: BlasterScene) -> [String] {
+        me.pages.compactMap { page in
+            guard let key = systemKey(ofContextPage: page.key),
+                  page.tiles.contains(where: { TileToken.scenePageKey($0.link)?.sceneID == sceneID })
+            else { return nil }
+            return key
+        }
+    }
+
+    /// Show `topic` on exactly `systemKeys`. A new context page is named "On
+    /// <title>" from `titles`; a context page left empty is dropped.
+    static func setContexts(_ systemKeys: Set<String>, for topic: BlasterScene,
+                            in me: BlasterScene, context: ModelContext,
+                            titles: [String: String]) {
+        let cover = SceneCover.ensure(for: topic, context: context)
+        let entry = entry(for: topic, cover: cover)
+        setContexts(systemKeys, forSceneID: topic.sceneID, in: me) { key in
+            (entry, titles[key] ?? PageNaming.displayName(key))
+        }
+    }
+
+    /// `make` gives the entry to add and the title for a page it creates; it
+    /// is not called when only removing.
+    private static func setContexts(_ systemKeys: Set<String>, forSceneID sceneID: String,
+                                    in me: BlasterScene,
+                                    make: (String) -> (TileEntry, String)?) {
+        func isTopic(_ e: TileEntry) -> Bool { TileToken.scenePageKey(e.link)?.sceneID == sceneID }
+        var pages = me.pages
+        let before = pages
+        // Off the pages no longer wanted.
+        for i in pages.indices {
+            guard let key = systemKey(ofContextPage: pages[i].key), !systemKeys.contains(key) else { continue }
+            pages[i].tiles.removeAll(where: isTopic)
+        }
+        // Onto the wanted ones, at the end.
+        for key in systemKeys.sorted() {
+            let pageKey = contextPageKey(for: key)
+            if let i = pages.firstIndex(where: { $0.key == pageKey }) {
+                guard !pages[i].tiles.contains(where: isTopic),
+                      let (entry, _) = make(key) else { continue }
+                pages[i].tiles.append(entry)
+            } else if let (entry, title) = make(key) {
+                pages.append(PageSpec(key: pageKey, displayName: "On " + title, tiles: [entry]))
+            }
+        }
+        pages.removeAll { isContextPage($0.key) && $0.tiles.isEmpty }
+        if pages != before { me.pages = pages }
+    }
+
+    /// The page "contextual me" is about, from the board's history: the last
+    /// page that is not a Me or topic page, the board's home left out. Going
+    /// deeper into Me and back keeps it; Home clears the history, and with it
+    /// the context.
+    static func contextKey(inHistory path: [String]) -> String? {
+        path.dropFirst().last { TileToken.scenePageKey($0) == nil }
+    }
+
+    /// What the Me page shows for the page the child came from, a navigation
+    /// key. With BlasterAI 60 as the board its pages are plain keys, so
+    /// `systemIsActive` reads them as system pages.
+    static func contextEntries(forNavKey navKey: String, systemIsActive: Bool,
+                               in me: BlasterScene) -> [TileEntry] {
+        let systemKey = TileToken.systemPageKey(navKey)
+            ?? (systemIsActive && TileToken.scenePageKey(navKey) == nil ? navKey : nil)
+        guard let systemKey else { return [] }
+        return (me.page(withKey: contextPageKey(for: systemKey))?.tiles ?? [])
+            .filter { !$0.isEmptyCell }
+    }
+
+    // MARK: - Context items
+
+    /// Add `item` to the context page for `systemKey`, replacing the one with
+    /// the same source (`link`). A new page is named "On <title>".
+    static func setItem(_ item: TileEntry, onPage systemKey: String, in me: BlasterScene,
+                        title: String) {
+        let pageKey = contextPageKey(for: systemKey)
+        var pages = me.pages
+        if let i = pages.firstIndex(where: { $0.key == pageKey }) {
+            if let j = pages[i].tiles.firstIndex(where: { $0.link == item.link }) {
+                pages[i].tiles[j] = item
+            } else {
+                pages[i].tiles.append(item)
+            }
+        } else {
+            pages.append(PageSpec(key: pageKey, displayName: "On " + title, tiles: [item]))
+        }
+        me.pages = pages
+    }
+
+    /// Replace the items on the context page for `systemKey`, in this order;
+    /// none left drops the page. What reordering and deleting write.
+    static func setItems(_ items: [TileEntry], onPage systemKey: String, in me: BlasterScene) {
+        let pageKey = contextPageKey(for: systemKey)
+        var pages = me.pages
+        guard let i = pages.firstIndex(where: { $0.key == pageKey }) else { return }
+        if items.isEmpty { pages.remove(at: i) } else { pages[i].tiles = items }
+        me.pages = pages
+    }
+
+    /// A word on its own: an item with no source, inlined as itself.
+    static func isWordItem(_ item: TileEntry) -> Bool {
+        item.link.isEmpty && !item.isEmptyCell
+    }
+
+    /// Append `keys` to the context page for `systemKey` as words, in this
+    /// order, skipping any already listed. A new page is named "On <title>".
+    static func addWords(_ keys: [String], onPage systemKey: String, in me: BlasterScene,
+                         title: String) {
+        let pageKey = contextPageKey(for: systemKey)
+        var pages = me.pages
+        let i = pages.firstIndex { $0.key == pageKey } ?? {
+            pages.append(PageSpec(key: pageKey, displayName: "On " + title, tiles: []))
+            return pages.count - 1
+        }()
+        var listed = Set(pages[i].tiles.filter(isWordItem).map(\.key))
+        for key in keys where listed.insert(key).inserted {
+            pages[i].tiles.append(TileEntry(key: key))
+        }
+        if pages[i].tiles.isEmpty { pages.remove(at: i) }
+        me.pages = pages
+    }
+
+    /// Drop the source item `link`; words (no link) go through `setItems`.
+    static func removeItem(link: String, fromPage systemKey: String, in me: BlasterScene) {
+        let items = me.page(withKey: contextPageKey(for: systemKey))?.tiles ?? []
+        setItems(items.filter { $0.link != link }, onPage: systemKey, in: me)
+    }
+
+    /// The picture for a folder to `pageKey` of `scene`: the tile that already
+    /// opens it there, else its minted page link — the rule
+    /// `PageLink.ensurePageImages` follows.
+    static func folderKey(forPage pageKey: String, in scene: BlasterScene) -> String {
+        scene.pages.lazy.flatMap(\.tiles)
+            .first { $0.link == pageKey && !$0.isEmptyCell }?.key
+            ?? PageLink.key(forPage: pageKey)
+    }
+
+    /// Me home as the child sees it after pressing ♥ from a page: `home`, the
+    /// words of the items that inline (into columns 1–7 below the author's
+    /// content), and the folders (into the region, `withRegion`).
+    ///
+    /// `words` reads an item's source page live. Only words are inlined —
+    /// folders, doorways and empty cells are not — and a word already on the
+    /// page, in row 1 (`rowKeys`) or inlined by an earlier item is skipped: a
+    /// key is a tile's identity on a page.
+    static func compose(_ home: [TileEntry], items: [TileEntry], rowKeys: Set<String>,
+                        words: (TileEntry) -> [TileEntry]) -> [TileEntry] {
+        let folders = items.filter { !isWordItem($0) && !$0.hidesFolder }.map { item -> TileEntry in
+            var folder = item
+            folder.inline = nil
+            folder.isAudible = false
+            return folder
+        }
+        var used = Set(home.filter { !$0.isEmptyCell }.map(\.key))
+            .union(rowKeys).union(folders.map(\.key))
+        var inlined: [TileEntry] = []
+        for item in items {
+            // A word on the list is inlined as itself, in list order.
+            if isWordItem(item) {
+                if !item.key.hasPrefix("<"), used.insert(item.key).inserted {
+                    inlined.append(TileEntry(key: item.key, label: item.label))
+                }
+                continue
+            }
+            guard let count = item.inline else { continue }
+            var taken = 0
+            for word in words(item) {
+                if count != TileEntry.inlineAll, taken >= count { break }
+                guard !word.isEmptyCell, word.link.isEmpty, !word.key.hasPrefix("<"),
+                      used.insert(word.key).inserted else { continue }
+                inlined.append(TileEntry(key: word.key, label: word.label))
+                taken += 1
+            }
+        }
+        // Folders first, so they keep column 8 and the words fill around them.
+        return placeInline(withRegion(home, region: folders), words: inlined)
+    }
+
+    /// Lay `words` across columns 1–7 below the last row the author used
+    /// there, after one empty row when everything still fits with it (Mark:
+    /// "preserve a whitespace buffer if feasible").
+    ///
+    /// When that is not enough, the rest take every free cell left on the
+    /// page in reading order — columns 8–10 and the gaps between the author's
+    /// tiles included (Mark: All "should steal all unallocated space if
+    /// needed"). Only empty cells are ever filled; past a full page the rest
+    /// are left off.
+    static func placeInline(_ home: [TileEntry], words: [TileEntry]) -> [TileEntry] {
+        guard !words.isEmpty else { return home }
+        let cols = PageTemplate.cols
+        let rows = PageTemplate.rows - 1
+        let field = 7
+        func isFree(_ index: Int) -> Bool { index >= home.count || home[index].isSpacer }
+        let lastRow = (0..<rows).last { row in (0..<field).contains { !isFree(row * cols + $0) } }
+        func free(from row: Int) -> Int {
+            (row..<max(row, rows)).reduce(0) { n, r in n + (0..<field).filter { isFree(r * cols + $0) }.count }
+        }
+        var start = lastRow.map { $0 + 1 } ?? 0
+        if let lastRow, lastRow + 2 < rows, free(from: lastRow + 2) >= words.count { start = lastRow + 2 }
+        var tiles = home
+        var queue = words[...]
+        func fill(_ index: Int) {
+            guard let next = queue.first else { return }
+            while tiles.count <= index { tiles.append(.spacer()) }
+            guard tiles[index].isSpacer else { return }
+            tiles[index] = next
+            queue = queue.dropFirst()
+        }
+        for row in start..<max(start, rows) {
+            for col in 0..<field { fill(row * cols + col) }
+        }
+        for index in 0..<(rows * cols) where !queue.isEmpty { fill(index) }
+        return tiles
+    }
+
+    /// Lay `region` into the free cells of `home`: column 8 top to bottom,
+    /// then 9, then 10 (Mark). Columns 9–10 are the page author's for links
+    /// that stay, so whatever the author placed is kept and the region flows
+    /// around it. What does not fit is left off.
+    static func withRegion(_ home: [TileEntry], region: [TileEntry]) -> [TileEntry] {
+        guard !region.isEmpty else { return home }
+        let cols = PageTemplate.cols
+        let rows = PageTemplate.rows - 1
+        var tiles = home
+        var queue = region[...]
+        for col in 7..<cols {
+            for row in 0..<rows {
+                guard let next = queue.first else { return tiles }
+                let index = row * cols + col
+                while tiles.count <= index { tiles.append(.spacer()) }
+                guard tiles[index].isSpacer else { continue }
+                tiles[index] = next
+                queue = queue.dropFirst()
+            }
+        }
+        return tiles
     }
 
     // MARK: - Layout

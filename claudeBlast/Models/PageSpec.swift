@@ -250,9 +250,21 @@ struct TileEntry: Codable, Hashable, Identifiable {
     /// art, colour and coverage are unchanged.
     var label: String?
 
+    /// On a Me context page (`MeScene.contextPrefix`): how many of the source
+    /// page's words to inline into the Me page — nil none, 0 all, N the first
+    /// N. The source is `link`. Nil everywhere else.
+    var inline: Int?
+
+    /// On a Me context page: words only, no folder to the source.
+    var hidesFolder: Bool
+
+    /// `inline` meaning every word.
+    static let inlineAll = 0
+
     init(key: String, link: String = "", isAudible: Bool = true,
          isConcealed: Bool = false, linkColor: String? = nil,
-         linkColorIsAuto: Bool = true, revealLevel: Int = 0, label: String? = nil) {
+         linkColorIsAuto: Bool = true, revealLevel: Int = 0, label: String? = nil,
+         inline: Int? = nil, hidesFolder: Bool = false) {
         self.key = key
         self.link = link
         self.isAudible = isAudible
@@ -261,6 +273,8 @@ struct TileEntry: Codable, Hashable, Identifiable {
         self.linkColorIsAuto = linkColorIsAuto
         self.revealLevel = revealLevel
         self.label = label
+        self.inline = inline
+        self.hidesFolder = hidesFolder
     }
 
     /// Hidden by the board's level: above `level` and not always-shown. Nil
@@ -340,12 +354,15 @@ struct TileEntry: Codable, Hashable, Identifiable {
         linkColorIsAuto = try container.decodeIfPresent(Bool.self, forKey: .linkColorIsAuto) ?? true
         revealLevel = try container.decodeIfPresent(Int.self, forKey: .revealLevel) ?? 0
         label = try container.decodeIfPresent(String.self, forKey: .label)
+        inline = try container.decodeIfPresent(Int.self, forKey: .inline)
+        hidesFolder = try container.decodeIfPresent(Bool.self, forKey: .hidesFolder) ?? false
     }
 
     /// Declared because both halves of Codable are hand-written, which stops
     /// Swift synthesizing it. A new field needs a case here too.
     private enum CodingKeys: String, CodingKey {
         case key, link, isAudible, isConcealed, linkColor, linkColorIsAuto, revealLevel, label
+        case inline, hidesFolder
     }
 
     /// Hand-written only to leave `revealLevel` out when it is 0.
@@ -366,5 +383,7 @@ struct TileEntry: Codable, Hashable, Identifiable {
         try container.encode(linkColorIsAuto, forKey: .linkColorIsAuto)
         if revealLevel != 0 { try container.encode(revealLevel, forKey: .revealLevel) }
         try container.encodeIfPresent(label, forKey: .label)
+        try container.encodeIfPresent(inline, forKey: .inline)
+        if hidesFolder { try container.encode(hidesFolder, forKey: .hidesFolder) }
     }
 }
