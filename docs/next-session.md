@@ -2,7 +2,9 @@
 # Handoff: the end of session 14 and what comes next
 
 Rewritten 2026-10-28, partway through session 14, replacing the sessions 12–16
-plan of 2026-10-19; updated 2026-10-29 at the session's close. Read this first.
+plan of 2026-10-19; updated 2026-10-29 at the session's close, and on
+2026-11-02 at the close of session 16. **Next: session 17, the editor.** Read
+this first.
 
 ## Where things stand
 
@@ -128,52 +130,104 @@ Next, on feedback:
 - **Age rating:** set Parental Controls and Age Assurance to None.
 - Then resubmit the build from session 15.
 
-## Session 16: prototype mountable scenes
+## Session 16: mountable scenes, done (#165, #166)
 
-Extending the system board is the high-value move, and we need a scene story
-around it.
+- **#165, Me and My Topics.**
+  - The ♥ rail button opens the child's Me scene, mounted under row 1.
+  - My Topics lists the topic scenes on it. Add to Topics is in the swipe and
+    context menus.
+  - Scene covers give each topic a picture.
+  - The path line shows who owns the page, for example
+    `♥  My Topics › Tide Pools › Fish`.
+- **#166, contextual Me.**
+  - Pressing ♥ from a board page shows the items attached to that page, and a
+    dot on ♥ says there are some.
+  - Items are kept per page in Settings › Me Page by Page. Each one is a topic
+    page or a board page shown as a folder, its first N or All words inlined,
+    or both; or a word chosen from existing vocabulary.
+  - Folders go in column 8, then 9 and 10.
+  - Words go below the author's tiles, after an empty row when everything
+    fits, then take any free cell left.
+  - Fix: row 1 under a mounted page keeps its `<system>:` links.
 
-**Already in place:**
-- `<system>:` links.
-- Scenes built on the template inherit row 1 and the rail.
-- The rail has a Topics/My slot, disabled until now.
+**Decided:**
+- **Extensions:** contextual Me, not folders placed onto system pages; a
+  system page is never edited.
+- **Two topics, one slot:** the folder region and the overflow absorb it.
+- **Where the mount list lives:** the Me scene itself, which syncs like any
+  other scene.
 
-**Two levels to prototype:**
-1. **Topics hub.** Topics/My opens a page of mounted topics. A topic is a small
-   scene whose pages inherit row 1 and the rail, so the child never leaves the
-   system board.
-2. **Extensions.** A topic adds a folder to a free folder slot (columns 9–10) on
-   a system page, for example People › My family or Places › Grandma's. That is
-   the folder rule as it stands: the folder extends the path, and the system
-   page itself is unchanged.
+**Still open:**
+- How a topic is made beyond hand-building. That waits on the editor below.
+- How create / mount / share reads to a caregiver. The guides don't cover Me
+  yet.
 
-**Decide:**
-- Where the mount list lives. A local setting is enough for the prototype;
-  sync needs a schema change.
-- How a topic is made: AI, by hand, or from a URL.
-- What happens when two topics want the same slot.
-- How create / mount / share reads to a caregiver.
+## Session 17: the board editor as a spreadsheet
 
-**Test cases:** the SLP's 30 starter phrases; the Sunday School board.
+Mark, 2026-11-02: the editor is "our biggest weakness and biggest
+opportunity", for Brandi and for Malawi. Even building demos is painful.
+Mounting only matters where there is content, and the editor is how content
+gets made.
+
+**The model:**
+- A page is a fixed 10×6 grid.
+- Row 1 is inherited, so rows 2–6 are 50 cells you can address, and any blank
+  cell can become a word.
+- With no reflow, editing becomes a spreadsheet.
+
+**Cells:**
+- Type `cat` ⏎ to place an existing word.
+- Type `cat, animal` ⏎ to make a new word with that class. This is
+  `BulkWordParser`'s grammar, `key, class[, Display]`.
+- A folder or doorway gets a link syntax, to be decided.
+- An empty cell is a spacer.
+- Arrows, Tab and Return move; typing replaces the cell; Delete empties it.
+- Words you type autocomplete from the vocabulary.
+- New words have no art until it is generated, and they show a text glyph in
+  the meantime.
+
+**CSV boards:**
+- Brandi already sketches boards in a spreadsheet, so CSV comes in using the
+  same cell grammar.
+- One CSV row is one grid row, and a marker line starts each page.
+- Export the same format back out, so a board can round-trip through Sheets
+  or Excel.
+
+**Where it runs:**
+- iPad and Mac, with a hardware keyboard first-class.
+- Touch: tap a cell to type.
+- The 2026-10-17 word-well idea (search on the left, drag to a cell) can sit
+  beside the grid in landscape.
+- The current page editor stays until this one covers it.
+
+**Test cases:**
+- a demo board built from nothing;
+- one of Brandi's spreadsheet sketches, imported;
+- a small Malawi board with local words and no AI.
 
 ## After that
 
+- **Sharing topics.**
+  - URL scene install and a first `blasterai.app/boards`. A shared topic
+    should land on My Topics, possibly with its Show On settings.
+  - Bugfixes in the same pass:
+    - Scene share drops `linkColor` / `linkColorIsAuto` (`SceneExporter.swift`).
+    - Prompt for scenes that were never imported.
+    - Tell the importer the file's level when "Replace Mine" takes it.
 - **Per-tile recorded voice.** It serves GLP phrases, Malawi and any
   language without TTS. Audio sits on the tile like `userImageData`, as a
   CloudKit asset, which is a schema change.
-- **Word pass 2.** Art for the cells held in `word_pass_2.json`, where
-  generation spends Mark's key, so ask first. A Reactions folder beside Sounds
-  would make room on Social. Phase 2 depth (actions, feelings, describe,
-  places, people) comes from a school-age frequency list; ask Brandi for one.
-- **Sharing boards.** URL scene install and a first `blasterai.app/boards`.
-  Bugfixes in the same pass:
-  - Scene share drops `linkColor` / `linkColorIsAuto` (`SceneExporter.swift`).
-  - Prompt for scenes that were never imported.
-  - Tell the importer the file's level when "Replace Mine" takes it.
-- **Editor revisit.** A grid-first page editor on landscape iPad and Mac, plus
-  the "do better" list from the screen check.
+- **Word pass 2.**
+  - Art for the cells held in `word_pass_2.json`. Generation spends Mark's
+    key, so ask first.
+  - A Reactions folder beside Sounds would make room on Social.
+  - Phase 2 depth (actions, feelings, describe, places, people) comes from a
+    school-age frequency list; ask Brandi for one.
 - **Malawi image set.** A P3D derivative with its own style prompt and
   reference pack. Show Brandi a small sample first.
+- **TestFlight build 10** with Me and My Topics, for Brandi and the SLP. Put it
+  at the start of whichever session comes next, once 1.0.0 (9) has cleared App
+  Review.
 
 ## Deadlines
 
