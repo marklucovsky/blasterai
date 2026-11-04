@@ -163,7 +163,7 @@ enum WordFinder {
 
     /// 0 whole word, 1 a word starting with the query, 2 containing it; nil
     /// for no match.
-    private static func rank(of query: String, in tile: TileModel) -> Int? {
+    static func rank(of query: String, in tile: TileModel) -> Int? {
         let terms = Set([tile.displayName, tile.value, tile.key.replacingOccurrences(of: "_", with: " ")]
             .map(normalize)
             .filter { !$0.isEmpty })
