@@ -20,6 +20,7 @@ struct MeTopicsSection: View {
 
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \BlasterScene.name) private var scenes: [BlasterScene]
+    @State private var isEditingMe = false
 
     /// BlasterAI 60, whose pages a topic can be shown on.
     @Query(filter: #Predicate<BlasterScene> { $0.isDefault })
@@ -135,10 +136,21 @@ struct MeTopicsSection: View {
                 }
             }
             if let me {
-                NavigationLink {
-                    SceneEditorView(scene: me)
-                } label: {
+                Button { isEditingMe = true } label: {
                     Label("Edit Me Page", systemImage: "pencil")
+                }
+                // Full screen, not pushed inside the profile sheet: the page
+                // editor is a 10 × 6 grid, and a form sheet gave it half the
+                // screen and its tiles half their size.
+                .fullScreenCover(isPresented: $isEditingMe) {
+                    NavigationStack {
+                        SceneEditorView(scene: me)
+                            .toolbar {
+                                ToolbarItem(placement: .topBarLeading) {
+                                    Button("Done") { isEditingMe = false }
+                                }
+                            }
+                    }
                 }
             }
         } header: {

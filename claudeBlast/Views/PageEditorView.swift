@@ -21,11 +21,23 @@ struct PageEditorView: View {
     let pageKey: String
     var autoOpenPickerWithKeys: Set<String> = []
     @Query(sort: \TileModel.key) private var allTiles: [TileModel]
+    @Query(filter: #Predicate<BlasterScene> { $0.isDefault })
+    private var systemScenes: [BlasterScene]
     @Environment(\.modelContext) private var modelContext
 
     @State private var isPickingTiles = false
     @State private var editingTileKey: String? = nil
+    /// Tile Settings' Edit Cell: the grid types the cell. Bumped as the sheet
+    /// starts to close, not once it has: waiting out the close added half a
+    /// second before the keyboard even began to rise.
+    @State private var cellEditRequest = 0
     @State private var pickerInitialKeys: Set<String> = []
+    /// The cell the picker's words fill from, in reading order.
+    @State private var pickerStart = 0
+    /// The on-screen keyboard is up. It takes most of a portrait iPad, so the
+    /// page header and the bars above it step aside for the formula bar and
+    /// the well.
+    @State private var keyboardUp = false
 
     // Undo/redo: snapshots of the page's tile array (reorder / add / remove / bulk).
     // Deep enough to not think about; snapshots are tiny so the memory is moot.
@@ -50,10 +62,6 @@ struct PageEditorView: View {
     @State private var redoStack: [[TileEntry]] = []
     @State private var prePickerSnapshot: [TileEntry]? = nil
     private let maxUndoDepth = 25
-
-    /// Multi-select mode toggle. Lives here so it sits in the nav bar; the grid
-    /// editor (`TileGridEditor`) owns the actual selection set.
-    @State private var isSelecting = false
 
     /// Page-level share. A page leaves as a vocabulary pack — see `ShareBoardSheet`.
     @State private var isSharingPage = false
@@ -173,62 +181,25 @@ struct PageEditorView: View {
 
     var body: some View {
         Group {
-            if let page, page.tiles.isEmpty {
-                ContentUnavailableView {
-                    Label("No Tiles", systemImage: "square.grid.2x2")
-                } description: {
-                    Text("This page is empty.")
-                } actions: {
-                    Button("Add Tiles") { openPicker() }
-                        .buttonStyle(.borderedProminent)
-                }
-            } else if page != nil {
-                let lookup = tileLookup
+            if page != nil {
                 VStack(spacing: 0) {
-                    pageHeader
-                    TileGridEditor(
+                    if !keyboardUp { pageHeader }
+                    PageSpreadsheetView(
+                        scene: scene,
                         tiles: tilesBinding,
-                        isSelecting: $isSelecting,
-                        wordClassOf: { lookup[$0]?.wordClass },
-                        showAddCell: true,
-                        onAdd: { openPicker() },
-                        onAddSpace: { addSpacer() },
-                        onTapTile: { editingTileKey = $0 },
-                        boardGrid: boardGrid,
+                        lookup: tileLookup,
+                        systemPages: systemScenes.first.map { $0.id == scene.id ? [] : $0.pages } ?? [],
+                        cells: pageCells,
                         chrome: BoardChrome.inherits(scene)
                             ? BoardChrome.row(for: scene, level: scene.effectiveRevealLevel) : [],
-                        levelCount: scene.revealLevelCount,
-                        onEnableLevels: { count in
-                            scene.setRevealLevelCount(count)
-                            try? modelContext.save()
-                        },
-                        cell: { entry in
-                            // The editor shows what the child cannot.
-                            //
-                            // On the board a concealed word draws as empty
-                            // space; here it has to stay visible and legible, or
-                            // the caregiver is arranging a page with invisible
-                            // contents and cannot find the word to reveal it
-                            // again. Same picture, dimmed, with a badge saying
-                            // why — the exact inverse of the child's view.
-                            if entry.isSpacer {
-                                SpacerCell()
-                            } else if let tile = lookup[entry.key] {
-                                PageTileCell(tile: tile, link: entry.link,
-                                             linkColor: entry.linkColor,
-                                             isAudible: entry.isAudible,
-                                             isConcealed: entry.isConcealed,
-                                             revealLevel: scene.revealLevelCount > 0 ? entry.revealLevel : 0,
-                                             isAbovePreview: previewLevel > 0
-                                                && entry.isAboveLevel(previewLevel))
-                                    .overlay(alignment: .bottomTrailing) {
-                                        TileReviewBadge(tile: tile,
-                                                        onKeep: { keepReview(tile) },
-                                                        onRemove: { removeReviewed(tile) })
-                                    }
-                            }
-                        }
-                    )
+                        previewLevel: previewLevel,
+                        onProperties: { editingTileKey = $0 },
+                        onAddWords: { openPicker(from: $0) },
+                        onKeepReview: { keepReview($0) },
+                        onRemoveReviewed: { removeReviewed($0) },
+                        editRequest: cellEditRequest,
+                        isCovered: editingTileKey != nil || isPickingTiles
+                            || isRenaming || isSharingPage)
                 }
             } else {
                 ContentUnavailableView("Page not found", systemImage: "questionmark.folder")
@@ -240,6 +211,16 @@ struct PageEditorView: View {
         .navigationSubtitle(scene.designedLayout.map { "Designed for \($0.title)" }
                             ?? "\(boardGrid.cols)×\(boardGrid.rows) · this device's layout")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(keyboardUp ? .hidden : .automatic, for: .navigationBar, .tabBar)
+        .animation(.easeOut(duration: 0.2), value: keyboardUp)
+        // A hardware keyboard reports only its shortcut bar, well under this.
+        .onReceive(NotificationCenter.default.publisher(
+            for: UIResponder.keyboardWillChangeFrameNotification)) { note in
+            let end = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect
+            keyboardUp = (end?.height ?? 0) > 150
+        }
+        .onReceive(NotificationCenter.default.publisher(
+            for: UIResponder.keyboardWillHideNotification)) { _ in keyboardUp = false }
         // Editing a page can change what the folders pointing AT it should
         // look like. Automatic folder colors are stored, not computed when
         // drawn, so this is the one moment they are allowed to move — see
@@ -271,7 +252,11 @@ struct PageEditorView: View {
         }
         .sheet(item: $editingTileKey) { key in
             TilePropertiesSheet(scene: scene, pageKey: pageKey, tileKey: key,
-                                onRemove: { remove(key: key) })
+                                onRemove: { remove(key: key) },
+                                onEditCell: {
+                                    editingTileKey = nil
+                                    cellEditRequest += 1
+                                })
         }
         .task {
             guard !autoOpenPickerWithKeys.isEmpty else { return }
@@ -283,27 +268,39 @@ struct PageEditorView: View {
 
     // MARK: - Add / Remove
 
-    private func openPicker() {
+    private var pageCells: PageCells {
+        PageCells(grid: boardGrid, inheritsChrome: BoardChrome.inherits(scene))
+    }
+
+    private func openPicker(from start: Int) {
         pickerInitialKeys = []
+        pickerStart = start
         prePickerSnapshot = page?.tiles ?? []
         isPickingTiles = true
     }
 
+    /// The picker inserts its words at the front of the page, which would push
+    /// every word after them along. On a board that is a different board, so
+    /// they are taken back out and put into empty cells instead, from the
+    /// cell the caregiver chose: nothing already placed moves.
     private func pickerDismissed() {
         pickerInitialKeys = []
-        if let before = prePickerSnapshot, before != (page?.tiles ?? []) {
-            recordUndo(before)
+        defer { prePickerSnapshot = nil; pickerStart = 0 }
+        guard let before = prePickerSnapshot else { return }
+        let after = page?.tiles ?? []
+        guard before != after else { return }
+        recordUndo(before)
+        if after.count > before.count, Array(after.suffix(before.count)) == before {
+            let added = Array(after.prefix(after.count - before.count))
+            setTiles(pageCells.placing(added, intoEmptyFrom: pickerStart, in: before))
         }
-        prePickerSnapshot = nil
     }
 
+    /// Takes a word off the page and leaves its cell empty, so nothing else moves.
     private func remove(key: String) {
-        guard let idx = pageIndex, let page else { return }
+        guard let page, let index = page.tiles.firstIndex(where: { $0.key == key }) else { return }
         recordUndo(page.tiles)
-        var pages = scene.pages
-        pages[idx].tiles.removeAll { $0.key == key }
-        scene.pages = pages
-        try? modelContext.save()
+        setTiles(pageCells.setting(nil, at: index, in: page.tiles))
     }
 
     // MARK: - Toolbar
@@ -317,65 +314,50 @@ struct PageEditorView: View {
     ///
     /// ## Why there is no "+" here
     ///
-    /// There was, and it did exactly what the grid's add cell does — the same
-    /// `openPicker()`. But the add cell sits in **slot 0** of the grid, ahead of
-    /// the first tile, so it is on screen without scrolling however long the page
-    /// is; it is also a drop target that moves a dragged tile to the front, which
-    /// a toolbar button cannot be. The duplicate bought nothing and cost the one
-    /// bar slot that a genuinely bar-shaped action needed.
+    /// Adding words belongs to a cell — the picker fills empty cells from the
+    /// selected one — so it lives in the grid's ⋯ menu beside the selection,
+    /// not in the bar.
     ///
-    /// **Share is that action.** It has no representation anywhere else on the
-    /// page, and a caregiver looking to send a page somewhere looks in the
-    /// navigation bar — so it is a visible button, not a menu item, at every
-    /// width. Both it and Select are gated on the page having tiles: an empty
-    /// page has nothing to share and nothing to select, and shows its own "Add
-    /// Tiles" button instead.
+    /// **Share is the bar's action.** It has no representation anywhere else
+    /// on the page, and a caregiver looking to send a page somewhere looks in
+    /// the navigation bar — so it is a visible button, not a menu item, at every
+    /// width. It is gated on the page having tiles: an empty page has nothing to
+    /// share.
     @ToolbarContentBuilder
     private var pageEditorToolbar: some ToolbarContent {
         if isCompactWidth {
             ToolbarItemGroup(placement: .navigationBarTrailing) {
-                if isSelecting {
-                    Button("Done") { isSelecting = false }
-                } else {
-                    if hasTiles {
-                        Button { isSharingPage = true } label: {
-                            Image(systemName: "square.and.arrow.up")
-                        }
-                        .accessibilityLabel("Share page")
+                if hasTiles {
+                    Button { isSharingPage = true } label: {
+                        Image(systemName: "square.and.arrow.up")
                     }
-                    Menu {
-                        Button { undo() } label: {
-                            Label("Undo", systemImage: "arrow.uturn.backward")
-                        }
-                        .disabled(undoStack.isEmpty)
-                        Button { redo() } label: {
-                            Label("Redo", systemImage: "arrow.uturn.forward")
-                        }
-                        .disabled(redoStack.isEmpty)
-                        if hasTiles {
-                            Button { isSelecting = true } label: {
-                                Label("Select Tiles", systemImage: "checkmark.circle")
-                            }
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                    }
-                    .accessibilityLabel("More page actions")
+                    .accessibilityLabel("Share page")
                 }
+                Menu {
+                    Button { undo() } label: {
+                        Label("Undo", systemImage: "arrow.uturn.backward")
+                    }
+                    .disabled(undoStack.isEmpty)
+                    Button { redo() } label: {
+                        Label("Redo", systemImage: "arrow.uturn.forward")
+                    }
+                    .disabled(redoStack.isEmpty)
+                } label: {
+                    Image(systemName: "arrow.uturn.backward.circle")
+                }
+                .accessibilityLabel("Undo and redo")
             }
         } else {
             ToolbarItemGroup(placement: .navigationBarLeading) {
                 Button { undo() } label: { Image(systemName: "arrow.uturn.backward") }
+                    .keyboardShortcut("z", modifiers: .command)
                     .disabled(undoStack.isEmpty)
                 Button { redo() } label: { Image(systemName: "arrow.uturn.forward") }
+                    .keyboardShortcut("z", modifiers: [.command, .shift])
                     .disabled(redoStack.isEmpty)
             }
             ToolbarItemGroup(placement: .navigationBarTrailing) {
-                if isSelecting {
-                    Button("Done") { isSelecting = false }
-                } else if hasTiles {
-                    Button { isSelecting = true } label: { Image(systemName: "checkmark.circle") }
-                        .accessibilityLabel("Select tiles")
+                if hasTiles {
                     Button { isSharingPage = true } label: {
                         Image(systemName: "square.and.arrow.up")
                     }
@@ -417,22 +399,7 @@ struct PageEditorView: View {
         isRenaming = false
     }
 
-    /// Add a deliberate gap at the front of the page.
-    ///
-    /// **Slot 0, exactly where a newly picked tile lands** (`TilePickerView`
-    /// inserts at index 0). Anything added from the Add cell appears right next
-    /// to it, on screen without scrolling however long the page is — and from
-    /// there the caregiver drags it where it belongs, using the reorder gesture
-    /// they already know. Appending would have put a new gap off the bottom of a
-    /// long page, where the one thing a blank cell cannot do is announce itself.
-    ///
-    /// Goes through `tilesBinding`, so it records one undo step and saves like
-    /// every other page mutation.
-    private func addSpacer() {
-        tilesBinding.wrappedValue = [TileEntry.spacer()] + (page?.tiles ?? [])
-    }
-
-    /// Whether the page has anything on it — gates Select and Share.
+    /// Whether the page has anything on it — gates Share.
     private var hasTiles: Bool { page.map { !$0.tiles.isEmpty } == true }
 
     // MARK: - Undo / redo (snapshot stack)
@@ -595,6 +562,9 @@ struct TilePropertiesSheet: View {
     let pageKey: String
     let tileKey: String
     var onRemove: (() -> Void)? = nil
+    /// Puts a different word in this cell: closes the sheet and types the
+    /// cell's text in the grid. The word itself — its key — never changes.
+    var onEditCell: (() -> Void)? = nil
     @Query(sort: \TileModel.key) private var allTiles: [TileModel]
     /// BlasterAI 60, whose pages any scene can link to (`TileToken.systemPrefix`).
     @Query(filter: #Predicate<BlasterScene> { $0.isDefault })
@@ -828,10 +798,24 @@ struct TilePropertiesSheet: View {
                                 }
                             }
                             // Key is the stable id used in TileScript / scene JSON — surface it (copyable).
-                            Text("key: \(tile?.key ?? tileKey)")
-                                .font(.caption.monospaced())
-                                .foregroundStyle(.secondary)
-                                .textSelection(.enabled)
+                            HStack(spacing: 8) {
+                                Text("key: \(tile?.key ?? tileKey)")
+                                    .font(.caption.monospaced())
+                                    .foregroundStyle(.secondary)
+                                    .textSelection(.enabled)
+                                if let onEditCell {
+                                    Button {
+                                        onEditCell()
+                                        dismiss()
+                                    } label: {
+                                        Label("Edit Cell", systemImage: "pencil")
+                                            .font(.caption)
+                                    }
+                                    .buttonStyle(.bordered)
+                                    .controlSize(.mini)
+                                    .accessibilityHint("Type a different word or link for this cell")
+                                }
+                            }
                         }
 
                         if let tile { partOfSpeechPicker(tile) }

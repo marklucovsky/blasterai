@@ -51,6 +51,37 @@ enum BulkWordParser {
     }
 }
 
+/// Turns a parsed `key, class[, Display]` row into a word: the existing word of
+/// that key and class, else a new one. Shared by the bulk-word sheet and the
+/// spreadsheet editor's cells.
+enum WordCreator {
+    /// - Parameter keys: every key in use, including ones created earlier in
+    ///   the same batch; a new word's key is added to it.
+    /// - Returns: nil when the key normalizes to nothing.
+    @discardableResult
+    static func findOrCreate(_ w: BulkWordParser.Word, existing: [TileModel],
+                             keys: inout Set<String>, context: ModelContext) -> TileModel? {
+        let base = TileModel.normalizeKey(w.key)
+        guard !base.isEmpty else { return nil }
+        // Same key + same class already exists → reuse it (place, don't dup).
+        if let tile = existing.first(where: { $0.key == base && $0.wordClass == w.wordClass }) {
+            return tile
+        }
+        // Key taken by another class (or an earlier row) → homograph key.
+        var finalKey = base
+        if keys.contains(base) {
+            finalKey = "\(base)_\(w.wordClass)"
+            var n = 2
+            while keys.contains(finalKey) { finalKey = "\(base)_\(w.wordClass)_\(n)"; n += 1 }
+        }
+        keys.insert(finalKey)
+        let tile = TileModel(key: finalKey, value: w.displayName, wordClass: w.wordClass)
+        tile.isSystem = false
+        context.insert(tile)
+        return tile
+    }
+}
+
 struct BulkWordSheet: View {
     let existingTiles: [TileModel]
     /// Called with the created (or reused) tiles to place on the page.
@@ -158,25 +189,10 @@ struct BulkWordSheet: View {
         var keys = Set(existingTiles.map(\.key))
         var created: [TileModel] = []
         for w in parseResult.words {
-            let base = TileModel.normalizeKey(w.key)
-            guard !base.isEmpty else { continue }
-            // Same key + same class already exists → reuse it (place, don't dup).
-            if let existing = existingTiles.first(where: { $0.key == base && $0.wordClass == w.wordClass }) {
-                created.append(existing)
-                continue
+            if let tile = WordCreator.findOrCreate(w, existing: existingTiles, keys: &keys,
+                                                   context: modelContext) {
+                created.append(tile)
             }
-            // Key taken by another class (or an earlier row) → homograph key.
-            var finalKey = base
-            if keys.contains(base) {
-                finalKey = "\(base)_\(w.wordClass)"
-                var n = 2
-                while keys.contains(finalKey) { finalKey = "\(base)_\(w.wordClass)_\(n)"; n += 1 }
-            }
-            keys.insert(finalKey)
-            let tile = TileModel(key: finalKey, value: w.displayName, wordClass: w.wordClass)
-            tile.isSystem = false
-            modelContext.insert(tile)
-            created.append(tile)
         }
         try? modelContext.save()
         onCommit(created)
