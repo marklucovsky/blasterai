@@ -2,9 +2,9 @@
 # Handoff: the end of session 14 and what comes next
 
 Rewritten 2026-10-28, partway through session 14, replacing the sessions 12–16
-plan of 2026-10-19; updated 2026-10-29 at the session's close, and on
-2026-11-02 at the close of session 16. **Next: session 17, the editor.** Read
-this first.
+plan of 2026-10-19; updated 2026-10-29 at the session's close, on 2026-11-02 at
+the close of session 16, and on 2026-11-05 at the close of session 17.
+**Next: session 18, the editor pass, then build 10.** Read this first.
 
 ## Where things stand
 
@@ -162,48 +162,55 @@ Next, on feedback:
 - How create / mount / share reads to a caregiver. The guides don't cover Me
   yet.
 
-## Session 17: the board editor as a spreadsheet
+## Session 17: the board editor as a spreadsheet, done (#168–#171)
 
-Mark, 2026-11-02: the editor is "our biggest weakness and biggest
-opportunity", for Brandi and for Malawi. Even building demos is painful.
-Mounting only matters where there is content, and the editor is how content
-gets made.
+| PR | What |
+|---|---|
+| #168 | The page editor's grid is a spreadsheet: typed cells (`cat`, `cat, animal`, `go > places`, `> animals`, `sys:`), arrow/Tab/Return, autocomplete, the word well, select + drag moves, a selection action bar, Tile Settings › Edit Cell |
+| #169 | Boards from spreadsheets (Google Sheets link, .xlsx, CSV; a tab is a page) and .xlsx export; page covers (`PageSpec.cover`, `[word] > page`); one import flow for scenes and pages, previewed and moderated; word classes from `Resources/word_classes.json`; Classic pack covers cut, cloud redrawn |
+| #170 | Import finds the board past details rows, titles, labels and notes (`#board` to say exactly); the start can be moved in the preview |
+| #171 | Add Page's Retry crashed (an optional `Binding` read after it was cleared); Retry hidden where there is nothing to regenerate |
 
-**The model:**
-- A page is a fixed 10×6 grid.
-- Row 1 is inherited, so rows 2–6 are 50 cells you can address, and any blank
-  cell can become a word.
-- With no reflow, editing becomes a spreadsheet.
+**Decided (Mark, 2026-11-04):**
+- A bare page name is always the scene's page (made empty if missing);
+  BlasterAI 60's pages need `sys:` — in the grid, sheets and export alike.
+- A folder and its page are one thing: a page carries its cover; `[word] >
+  page` overrides one folder.
+- Import is one idea: New Scene / Import Scene, Add Page / Import Page, every
+  path previewed with its new words reviewed.
 
-**Cells:**
-- Type `cat` ⏎ to place an existing word.
-- Type `cat, animal` ⏎ to make a new word with that class. This is
-  `BulkWordParser`'s grammar, `key, class[, Display]`.
-- A folder or doorway gets a link syntax, to be decided.
-- An empty cell is a spacer.
-- Arrows, Tab and Return move; typing replaces the cell; Delete empties it.
-- Words you type autocomplete from the vocabulary.
-- New words have no art until it is generated, and they show a text glyph in
-  the meantime.
+The spreadsheet format for authors: `docs/board-format/README.md`.
 
-**CSV boards:**
-- Brandi already sketches boards in a spreadsheet, so CSV comes in using the
-  same cell grammar.
-- One CSV row is one grid row, and a marker line starts each page.
-- Export the same format back out, so a board can round-trip through Sheets
-  or Excel.
+## Session 18: the editor pass, then build 10
 
-**Where it runs:**
-- iPad and Mac, with a hardware keyboard first-class.
-- Touch: tap a cell to type.
-- The 2026-10-17 word-well idea (search on the left, drag to a cell) can sit
-  beside the grid in landscape.
-- The current page editor stays until this one covers it.
+Mark, 2026-11-05: before build 10, one more pass on the editor — solid on the
+phone, and smooth next to Avaz. In this order:
 
-**Test cases:**
-- a demo board built from nothing;
-- one of Brandi's spreadsheet sketches, imported;
-- a small Malawi board with local words and no AI.
+1. **The phone.** The iPad spreadsheet does not fit a portrait phone. A hybrid
+   phone editor, and with it how a 10-column page lays out on a phone, editor
+   and child board alike: the full grid small, and a zoom that scrolls sideways
+   snapping to the column bands (4 · 4 · 2, read from `page_templates.json`).
+   Page editor sizing (above, "Do better") belongs here.
+2. **Smooth next to Avaz.** Mark brings a list of rough spots to work through.
+3. **A scene's own system row.** Brandi wants her own row 1, and so does
+   Malawi; "if we can make this work, that would be huge."
+   - A scene setting: the system row is local to the scene.
+   - Spreadsheets: a `SystemRow` tab whose one row is the bar on every page;
+     `#placement top | bottom` for where it sits.
+   - To decide: stored as a reserved page in `pagesData` (no schema change)
+     or a scene field; what `sys:` links, Me and topics do under a local row;
+     how placement sits with the control rail. Ties to the parked "a template
+     picks the grid and the system-row placement".
+4. **Then:** the Malawi test case (local words, no AI, its own row 1), and
+   retiring the old page editor once the grid covers it.
+
+**Also with the editor work:**
+- Class leniency: let words stay class-less through import and the grid;
+  force a class only through the preview's review flags.
+- Word naming (#167) before any localization.
+
+**Then TestFlight build 10**, with Me and My Topics and the editor, for Brandi
+and the SLP — once 1.0.0 (9) has cleared App Review.
 
 ## After that
 
@@ -225,9 +232,6 @@ gets made.
     school-age frequency list; ask Brandi for one.
 - **Malawi image set.** A P3D derivative with its own style prompt and
   reference pack. Show Brandi a small sample first.
-- **TestFlight build 10** with Me and My Topics, for Brandi and the SLP. Put it
-  at the start of whichever session comes next, once 1.0.0 (9) has cleared App
-  Review.
 
 ## Deadlines
 

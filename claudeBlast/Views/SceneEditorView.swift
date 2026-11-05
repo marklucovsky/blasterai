@@ -861,9 +861,13 @@ private struct PageGeneratorSheet: View {
 
     var body: some View {
         NavigationStack {
-            if preview != nil, let previewBinding = Binding($preview) {
+            if let shown = preview {
+                // Never `Binding($preview)`: Retry clears `preview` while this
+                // view is still up, and that binding's getter traps on nil as
+                // the view reads it on the way out. This one falls back to the
+                // page it was showing.
                 PagePreviewView(
-                    preview: previewBinding,
+                    preview: Binding(get: { preview ?? shown }, set: { preview = $0 }),
                     pageName: pageName,
                     allTiles: allTiles,
                     apiKey: apiKey,
@@ -875,7 +879,13 @@ private struct PageGeneratorSheet: View {
                     } : nil,
                     onAccept: { if let p = self.preview { buildAndAccept(p, editMode: false) } },
                     onEdit:   { if let p = self.preview { buildAndAccept(p, editMode: true) } },
-                    onRetry:  { cachedPack = nil; cachedAIExample = nil; cachedCopy = nil; cachedClassQuery = nil; self.preview = nil; runGeneration() },
+                    // A pack, a copied page or a word class is not generated, so
+                    // there is nothing to retry: Cancel is the way back.
+                    onRetry: (cachedPack != nil || cachedCopy != nil || cachedClassQuery != nil) ? nil : {
+                        cachedPack = nil; cachedAIExample = nil; cachedCopy = nil; cachedClassQuery = nil
+                        self.preview = nil
+                        runGeneration()
+                    },
                     onRefine: (isLivePreview && !apiKey.isEmpty) ? { showRefine = true } : nil,
                     onCancel: { dismiss() }
                 )
