@@ -128,6 +128,9 @@ struct SceneEditorView: View {
     @State private var pickerKeysForNewPage: Set<String> = []
     @Environment(\.horizontalSizeClass) private var hSizeClass
     @State private var isSharingScene = false
+    @State private var isImportingPages = false
+    /// Imported pages still to offer a link for, after the one showing.
+    @State private var pendingLinks: [String] = []
 
     /// Graded reveal: how many levels the board has, where it opens, and where
     /// it is now. Placements get their level in the page editor, from the same
@@ -484,6 +487,11 @@ struct SceneEditorView: View {
                 } label: {
                     Label("Add Page", systemImage: "plus.circle")
                 }
+                Button {
+                    isImportingPages = true
+                } label: {
+                    Label("Import Page", systemImage: "square.and.arrow.down")
+                }
             } header: {
                 Text("Pages (\(scene.pages.count), \(sceneTileCount))")
             } footer: {
@@ -512,6 +520,13 @@ struct SceneEditorView: View {
         .toolbar { sceneEditorToolbar }
         .sheet(isPresented: $isSharingScene) {
             ShareBoardSheet(subject: .scene(scene))
+        }
+        .sheet(isPresented: $isImportingPages) {
+            BoardImportSheet(scene: scene) { _, unlinked in
+                // As Add Page does: offer a folder to each new page, one at a time.
+                pendingLinks = Array(unlinked.dropFirst())
+                pageToLink = unlinked.first.map { PageLinkTarget(pageKey: $0) }
+            }
         }
         .fullScreenCover(isPresented: $showPreview) {
             ScenePreviewBoardView(scene: scene, allTiles: allTiles)
@@ -557,7 +572,10 @@ struct SceneEditorView: View {
         .navigationDestination(item: $navigateToNewPageKey) { pageKey in
             PageEditorView(scene: scene, pageKey: pageKey, autoOpenPickerWithKeys: pickerKeysForNewPage)
         }
-        .sheet(item: $pageToLink) { target in
+        .sheet(item: $pageToLink, onDismiss: {
+            guard !pendingLinks.isEmpty else { return }
+            pageToLink = PageLinkTarget(pageKey: pendingLinks.removeFirst())
+        }) { target in
             PageLinkPlacementSheet(scene: scene, target: target, allTiles: allTiles)
         }
     }
@@ -710,8 +728,8 @@ struct SceneEditorView: View {
         }
         // Drop the now-orphaned page_link tiles for the deleted pages from vocab.
         for key in deletedKeys {
-            let linkKey = PageLink.key(forPage: key)
-            if let tile = allTiles.first(where: { $0.key == linkKey }) {
+            let linkKeys = [PageLink.key(forPage: key), PageCover.ownKey(forPage: key, in: scene)]
+            for tile in allTiles where linkKeys.contains(tile.key) {
                 modelContext.delete(tile)
             }
         }
@@ -1444,7 +1462,9 @@ private struct PageGeneratorSheet: View {
 
 // MARK: - Page Preview View
 
-private struct PagePreviewView: View {
+/// The standard page preview: every way a page is made — AI, a pack, a copy,
+/// a spreadsheet — shows it here, with its new words reviewed, before Accept.
+struct PagePreviewView: View {
     @Binding var preview: GeneratedPageResult
     let pageName: String
     let allTiles: [TileModel]
@@ -1457,9 +1477,13 @@ private struct PagePreviewView: View {
     var placed: ((GeneratedPage) -> PageSpec?)? = nil
     let onAccept: () -> Void
     let onEdit: () -> Void
-    let onRetry: () -> Void
+    /// Nil hides Retry: a spreadsheet has nothing to retry.
+    let onRetry: (() -> Void)?
     var onRefine: (() -> Void)? = nil
     let onCancel: () -> Void
+    /// Every section is laid out by `placed` and cannot be pruned: a sheet's
+    /// cells have addresses, and removing one would move every later cell.
+    var fixedLayout: Bool = false
 
     @State private var selectedSection = 0  // 0 = primary, 1+ = sub-pages
     @State private var isSelecting = false
@@ -1495,6 +1519,15 @@ private struct PagePreviewView: View {
         onAccept()
     }
     private var sectionIndex: Int { min(selectedSection, allSections.count - 1) }
+
+    /// A section's strongest unresolved review state, for its tab: flagged
+    /// words must be resolved to Accept, blocked ones will be left off.
+    private func reviewMark(for section: GeneratedPage) -> (symbol: String, color: Color)? {
+        let states = section.tiles.filter(\.isProposedNew).map { review.state(for: $0.key) }
+        if states.contains(.flagged) { return ("flag.fill", .orange) }
+        if states.contains(.blocked) { return ("xmark", .red) }
+        return nil
+    }
     private var currentTiles: [GeneratedTile] { allSections[sectionIndex].tiles }
 
     /// The current section's tiles as an editable `[TileEntry]` binding. Writes
@@ -1520,7 +1553,7 @@ private struct PagePreviewView: View {
                     HStack(spacing: 8) {
                         ForEach(allSections.indices, id: \.self) { i in
                             Button { selectedSection = i } label: {
-                                Text(i == 0 ? pageName : allSections[i].key)
+                                Text(i == 0 ? pageName : PageNaming.displayName(allSections[i].key))
                                     .font(.caption)
                                     .fontWeight(selectedSection == i ? .semibold : .regular)
                                     .padding(.horizontal, 12)
@@ -1531,13 +1564,27 @@ private struct PagePreviewView: View {
                                                        : Color.secondary.opacity(0.15))
                                     )
                                     .foregroundStyle(selectedSection == i ? .white : .primary)
+                                    // Where the words still to review are: a page
+                                    // other than the one showing says so.
+                                    .overlay(alignment: .topTrailing) {
+                                        if let mark = reviewMark(for: allSections[i]) {
+                                            Image(systemName: mark.symbol)
+                                                .font(.caption2.weight(.bold))
+                                                .foregroundStyle(.white)
+                                                .padding(3)
+                                                .background(Circle().fill(mark.color))
+                                                .offset(x: 6, y: -6)
+                                                .accessibilityLabel("Has words to review")
+                                        }
+                                    }
                             }
                             .buttonStyle(.plain)
                         }
                     }
                     .padding(.horizontal)
+                    .padding(.vertical, 8)   // room for a tab's review badge
                 }
-                .padding(.vertical, 10)
+                .padding(.vertical, 2)
             } else {
                 Text(pageName)
                     .font(.headline)
@@ -1559,7 +1606,7 @@ private struct PagePreviewView: View {
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                 Spacer()
-                if !currentTiles.isEmpty {
+                if !currentTiles.isEmpty, !fixedLayout {
                     Button(isSelecting ? "Done" : "Select") { isSelecting.toggle() }
                         .font(.caption)
                         .buttonStyle(.bordered)
@@ -1571,7 +1618,7 @@ private struct PagePreviewView: View {
 
             // A templated page shows where each word will sit; Select switches
             // to the list to prune it, and the board re-lays out from the list.
-            if !isSelecting, sectionIndex == 0, let board = placed?(allSections[0]) {
+            if !isSelecting, sectionIndex == 0 || fixedLayout, let board = placed?(allSections[sectionIndex]) {
                 ScrollView {
                     TemplateBoardGrid(page: board) { entry in boardCell(entry) }
                 }
@@ -1598,8 +1645,10 @@ private struct PagePreviewView: View {
                 Button("Cancel", role: .destructive) { onCancel() }
                     .buttonStyle(.bordered)
                     .tint(.red)
-                Button("Retry") { onRetry() }
-                    .buttonStyle(.bordered)
+                if let onRetry {
+                    Button("Retry") { onRetry() }
+                        .buttonStyle(.bordered)
+                }
                 if let onRefine {
                     Button("Refine") { onRefine() }
                         .buttonStyle(.bordered)
@@ -1625,12 +1674,18 @@ private struct PagePreviewView: View {
     /// would shift every later cell.
     @ViewBuilder
     private func boardCell(_ entry: TileEntry) -> some View {
-        if currentTiles.contains(where: { $0.key == entry.key }) {
+        // Only a tile `generatedCell` can draw: a folder whose page-link tile
+        // does not exist yet would draw nothing and shift every later cell.
+        if currentTiles.contains(where: { $0.key == entry.key && (tileLookup[$0.key] != nil || $0.isProposedNew) }) {
             generatedCell(entry.key)
         } else if let tile = tileLookup[entry.key] {
             GeneratedTileCell(key: tile.bundleImage, displayName: tile.displayName,
                               wordClass: tile.wordClass, link: entry.link,
                               linkColor: entry.linkColor, isAudible: entry.isAudible)
+        } else if !entry.link.isEmpty {
+            // A folder whose page-link tile Accept will make.
+            GeneratedTileCell(key: entry.key, displayName: SystemLinks.displayName(of: entry.link),
+                              wordClass: PageLink.wordClass, link: entry.link)
         } else {
             Color.clear.aspectRatio(1, contentMode: .fit)
         }

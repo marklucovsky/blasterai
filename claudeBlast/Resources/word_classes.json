@@ -1,0 +1,160 @@
+{
+  "_comment": "The word classes BlasterAI knows \u2014 the app loads this file (VocabularyClasses), so it is the source of truth. 'caregiverSelectable' classes are the ones a new word may use, in a spreadsheet cell ('cat, animal') or in the app. 'partOfSpeech' is the fallback that colors a new word when nothing better is known; null means no word color.",
+  "classes": [
+    {
+      "name": "people",
+      "partOfSpeech": "noun",
+      "caregiverSelectable": true
+    },
+    {
+      "name": "animal",
+      "partOfSpeech": "noun",
+      "caregiverSelectable": true
+    },
+    {
+      "name": "actions",
+      "partOfSpeech": "verb",
+      "caregiverSelectable": true
+    },
+    {
+      "name": "describe",
+      "partOfSpeech": "adjective",
+      "caregiverSelectable": true
+    },
+    {
+      "name": "feeling",
+      "partOfSpeech": "adjective",
+      "caregiverSelectable": true
+    },
+    {
+      "name": "social",
+      "partOfSpeech": "social",
+      "caregiverSelectable": true
+    },
+    {
+      "name": "food",
+      "partOfSpeech": "noun",
+      "caregiverSelectable": true,
+      "note": "Absorbs the former meals/fruit/veggie/snacks buckets (2026-08). The class string goes into the sentence prompt, and those sub-splits told the model nothing the word did not."
+    },
+    {
+      "name": "plant",
+      "partOfSpeech": "noun",
+      "caregiverSelectable": true
+    },
+    {
+      "name": "nature",
+      "partOfSpeech": "noun",
+      "caregiverSelectable": true,
+      "note": "The outdoors that is neither growing nor weather: rock, mud, puddle, hill, sky, moon."
+    },
+    {
+      "name": "drinks",
+      "partOfSpeech": "noun",
+      "caregiverSelectable": true
+    },
+    {
+      "name": "places",
+      "partOfSpeech": "noun",
+      "caregiverSelectable": true
+    },
+    {
+      "name": "weather",
+      "partOfSpeech": "noun",
+      "caregiverSelectable": true
+    },
+    {
+      "name": "time",
+      "partOfSpeech": "noun",
+      "caregiverSelectable": true,
+      "note": "Days, months, seasons, parts of the day, clock and when-words. 'fall (time)' reads as autumn where 'fall (object)' read as a dropped thing."
+    },
+    {
+      "name": "colors",
+      "partOfSpeech": "adjective",
+      "caregiverSelectable": true
+    },
+    {
+      "name": "shape",
+      "partOfSpeech": "noun",
+      "caregiverSelectable": true
+    },
+    {
+      "name": "body",
+      "partOfSpeech": "noun",
+      "caregiverSelectable": true
+    },
+    {
+      "name": "health",
+      "partOfSpeech": "noun",
+      "caregiverSelectable": true
+    },
+    {
+      "name": "toy",
+      "partOfSpeech": "noun",
+      "caregiverSelectable": true
+    },
+    {
+      "name": "games",
+      "partOfSpeech": "noun",
+      "caregiverSelectable": true
+    },
+    {
+      "name": "sports",
+      "partOfSpeech": "noun",
+      "caregiverSelectable": true
+    },
+    {
+      "name": "play",
+      "partOfSpeech": "noun",
+      "caregiverSelectable": true
+    },
+    {
+      "name": "art",
+      "partOfSpeech": "noun",
+      "caregiverSelectable": true
+    },
+    {
+      "name": "object",
+      "partOfSpeech": "noun",
+      "caregiverSelectable": true,
+      "note": "Last resort: concrete objects, tools and vehicles no more specific class fits."
+    },
+    {
+      "name": "letter",
+      "partOfSpeech": null,
+      "caregiverSelectable": true,
+      "note": "Drawn, not generated (GlyphTile). Not a word, so no part of speech."
+    },
+    {
+      "name": "number",
+      "partOfSpeech": "determiner",
+      "caregiverSelectable": true,
+      "note": "Drawn, not generated. A determiner: 'three cookies' quantifies."
+    },
+    {
+      "name": "core",
+      "partOfSpeech": "preposition",
+      "caregiverSelectable": false,
+      "note": "Structural. Mixed prepositions, pronouns and determiners; every bundled one is in the part-of-speech table, so this fallback is nearly unreachable."
+    },
+    {
+      "name": "navigation",
+      "partOfSpeech": null,
+      "caregiverSelectable": false,
+      "note": "Structural: folders and other chrome."
+    },
+    {
+      "name": "question",
+      "partOfSpeech": "question",
+      "caregiverSelectable": false,
+      "note": "Structural: question words."
+    },
+    {
+      "name": "page_link",
+      "partOfSpeech": null,
+      "caregiverSelectable": false,
+      "note": "Structural: page and scene covers, minted by the app."
+    }
+  ]
+}

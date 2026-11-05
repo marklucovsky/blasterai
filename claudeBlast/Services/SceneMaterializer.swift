@@ -107,7 +107,9 @@ enum SceneMaterializer {
             description: scene.description ?? "",
             homePageKey: scene.homePageKey,
             isDefault: scene.isDefault,
-            pages: materializedPages,
+            // Every page's cover written down: the folder that opens it, or
+            // the system row's on the default board. See `PageCover`.
+            pages: PageCover.assigningDefaults(materializedPages, isSystemScene: scene.isDefault),
             designedFor: scene.designedFor ?? "",
             revealLevelCount: levelCount,
             revealLevel: levelCount > 0 ? min(max(scene.revealLevel ?? levelCount, 1), levelCount) : 0

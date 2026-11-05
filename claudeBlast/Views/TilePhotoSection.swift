@@ -22,6 +22,9 @@ import UIKit
 
 struct TilePhotoSection: View {
     @Bindable var tile: TileModel
+    /// What AI art is of, when it is more than the tile's name: a scene's
+    /// description for its cover. Used when no detail is typed.
+    var subjectDetail: String = ""
     /// Called with a freshly picked (uncropped) image. The host presents the
     /// cropper and, on confirm, calls `TilePhotoCommit.apply`.
     let onPick: (UIImage) -> Void
@@ -277,7 +280,9 @@ struct TilePhotoSection: View {
         let expected = ArtPlan.expectedSets(plan)
         let images = await TileImageGenerator.generate(
             displayName: tile.displayName, wordClass: tile.wordClass,
-            plan: plan, detail: imageDetail, apiKey: apiKey)
+            plan: plan,
+            detail: imageDetail.isEmpty ? String(subjectDetail.prefix(TileImageGenerator.maxDetailLength)) : imageDetail,
+            apiKey: apiKey)
 
         for (set, image) in images.images {
             if let err = TilePhotoCommit.applyVariant(image, to: tile, imageSet: set,

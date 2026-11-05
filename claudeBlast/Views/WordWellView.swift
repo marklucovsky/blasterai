@@ -71,7 +71,8 @@ extension WellItem {
         case .scenePage(let pageKey):
             let page = scenePages.first { $0.key == pageKey }
             return (page?.tiles ?? []).compactMap { entry in
-                item(entry, text: BoardCell.format(entry, scenePages: scenePages), lookup: lookup)
+                item(entry, text: BoardCell.format(entry, cover: BoardCell.covers(
+                    scenePages: scenePages, systemPages: systemPages)), lookup: lookup)
             }
         case .systemPage(let pageKey):
             let page = systemPages.first { $0.key == pageKey }

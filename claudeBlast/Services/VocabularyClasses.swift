@@ -42,80 +42,39 @@ struct VocabularyClass: Identifiable, Hashable {
 }
 
 enum VocabularyClasses {
-    /// Canonical word classes in caregiver-facing display order.
+    /// Canonical word classes in caregiver-facing display order, from
+    /// `Resources/word_classes.json`.
     ///
-    /// The second column used to be a color. It is now the part of speech a
-    /// word of this class falls back to when neither a stored answer nor the
-    /// bundled table knows — the derivation layer, measured at **92.3% color
-    /// accuracy** across the caregiver-selectable classes.
+    /// The file is the source of truth, published as data so that someone
+    /// writing a board in a spreadsheet can read the exact list without the
+    /// app (`docs/board-format/README.md` links it). Each class's reasoning
+    /// lives beside it there, as a `note`.
     ///
-    /// Every miss in that measurement is a *bundled* word, which has an exact
-    /// table entry and never reaches here: prepositions filed as `describe`,
-    /// pronouns filed as `people`. The population this actually serves is
-    /// caregiver-added words, which are overwhelmingly concrete nouns a family
-    /// invented — "grandma", "Bluey", "trampoline" — so its real accuracy is
-    /// well above the measured figure.
-    static let all: [VocabularyClass] = [
-        VocabularyClass(name: "people", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
-        VocabularyClass(name: "animal", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
-        VocabularyClass(name: "actions", defaultPartOfSpeech: .verb, isCaregiverSelectable: true),
-        VocabularyClass(name: "describe", defaultPartOfSpeech: .adjective, isCaregiverSelectable: true),
-        VocabularyClass(name: "feeling", defaultPartOfSpeech: .adjective, isCaregiverSelectable: true),
-        VocabularyClass(name: "social", defaultPartOfSpeech: .social, isCaregiverSelectable: true),
-        // `food` absorbs the former meals/fruit/veggie/snacks buckets (2026-08).
-        // Those sub-splits were arbitrary from the LLM's view (the class string is
-        // injected into the sentence prompt) and only ever served scene-builder
-        // collection filtering — the wrong customer. The word itself ("carrot",
-        // "cookie") already tells the model what it is; the sub-class did not.
-        VocabularyClass(name: "food", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
-        VocabularyClass(name: "plant", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
-        // The outdoors that is neither growing nor weather: rock, mud, puddle,
-        // hill, sky, moon. Without it these fell into `object`.
-        VocabularyClass(name: "nature", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
-        VocabularyClass(name: "drinks", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
-        VocabularyClass(name: "places", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
-        VocabularyClass(name: "weather", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
-        // Days, months, seasons, parts of the day, clock words, and when-words
-        // (today, later). The class rides into the sentence prompt, and "fall
-        // (object)" read as a dropped thing; "fall (time)" reads as autumn.
-        // Colour still comes from the bundled part-of-speech table.
-        VocabularyClass(name: "time", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
-        VocabularyClass(name: "colors", defaultPartOfSpeech: .adjective, isCaregiverSelectable: true),
-        VocabularyClass(name: "shape", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
-        VocabularyClass(name: "body", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
-        VocabularyClass(name: "health", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
-        VocabularyClass(name: "toy", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
-        VocabularyClass(name: "games", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
-        VocabularyClass(name: "sports", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
-        VocabularyClass(name: "play", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
-        VocabularyClass(name: "art", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
-        // Generic concrete objects / tools / equipment / vehicles that don't fit a
-        // more specific class (handcuffs, badge, hose, ladder, tractor).
-        VocabularyClass(name: "object", defaultPartOfSpeech: .noun, isCaregiverSelectable: true),
-        // Letters and numbers. Drawn rather than generated (`GlyphTile`), and
-        // caregiver-selectable so a family can add a letter we did not ship —
-        // an accented character, a numeral past ten — and have it render.
-        //
-        // A letter has no part of speech: it is not a word, and on a published
-        // letter board it is neutral. A number is a `determiner` — "three
-        // cookies" quantifies, which is what the Fitzgerald key colors it for.
-        VocabularyClass(name: "letter", defaultPartOfSpeech: nil, isCaregiverSelectable: true),
-        VocabularyClass(name: "number", defaultPartOfSpeech: .determiner, isCaregiverSelectable: true),
-        // Structural / function classes — not caregiver-creatable content.
-        //
-        // `core` is the one genuinely mixed class: its bundled words split across
-        // prepositions, pronouns and determiners, with preposition the modal
-        // answer at 50%. Every one of them is in the table, so this fallback is
-        // very nearly unreachable — it exists for a `core` word that arrived by
-        // scene import.
-        VocabularyClass(name: "core", defaultPartOfSpeech: .preposition, isCaregiverSelectable: false),
-        VocabularyClass(name: "navigation", defaultPartOfSpeech: nil, isCaregiverSelectable: false),
-        VocabularyClass(name: "question", defaultPartOfSpeech: .question, isCaregiverSelectable: false),
-        // Auto-minted per page: a silent link tile (key `page_<pageKey>`) that
-        // navigates to a named page collection. Reusable on any board. Not
-        // caregiver-creatable — pages mint these themselves.
-        VocabularyClass(name: "page_link", defaultPartOfSpeech: nil, isCaregiverSelectable: false),
-    ]
+    /// The part of speech is the fallback a word of the class gets when
+    /// neither a stored answer nor the bundled table knows — measured at
+    /// **92.3% color accuracy** across the caregiver-selectable classes, every
+    /// miss a bundled word that never reaches the fallback.
+    static let all: [VocabularyClass] = load()
+
+    private struct File: Decodable {
+        struct Entry: Decodable {
+            let name: String
+            let partOfSpeech: PartOfSpeech?
+            let caregiverSelectable: Bool
+        }
+        let classes: [Entry]
+    }
+
+    /// Empty if the file is missing or malformed, which `theClassListLoadsFromItsFile`
+    /// catches: every class-driven picker would be empty.
+    static func load(_ data: Data? = Bundle.main.url(forResource: "word_classes", withExtension: "json")
+                        .flatMap { try? Data(contentsOf: $0) }) -> [VocabularyClass] {
+        guard let data, let file = try? JSONDecoder().decode(File.self, from: data) else { return [] }
+        return file.classes.map {
+            VocabularyClass(name: $0.name, defaultPartOfSpeech: $0.partOfSpeech,
+                            isCaregiverSelectable: $0.caregiverSelectable)
+        }
+    }
 
     /// Shared, tightened rule for how the AI should pick a `wordClass` for a NEW
     /// word. Centralized here so the scene / page / tile / refiner generators all

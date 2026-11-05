@@ -53,6 +53,7 @@ private enum ShareDestination: String, Identifiable, CaseIterable {
     case nativeFile
     case printablePDF
     case tileImages
+    case spreadsheet
     case openBoard
 
     var id: String { rawValue }
@@ -62,6 +63,7 @@ private enum ShareDestination: String, Identifiable, CaseIterable {
         case .nativeFile: return "square.and.arrow.up.on.square"
         case .printablePDF: return "printer"
         case .tileImages: return "photo.on.rectangle.angled"
+        case .spreadsheet: return "tablecells"
         case .openBoard: return "arrow.up.forward.square"
         }
     }
@@ -69,7 +71,7 @@ private enum ShareDestination: String, Identifiable, CaseIterable {
     /// A native file always carries every style, so it has nothing to configure
     /// — except the level a scene opens at, which `ShareBoardSheet.hasOptions`
     /// adds when the board has levels.
-    var hasOptions: Bool { self != .nativeFile && self != .openBoard }
+    var hasOptions: Bool { self != .nativeFile && self != .openBoard && self != .spreadsheet }
 
     /// Only whole scenes travel as OBF. A board set holding one board and no
     /// navigation is not what the format is for, and a page's links point at
@@ -249,7 +251,7 @@ struct ShareBoardSheet: View {
         case .printablePDF: pdfOptionRows
         case .tileImages: pictureOptionRows
         case .nativeFile: sceneOptionRows
-        case .openBoard: EmptyView()
+        case .spreadsheet, .openBoard: EmptyView()
         }
     }
 
@@ -431,6 +433,9 @@ struct ShareBoardSheet: View {
             let count = Set(pictureKeys).count * sets
             let level = sharesLevels && pictureLevel > 0 ? " · level \(pictureLevel)" : ""
             return "\(count) PNG image\(count == 1 ? "" : "s") · \(setScope.label.lowercased())\(level)"
+        case .spreadsheet:
+            let tabs = isPage ? 1 : subject.scene.pages.count
+            return "\(tabs) tab\(tabs == 1 ? "" : "s"), a page per tab, for Numbers, Excel or Google Sheets"
         case .openBoard:
             let boards = subject.scene.pages.count
             return "\(boards) board\(boards == 1 ? "" : "s") for CoughDrop and other AAC apps"
@@ -488,6 +493,7 @@ struct ShareBoardSheet: View {
         case .nativeFile: return isPage ? "Blaster Pack" : "Blaster Scene"
         case .printablePDF: return "Printable PDF"
         case .tileImages: return "Tile Pictures"
+        case .spreadsheet: return "Spreadsheet (.xlsx)"
         case .openBoard: return "Open Board (.obz)"
         }
     }
@@ -512,6 +518,7 @@ struct ShareBoardSheet: View {
                 case .nativeFile:   file = try nativeFile()
                 case .printablePDF: file = try await printablePDF()
                 case .tileImages:   file = try await tileImages()
+                case .spreadsheet:  file = try spreadsheet()
                 case .openBoard:    file = try await openBoardPackage()
                 }
                 try Task.checkCancellation()
@@ -531,6 +538,7 @@ struct ShareBoardSheet: View {
         case .nativeFile: return "Packaging words and pictures…"
         case .printablePDF: return "Drawing sheets…"
         case .tileImages: return "Saving pictures…"
+        case .spreadsheet: return "Writing tabs…"
         case .openBoard: return "Building boards…"
         }
     }
@@ -554,6 +562,23 @@ struct ShareBoardSheet: View {
 
     private var tileLookup: [String: TileModel] {
         Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
+    }
+
+    /// The board as a workbook, a tab per page, each cell as the page editor
+    /// shows it — so it imports back as the same board.
+    private func spreadsheet() throws -> ExportedFile {
+        let scene = subject.scene
+        let cols = GridLayoutCalculator.authoringGrid(
+            designed: scene.designedLayout,
+            isPhone: GridLayoutCalculator.isPhone(screenSize: GridLayoutCalculator.deviceScreenSize),
+            deviceLayout: .standard).cols
+        let pages: [PageSpec]
+        switch subject {
+        case .scene(let scene): pages = scene.pages
+        case .page(let page, _): pages = [page]
+        }
+        let tabs = BoardWorkbook.tabs(for: pages, homeKey: scene.homePageKey, cols: cols)
+        return try ExportedFile.write(XLSX.write(tabs), named: "\(subject.basename).xlsx")
     }
 
     private func nativeFile() throws -> ExportedFile {

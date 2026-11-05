@@ -38,6 +38,15 @@ enum SceneImageBatch {
                 }
             }
         }
+        // Each page's cover, which a page no folder opens yet (a topic's
+        // pages, a page just made) would otherwise never offer to draw.
+        for page in scene.pages {
+            let key = PageCover.key(of: page, in: scene.pages, isSystemScene: scene.isDefault)
+            guard seen.insert(key).inserted, let tile = tileLookup[key] else { continue }
+            if !tile.hasUserImage, !resolver.hasResolvedArt(for: tile.bundleImage) {
+                result.append(tile)
+            }
+        }
         return result
     }
 

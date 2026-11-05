@@ -305,9 +305,11 @@ enum SceneImporter {
                     revealLevel: max(0, exportTile.revealLevel ?? 0)
                 )
             }
+            // A cover this device has no tile for falls back to the default.
+            let cover = exportPage.cover.flatMap { tileLookup[$0] == nil ? nil : $0 } ?? ""
             return PageSpec(key: exportPage.key,
                             displayName: exportPage.displayName ?? "",
-                            tiles: tiles)
+                            tiles: tiles, cover: cover)
         }
 
         // Decentralized identity carried in the file (absent on legacy exports).

@@ -325,9 +325,7 @@ enum MeScene {
     /// opens it there, else its minted page link — the rule
     /// `PageLink.ensurePageImages` follows.
     static func folderKey(forPage pageKey: String, in scene: BlasterScene) -> String {
-        scene.pages.lazy.flatMap(\.tiles)
-            .first { $0.link == pageKey && !$0.isEmptyCell }?.key
-            ?? PageLink.key(forPage: pageKey)
+        PageCover.key(ofPage: pageKey, in: scene)
     }
 
     /// Me home as the child sees it after pressing ♥ from a page: `home`, the

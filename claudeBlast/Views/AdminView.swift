@@ -122,7 +122,7 @@ struct AdminView: View {
 
     @State var navigateToNewScene: BlasterScene?
     @State var isCreatingScene = false
-    @State var isImporting = false
+    @State var isImportingBoard = false
     @State var importError: String?
     @State var pendingImportURL: ImportSheetURL?
     /// The scene the caregiver is sharing, if any. Drives `ShareBoardSheet`,

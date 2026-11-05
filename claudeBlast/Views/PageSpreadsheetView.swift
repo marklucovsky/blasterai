@@ -659,7 +659,8 @@ struct PageSpreadsheetView: View {
     }
 
     private func cellText(index: Int, _ entry: TileEntry) -> String {
-        BoardCell.format(entry, scenePages: scene.pages)
+        BoardCell.format(entry, cover: BoardCell.covers(scenePages: scene.pages, systemPages: systemPages,
+                                                        isSystemScene: scene.isDefault))
     }
 
     /// "R2 C3": rows counted as the board counts them, the system row as row 1.
@@ -824,7 +825,7 @@ struct PageSpreadsheetView: View {
     }
 
     private func accept(_ suggestion: CellSuggestion) {
-        draft = suggestion.applied(to: draft ?? "", scenePages: scene.pages)
+        draft = suggestion.applied(to: draft ?? "")
         highlighted = 0
         error = nil
     }
@@ -1073,7 +1074,7 @@ struct PageSpreadsheetView: View {
             keyboardRun = false
         case .tab:
             if count > 0, highlighted < count,
-               suggestions[highlighted].applied(to: draft ?? "", scenePages: scene.pages) != draft {
+               suggestions[highlighted].applied(to: draft ?? "") != draft {
                 accept(suggestions[highlighted])
             } else {
                 commit(thenMove: (0, 1))
@@ -1184,16 +1185,14 @@ enum CellSuggestion: Hashable {
         let system = systemPages.filter(matches).map { CellSuggestion.page($0.key, isSystem: true) }
         var result = Array((own + system).prefix(limit))
         let key = BoardCell.pageKey(query)
-        if allowNew, !key.isEmpty,
-           !scenePages.contains(where: { $0.key == key }),
-           !systemPages.contains(where: { $0.key == key }) {
+        if allowNew, !key.isEmpty, !scenePages.contains(where: { $0.key == key }) {
             result.append(.newPage(key))
         }
         return result
     }
 
     /// `text` with this suggestion in place of the side being typed.
-    func applied(to text: String, scenePages: [PageSpec]) -> String {
+    func applied(to text: String) -> String {
         let arrow = text.firstIndex(of: ">")
         let lhs = arrow.map { String(text[..<$0]).trimmingCharacters(in: .whitespaces) } ?? ""
         switch self {
@@ -1201,8 +1200,7 @@ enum CellSuggestion: Hashable {
             guard let arrow else { return key }
             return key + " " + text[arrow...]
         case .page(let key, let isSystem):
-            let collides = isSystem && scenePages.contains { $0.key == key }
-            let page = (collides ? BoardCell.systemMarker : "") + key
+            let page = (isSystem ? BoardCell.systemMarker : "") + key
             return lhs.isEmpty ? "> \(page)" : "\(lhs) > \(page)"
         case .newPage(let key):
             return lhs.isEmpty ? "> \(key)" : "\(lhs) > \(key)"
