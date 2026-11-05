@@ -36,6 +36,9 @@ enum BoardWorkbook {
             case ambiguous(String, [String])
             /// A new word whose class is not one of the app's: pick one.
             case unknownClass(String, String)
+            /// Prose in a cell — several words that are no word: a note to
+            /// the reader, left out rather than settled.
+            case note
             case other
         }
         var page: String
@@ -65,6 +68,11 @@ enum BoardWorkbook {
         var existing: Existing
         /// Cells with something to place, by board index.
         var cells: [(index: Int, text: String)]
+        /// Where the tab's board starts (`detectOrigin`, or the caregiver's
+        /// choice).
+        var origin: Origin = .topLeft
+        /// The tab it came from, as the sheet names it.
+        var tabName: String = ""
         /// The cover the `#covers` tab names, by key; empty leaves it as is.
         var cover: String = ""
         /// Each placed cell as it would land, for the page preview: the
@@ -106,6 +114,8 @@ enum BoardWorkbook {
         /// Pages a link names that no tab fills: made empty.
         var emptyPages: [String]
         var problems: [Problem]
+        /// `Name:`, `Description:` and the like from the sheet's details rows.
+        var details: [String: String] = [:]
 
         var hasWork: Bool { !pages.isEmpty }
     }
@@ -117,13 +127,30 @@ enum BoardWorkbook {
     ///   - cols: the board's columns; cells past them are reported, not placed.
     ///   - lookup: every word, by key.
     ///   - systemPages: BlasterAI 60's pages, for `sys:` links.
+    ///   - origins: where a tab's board starts, by tab name, when the
+    ///     caregiver moved it; any other tab's is detected.
+    ///   - unnamedTab: the page a first tab nobody named (`Sheet1`) becomes:
+    ///     Home for a new scene, the sheet's own name for pages added to one.
     static func preview(_ tabs: [SpreadsheetTab], cols: Int, scenePages: [PageSpec],
-                        lookup: [String: TileModel], systemPages: [PageSpec]) -> Preview {
+                        lookup: [String: TileModel], systemPages: [PageSpec],
+                        origins: [String: Origin] = [:], unnamedTab: String = "home") -> Preview {
         var preview = Preview(pages: [], homeKey: nil, newWords: [], emptyPages: [], problems: [])
         var seen = Set<String>()
         let coverTab = tabs.first { $0.name.lowercased() == coversTab }
-        for tab in tabs where tab.name.lowercased() != coversTab {
-            let key = BoardCell.pageKey(tab.name)
+        let pageTabs = tabs.filter { $0.name.lowercased() != coversTab }
+        preview.details = pageTabs.first.map(details(of:)) ?? [:]
+        let reads: (String) -> Bool = { text in
+            switch BoardCell.parse(text) {
+            case .spacer, .invalid: return false
+            case .cell(.existing(let word)?, _):
+                return BoardCell.existingWord(word, lookup: lookup) != .missing
+            case .cell: return true
+            }
+        }
+        for (t, tab) in pageTabs.enumerated() {
+            // Sheet1 is no page's name: the first one is Home.
+            let unnamed = t == 0 && isDefaultTabName(tab.name)
+            let key = BoardCell.pageKey(unnamed ? unnamedTab : tab.name)
             guard !key.isEmpty, seen.insert(key).inserted else {
                 preview.problems.append(Problem(page: tab.name, row: 0, column: "", text: tab.name,
                                                 message: key.isEmpty ? "A tab needs a name" : "Two tabs are both \u{201C}\(key)\u{201D}; the second was skipped"))
@@ -136,21 +163,27 @@ enum BoardWorkbook {
             } else {
                 existing = .none
             }
+            let origin = origins[tab.name] ?? detectOrigin(tab, cols: cols, reads: reads)
             var cells: [(Int, String)] = []
-            for (r, row) in tab.rows.enumerated() {
-                for (c, raw) in row.enumerated() {
+            for (r, row) in tab.rows.enumerated() where r >= origin.row {
+                for (c, raw) in row.enumerated() where c >= origin.col {
                     let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-                    guard !text.isEmpty else { continue }
-                    guard c < cols else {
+                    guard !text.isEmpty, text.lowercased() != boardMarker else { continue }
+                    let br = r - origin.row, bc = c - origin.col
+                    guard bc < cols else {
                         preview.problems.append(Problem(page: key, row: r + 1, column: XLSX.column(c), text: text,
                                                         message: "Past the board's \(cols) columns"))
                         continue
                     }
-                    cells.append((r * cols + c, text))
+                    cells.append((br * cols + bc, text))
                 }
             }
-            let title = PageNaming.displayName(key) == tab.name || tab.name == key ? "" : tab.name
-            preview.pages.append(PagePlan(key: key, title: title, existing: existing, cells: cells, placed: 0))
+            let shown = unnamed ? unnamedTab : tab.name
+            let title = PageNaming.displayName(key) == shown || shown == key || key == "home" ? "" : shown
+            var plan = PagePlan(key: key, title: title, existing: existing, cells: cells, placed: 0)
+            plan.origin = origin
+            plan.tabName = tab.name
+            preview.pages.append(plan)
         }
         guard !preview.pages.isEmpty else { return preview }
         preview.homeKey = preview.pages.first { $0.key == "home" }?.key ?? preview.pages[0].key
@@ -212,8 +245,8 @@ enum BoardWorkbook {
                 if case .cell(.new(let word)?, _) = BoardCell.parse(text), !isKnownClass(word.wordClass) {
                     let cells = PageCells(grid: (cols, 1), inheritsChrome: false)
                     preview.problems.append(Problem(
-                        page: preview.pages[i].key, row: cells.absoluteRow(index) + 1,
-                        column: XLSX.column(cells.column(index)), text: text,
+                        page: preview.pages[i].key, row: preview.pages[i].origin.row + cells.absoluteRow(index) + 1,
+                        column: XLSX.column(preview.pages[i].origin.col + cells.column(index)), text: text,
                         message: "\u{201C}\(word.wordClass)\u{201D} isn't a word class",
                         kind: .unknownClass(word.key, word.wordClass)))
                     continue
@@ -225,14 +258,18 @@ enum BoardWorkbook {
                     var kind = Problem.Kind.other
                     if case .cell(.existing(let word)?, _) = BoardCell.parse(text) {
                         switch BoardCell.existingWord(word, lookup: simulated) {
-                        case .missing: kind = .missingWord(word)
+                        case .missing:
+                            kind = word.split(whereSeparator: \.isWhitespace).count >= 3 ? .note : .missingWord(word)
                         case .ambiguous(let keys): kind = .ambiguous(word, keys)
                         case .found: break
                         }
                     }
-                    preview.problems.append(Problem(page: preview.pages[i].key, row: cells.absoluteRow(index) + 1,
-                                                    column: XLSX.column(cells.column(index)), text: text,
-                                                    message: message, kind: kind))
+                    // Named as the sheet names the cell, not by board position.
+                    let origin = preview.pages[i].origin
+                    preview.problems.append(Problem(page: preview.pages[i].key,
+                                                    row: origin.row + cells.absoluteRow(index) + 1,
+                                                    column: XLSX.column(origin.col + cells.column(index)), text: text,
+                                                    message: kind == .note ? "A note, left out" : message, kind: kind))
                 case .plan(let plan):
                     placed += 1
                     if !plan.entry.isSpacer {
