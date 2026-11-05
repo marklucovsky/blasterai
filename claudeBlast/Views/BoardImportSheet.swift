@@ -39,6 +39,11 @@ struct BoardImportSheet: View {
     @State private var link = ""
     @State private var isPickingFile = false
     @State private var isLoading = false
+    /// When the current load began, and how long it took, for the summary.
+    @State private var loadStarted = Date()
+    @State private var loadSeconds: Double?
+    /// The source block expanded again after a load, to pick another.
+    @State private var changingSource = false
     @State private var error: String?
     @State private var sourceName = ""
     @State private var tabs: [SpreadsheetTab] = []
@@ -49,9 +54,19 @@ struct BoardImportSheet: View {
     /// Fixes chosen here for words the sheet names that do not resolve.
     @State private var fixes: [String: BoardWorkbook.Fix] = [:]
     /// Step 3: the pages as the page preview shows them.
-    @State private var pagePreview: GeneratedPageResult?
+    /// Step 3: the pages as the page preview shows them. Not optional, with
+    /// `isPreviewing` choosing the step: a `Binding($optional)` handed to the
+    /// preview trapped on Cancel, when the preview read it once more on its
+    /// way out after the value was cleared.
+    @State private var pagePreview = GeneratedPageResult(primaryPage: GeneratedPage(key: "", tiles: []), subPages: [])
+    @State private var isPreviewing = false
     /// A BlasterAI file, handed to its own import preview.
     @State private var blasterFile: ImportSheetURL?
+    /// Where a tab's board starts, by tab name, where the caregiver moved it.
+    @State private var origins: [String: BoardWorkbook.Origin] = [:]
+    /// The tab whose start is being chosen.
+    @State private var choosingOrigin: BoardWorkbook.PagePlan?
+    @State private var sceneDescription = ""
 
     private var isScene: Bool { scene == nil }
 
@@ -64,9 +79,9 @@ struct BoardImportSheet: View {
     var body: some View {
         NavigationStack {
             Group {
-                if pagePreview != nil, let binding = Binding($pagePreview) {
+                if isPreviewing {
                     PagePreviewView(
-                        preview: binding,
+                        preview: $pagePreview,
                         pageName: writing.first.map(title) ?? "",
                         allTiles: allTiles,
                         apiKey: OpenAIKeyVault.currentKey() ?? "",
@@ -76,7 +91,7 @@ struct BoardImportSheet: View {
                         onAccept: { runImport() },
                         onEdit: {},
                         onRetry: nil,
-                        onCancel: { pagePreview = nil },
+                        onCancel: { isPreviewing = false },
                         fixedLayout: true)
                 } else {
                     settleForm
@@ -86,10 +101,10 @@ struct BoardImportSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    if pagePreview == nil { Button("Cancel") { dismiss() } }
+                    if !isPreviewing { Button("Cancel") { dismiss() } }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    if pagePreview == nil {
+                    if !isPreviewing {
                         Button("Preview") { showPreview() }
                             .disabled(!canPreview)
                     }
@@ -99,6 +114,15 @@ struct BoardImportSheet: View {
                 switch result {
                 case .success(let url): load(url)
                 case .failure(let failure): error = failure.localizedDescription
+                }
+            }
+            .sheet(item: $choosingOrigin) { page in
+                if let tab = tabs.first(where: { $0.name == page.tabName }) {
+                    TabOriginSheet(tab: tab, cols: cols, origin: page.origin,
+                                   detected: detectedOrigin(of: tab)) { chosen in
+                        origins[tab.name] = chosen
+                        refresh()
+                    }
                 }
             }
             .sheet(item: $blasterFile) { item in
@@ -112,9 +136,10 @@ struct BoardImportSheet: View {
 
     private var settleForm: some View {
         Form {
-            sourceSection
-            if isLoading {
-                Section { ProgressView("Reading…") }
+            if showsSummary {
+                loadSummary
+            } else {
+                sourceSection
             }
             if let error {
                 Section {
@@ -128,18 +153,67 @@ struct BoardImportSheet: View {
 
     // MARK: - Step 1: From
 
+    /// Once a load starts, the source block gives its room to what came in:
+    /// one line that turns from progress to a result, where the eye already is.
+    private var showsSummary: Bool {
+        !changingSource && error == nil && (isLoading || preview?.hasWork == true)
+    }
+
+    private var loadSummary: some View {
+        Section {
+            HStack(spacing: 12) {
+                if isLoading {
+                    ProgressView()
+                } else {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(.green)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(isLoading ? "Reading…" : "Loaded \(sourceName)")
+                        .font(.headline)
+                    Text(isLoading ? loadingWhat : loadedWhat)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+                Spacer()
+                if !isLoading {
+                    Button("Change") { changingSource = true }
+                        .buttonStyle(.bordered)
+                }
+            }
+            .padding(.vertical, 4)
+        }
+    }
+
+    private var loadingWhat: String {
+        link.isEmpty ? "the file" : link
+    }
+
+    private var loadedWhat: String {
+        let pages = preview?.pages.count ?? 0
+        let time = loadSeconds.map { String(format: " · %.1f s", $0) } ?? ""
+        return "\(pages) page\(pages == 1 ? "" : "s")\(time)"
+    }
+
     private var sourceSection: some View {
         Section {
-            HStack {
-                TextField(isScene ? "Link to a sheet or scene file" : "Google Sheets link", text: $link)
-                    .textContentType(.URL)
-                    .keyboardType(.URL)
-                    .autocorrectionDisabled()
-                    .textInputAutocapitalization(.never)
-                    .onSubmit { fetchLink() }
-                Button("Get") { fetchLink() }
-                    .disabled(link.trimmingCharacters(in: .whitespaces).isEmpty || isLoading)
+            TextField(isScene ? "Paste a link to a sheet or scene file" : "Paste a Google Sheets link", text: $link)
+                .textContentType(.URL)
+                .keyboardType(.URL)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+                .onSubmit { fetchLink() }
+            // Its own row and plainly a button: beside a freshly pasted link it
+            // read as part of the text.
+            Button { fetchLink() } label: {
+                Label(isScene ? "Get Scene from Link" : "Get Pages from Link", systemImage: "arrow.down.circle.fill")
+                    .frame(maxWidth: .infinity)
             }
+            .buttonStyle(.borderedProminent)
+            .disabled(link.trimmingCharacters(in: .whitespaces).isEmpty || isLoading)
             Button {
                 isPickingFile = true
             } label: {
@@ -164,6 +238,9 @@ struct BoardImportSheet: View {
                 LabeledContent("Into", value: scene.name)
             } else {
                 TextField("Scene name", text: $sceneName)
+                if !sceneDescription.isEmpty {
+                    LabeledContent("Description", value: sceneDescription)
+                }
             }
             LabeledContent("Source", value: sourceName)
         }
@@ -223,7 +300,8 @@ struct BoardImportSheet: View {
                                 }
                             }
                         } else {
-                            Menu(item.note == nil ? "Make a word…" : "Pick a class…") {
+                            // One action whatever the reason: the word needs a class.
+                            Menu("Add a class…") {
                                 ForEach(VocabularyClasses.caregiverSelectable.map(\.name), id: \.self) { cls in
                                     Button(cls) { setFix(.newWord(wordClass: cls), for: item.word) }
                                 }
@@ -234,7 +312,23 @@ struct BoardImportSheet: View {
             } header: {
                 Text("Words to settle (\(missing.count))")
             } footer: {
-                Text("A word this device doesn't have needs a class to become one; a name several words share needs one picked. Settle them here, or leave them and those cells stay empty.")
+                Text("A new word needs a class — what kind of word it is. A name several words share needs one picked. Settle them here, or leave them and those cells stay empty.")
+            }
+        }
+        let notes = preview.problems.filter { $0.kind == .note }
+        if !notes.isEmpty {
+            Section {
+                ForEach(notes) { note in
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("\(note.page) · \(note.column)\(note.row)")
+                            .font(.caption.monospaced()).foregroundStyle(.secondary)
+                        Text(note.text).font(.callout)
+                    }
+                }
+            } header: {
+                Text("Notes left out (\(notes.count))")
+            } footer: {
+                Text("Sentences in a cell read as notes to whoever opens the sheet, not as words. If one is meant to be on the board, make it a word in the page editor.")
             }
         }
         let others = preview.problems.filter { $0.kind == .other }
@@ -261,6 +355,20 @@ struct BoardImportSheet: View {
 
     @ViewBuilder
     private func pageRow(_ page: BoardWorkbook.PagePlan, isHome: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            pageRowContent(page, isHome: isHome)
+            // Where the board was found, and the way to move it.
+            Button { choosingOrigin = page } label: {
+                Label(page.origin.summary ?? "Starts at A1", systemImage: "scope")
+                    .font(.caption)
+                    .foregroundStyle(page.origin.summary == nil ? Color.secondary : Color.accentColor)
+            }
+            .buttonStyle(.borderless)
+        }
+    }
+
+    @ViewBuilder
+    private func pageRowContent(_ page: BoardWorkbook.PagePlan, isHome: Bool) -> some View {
         switch page.existing {
         case .filled(let count):
             Toggle(isOn: Binding(
@@ -306,6 +414,7 @@ struct BoardImportSheet: View {
         let pages = writing.map(\.generated)
         guard let first = pages.first else { return }
         pagePreview = GeneratedPageResult(primaryPage: first, subPages: Array(pages.dropFirst()))
+        isPreviewing = true
     }
 
     // MARK: - Loading
@@ -338,7 +447,7 @@ struct BoardImportSheet: View {
             switch problem.kind {
             case .missingWord(let w), .unknownClass(let w, _): word = w; choices = nil
             case .ambiguous(let w, let keys): word = w; choices = keys
-            case .other: continue
+            case .other, .note: continue
             }
             let key = BoardWorkbook.fixKey(word)
             if found[key] == nil { order.append(key); found[key] = (word, [], choices, note) }
@@ -371,6 +480,9 @@ struct BoardImportSheet: View {
         }
         isLoading = true
         error = nil
+        changingSource = false
+        loadStarted = Date()
+        loadSeconds = nil
         Task {
             do {
                 let fetched = try await ImportSource.fetch(text)
@@ -384,6 +496,8 @@ struct BoardImportSheet: View {
 
     private func load(_ url: URL) {
         error = nil
+        changingSource = false
+        loadStarted = Date()
         let ext = url.pathExtension.lowercased()
         if BlasterFileFormat.openableExtensions.contains(ext) || ext == "json" {
             guard isScene else { error = ImportSource.RouteError.notASpreadsheet.localizedDescription; return }
@@ -415,27 +529,48 @@ struct BoardImportSheet: View {
     }
 
     private func show(_ tabs: [SpreadsheetTab], from name: String) {
+        loadSeconds = Date().timeIntervalSince(loadStarted)
         self.tabs = tabs
         sourceName = name
-        if sceneName.isEmpty { sceneName = name }
         replacing = []
         fixes = [:]
-        pagePreview = nil
+        origins = [:]
+        isPreviewing = false
         refresh()
+        // The sheet's own details name the scene, when it gives them.
+        let details = preview?.details ?? [:]
+        if sceneName.isEmpty { sceneName = details["name"] ?? details["title"] ?? details["scene"] ?? name }
+        sceneDescription = details["description"] ?? ""
         if preview?.hasWork != true { error = "The sheet has no tabs with cells to import." }
     }
 
     private func refresh() {
-        let lookup = Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { a, _ in a })
         preview = BoardWorkbook.preview(BoardWorkbook.applying(fixes, to: tabs), cols: cols,
                                         scenePages: scene?.pages ?? [],
-                                        lookup: lookup, systemPages: systemPages)
+                                        lookup: lookup, systemPages: systemPages, origins: origins,
+                                        unnamedTab: unnamedTab)
+    }
+
+    /// A tab nobody named is Home in a new scene; added to a scene, where
+    /// Home already is, it is named after the sheet.
+    private var unnamedTab: String { isScene ? "home" : (sourceName.isEmpty ? "Imported" : sourceName) }
+
+    private var lookup: [String: TileModel] {
+        Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { a, _ in a })
+    }
+
+    /// Where detection puts `tab`'s board, for the origin sheet's Reset.
+    private func detectedOrigin(of tab: SpreadsheetTab) -> BoardWorkbook.Origin {
+        let preview = BoardWorkbook.preview([tab], cols: cols, scenePages: scene?.pages ?? [],
+                                            lookup: lookup, systemPages: systemPages, unnamedTab: unnamedTab)
+        return preview.pages.first?.origin ?? .topLeft
     }
 
     /// Accept from the preview: the review's removals arrive as new words no
     /// longer on any page, and are not made.
     private func runImport() {
-        guard let preview, let accepted = pagePreview else { return }
+        guard let preview, isPreviewing else { return }
+        let accepted = pagePreview
         let kept = Set(([accepted.primaryPage] + accepted.subPages).flatMap(\.tiles).map(\.key))
         let proposed = Set(preview.newWords.map { TileModel.normalizeKey($0.key) })
         let dropped = proposed.subtracting(kept)
@@ -448,6 +583,7 @@ struct BoardImportSheet: View {
             target.ensureIdentity(authorID: DeviceProfileStore.ensureAuthorID(context: modelContext),
                                   authorName: DeviceProfileStore.authorName(context: modelContext))
             target.designedFor = Self.designedFor.rawValue
+            target.descriptionText = sceneDescription
             modelContext.insert(target)
         }
         let result = BoardWorkbook.apply(preview, to: target, cols: cols, replacing: replacing,

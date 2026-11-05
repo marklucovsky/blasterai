@@ -16,6 +16,14 @@ working example.
   out the top row every board shares (People, Questions, Actions, …), since the
   app adds it. Rows past the first screen continue onto the next screen.
 - **An empty cell is a gap.** Gaps stay where you put them.
+- **Anything above the board is fine.** Details rows like `Name: Tide Pools`
+  and `Description: …` are read (they name and describe a new scene); a title,
+  notes, column letters and row numbers are left out. The import says where it
+  found each board ("Starts at A5") and lets you move it. To say exactly, put
+  `#board` in the cell above the board's first word.
+- **Sentences are notes.** A cell of several words that is not a word is left
+  out and listed, not turned into a tile.
+- **A tab named `Sheet1`** (or any name the spreadsheet made up) is Home.
 - **A `#covers` tab** (optional) names the picture for each page: one row per
   page, with the page name in column A and a word in column B.
 

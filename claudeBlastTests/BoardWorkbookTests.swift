@@ -142,7 +142,7 @@ struct BoardWorkbookTests {
     }
 
     @Test func problemsSayWhereTheyAre() {
-        let tabs = [SpreadsheetTab(name: "home", rows: [[], ["", "zebra"], Array(repeating: "", count: 10) + ["cat"]]),
+        let tabs = [SpreadsheetTab(name: "home", rows: [[], ["", "zebra"], ["cat"] + Array(repeating: "", count: 9) + ["cat"]]),
                     SpreadsheetTab(name: "HOME", rows: [["cat"]])]
         let preview = BoardWorkbook.preview(tabs, cols: 10, scenePages: [], lookup: lookup, systemPages: system)
         #expect(preview.problems.map(\.id) == ["home!K3", "HOME!0", "home!B2"])
@@ -311,6 +311,98 @@ struct BoardWorkbookTests {
         let generated = page.generated
         #expect(generated.tiles.map(\.key) == ["cat", "pony", "go"])
         #expect(generated.tiles.map(\.isProposedNew) == [false, true, false])
+    }
+
+    // MARK: - Finding the board
+
+    private func origin(_ rows: [[String]], _ words: [String: TileModel]? = nil) -> BoardWorkbook.Origin {
+        let preview = BoardWorkbook.preview([SpreadsheetTab(name: "home", rows: rows)], cols: 10,
+                                            scenePages: [], lookup: words ?? lookup, systemPages: [])
+        return preview.pages.first?.origin ?? .topLeft
+    }
+
+    /// Mark's sheet: details rows, two blank rows, the board at A5, on a tab
+    /// nobody named.
+    @Test func aSheetWithDetailsStartsBelowThem() throws {
+        let url = try #require(Bundle(for: BundleToken.self)
+            .url(forResource: "google-sheets-structure-issues", withExtension: "xlsx"))
+        let tabs = try XLSX.read(Data(contentsOf: url))
+        let words = Dictionary(uniqueKeysWithValues: ["ball", "bubbles", "art"].map { ($0, tile($0)) })
+        let preview = BoardWorkbook.preview(tabs, cols: 10, scenePages: [], lookup: words, systemPages: [])
+        let page = try #require(preview.pages.first)
+        #expect(page.key == "home")
+        #expect(page.title == "")
+        #expect(page.origin.cell == "A5")
+        #expect(page.origin.skipped == [.details(2)])
+        #expect(preview.details["description"] == "test scene based on play_activities")
+        #expect(preview.details["owner"] == "Mark")
+        #expect(page.cells.first?.index == 0)
+        #expect(page.cells.first?.text == "ball")
+    }
+
+    /// Added to a scene, an unnamed tab is named after its sheet, not Home —
+    /// it must not offer to replace the scene's own Home page.
+    @Test func anUnnamedTabAddedToASceneIsNamedForItsSheet() {
+        let tabs = [SpreadsheetTab(name: "Sheet1", rows: [["cat"]])]
+        let home = [PageSpec(key: "home", tiles: [TileEntry(key: "dog")])]
+        let added = BoardWorkbook.preview(tabs, cols: 10, scenePages: home, lookup: lookup, systemPages: [],
+                                          unnamedTab: "Structure Issues")
+        #expect(added.pages.map(\.key) == ["structure_issues"])
+        #expect(PageNaming.displayName(added.pages[0].key) == "Structure Issues")
+        #expect(added.pages[0].existing == .none)
+    }
+
+    @Test func aTitleAndLabelsAreLeftOut() {
+        let rows = [["Brandi's board v2"], [],
+                    ["", "A", "B", "C"],
+                    ["1", "cat", "mom", "dad"],
+                    ["2", "go", "", "cat"]]
+        let found = origin(rows)
+        #expect(found.cell == "B4")
+        #expect(found.skipped == [.columnLetters, .title(1), .rowNumbers])
+        #expect(found.summary == "Starts at B4 · skipped the column labels, a title row, the row labels")
+    }
+
+    /// A numbers page starts 1…10 too: followed by more numbers, it is the board.
+    @Test func aNumbersPageIsNotLabels() {
+        let rows = [(1...10).map(String.init), (11...20).map(String.init)]
+        #expect(origin(rows) == .topLeft)
+    }
+
+    /// An empty first row with nothing above it is the board's own.
+    @Test func aBoardsOwnEmptyFirstRowIsKept() {
+        #expect(origin([[], ["cat", "dog"]]) == .topLeft)
+    }
+
+    @Test func aBoardMarkerSaysWhere() {
+        let rows = [["Owner: me", "anything"], ["notes here"], ["", "#board"], ["", "cat"]]
+        let found = origin(rows)
+        #expect(found.cell == "B4")
+        #expect(found.skipped == [.marker])
+    }
+
+    /// A grid typed from column B on is moved left only when it would
+    /// otherwise run past the board's ten columns.
+    @Test func aGridTypedFurtherRightIsFound() {
+        let wide = [[""] + Array(repeating: "cat", count: 10)]
+        #expect(origin(wide).cell == "B1")
+        let narrow = [["", "cat", "dog"]]
+        #expect(origin(narrow) == .topLeft)
+    }
+
+    /// A chosen start wins, and problems keep the sheet's own addresses.
+    @Test func aChosenStartWinsAndAddressesStayTheSheets() {
+        let tabs = [SpreadsheetTab(name: "home", rows: [["Title"], ["cat", "zebra"]])]
+        let moved = BoardWorkbook.preview(tabs, cols: 10, scenePages: [], lookup: lookup, systemPages: [],
+                                          origins: ["home": BoardWorkbook.Origin(row: 1, col: 1)])
+        #expect(moved.pages[0].origin.cell == "B2")
+        #expect(moved.problems.map(\.id) == ["home!B2"])
+    }
+
+    @Test func aSentenceIsANoteNotAWord() {
+        let tabs = [SpreadsheetTab(name: "home", rows: [["cat", "remember to add more animals"]])]
+        let preview = BoardWorkbook.preview(tabs, cols: 10, scenePages: [], lookup: lookup, systemPages: [])
+        #expect(preview.problems.map(\.kind) == [.note])
     }
 
     // MARK: - Class list
