@@ -20,9 +20,15 @@ import SwiftData
 /// | *(empty)*                | a gap                                           |
 /// | `cat`                    | an existing word                                |
 /// | `cat, animal[, Display]` | a new word of that class (`BulkWordParser`)     |
-/// | `go > places`            | says *go*, then opens Places                    |
+/// | `go > places`            | says *go*, then opens this scene's Places       |
 /// | `> animals`              | a silent folder that opens Animals              |
-/// | `go > sys:places`        | opens BlasterAI 60's Places, even when the scene has its own |
+/// | `go > sys:places`        | opens BlasterAI 60's Places                     |
+/// | `[family] > people`      | a folder showing Family's picture, not People's cover |
+///
+/// A bare page name is always the scene's own: one not made yet becomes an
+/// empty page, so a board can link forward to a page written later. BlasterAI
+/// 60's pages are reached only with `sys:` — the same text means the same page
+/// in the grid, a spreadsheet and an export.
 ///
 /// ## Why a board is a spreadsheet
 ///
@@ -52,6 +58,9 @@ enum BoardCell {
         var page: String
         /// `sys:` was written.
         var isSystem: Bool
+        /// `[word] > page`: a folder showing this word's picture rather than
+        /// the page's cover.
+        var picture: String? = nil
     }
 
     enum Parsed: Equatable {
@@ -81,7 +90,14 @@ enum BoardCell {
             lhs = Substring(trimmed)
         }
 
-        let wordText = lhs.trimmingCharacters(in: .whitespaces)
+        var wordText = lhs.trimmingCharacters(in: .whitespaces)
+        if wordText.hasPrefix("["), wordText.hasSuffix("]") {
+            let picture = wordText.dropFirst().dropLast().trimmingCharacters(in: .whitespaces)
+            guard link != nil else { return .invalid("[picture] is for a folder: [word] > page") }
+            guard !picture.isEmpty else { return .invalid("Name a word's picture inside [ ]") }
+            link?.picture = picture
+            wordText = ""
+        }
         guard !wordText.isEmpty else {
             return link == nil ? .spacer : .cell(word: nil, link: link)
         }
@@ -130,20 +146,18 @@ enum BoardCell {
         }
     }
 
-    /// The scene's page first, then BlasterAI 60's, else a new page of the
-    /// scene. `sys:` skips the scene. Matched by key or by title.
+    /// The scene's page, else a new page of the scene; with `sys:`, BlasterAI
+    /// 60's page or nothing. Matched by key or by title.
     static func target(_ link: Link, scenePages: [PageSpec],
                        systemPages: [PageSpec]) -> Target? {
         if link.page == TileToken.home { return .scene(TileToken.home) }
         let key = pageKey(link.page)
         guard !key.isEmpty else { return nil }
-        if !link.isSystem, let page = match(link.page, key: key, in: scenePages) {
-            return .scene(page.key)
+        if link.isSystem {
+            return match(link.page, key: key, in: systemPages).map { .system($0.key) }
         }
-        if let page = match(link.page, key: key, in: systemPages) {
-            return .system(page.key)
-        }
-        return link.isSystem ? nil : .newPage(key)
+        if let page = match(link.page, key: key, in: scenePages) { return .scene(page.key) }
+        return .newPage(key)
     }
 
     /// Turns a parsed cell into a placement.
@@ -174,12 +188,26 @@ enum BoardCell {
             case nil:
                 guard let target else { return .plan(Plan(entry: .spacer())) }
                 plan.entry.isAudible = false
-                if let key = folderKey(for: target, scenePages: scenePages, systemPages: systemPages) {
-                    plan.entry.key = key
+                if let picture = link?.picture {
+                    // Any tile's picture, folders and covers included, by key
+                    // first and then by name.
+                    let key = TileModel.normalizeKey(picture)
+                    if lookup[key] != nil {
+                        plan.entry.key = key
+                    } else if case .found(let found) = existingWord(picture, lookup: lookup) {
+                        plan.entry.key = found
+                    } else {
+                        return .error("No word \u{201C}\(picture)\u{201D} for the folder's picture")
+                    }
                 } else {
                     let pageKey = target.link == TileToken.home ? "home" : key(of: target)
-                    plan.entry.key = PageLink.key(forPage: pageKey)
-                    if lookup[plan.entry.key] == nil { plan.folderFor = pageKey }
+                    plan.entry.key = folderKey(for: target, scenePages: scenePages, systemPages: systemPages)
+                        ?? PageLink.key(forPage: pageKey)
+                    // A page whose cover is still its own page-link tile, not
+                    // yet made: make it.
+                    if plan.entry.key == PageLink.key(forPage: pageKey), lookup[plan.entry.key] == nil {
+                        plan.folderFor = pageKey
+                    }
                 }
             case .existing(let text):
                 switch existingWord(text, lookup: lookup) {
@@ -255,15 +283,15 @@ enum BoardCell {
         case .scene: systemPages.isEmpty
         case .newPage: false
         }
+        // The page's cover — chosen, else its default (`PageCover`).
+        if let page = pages.first(where: { $0.key == link }) {
+            return PageCover.key(of: page, in: pages, isSystemScene: isCoreBoardPage, systemRow: systemRow)
+        }
         if isCoreBoardPage, let folder = systemRow.first(where: { $0.page == link }) {
             return folder.key
         }
-        for page in pages {
-            if let entry = page.tiles.first(where: { !$0.isAudible && $0.link == link && !$0.isSpacer }) {
-                return entry.key
-            }
-        }
-        // A folder on a scene page that opens a system page.
+        // A folder on a scene page that opens a system page BlasterAI 60's
+        // pages were not passed for.
         if case .system = target {
             for page in scenePages {
                 if let entry = page.tiles.first(where: { !$0.isAudible && $0.link == target.link }) {
@@ -297,16 +325,19 @@ enum BoardCell {
     ///
     /// A silent folder writes only its page: its key is the folder's picture,
     /// which `folderKey` finds again.
-    static func format(_ entry: TileEntry, scenePages: [PageSpec]) -> String {
+    static func format(_ entry: TileEntry, cover: (TileEntry) -> String? = { _ in nil }) -> String {
         if entry.isSpacer { return "" }
-        let word = entry.isAudible || entry.link.isEmpty ? entry.key : ""
+        var word = entry.isAudible || entry.link.isEmpty ? entry.key : ""
         guard !entry.link.isEmpty else { return word }
+        // A folder showing something other than its page's cover says so.
+        if word.isEmpty, entry.link != TileToken.home, let cover = cover(entry), cover != entry.key {
+            word = "[\(entry.key)]"
+        }
         let page: String
         if entry.link == TileToken.home {
             page = TileToken.home
         } else if let system = TileToken.systemPageKey(entry.link) {
-            // Plain unless the scene has a page of the same key.
-            page = scenePages.contains { $0.key == system } ? systemMarker + system : system
+            page = systemMarker + system
         } else {
             page = entry.link
         }
@@ -315,6 +346,20 @@ enum BoardCell {
 }
 
 extension BoardCell {
+    /// The cover of the page a link opens, for `format`: a scene page's from
+    /// `scenePages`, a BlasterAI 60 page's from `systemPages`.
+    static func covers(scenePages: [PageSpec], systemPages: [PageSpec],
+                       isSystemScene: Bool = false) -> (TileEntry) -> String? {
+        { entry in
+            if let system = TileToken.systemPageKey(entry.link) {
+                guard let page = systemPages.first(where: { $0.key == system }) else { return nil }
+                return PageCover.key(of: page, in: systemPages, isSystemScene: true)
+            }
+            guard let page = scenePages.first(where: { $0.key == entry.link }) else { return nil }
+            return PageCover.key(of: page, in: scenePages, isSystemScene: isSystemScene || systemPages.isEmpty)
+        }
+    }
+
     /// Carries out `plan` in `scene`: creates the word, the page and the
     /// folder tile it needs, and returns the placement for the cell.
     ///

@@ -27,7 +27,6 @@ extension AdminView {
                 AuthorNameField()
                 scenesSection
                 newSceneSection
-                importSceneSection
                 Section {
                     NavigationLink {
                         VocabManagerView()
@@ -64,6 +63,9 @@ extension AdminView {
         .sheet(item: $sceneToShare) { scene in
             ShareBoardSheet(subject: .scene(scene))
         }
+        .sheet(isPresented: $isImportingBoard) {
+            BoardImportSheet(scene: nil) { scene, _ in navigateToNewScene = scene }
+        }
         .confirmationDialog(
             "This is a built-in board",
             isPresented: Binding(get: { sceneToClone != nil },
@@ -75,13 +77,6 @@ extension AdminView {
             Button("Cancel", role: .cancel) { sceneToClone = nil }
         } message: { scene in
             Text("\(scene.baseName) is supplied and updated by BlasterAI, so it can't be edited directly. We'll make you an editable copy and switch to it. Your copy is yours — app updates won't touch it.")
-        }
-        .fileImporter(
-            isPresented: $isImporting,
-            allowedContentTypes: [.blasterScene, .blasterPack, .blasterColorway, .blasterKey, .json],
-            allowsMultipleSelection: false
-        ) { result in
-            handleFileImport(result)
         }
         .sheet(item: $pendingImportURL) { item in
             ImportRouteSheet(url: item.url) { pendingImportURL = nil }
@@ -239,6 +234,9 @@ extension AdminView {
         }
     }
 
+    /// Making a scene and bringing one in, side by side: one Import takes a
+    /// BlasterAI scene file or a spreadsheet, from a link or a file, and every
+    /// path previews before anything is written.
     @ViewBuilder
     var newSceneSection: some View {
         Section {
@@ -247,17 +245,13 @@ extension AdminView {
             } label: {
                 Label("New Scene", systemImage: "plus.circle")
             }
-        }
-    }
-
-    @ViewBuilder
-    var importSceneSection: some View {
-        Section {
             Button {
-                isImporting = true
+                isImportingBoard = true
             } label: {
                 Label("Import Scene", systemImage: "square.and.arrow.down")
             }
+        } footer: {
+            Text("Import a BlasterAI scene (.blasterscene) or a scene drawn in a spreadsheet — Google Sheets, Excel, Numbers or CSV — from a link or a file. You'll see it before anything is added.")
         }
     }
 
@@ -356,16 +350,4 @@ extension AdminView {
     /// every pack word from every export. See `BundledVocabulary`.
     var defaultTileKeys: Set<String> { BundledVocabulary.keys }
 
-    func handleFileImport(_ result: Result<[URL], Error>) {
-        switch result {
-        case .success(let urls):
-            guard let url = urls.first else { return }
-            // Route through the same confirmation sheet as the file-open/iMessage
-            // path so an in-app import is previewed (new words, images) before it
-            // lands — rather than importing immediately.
-            pendingImportURL = ImportSheetURL(url: url)
-        case .failure(let error):
-            importError = error.localizedDescription
-        }
-    }
 }

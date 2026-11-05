@@ -67,6 +67,12 @@ enum WordCreator {
         if let tile = existing.first(where: { $0.key == base && $0.wordClass == w.wordClass }) {
             return tile
         }
+        // …or the homograph an earlier `right, describe` already made, so
+        // writing the same word twice does not mint `right_describe_2`.
+        let homograph = "\(base)_\(w.wordClass)"
+        if let tile = existing.first(where: { $0.key == homograph && $0.wordClass == w.wordClass }) {
+            return tile
+        }
         // Key taken by another class (or an earlier row) → homograph key.
         var finalKey = base
         if keys.contains(base) {

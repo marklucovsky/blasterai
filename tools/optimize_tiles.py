@@ -43,6 +43,11 @@ DEFAULT_SIZE = 512
 # was cut into (2026-10-26), so it ships uncut on a framed white plate. High
 # Contrast's figures are white on black; it keeps its black plate, framed.
 CUT_SETS = {"classic", "classic_chain_medium", "classic_chain_medium_dark"}
+# Pack covers share one folder across styles (`{prefix}_{slug}.png`); only the
+# Classic ones (`cls_`) are cut. Skipping them shipped every Classic cover on
+# a white square (Mark, 2026-11-04).
+COVER_SET = "packcovers"
+CUT_COVER_PREFIXES = ("cls_",)
 CUTTER = Path("tools/cutout/.build/cutout")
 CUT_SPEC = Path("tools/board_spec/cutout.json")
 CUT_CACHE = INPUT_BASE / "cut"      # gitignored: <set>/<key>.png + _vision.json
@@ -120,7 +125,7 @@ def optimize_set(set_name: str, target_size: int,
     src_dir = INPUT_BASE / set_name
     dst_dir = OUTPUT_BASE / set_name
     dst_dir.mkdir(parents=True, exist_ok=True)
-    cutting = fmt == "heic" and set_name in CUT_SETS
+    cutting = fmt == "heic" and (set_name in CUT_SETS or set_name == COVER_SET)
     if cutting and not CUTTER.exists():
         sys.exit(f"{CUTTER} missing: run tools/cutout/build.sh")
     decisions = cut_spec(set_name) if cutting else {}
@@ -152,7 +157,7 @@ def optimize_set(set_name: str, target_size: int,
         try:
             if fmt == "heic":
                 encode_from = src
-                if cutting:
+                if cutting and (set_name != COVER_SET or src.stem.startswith(CUT_COVER_PREFIXES)):
                     encode_from = cut_master(src, set_name, decisions)
                 # Pillow cannot write HEIC without pillow-heif; sips is already a
                 # dependency of the review tooling and does the resize in the same
@@ -193,7 +198,7 @@ def main():
     parser = argparse.ArgumentParser(description="Optimize tiles for app bundle")
     parser.add_argument("--set", required=True,
                         choices=["playful_3d", "high_contrast", "high_contrast_v2", "classic",
-                                 "classic_chain_medium", "classic_chain_medium_dark", "both"])
+                                 "classic_chain_medium", "classic_chain_medium_dark", COVER_SET, "both"])
     parser.add_argument("--size", type=int, default=DEFAULT_SIZE, help=f"Target size in px (default {DEFAULT_SIZE})")
     parser.add_argument("--format", default="png", choices=["png", "heic"],
                         help="heic ships in the bundle; png for interop/print")

@@ -41,7 +41,7 @@ enum SceneExporter {
         // than one fetch per tile.
         // Spacers name no word, so they have no art to collect.
         let allKeys = scene.pages.flatMap { page in
-            page.tiles.filter { !$0.isSpacer }.map(\.key)
+            page.tiles.filter { !$0.isSpacer }.map(\.key) + (page.cover.isEmpty ? [] : [page.cover])
         }
         let storedArt = context.map {
             ExportArtResolver.storedArt(for: allKeys, tileLookup: tileLookup, context: $0)
@@ -79,8 +79,16 @@ enum SceneExporter {
             }
             // A rename has to travel, or sharing a board silently reverts
             // every page name the caregiver chose.
+            // The cover travels with its tile when that tile is the page's own
+            // picture or another word the recipient may not have.
+            if !page.cover.isEmpty, let tile = tileLookup[page.cover],
+               seenTileKeys.insert(tile.key).inserted,
+               !defaultTileKeys.contains(tile.key) || tile.hasUserImage {
+                exportTiles.append(exportableTile(for: tile, art: storedArt[tile.key]))
+            }
             return ExportablePage(key: page.key, tiles: pageTiles,
-                                  displayName: page.hasCustomName ? page.displayName : nil)
+                                  displayName: page.hasCustomName ? page.displayName : nil,
+                                  cover: page.cover.isEmpty ? nil : page.cover)
         }
 
         return ExportableScene(

@@ -66,12 +66,16 @@ struct BoardCellTests {
         return nil
     }
 
-    @Test func linksPreferTheSceneThenTheSystemBoard() {
+    /// A bare name is the scene's page, made empty if need be, even where
+    /// BlasterAI 60 has one; only `sys:` reaches BlasterAI 60.
+    @Test func bareLinksAreTheScenesAndSysIsTheSystemBoards() {
         let lookup = ["go": tile("go", "actions")]
         #expect(plan("go > places", lookup)?.entry.link == "places")
         #expect(plan("go > sys:places", lookup)?.entry.link == TileToken.systemLink(to: "places"))
-        #expect(plan("go > actions", lookup)?.entry.link == TileToken.systemLink(to: "actions"))
-        #expect(plan("go > Actions", lookup)?.entry.link == TileToken.systemLink(to: "actions"))
+        #expect(plan("go > sys:Actions", lookup)?.entry.link == TileToken.systemLink(to: "actions"))
+        let forward = plan("go > actions", lookup)
+        #expect(forward?.entry.link == "actions")
+        #expect(forward?.newPage == "actions")
         let fresh = plan("go > tide pools", lookup)
         #expect(fresh?.entry.link == "tide_pools")
         #expect(fresh?.newPage == "tide_pools")
@@ -88,7 +92,7 @@ struct BoardCellTests {
     }
 
     @Test func aFolderReusesTheFolderAlreadyUsedForThatPage() {
-        let folder = plan("> places_house", [:])
+        let folder = plan("> sys:places_house", [:])
         #expect(folder?.entry.key == "folder_house")
         #expect(folder?.entry.link == TileToken.systemLink(to: "places_house"))
         #expect(folder?.folderFor == nil)
@@ -97,16 +101,16 @@ struct BoardCellTests {
     /// People and Questions are folders only on the inherited system row, so
     /// `> people` found no folder on any page and minted an artless one.
     @Test func aFolderIntoASystemRowPageUsesTheRowsFolder() {
-        let people = plan("> people", [:])
+        let people = plan("> sys:people", [:])
         #expect(people?.entry.key == "people")
         #expect(people?.entry.link == TileToken.systemLink(to: "people"))
         #expect(people?.folderFor == nil)
-        #expect(plan("> questions", [:])?.entry.key == "question")
+        #expect(plan("> sys:questions", [:])?.entry.key == "question")
         // A scene's own People page is not the core board's.
         let own = BoardCell.folderKey(for: .scene("people"),
                                       scenePages: [PageSpec(key: "people", tiles: [])],
                                       systemPages: systemPages)
-        #expect(own == nil)
+        #expect(own == PageLink.key(forPage: "people"))
     }
 
     @Test func wordsMatchByKeyThenByLabel() {
@@ -133,16 +137,12 @@ struct BoardCellTests {
     // MARK: - Format
 
     @Test func formatWritesWhatParseReads() {
-        let pages = [PageSpec(key: "places", tiles: [])]
-        #expect(BoardCell.format(.spacer(), scenePages: pages) == "")
-        #expect(BoardCell.format(TileEntry(key: "cat"), scenePages: pages) == "cat")
-        #expect(BoardCell.format(TileEntry(key: "go", link: "places"), scenePages: pages) == "go > places")
-        #expect(BoardCell.format(TileEntry(key: "page_x", link: "x", isAudible: false), scenePages: pages) == "> x")
-        #expect(BoardCell.format(TileEntry(key: "go", link: TileToken.systemLink(to: "actions")),
-                                 scenePages: pages) == "go > actions")
-        // Written with sys: only where the scene's own page would win.
-        #expect(BoardCell.format(TileEntry(key: "go", link: TileToken.systemLink(to: "places")),
-                                 scenePages: pages) == "go > sys:places")
+        #expect(BoardCell.format(.spacer()) == "")
+        #expect(BoardCell.format(TileEntry(key: "cat")) == "cat")
+        #expect(BoardCell.format(TileEntry(key: "go", link: "places")) == "go > places")
+        #expect(BoardCell.format(TileEntry(key: "page_x", link: "x", isAudible: false)) == "> x")
+        // A link into BlasterAI 60 is always written with sys:.
+        #expect(BoardCell.format(TileEntry(key: "go", link: TileToken.systemLink(to: "actions"))) == "go > sys:actions")
     }
 
     /// Every placement on BlasterAI 60 survives being written as a cell and
@@ -156,7 +156,7 @@ struct BoardCellTests {
         var mismatches: [String] = []
         for page in pages {
             for entry in page.tiles where !entry.isSpacer {
-                let text = BoardCell.format(entry, scenePages: pages)
+                let text = BoardCell.format(entry)
                 switch BoardCell.resolve(BoardCell.parse(text), lookup: lookup,
                                          scenePages: pages, systemPages: []) {
                 case .error(let message):
@@ -209,7 +209,7 @@ struct BoardCellTests {
         scene.pages = [PageSpec(key: "home", tiles: [])]
         let lookup = ["go": tile("go", "actions")]
         let system = [PageSpec(key: "places", tiles: [TileEntry(key: "park")])]
-        guard case .plan(let plan) = BoardCell.resolve(BoardCell.parse("go > places"), lookup: lookup,
+        guard case .plan(let plan) = BoardCell.resolve(BoardCell.parse("go > sys:places"), lookup: lookup,
                                                       scenePages: scene.pages, systemPages: system) else {
             Issue.record("no plan"); return
         }
@@ -395,8 +395,8 @@ struct BoardCellTests {
         let lookup = ["cow": tile("cow", "animal")]
         let offered = CellSuggestion.suggestions(for: "pony", lookup: lookup, scenePages: [], systemPages: [])
         #expect(offered.contains(.wordClass("animal")))
-        #expect(CellSuggestion.wordClass("animal").applied(to: "pony", scenePages: []) == "pony, animal")
-        #expect(CellSuggestion.wordClass("animal").applied(to: "pony, an > barn", scenePages: [])
+        #expect(CellSuggestion.wordClass("animal").applied(to: "pony") == "pony, animal")
+        #expect(CellSuggestion.wordClass("animal").applied(to: "pony, an > barn")
                 == "pony, animal > barn")
         let typed = CellSuggestion.suggestions(for: "pony, an", lookup: lookup, scenePages: [], systemPages: [])
         #expect(typed.first == .wordClass("animal"))

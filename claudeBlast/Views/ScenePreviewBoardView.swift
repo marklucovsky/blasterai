@@ -2,10 +2,12 @@
 // Copyright 2026 Mark Lucovsky
 
 import SwiftUI
+import SwiftData
 
 /// Read-only preview of a BlasterScene's board, as the child would see it —
 /// without activating the scene. Tapping a navigation (linked) tile follows the
-/// link between the scene's pages; leaf tiles are inert.
+/// link — to the scene's own pages, and to BlasterAI 60's (`sys:` links and
+/// the inherited system row) as the board does; leaf tiles are inert.
 ///
 /// Laid out on the scene's designed grid (`BlasterScene.designedFor`), whatever
 /// device this is — a phone board designed on an iPad previews as the phone
@@ -19,6 +21,8 @@ struct ScenePreviewBoardView: View {
     private let tileLookup: [String: TileModel]
 
     @Environment(\.dismiss) private var dismiss
+    @Query(filter: #Predicate<BlasterScene> { $0.isDefault })
+    private var systemScenes: [BlasterScene]
     @State private var currentPageKey: String
     @State private var displayPage: Int? = 0
     @AppStorage(AppSettingsKey.boardLayout) private var boardLayoutRaw: String =
@@ -34,7 +38,27 @@ struct ScenePreviewBoardView: View {
     private var currentPage: PageSpec? {
         // As the child sees it, at the board's current level.
         let pages = scene.visiblePages
-        return pages.first { $0.key == currentPageKey } ?? pages.first
+        return SystemLinks.page(forKey: currentPageKey, scenePages: pages, systemPages: systemPages)
+            ?? pages.first
+    }
+
+    /// BlasterAI 60's pages, for the links into it. Empty when previewing it.
+    private var systemPages: [PageSpec] {
+        guard let system = systemScenes.first, system.id != scene.id else { return [] }
+        return system.pages
+    }
+
+    /// The page a tapped link opens, as the board resolves it: a scene page, a
+    /// BlasterAI 60 page (`<system>:`), or nil when there is no such page.
+    static func destination(of link: String, fromPage: String, scene: BlasterScene,
+                            systemPages: [PageSpec], systemHomePageKey: String?) -> String? {
+        let dest = SystemLinks.destination(of: link, fromPage: fromPage,
+                                           homePageKey: scene.homePageKey,
+                                           systemHomePageKey: systemHomePageKey,
+                                           systemIsActive: scene.isDefault)
+        guard SystemLinks.page(forKey: dest, scenePages: scene.pages, systemPages: systemPages) != nil
+        else { return nil }
+        return dest
     }
 
     private var grid: (cols: Int, rows: Int) {
@@ -119,7 +143,8 @@ struct ScenePreviewBoardView: View {
 
     private var pageTitle: String {
         let name = scene.name.isEmpty ? "Preview" : scene.name
-        return currentPageKey != scene.homePageKey ? "\(name) · \(currentPageKey)" : name
+        return currentPageKey != scene.homePageKey
+            ? "\(name) · \(SystemLinks.displayName(of: currentPageKey))" : name
     }
 
     @ViewBuilder
@@ -138,8 +163,11 @@ struct ScenePreviewBoardView: View {
         let isLink = !entry.link.isEmpty
         Button {
             guard isLink else { return }
-            let dest = entry.link == "<home>" ? scene.homePageKey : entry.link
-            if scene.page(withKey: dest) != nil { go(to: dest) }
+            if let dest = Self.destination(of: entry.link, fromPage: currentPageKey, scene: scene,
+                                           systemPages: systemPages,
+                                           systemHomePageKey: systemScenes.first?.homePageKey) {
+                go(to: dest)
+            }
         } label: {
             // The board's own tile. A preview exists to be checked against
             // what the child will see, colours and folder badges included.

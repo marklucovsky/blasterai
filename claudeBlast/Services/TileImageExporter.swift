@@ -53,6 +53,18 @@ enum ZipWriter {
     /// are almost all of the bytes — are already compressed. Deflate would spend
     /// time to save almost nothing.
     static func zip(entries: [(path: String, data: Data)], named filename: String) throws -> URL {
+        let archive = archive(entries)
+        let destination = FileManager.default.temporaryDirectory
+            .appendingPathComponent("zip-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent(filename)
+        try FileManager.default.createDirectory(at: destination.deletingLastPathComponent(),
+                                                withIntermediateDirectories: true)
+        try archive.write(to: destination)
+        return destination
+    }
+
+    /// The archive's bytes: `entries` at exactly their paths, stored.
+    static func archive(_ entries: [(path: String, data: Data)]) -> Data {
         var archive = Data()
         var directory = Data()
         var offset = 0
@@ -112,14 +124,7 @@ enum ZipWriter {
         archive.append(uint32: UInt32(directory.count))
         archive.append(uint32: UInt32(directoryOffset))
         archive.append(uint16: 0)                      // comment length
-
-        let destination = FileManager.default.temporaryDirectory
-            .appendingPathComponent("zip-\(UUID().uuidString)", isDirectory: true)
-            .appendingPathComponent(filename)
-        try FileManager.default.createDirectory(at: destination.deletingLastPathComponent(),
-                                                withIntermediateDirectories: true)
-        try archive.write(to: destination)
-        return destination
+        return archive
     }
 
     private static let crcTable: [UInt32] = (0..<256).map { i -> UInt32 in

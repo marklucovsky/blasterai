@@ -69,6 +69,8 @@ struct PageEditorView: View {
     /// Rename sheet presentation. Separate from `renameDraft` on purpose — see
     /// `rename(to:)`.
     @State private var isRenaming = false
+    @State private var isChoosingCover = false
+    @State private var isLinkingPage = false
     /// The level the editor previews: cells above it dim, as concealed cells
     /// do, so a caregiver sees what a child at that level gets without leaving
     /// the editor. 0 shows every level at full strength.
@@ -151,6 +153,29 @@ struct PageEditorView: View {
                         .font(.subheadline.weight(.medium))
                 }
             }
+            if !scene.isDefault, scene.pages.contains(where: { $0.key != pageKey }) {
+                // Put a folder to this page on others — the step Add Page and
+                // Import Page offer once, here whenever it was skipped.
+                Button { isLinkingPage = true } label: {
+                    Label("Link From…", systemImage: "arrow.turn.down.right")
+                        .font(.subheadline.weight(.medium))
+                }
+                .buttonStyle(.plain)
+            }
+            if !scene.isDefault {
+                // The picture every folder into this page shows. See `PageCover`.
+                Button { isChoosingCover = true } label: {
+                    HStack(spacing: 6) {
+                        TileImageView(key: PageCover.key(ofPage: pageKey, in: scene),
+                                      wordClass: PageLink.wordClass)
+                            .frame(width: 24, height: 24)
+                            .clipShape(RoundedRectangle(cornerRadius: 5))
+                        Text("Cover").font(.subheadline.weight(.medium))
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Page cover")
+            }
             Button {
                 renameDraft = page?.displayName ?? ""
                 isRenaming = true
@@ -198,8 +223,8 @@ struct PageEditorView: View {
                         onKeepReview: { keepReview($0) },
                         onRemoveReviewed: { removeReviewed($0) },
                         editRequest: cellEditRequest,
-                        isCovered: editingTileKey != nil || isPickingTiles
-                            || isRenaming || isSharingPage)
+                        isCovered: editingTileKey != nil || isPickingTiles || isChoosingCover
+                            || isRenaming || isSharingPage || isLinkingPage)
                 }
             } else {
                 ContentUnavailableView("Page not found", systemImage: "questionmark.folder")
@@ -235,6 +260,19 @@ struct PageEditorView: View {
             SceneLinkColors.refresh(scene: scene, context: modelContext)
         }
         .toolbar { pageEditorToolbar }
+        .sheet(isPresented: $isLinkingPage) {
+            PageLinkPlacementSheet(scene: scene, target: PageLinkTarget(pageKey: pageKey), allTiles: allTiles)
+        }
+        .sheet(isPresented: $isChoosingCover) {
+            NavigationStack {
+                CoverPickerView(subject: .page(pageKey, in: scene))
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { isChoosingCover = false }
+                        }
+                    }
+            }
+        }
         .sheet(isPresented: $isRenaming) {
             PageRenameSheet(
                 currentTitle: page?.title ?? pageKey,
@@ -392,9 +430,11 @@ struct PageEditorView: View {
         pages[idx].displayName = trimmed
         scene.pages = pages
 
+        let title = trimmed.isEmpty ? PageNaming.displayName(pageKey) : trimmed
         if let link = tileLookup[PageLink.key(forPage: pageKey)] {
-            link.displayName = trimmed.isEmpty ? PageNaming.displayName(pageKey) : trimmed
+            link.displayName = title
         }
+        PageCover.renamed(page: pageKey, in: scene, to: title, lookup: tileLookup)
         try? modelContext.save()
         isRenaming = false
     }

@@ -47,10 +47,16 @@ struct PageSpec: Codable, Hashable, Identifiable {
 
     var tiles: [TileEntry]
 
-    init(key: String, displayName: String = "", tiles: [TileEntry]) {
+    /// The tile whose picture stands for this page wherever a folder opens it:
+    /// any word of the vocabulary, or the page's own photo or AI art
+    /// (`PageCover`). Empty until chosen; `PageCover.key` supplies the default.
+    var cover: String = ""
+
+    init(key: String, displayName: String = "", tiles: [TileEntry], cover: String = "") {
         self.key = key
         self.displayName = displayName
         self.tiles = tiles
+        self.cover = cover
     }
 
     /// The name to show. The single resolution point — no surface should reach
@@ -71,6 +77,7 @@ struct PageSpec: Codable, Hashable, Identifiable {
         key = try container.decode(String.self, forKey: .key)
         displayName = try container.decodeIfPresent(String.self, forKey: .displayName) ?? ""
         tiles = try container.decodeIfPresent([TileEntry].self, forKey: .tiles) ?? []
+        cover = try container.decodeIfPresent(String.self, forKey: .cover) ?? ""
     }
 }
 

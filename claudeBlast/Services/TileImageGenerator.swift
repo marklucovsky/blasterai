@@ -288,7 +288,7 @@ enum TileImageGenerator {
     private static func referencePrompt(displayName: String, wordClass: String,
                                         imageSet: ImageSetID, detail: String) -> String {
         let trimmed = detail.trimmingCharacters(in: .whitespacesAndNewlines)
-        let subject = "\(displayName) (\(wordClass))" + (trimmed.isEmpty ? "" : ", \(trimmed)")
+        let subject = "\(displayName) (\(promptClass(wordClass)))" + (trimmed.isEmpty ? "" : ", \(trimmed)")
         return """
         The reference images are tiles from one AAC pictogram symbol set. Draw ONE new tile \
         for this set showing: \(subject).
@@ -648,9 +648,16 @@ enum TileImageGenerator {
     /// ambiguous words resolve correctly (e.g. "snack bar (food)" → a granola bar,
     /// "snack bar (place)" → a building).
     private static func prompt(displayName: String, wordClass: String, imageSet: ImageSetID, detail: String) -> String {
-        let base = "\(style(for: imageSet)) Subject: \(displayName) (\(wordClass))."
+        let base = "\(style(for: imageSet)) Subject: \(displayName) (\(promptClass(wordClass)))."
         let trimmed = detail.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? base : "\(base) \(trimmed)."
+    }
+
+    /// The class as the prompt names it. A cover — a page's or a scene's — is
+    /// a `page_link` tile, which says nothing to the model; what it draws is a
+    /// topic in one picture.
+    static func promptClass(_ wordClass: String) -> String {
+        wordClass == PageLink.wordClass ? "a topic, shown as one picture" : wordClass
     }
 
     /// Style prefix per image set. Loaded from the shared `image_styles.json`

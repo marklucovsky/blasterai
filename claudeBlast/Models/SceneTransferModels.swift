@@ -159,6 +159,9 @@ struct ExportablePage: Codable {
     /// file written before rename existed decodes as nil, and absent on the wire
     /// for a page still using its derived name.
     var displayName: String? = nil
+    /// The page's cover (`PageCover`), when one is written down. Optional so
+    /// an older file decodes as nil and the page takes its default.
+    var cover: String? = nil
 }
 
 struct ExportableScene: Codable {
