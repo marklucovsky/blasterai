@@ -405,5 +405,18 @@ struct BoardCellTests {
         #expect(!CellSuggestion.suggestions(for: "cow", lookup: lookup, scenePages: [], systemPages: [])
             .contains { $0.isWordClass })
     }
+
+    /// `>` alone lists every page of the scene, then one chip for BlasterAI
+    /// 60's pages; the chip opens `sys:`, which lists them all.
+    @Test func aBareArrowListsTheScenesPagesThenTheSystemChip() {
+        let own = (1...12).map { PageSpec(key: "page\($0)", tiles: []) }
+        let system = (1...20).map { PageSpec(key: "sys\($0)", tiles: []) }
+        let bare = CellSuggestion.suggestions(for: "cow > ", lookup: [:], scenePages: own, systemPages: system)
+        #expect(bare.count == 13)
+        #expect(bare.last == .systemPages(count: 20))
+        #expect(CellSuggestion.systemPages(count: 20).applied(to: "cow > ") == "cow > sys:")
+        let all = CellSuggestion.suggestions(for: "cow > sys:", lookup: [:], scenePages: own, systemPages: system)
+        #expect(all.count == 20)
+    }
 }
 }
