@@ -48,18 +48,24 @@ import os
 ///
 /// ## Touch
 ///
-/// A tap on a word opens Tile Settings — art, class, link — whose Edit Cell
-/// comes back to type a different word there. A tap on an empty cell selects
-/// it, a second tap edits it. Tapping another cell during an edit commits it
-/// (Cancel drops it). The on-screen keyboard then stays up
-/// from cell to cell — typing in the selected cell starts it — until Cancel
-/// or the caregiver lowers it. Press and drag moves a tile,
+/// The editor opens with nothing selected. A tap selects a cell, word or
+/// empty, and the option bar over the input row offers what that cell can do
+/// (Edit Settings, visibility, cut, copy, paste, clear); the input row holds
+/// its text. A second tap on the cell, or a tap on the input row, types it,
+/// keyboard up. Edit Settings is Tile Settings (art, class, link), whose Edit
+/// Cell comes back here to type. Tapping another cell during an edit commits
+/// it (Cancel drops it). The on-screen keyboard then stays up from cell to
+/// cell, typing in the selected cell starts it, until Cancel or the caregiver
+/// lowers it.
+///
+/// Every word carries a check circle, always: a tap on it adds the word to the
+/// selection or takes it out, with no Select mode to turn on first, and the
+/// option bar changes to what a group can do. Press and drag moves a tile,
 /// or the whole selection's words when the tile is part of it: dropped on a
 /// cell's middle it moves or swaps, on its left edge it goes in front and the
 /// run shifts into its gap. In landscape the word well (`WordWellView`) sits to
-/// the left; its words drop the same way. Select (in the ⋯ menu)
-/// turns taps into adding and removing cells from the selection. Each cell's
-/// menu carries what the selection can do: visibility, cut, copy, paste, clear.
+/// the left; its words drop the same way. Each cell's menu carries what the
+/// selection can do, as the bar does.
 ///
 /// Edits go through `tiles`, so each change is one step of the page editor's
 /// undo.
@@ -90,12 +96,14 @@ struct PageSpreadsheetView: View {
     @Environment(TileImageResolver.self) private var resolver
 
     @State private var selected = PageCells.Cell(screen: 0, row: 0, col: 0)
+    /// The cursor is on `selected`. False when the editor opens and after the
+    /// last cell is deselected: nothing is selected, and the bar offers what
+    /// the page can do instead of what a cell can.
+    @State private var hasCursor = false
     /// Cells selected besides the cursor's; empty means the cursor alone.
     @State private var selection: Set<Int> = []
     /// Where a Shift-arrow block started.
     @State private var anchor: Int?
-    /// Taps add and remove cells instead of moving the cursor.
-    @State private var isSelecting = false
     /// The cell's text while it is edited; nil when not editing.
     @State private var draft: String?
     /// The on-screen keyboard stays up from cell to cell: Return or a tap on
@@ -139,8 +147,12 @@ struct PageSpreadsheetView: View {
 
     private var screens: Int { cells.screenCount(tiles) + extraScreens }
     private var selectedIndex: Int { cells.index(of: selected) }
-    /// What an action applies to: the selection, else the cursor's cell.
-    private var targets: Set<Int> { selection.isEmpty ? [selectedIndex] : selection }
+    /// What an action applies to: the selection, else the cursor's cell, else
+    /// nothing.
+    private var targets: Set<Int> {
+        if !selection.isEmpty { return selection }
+        return hasCursor ? [selectedIndex] : []
+    }
 
     var body: some View {
         GeometryReader { outer in
@@ -229,6 +241,7 @@ struct PageSpreadsheetView: View {
 
     private func formulaBar(hasWell: Bool) -> some View {
         VStack(alignment: .leading, spacing: 6) {
+            optionBar
             HStack(spacing: 10) {
                 if hasWell {
                     Button { wellVisible.toggle() } label: {
@@ -236,23 +249,14 @@ struct PageSpreadsheetView: View {
                     }
                     .accessibilityLabel(wellVisible ? "Hide words" : "Show words")
                 }
-                if showsSelectionBar {
-                    // Always visible while it exists, and one tap to end it:
-                    // a forgotten selection rides along on the next drag.
-                    Button { deselect(); isSelecting = false } label: {
-                        Label("\(selection.count) selected", systemImage: "xmark.circle.fill")
-                            .font(.subheadline.monospacedDigit().weight(.semibold))
-                    }
-                    .buttonStyle(.bordered)
-                    .accessibilityLabel("Clear the selection of \(selection.count) cells")
-                } else {
-                    Text(address(selected))
-                        .font(.subheadline.monospacedDigit().weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .frame(minWidth: 64, alignment: .leading)
-                }
+                Text(hasCursor && selection.isEmpty ? address(selected) : "")
+                    .font(.subheadline.monospacedDigit().weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(minWidth: 64, alignment: .leading)
                 CellTextField(text: draftBinding,
-                              placeholder: "word · word, class · word > page · > page",
+                              placeholder: hasCursor
+                                  ? "word · word, class · word > page · > page"
+                                  : "Tap a cell, or type to fill the next empty one",
                               isEditing: draft != nil,
                               showsKeyboard: keyboardRun,
                               arrowsChoose: draft != nil && !suggestions.isEmpty,
@@ -260,7 +264,12 @@ struct PageSpreadsheetView: View {
                               isSuspended: isCovered,
                               onKey: key,
                               onType: { typed in
-                                  if let draft { self.draft = draft + typed } else { beginEdit(with: typed) }
+                                  if let draft {
+                                      self.draft = draft + typed
+                                  } else {
+                                      if !hasCursor && selection.isEmpty { selectFirstEmpty() }
+                                      beginEdit(with: typed)
+                                  }
                                   error = nil
                                   highlighted = 0
                               },
@@ -268,22 +277,6 @@ struct PageSpreadsheetView: View {
                               onRaise: { keyboardRun = true },
                               onLowered: keyboardLowered)
                     .frame(height: 34)
-                    // The field stays first responder underneath (hardware keys
-                    // still reach it); a selection shows what it can do instead.
-                    .opacity(showsSelectionBar ? 0 : 1)
-                    .overlay(alignment: .leading) {
-                        if showsSelectionBar { selectionBar }
-                    }
-                if draft != nil {
-                    Button("Cancel") { cancelEdit(); keyboardRun = false }
-                        .font(.subheadline)
-                } else {
-                    if isSelecting {
-                        Button("Done") { isSelecting = false }
-                            .font(.subheadline.weight(.semibold))
-                    }
-                    pageMenu
-                }
             }
             if let error {
                 Label(error, systemImage: "exclamationmark.triangle.fill")
@@ -299,40 +292,108 @@ struct PageSpreadsheetView: View {
         .background(.bar)
     }
 
-    /// A selection of cells, in the bar rather than behind ⋯: the old editor's
-    /// actions sat on the selection, and going back to a menu for each was the
-    /// step too many.
-    private var showsSelectionBar: Bool {
-        draft == nil && (selection.count > 1 || (isSelecting && !selection.isEmpty))
-    }
+    // MARK: - Option bar
 
-    private var selectionBar: some View {
-        let filled = selection.filter { cells.entry(at: $0, in: tiles) != nil }
-        return ViewThatFits(in: .horizontal) {
-            selectionButtons(filled, labelled: true)
-            selectionButtons(filled, labelled: false)
+    /// What can be done now, over the input row: the page's options with
+    /// nothing selected, a cell's with one, a group's with several, and the
+    /// edit's own while one is typed. One row, always there, so choosing a
+    /// cell changes the buttons and never the layout.
+    private var optionBar: some View {
+        ViewThatFits(in: .horizontal) {
+            optionButtons(labelled: true)
+            optionButtons(labelled: false)
+            ScrollView(.horizontal, showsIndicators: false) {
+                optionButtons(labelled: false)
+            }
         }
         .buttonStyle(.bordered)
         .controlSize(.small)
+        .font(.subheadline)
+        .frame(height: 30)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func selectionButtons(_ filled: Set<Int>, labelled: Bool) -> some View {
+    private func optionButtons(labelled: Bool) -> some View {
         HStack(spacing: 8) {
-            Menu { visibilityItems(filled) } label: {
-                barLabel("Visibility", "eye", labelled)
+            if draft != nil {
+                Text("Typing \(address(selected))")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Button { cancelEdit(); keyboardRun = false } label: {
+                    barLabel("Cancel", "xmark", labelled)
+                }
+            } else if targets.isEmpty {
+                Button { onAddWords(firstEmptyIndex) } label: {
+                    barLabel("Add Words…", "plus.square.on.square", labelled)
+                }
+                Button { selectAll() } label: {
+                    barLabel("Select All", "checkmark.circle", labelled)
+                }
+                .disabled(tiles.allSatisfy(\.isSpacer))
+                Button { paste() } label: { barLabel("Paste", "doc.on.clipboard", labelled) }
+            } else if targets.count == 1, let index = targets.first {
+                singleCellButtons(index, labelled: labelled)
+            } else {
+                groupButtons(labelled: labelled)
             }
-            .disabled(filled.isEmpty)
-            Button { cut(selection) } label: { barLabel("Cut", "scissors", labelled) }
-                .disabled(filled.isEmpty)
-            Button { copy(selection) } label: { barLabel("Copy", "doc.on.doc", labelled) }
-                .disabled(filled.isEmpty)
-            Button(role: .destructive) { clear(selection) } label: {
+        }
+        .fixedSize()
+    }
+
+    /// One cell: a word's settings and what can be done to it, or an empty
+    /// cell's ways to fill it.
+    @ViewBuilder
+    private func singleCellButtons(_ index: Int, labelled: Bool) -> some View {
+        // The input row says which cell; this only lets it go.
+        Button { clearSelection() } label: {
+            Image(systemName: "xmark.circle.fill")
+        }
+        .accessibilityLabel("Deselect \(address(index))")
+        if let entry = cells.entry(at: index, in: tiles) {
+            if lookup[entry.key] != nil {
+                Button { onProperties(entry.key) } label: {
+                    barLabel("Edit Settings", "slider.horizontal.3", labelled)
+                }
+            }
+            Menu { visibilityItems([index]) } label: { barLabel("Visibility", "eye", labelled) }
+            Button { cut([index]) } label: { barLabel("Cut", "scissors", labelled) }
+            Button { copy([index]) } label: { barLabel("Copy", "doc.on.doc", labelled) }
+            Button { paste() } label: { barLabel("Paste", "doc.on.clipboard", labelled) }
+            Button(role: .destructive) { clear([index]) } label: {
                 barLabel("Clear", "xmark.square", labelled)
             }
             .tint(.red)
-            .disabled(filled.isEmpty)
+        } else {
+            Button { beginEdit(with: nil) } label: { barLabel("Type", "keyboard", labelled) }
+            Button { onAddWords(index) } label: {
+                barLabel("Add Words…", "plus.square.on.square", labelled)
+            }
+            Button { paste() } label: { barLabel("Paste", "doc.on.clipboard", labelled) }
         }
-        .fixedSize()
+    }
+
+    /// Several cells: what a group can do. Always one tap to end it: a
+    /// forgotten selection rides along on the next drag.
+    @ViewBuilder
+    private func groupButtons(labelled: Bool) -> some View {
+        let filled = selection.filter { cells.entry(at: $0, in: tiles) != nil }
+        Button { clearSelection() } label: {
+            Label("\(selection.count) selected", systemImage: "xmark.circle.fill")
+                .font(.subheadline.monospacedDigit().weight(.semibold))
+        }
+        .accessibilityLabel("Clear the selection of \(selection.count) cells")
+        Menu { visibilityItems(filled) } label: { barLabel("Visibility", "eye", labelled) }
+            .disabled(filled.isEmpty)
+        Button { cut(selection) } label: { barLabel("Cut", "scissors", labelled) }
+            .disabled(filled.isEmpty)
+        Button { copy(selection) } label: { barLabel("Copy", "doc.on.doc", labelled) }
+            .disabled(filled.isEmpty)
+        Button(role: .destructive) { clear(selection) } label: {
+            barLabel("Clear", "xmark.square", labelled)
+        }
+        .tint(.red)
+        .disabled(filled.isEmpty)
+        Button { selectAll() } label: { barLabel("Select All", "checkmark.circle", labelled) }
     }
 
     @ViewBuilder
@@ -342,32 +403,7 @@ struct PageSpreadsheetView: View {
         }
     }
 
-    /// What the selection, or the whole page, can do — the touch way to every
-    /// keyboard command.
-    private var pageMenu: some View {
-        Menu {
-            Button { onAddWords(selectedIndex) } label: {
-                Label("Add Words…", systemImage: "plus.square.on.square")
-            }
-            Divider()
-            Button { isSelecting.toggle() } label: {
-                Label(isSelecting ? "Stop Selecting" : "Select Cells", systemImage: "checkmark.circle")
-            }
-            Button { selectAll() } label: { Label("Select All", systemImage: "square.grid.3x3.fill") }
-            if !selection.isEmpty {
-                Button { deselect() } label: { Label("Deselect", systemImage: "square.dashed") }
-            }
-            Divider()
-            selectionActions(targets)
-        } label: {
-            Image(systemName: "ellipsis.circle")
-                .font(.title3)
-        }
-        .accessibilityLabel("Cell actions")
-    }
-
-    /// Visibility, clipboard and clear, for `indices`. Shared by the ⋯ menu
-    /// and each cell's own menu.
+    /// Visibility, clipboard and clear, for `indices`: each cell's own menu.
     @ViewBuilder
     private func selectionActions(_ indices: Set<Int>) -> some View {
         let filled = indices.filter { cells.entry(at: $0, in: tiles) != nil }
@@ -394,8 +430,8 @@ struct PageSpreadsheetView: View {
         }
     }
 
-    /// Shown always, from a level, or concealed — for the ⋯ menu, a cell's
-    /// menu and the selection bar.
+    /// Shown always, from a level, or concealed — for the option bar and a
+    /// cell's menu.
     @ViewBuilder
     private func visibilityItems(_ filled: Set<Int>) -> some View {
         Button { setVisibility(concealed: false, level: 0, at: filled) } label: {
@@ -422,10 +458,11 @@ struct PageSpreadsheetView: View {
         2...(scene.revealLevelCount > 0 ? max(scene.revealLevelCount, 2) : Self.starterLevelCount)
     }
 
-    /// The bar shows the selected cell's text until an edit starts.
+    /// The bar shows the selected cell's text until an edit starts; nothing
+    /// with no cell, or a group, selected.
     private var draftBinding: Binding<String> {
         Binding(
-            get: { draft ?? cellText(selectedIndex) },
+            get: { draft ?? (hasCursor && selection.isEmpty ? cellText(selectedIndex) : "") },
             set: { text in
                 draft = text
                 error = nil
@@ -533,8 +570,9 @@ struct PageSpreadsheetView: View {
     private func cellView(_ cell: PageCells.Cell, side: CGFloat) -> some View {
         let index = cells.index(of: cell)
         let entry = cells.entry(at: index, in: tiles)
-        let isCursor = cell == selected
+        let isCursor = hasCursor && cell == selected
         let isInSelection = selection.contains(index)
+        let isChecked = isInSelection || (isCursor && selection.isEmpty)
         ZStack {
             if isCursor, let draft, let preview = previewEntry(draft) {
                 entryView(preview).opacity(0.7)
@@ -554,20 +592,27 @@ struct PageSpreadsheetView: View {
             }
         }
         .overlay(alignment: .topTrailing) {
-            // The stock multi-select mark: an empty ring on every cell while
-            // selecting, filled with a check on the chosen ones.
-            if isInSelection || isSelecting {
-                Image(systemName: isInSelection ? "checkmark.circle.fill" : "circle")
+            // The stock multi-select mark, on every word, always: an empty
+            // ring, filled with a check on the chosen ones. Its corner is its
+            // own target, so a tap there adds to the selection or takes away
+            // from it, where a tap on the rest of the cell selects only it.
+            if entry != nil {
+                Image(systemName: isChecked ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: max(14, side * 0.22), weight: .semibold))
                     .symbolRenderingMode(.palette)
-                    .foregroundStyle(.white, isInSelection ? Color.accentColor : Color.black.opacity(0.15))
+                    .foregroundStyle(.white, isChecked ? Color.accentColor : Color.black.opacity(0.18))
                     .background {
-                        // White rim on the chosen check so it reads on any tile colour.
-                        if isInSelection { Circle().fill(.white).padding(-1.5) }
+                        // A white rim so it reads on any tile colour.
+                        Circle().fill(isChecked ? .white : .white.opacity(0.55)).padding(-1.5)
                     }
-                    .shadow(color: .black.opacity(0.35), radius: 1.5)
+                    .shadow(color: .black.opacity(isChecked ? 0.35 : 0.15), radius: 1.5)
                     .padding(4)
-                    .allowsHitTesting(false)
+                    .frame(width: max(30, side * 0.45), height: max(30, side * 0.45),
+                           alignment: .topTrailing)
+                    .contentShape(Rectangle())
+                    .onTapGesture { toggleCheck(cell) }
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityLabel(isChecked ? "Deselect" : "Add to selection")
             }
         }
         .overlay(
@@ -598,7 +643,7 @@ struct PageSpreadsheetView: View {
             let menuTargets = isInSelection ? targets : [index]
             if menuTargets.count == 1, let entry, lookup[entry.key] != nil {
                 Button { onProperties(entry.key) } label: {
-                    Label("Properties", systemImage: "slider.horizontal.3")
+                    Label("Edit Settings", systemImage: "slider.horizontal.3")
                 }
             }
             selectionActions(menuTargets)
@@ -609,9 +654,9 @@ struct PageSpreadsheetView: View {
     private func outline(index: Int, isCursor: Bool, isInSelection: Bool) -> Color {
         if blocked.contains(index) { return .red }
         if dropTarget == index, !dropInserts { return .green }
-        // While selecting, the checks say what is chosen; a cursor ring on an
-        // unchosen cell would read as chosen too.
-        if isCursor, !isSelecting || draft != nil { return error == nil ? .accentColor : .orange }
+        // With a group chosen, the checks say what is in it; a cursor ring on
+        // an unchosen cell would read as chosen too.
+        if isCursor, selection.isEmpty || draft != nil { return error == nil ? .accentColor : .orange }
         return isInSelection ? .accentColor : .clear
     }
 
@@ -675,7 +720,6 @@ struct PageSpreadsheetView: View {
     // MARK: - Selection
 
     private func tap(_ cell: PageCells.Cell) {
-        let index = cells.index(of: cell)
         // Tapping away from an edit keeps it, as a spreadsheet does; Cancel
         // is there to drop it. One that cannot be made yet (`pony` with no
         // class) stays open with its error instead of being lost.
@@ -683,23 +727,66 @@ struct PageSpreadsheetView: View {
             guard cell != selected else { keyboardRun = true; return }
             guard commit(thenMove: (0, 0)) else { return }
         }
-        if isSelecting {
-            // Only what is tapped: the cell the cursor happened to be on
-            // when Select began is not part of it.
-            if selection.contains(index) { selection.remove(index) } else { selection.insert(index) }
-            selected = cell
-            focusToken += 1
-        } else if let entry = cells.entry(at: index, in: tiles), !entry.isSpacer,
-                  lookup[entry.key] != nil {
-            // A word is inspected, not retyped: its art, class and link are in
-            // Tile Settings, whose Edit comes back here to change the word.
-            select(cell)
-            onProperties(entry.key)
-        } else if cell == selected, selection.isEmpty {
+        if hasCursor, cell == selected, selection.isEmpty {
+            // The second tap types the cell, as a tap on the input row does.
             beginEdit(with: nil)
         } else {
             select(cell)
         }
+    }
+
+    /// A tap on a word's check: into the selection or out of it, keeping
+    /// what is already chosen. A word the cursor alone was on counts as
+    /// chosen, so the second check makes a group of two. One left is the
+    /// cursor again, with its own options; none left is nothing selected.
+    private func toggleCheck(_ cell: PageCells.Cell) {
+        if draft != nil {
+            guard commit(thenMove: (0, 0)) else { return }
+        }
+        let index = cells.index(of: cell)
+        var chosen = selection
+        if chosen.isEmpty, hasCursor, cells.entry(at: selectedIndex, in: tiles) != nil {
+            chosen = [selectedIndex]
+        }
+        if chosen.contains(index) {
+            chosen.remove(index)
+        } else {
+            chosen.insert(index)
+            selected = cell
+        }
+        anchor = nil
+        error = nil
+        blocked = []
+        // A check is choosing, not typing: a group has nothing to type into,
+        // and back down to one keeps the keyboard down too. Typing the one
+        // left is a tap on it or on the bar, as for any cell.
+        keyboardRun = false
+        switch chosen.count {
+        case 0:
+            selection = []
+            hasCursor = false
+        case 1:
+            selected = cells.cell(at: chosen.first!)
+            selection = []
+            hasCursor = true
+        default:
+            selection = chosen
+            hasCursor = true
+        }
+        focusToken += 1
+    }
+
+    /// The first cell with nothing in it; past the last screen if all are full.
+    private var firstEmptyIndex: Int {
+        let total = screens * cells.perScreen
+        return (0..<total).first { cells.entry(at: $0, in: tiles) == nil } ?? total
+    }
+
+    /// Typing with nothing selected fills the next empty cell.
+    private func selectFirstEmpty() {
+        let index = firstEmptyIndex
+        if index >= screens * cells.perScreen { extraScreens += 1 }
+        select(cells.cell(at: index))
     }
 
     /// Tile Settings' Edit: the cell's text, ready to change.
@@ -711,8 +798,17 @@ struct PageSpreadsheetView: View {
     private func select(_ cell: PageCells.Cell) {
         if draft != nil { cancelEdit() }
         selected = cell
+        hasCursor = true
         deselect()
         focusToken += 1
+    }
+
+    /// Nothing selected, as the editor first opens: no cursor, and the
+    /// keyboard down — a run of typing ends with what it was typing into.
+    private func clearSelection() {
+        deselect()
+        hasCursor = false
+        keyboardRun = false
     }
 
     private func deselect() {
@@ -737,6 +833,7 @@ struct PageSpreadsheetView: View {
 
     private func move(_ dRow: Int, _ dCol: Int) {
         selected = cells.moving(selected, rowBy: dRow, colBy: dCol, screens: screens)
+        hasCursor = true
         deselect()
     }
 
@@ -744,6 +841,7 @@ struct PageSpreadsheetView: View {
     private func extend(_ dRow: Int, _ dCol: Int) {
         let start = anchor ?? selectedIndex
         selected = cells.moving(selected, rowBy: dRow, colBy: dCol, screens: screens)
+        hasCursor = true
         selection = cells.span(from: start, to: selectedIndex)
         anchor = start
         error = nil
@@ -754,6 +852,7 @@ struct PageSpreadsheetView: View {
     private func beginEdit(with text: String?) {
         PerfSignposts.signposter.emitEvent("cell.edit")
         keyboardRun = true
+        hasCursor = true
         selection = []
         anchor = nil
         draft = text ?? cellText(selectedIndex)
@@ -907,8 +1006,8 @@ struct PageSpreadsheetView: View {
     private func finishMove(_ moved: [TileEntry], at target: Int) {
         apply(moved)
         selected = cells.cell(at: target)
+        hasCursor = true
         deselect()
-        isSelecting = false
         focusToken += 1
     }
 
@@ -927,6 +1026,7 @@ struct PageSpreadsheetView: View {
             apply(inserting ? cells.inserting([entry], before: target, in: tiles)
                             : cells.setting(entry, at: target, in: tiles))
             selected = cells.cell(at: target)
+            hasCursor = true
             deselect()
             focusToken += 1
         }
@@ -967,6 +1067,7 @@ struct PageSpreadsheetView: View {
         apply(placed)
         deselect()
         selected = cells.cell(at: min(last, (screens + 1) * cells.perScreen - 1))
+        hasCursor = true
         focusToken += 1
     }
 
@@ -983,7 +1084,10 @@ struct PageSpreadsheetView: View {
 
     private func paste() {
         guard let text = UIPasteboard.general.string else { return }
-        paste(text, at: cells.rectangle(targets).first?.first ?? selectedIndex)
+        // Nothing selected: into the first empty cell.
+        let at = targets.isEmpty ? firstEmptyIndex
+            : (cells.rectangle(targets).first?.first ?? selectedIndex)
+        paste(text, at: at)
     }
 
     /// Pastes tab-separated cells with their top-left at `target`, as a
@@ -1019,6 +1123,7 @@ struct PageSpreadsheetView: View {
         let result = cells.pasting(entries, at: target, in: tiles)
         apply(result.tiles)
         selected = cells.cell(at: target)
+        hasCursor = true
         // What was pasted stays selected, so it can be dragged on at once.
         let width = min(rows.map(\.count).max() ?? 1, cells.cols - cells.column(target))
         let corner = target + (rows.count - 1) * cells.cols + max(0, width - 1)
@@ -1033,6 +1138,21 @@ struct PageSpreadsheetView: View {
 
     /// One key from the formula bar. Returns false to let the field have it.
     private func key(_ key: CellTextField.Key) -> Bool {
+        // Nothing selected: the first arrow shows the cursor where it is, and
+        // Return (or a tap on the input row) types the next empty cell.
+        if draft == nil, !hasCursor, selection.isEmpty {
+            switch key {
+            case .up, .down, .left, .right, .tab, .backTab:
+                hasCursor = true
+                return true
+            case .enter:
+                selectFirstEmpty()
+                beginEdit(with: nil)
+                return true
+            default:
+                break
+            }
+        }
         guard draft != nil else {
             switch key {
             case .up: move(-1, 0)
@@ -1047,9 +1167,8 @@ struct PageSpreadsheetView: View {
             case .backTab: move(0, -1)
             case .enter: beginEdit(with: nil)
             case .escape:
-                guard !selection.isEmpty || isSelecting else { return false }
-                deselect()
-                isSelecting = false
+                guard !selection.isEmpty || hasCursor else { return false }
+                clearSelection()
             case .copy: copy(targets)
             case .cut: cut(targets)
             case .paste: paste()
@@ -1441,6 +1560,23 @@ struct CellTextField: UIViewRepresentable {
         var isSuspended = false
 
         override var canBecomeFirstResponder: Bool { !isSuspended && super.canBecomeFirstResponder }
+
+        /// The iPad's lower-keyboard key resigns the field. Seen here as well
+        /// as in `keyboardWillHide`, whose `softKeyboardUp` can miss it: a run
+        /// still marked on after the keyboard went down raised it again at the
+        /// next selection, with nothing to type.
+        override func resignFirstResponder() -> Bool {
+            let lowered = wantsKeyboard && !isSuspended && isFirstResponder
+            let resigned = super.resignFirstResponder()
+            if resigned, lowered {
+                // Put away for good: the next focus (a tap, a check) does
+                // not bring it back. Synchronous, as `keyboardWillHide` is,
+                // so no update in between can re-arm it.
+                showsSoftwareKeyboard(false)
+                onLowered?()
+            }
+            return resigned
+        }
 
         override func didMoveToWindow() {
             super.didMoveToWindow()

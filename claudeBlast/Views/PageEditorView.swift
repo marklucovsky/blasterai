@@ -126,19 +126,88 @@ struct PageEditorView: View {
 
     private var isHome: Bool { scene.homePageKey == pageKey }
 
-    /// The home-page control lives here (not the nav bar) so it has room for a
-    /// full, non-truncating label and never crowds Select/＋ out of reach in
-    /// portrait. Filled blue when this page is the scene's home; tap to toggle.
+    /// The page itself, apart from its words: a card over the editor with
+    /// what the page *is* — its cover, its name, whether it is Home — and
+    /// what is set for the page as a whole (preview level, folders into it).
+    /// Drawn as a card, not a bar, so it never reads as part of the grid's
+    /// own option bar under it, which is about the words.
     private var pageHeader: some View {
-        HStack(spacing: 10) {
-            Button { toggleHome() } label: {
-                Label(isHome ? "Home Page" : "Set as Home",
-                      systemImage: isHome ? "house.fill" : "house")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(isHome ? Color.blue : Color.secondary)
+        HStack(spacing: 12) {
+            pageIdentity
+            Spacer(minLength: 8)
+            ViewThatFits(in: .horizontal) {
+                pageSettings(labelled: true)
+                pageSettings(labelled: false)
             }
-            .buttonStyle(.plain)
-            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        // System grouped colours, so the card stands off its strip in both
+        // modes: white on light grey, raised grey on black.
+        .background(RoundedRectangle(cornerRadius: 14)
+            .fill(Color(.secondarySystemGroupedBackground))
+            .shadow(color: .black.opacity(0.08), radius: 3, y: 1))
+        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color(.separator)))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(Color(.systemGroupedBackground))
+        .overlay(alignment: .bottom) { Divider() }
+    }
+
+    /// Cover (tap to change it), name (tap to rename), and a Home badge.
+    private var pageIdentity: some View {
+        HStack(spacing: 10) {
+            if !scene.isDefault {
+                // The picture every folder into this page shows. See `PageCover`.
+                Button { isChoosingCover = true } label: {
+                    // On white, as every list row and chip draws art: tinted,
+                    // the card and system colours behind it bled through.
+                    TileImageView(key: PageCover.key(ofPage: pageKey, in: scene),
+                                  wordClass: PageLink.wordClass)
+                        .frame(width: 40, height: 40)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Page cover")
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Button {
+                    renameDraft = page?.displayName ?? ""
+                    isRenaming = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Text(page?.title ?? pageKey)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                        Image(systemName: "pencil")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.tint)
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Rename page")
+                Text(wordCountText)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var wordCountText: String {
+        let count = page?.tiles.filter { !$0.isSpacer }.count ?? 0
+        return count == 1 ? "1 word" : "\(count) words"
+    }
+
+    /// Settings for the whole page. `labelled: false` is the narrow fallback.
+    @ViewBuilder
+    private func pageSettings(labelled: Bool) -> some View {
+        HStack(spacing: 8) {
+            Button { toggleHome() } label: {
+                settingLabel(isHome ? "Home Page" : "Set as Home",
+                             isHome ? "house.fill" : "house", labelled)
+            }
+            .tint(isHome ? .blue : .secondary)
             if scene.revealLevelCount > 0 {
                 Menu {
                     Picker("Preview Level", selection: $previewLevel) {
@@ -148,46 +217,30 @@ struct PageEditorView: View {
                         }
                     }
                 } label: {
-                    Label(previewLevel == 0 ? "All Levels" : "Preview L\(previewLevel)",
-                          systemImage: "stairs")
-                        .font(.subheadline.weight(.medium))
+                    settingLabel(previewLevel == 0 ? "All Levels" : "Preview L\(previewLevel)",
+                                 "stairs", labelled)
                 }
             }
             if !scene.isDefault, scene.pages.contains(where: { $0.key != pageKey }) {
                 // Put a folder to this page on others — the step Add Page and
                 // Import Page offer once, here whenever it was skipped.
                 Button { isLinkingPage = true } label: {
-                    Label("Link From…", systemImage: "arrow.turn.down.right")
-                        .font(.subheadline.weight(.medium))
+                    settingLabel("Link From…", "arrow.turn.down.right", labelled)
                 }
-                .buttonStyle(.plain)
             }
-            if !scene.isDefault {
-                // The picture every folder into this page shows. See `PageCover`.
-                Button { isChoosingCover = true } label: {
-                    HStack(spacing: 6) {
-                        TileImageView(key: PageCover.key(ofPage: pageKey, in: scene),
-                                      wordClass: PageLink.wordClass)
-                            .frame(width: 24, height: 24)
-                            .clipShape(RoundedRectangle(cornerRadius: 5))
-                        Text("Cover").font(.subheadline.weight(.medium))
-                    }
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Page cover")
-            }
-            Button {
-                renameDraft = page?.displayName ?? ""
-                isRenaming = true
-            } label: {
-                Label("Rename", systemImage: "pencil")
-                    .font(.subheadline.weight(.medium))
-            }
-            .buttonStyle(.plain)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
-        .background(.bar)
+        .buttonStyle(.bordered)
+        .controlSize(.small)
+        .font(.subheadline)
+    }
+
+    @ViewBuilder
+    private func settingLabel(_ title: String, _ icon: String, _ labelled: Bool) -> some View {
+        if labelled {
+            Label(title, systemImage: icon)
+        } else {
+            Image(systemName: icon).accessibilityLabel(title)
+        }
     }
 
     /// Toggle this page as the scene's home. A scene keeps exactly one home, so
@@ -230,7 +283,8 @@ struct PageEditorView: View {
                 ContentUnavailableView("Page not found", systemImage: "questionmark.folder")
             }
         }
-        .navigationTitle(page?.title ?? pageKey)
+        // The scene the page belongs to; the page's own name is on its card.
+        .navigationTitle(scene.name)
         // The grid this page is laid out on, so a caregiver arranging words
         // knows which board's positions they are setting.
         .navigationSubtitle(scene.designedLayout.map { "Designed for \($0.title)" }
@@ -353,8 +407,8 @@ struct PageEditorView: View {
     /// ## Why there is no "+" here
     ///
     /// Adding words belongs to a cell — the picker fills empty cells from the
-    /// selected one — so it lives in the grid's ⋯ menu beside the selection,
-    /// not in the bar.
+    /// selected one — so it lives in the grid's option bar beside the
+    /// selection, not in the navigation bar.
     ///
     /// **Share is the bar's action.** It has no representation anywhere else
     /// on the page, and a caregiver looking to send a page somewhere looks in

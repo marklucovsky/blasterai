@@ -12,6 +12,10 @@ import SwiftData
 
 /// The caregiver rail's Edit: the page the board is showing, in the page
 /// editor, without going through Admin › Scenes to find it.
+///
+/// On BlasterAI 60, or any scene the system owns, there is nothing to edit in
+/// place: it offers a copy first (`SystemSceneCopyOffer`), and once the copy
+/// is the active scene the same page opens in it.
 struct RailPageEditor: View {
     let pageKey: String
     @Query(filter: #Predicate<BlasterScene> { $0.isActive }) private var activeScenes: [BlasterScene]
@@ -20,7 +24,9 @@ struct RailPageEditor: View {
     var body: some View {
         NavigationStack {
             Group {
-                if let scene = activeScenes.first, scene.page(withKey: pageKey) != nil {
+                if let scene = activeScenes.first, scene.isDefault || scene.isSystemOwned {
+                    SystemSceneCopyOffer(scene: scene)
+                } else if let scene = activeScenes.first, scene.page(withKey: pageKey) != nil {
                     PageEditorView(scene: scene, pageKey: pageKey)
                 } else {
                     ContentUnavailableView("This Page Can't Be Edited",
@@ -38,7 +44,7 @@ struct RailPageEditor: View {
 }
 
 /// The Edit menu's Edit Scene: the active scene in the scene editor. BlasterAI
-/// 60 is the system's and never reaches here; the menu disables the row.
+/// 60 is the system's: it offers a copy first, as Edit This Page does.
 struct RailSceneEditor: View {
     @Query(filter: #Predicate<BlasterScene> { $0.isActive }) private var activeScenes: [BlasterScene]
     @Environment(\.dismiss) private var dismiss
@@ -46,12 +52,14 @@ struct RailSceneEditor: View {
     var body: some View {
         NavigationStack {
             Group {
-                if let scene = activeScenes.first, !scene.isDefault {
-                    SceneEditorView(scene: scene)
+                if let scene = activeScenes.first {
+                    if scene.isDefault || scene.isSystemOwned {
+                        SystemSceneCopyOffer(scene: scene)
+                    } else {
+                        SceneEditorView(scene: scene)
+                    }
                 } else {
-                    ContentUnavailableView("This Scene Can't Be Edited",
-                                           systemImage: "pencil.slash",
-                                           description: Text("BlasterAI 60 is the system's board. Duplicate it in Settings › Scenes to change it."))
+                    ContentUnavailableView("No Active Scene", systemImage: "pencil.slash")
                 }
             }
             .toolbar {
@@ -59,6 +67,46 @@ struct RailSceneEditor: View {
                     Button("Done") { dismiss() }
                 }
             }
+        }
+    }
+}
+
+/// A system scene is never edited in place (`BlasterScene.isSystemOwned`):
+/// the caregiver who asked to edit it is offered their own copy, made with the
+/// usual copy name ("BlasterAI 60 (1)") and switched to, so the editor that
+/// asked for it opens on the copy. The copy is the board from then on; the
+/// system's own stays in Settings › Scenes.
+struct SystemSceneCopyOffer: View {
+    let scene: BlasterScene
+    @Environment(\.modelContext) private var modelContext
+    @State private var failure: String?
+
+    var body: some View {
+        ContentUnavailableView {
+            Label("Make Your Own Copy", systemImage: "square.on.square")
+        } description: {
+            Text("\(BlasterScene.copyRoot(of: scene.name)) is the system's board, so it can't be changed. "
+                 + "Make a copy to edit; the copy becomes the board the child uses.")
+        } actions: {
+            Button("Make a Copy and Edit") { makeCopy() }
+                .buttonStyle(.borderedProminent)
+            if let failure {
+                Text(failure).font(.footnote).foregroundStyle(.red)
+            }
+        }
+    }
+
+    private func makeCopy() {
+        let copy = BlasterScene.cloneForEditing(
+            scene, in: modelContext,
+            authorID: DeviceProfileStore.ensureAuthorID(context: modelContext),
+            authorName: DeviceProfileStore.authorName(context: modelContext))
+        do {
+            _ = try copy.activate(context: modelContext)
+            try? modelContext.save()
+        } catch {
+            modelContext.delete(copy)
+            failure = error.localizedDescription
         }
     }
 }
