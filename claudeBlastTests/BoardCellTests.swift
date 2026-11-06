@@ -406,6 +406,25 @@ struct BoardCellTests {
             .contains { $0.isWordClass })
     }
 
+    /// A word borrows another's art by alias, following that word's own
+    /// alias; a photo comes along, and one already there goes.
+    @Test func borrowedArtFollowsTheSourcesAliasAndPhoto() {
+        let dog = tile("dog", "animal")
+        let puppy = tile("puppy", "animal")
+        puppy.bundleImage = "dog"
+        let pup = tile("pup", "animal")
+        pup.userImageData = Data([1, 2, 3])
+        TileArtBorrow.use(puppy, on: pup)
+        #expect(pup.bundleImage == "dog")
+        #expect(!pup.hasUserImage)
+        #expect(TileArtBorrow.isBorrowed(pup))
+        dog.userImageData = Data([9])
+        TileArtBorrow.use(dog, on: pup)
+        #expect(pup.userImageData == Data([9]))
+        TileArtBorrow.restoreOwn(pup)
+        #expect(!TileArtBorrow.isBorrowed(pup))
+    }
+
     /// `>` alone lists every page of the scene, then one chip for BlasterAI
     /// 60's pages; the chip opens `sys:`, which lists them all.
     @Test func aBareArrowListsTheScenesPagesThenTheSystemChip() {

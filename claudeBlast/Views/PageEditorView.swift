@@ -670,6 +670,7 @@ struct TilePropertiesSheet: View {
     /// Image awaiting a square crop. Owned here (the sheet root), not inside the
     /// photo Section, so the cropper presents off a stable anchor.
     @State private var cropTarget: CropTarget?
+    @State private var isBorrowingArt = false
     @State private var photoError: String?
 
     private struct CropTarget: Identifiable {
@@ -923,7 +924,8 @@ struct TilePropertiesSheet: View {
                 }
 
                 if let tile {
-                    TilePhotoSection(tile: tile) { picked in
+                    TilePhotoSection(tile: tile,
+                                     onUseExistingArt: { isBorrowingArt = true }) { picked in
                         cropTarget = CropTarget(image: picked)
                     }
                 }
@@ -1029,6 +1031,15 @@ struct TilePropertiesSheet: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
+                }
+            }
+            .sheet(isPresented: $isBorrowingArt) {
+                if let tile {
+                    ExistingArtPicker(tile: tile) { source in
+                        TileArtBorrow.use(source, on: tile)
+                        TileArtBorrow.changed(tile, context: modelContext, resolver: resolver)
+                        isBorrowingArt = false
+                    }
                 }
             }
             .fullScreenCover(item: $cropTarget) { target in

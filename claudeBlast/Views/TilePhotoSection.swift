@@ -25,6 +25,11 @@ struct TilePhotoSection: View {
     /// What AI art is of, when it is more than the tile's name: a scene's
     /// description for its cover. Used when no detail is typed.
     var subjectDetail: String = ""
+    /// Offers another word's picture. The host presents `ExistingArtPicker`
+    /// at its root, as it does the cropper: a sheet anchored in a Form section
+    /// came up and was dismissed at once. Nil where the host has its own word
+    /// list for that (a cover).
+    var onUseExistingArt: (() -> Void)? = nil
     /// Called with a freshly picked (uncropped) image. The host presents the
     /// cropper and, on confirm, calls `TilePhotoCommit.apply`.
     let onPick: (UIImage) -> Void
@@ -74,6 +79,21 @@ struct TilePhotoSection: View {
                       systemImage: "photo.badge.plus")
             }
             .disabled(isLoading || isGenerating)
+
+            if let onUseExistingArt {
+                Button { onUseExistingArt() } label: {
+                    Label("Use Existing Art…", systemImage: "photo.on.rectangle")
+                }
+                .disabled(isLoading || isGenerating)
+                if TileArtBorrow.isBorrowed(tile) {
+                    Button {
+                        TileArtBorrow.restoreOwn(tile)
+                        TileArtBorrow.changed(tile, context: modelContext, resolver: resolver)
+                    } label: {
+                        Label("Use This Word's Own Art", systemImage: "arrow.uturn.backward")
+                    }
+                }
+            }
 
             // Status sits between the two actions, above the Artwork rows. At the
             // bottom of the section it fell below the fold once Artwork was
@@ -380,6 +400,61 @@ enum TilePhotoCommit {
             return err.errorDescription
         } catch {
             return "Couldn't save that image."
+        }
+    }
+}
+
+/// Every word's picture, searchable: the one tapped becomes `tile`'s.
+struct ExistingArtPicker: View {
+    let tile: TileModel
+    let onPick: (TileModel) -> Void
+
+    @Query(sort: \TileModel.key) private var allTiles: [TileModel]
+    @Environment(\.dismiss) private var dismiss
+    @State private var search = ""
+
+    private var matches: [TileModel] {
+        let candidates = allTiles.filter {
+            $0.key != tile.key && !$0.isHiddenFromChild && PageLink.targetPage(forKey: $0.key) == nil
+        }
+        let query = WordFinder.normalize(search)
+        guard !query.isEmpty else { return candidates.sorted { $0.displayName < $1.displayName } }
+        return candidates
+            .compactMap { t in WordFinder.rank(of: query, in: t).map { (t, $0) } }
+            .sorted { ($0.1, $0.0.key.count, $0.0.key) < ($1.1, $1.0.key.count, $1.0.key) }
+            .map(\.0)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 88), spacing: 10)], spacing: 10) {
+                    ForEach(matches, id: \.key) { source in
+                        Button { onPick(source) } label: {
+                            VStack(spacing: 4) {
+                                TileImageView(key: source.key, wordClass: source.wordClass)
+                                    .frame(width: 80, height: 80)
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                                Text(source.displayName)
+                                    .font(.caption)
+                                    .foregroundStyle(.primary)
+                                    .lineLimit(1)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding()
+            }
+            .searchable(text: $search, placement: .navigationBarDrawer(displayMode: .always),
+                        prompt: "Search all words")
+            .navigationTitle("Use Existing Art")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
         }
     }
 }
