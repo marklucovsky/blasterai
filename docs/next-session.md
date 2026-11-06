@@ -184,14 +184,14 @@ The spreadsheet format for authors: `docs/board-format/README.md`.
 ## Session 18: the editor pass, then build 10
 
 Mark, 2026-11-05: before build 10, one more pass on the editor — solid on the
-phone, and smooth next to Avaz. In this order:
+phone, and smooth next to Avaz. In this order (Avaz first — Mark, 2026-11-05):
 
-1. **The phone.** The iPad spreadsheet does not fit a portrait phone. A hybrid
+1. **Smooth next to Avaz.** Mark brings a list of rough spots to work through.
+2. **The phone.** The iPad spreadsheet does not fit a portrait phone. A hybrid
    phone editor, and with it how a 10-column page lays out on a phone, editor
    and child board alike: the full grid small, and a zoom that scrolls sideways
    snapping to the column bands (4 · 4 · 2, read from `page_templates.json`).
    Page editor sizing (above, "Do better") belongs here.
-2. **Smooth next to Avaz.** Mark brings a list of rough spots to work through.
 3. **A scene's own system row.** Brandi wants her own row 1, and so does
    Malawi; "if we can make this work, that would be huge."
    - A scene setting: the system row is local to the scene.
