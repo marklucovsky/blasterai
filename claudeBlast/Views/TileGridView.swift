@@ -1001,10 +1001,11 @@ struct TileGridView: View {
 
     private static var keyboardPage: String { BoardChrome.keyboardPage }
 
-    /// The page Edit would open: one of the active scene's own. BlasterAI 60's
-    /// pages are the system's and cannot be edited.
+    /// The page Edit would open: one of the active scene's own. On BlasterAI
+    /// 60 that is its page too: the editor offers a copy to edit
+    /// (`SystemSceneCopyOffer`) and opens the same page in it.
     private var editablePageKey: String? {
-        guard let scene = activeScene, !scene.isDefault,
+        guard let scene = activeScene,
               TileToken.systemPageKey(identityPageKey) == nil,
               TileToken.scenePageKey(identityPageKey) == nil,
               scene.page(withKey: identityPageKey) != nil else { return nil }
@@ -1228,7 +1229,7 @@ struct TileGridView: View {
             }
             Divider()
             caregiverMenuRow("Edit This Scene", systemImage: "square.grid.3x3",
-                             enabled: activeScene.map { !$0.isDefault } ?? false) {
+                             enabled: activeScene != nil) {
                 showEditMenu = false
                 caregiverMenu.requested = .editScene
             }
