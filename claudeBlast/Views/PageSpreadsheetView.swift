@@ -111,6 +111,9 @@ struct PageSpreadsheetView: View {
     /// straight away, as with a hardware keyboard. Cancel, or lowering the
     /// keyboard, ends the run.
     @State private var keyboardRun = false
+    /// The on-screen keyboard is showing (not a hardware keyboard's bar):
+    /// the grid then narrows to the row being typed.
+    @State private var softKeyboardUp = false
     @State private var error: String?
     @State private var highlighted = 0
     /// Screens shown beyond those the page fills, so a new screen can be typed into.
@@ -201,6 +204,18 @@ struct PageSpreadsheetView: View {
             }
         }
         .onChange(of: editRequest) { editFromSettings() }
+        // A new word's class is the caregiver's choice: none is highlighted,
+        // so Return cannot pick one for them. The arrows still walk to one.
+        .onChange(of: draft) {
+            if choosingClass { highlighted = -1 }
+        }
+        .onReceive(NotificationCenter.default.publisher(
+            for: UIResponder.keyboardWillChangeFrameNotification)) { note in
+            let end = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect
+            softKeyboardUp = (end?.height ?? 0) > 150
+        }
+        .onReceive(NotificationCenter.default.publisher(
+            for: UIResponder.keyboardWillHideNotification)) { _ in softKeyboardUp = false }
         // Undo can take away the screen the cursor was on.
         .onChange(of: tiles) {
             let last = screens * cells.perScreen - 1
@@ -277,14 +292,21 @@ struct PageSpreadsheetView: View {
                               onRaise: { keyboardRun = true },
                               onLowered: keyboardLowered)
                     .frame(height: 34)
+                // What the typed text can become, beside it: the primary is
+                // what Return does.
+                ForEach(guides) { guide in
+                    guideButton(guide)
+                }
             }
+            // One height with or without the buttons, so they never move the grid.
+            .frame(height: 46)
             if let error {
                 Label(error, systemImage: "exclamationmark.triangle.fill")
                     .font(.caption)
                     .foregroundStyle(.orange)
             }
-            if draft != nil, !suggestions.isEmpty {
-                suggestionStrip
+            if draft != nil || keyboardRun {
+                typingPanel
             }
         }
         .padding(.horizontal, 14)
@@ -471,6 +493,126 @@ struct PageSpreadsheetView: View {
         )
     }
 
+    // MARK: - Typing panel
+
+    /// Under the input row while typing: what the typed text could become, and
+    /// the next step it can take — a link, a class. One fixed height, up from
+    /// the first key to the keyboard going down, so moving from cell to cell
+    /// never moves the grid.
+    static let panelHeight: CGFloat = 96
+
+    private var typingPanel: some View {
+        HStack(spacing: 10) {
+            if suggestions.isEmpty {
+                Text(draft?.isEmpty ?? true
+                     ? "Type a word, or > for a folder to a page"
+                     : "word  ·  word, class  ·  word > page")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                Spacer(minLength: 0)
+            } else {
+                VStack(alignment: .leading, spacing: 4) {
+                    suggestionStrip
+                    if choosingClass {
+                        Text("Select a class for the new word")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+        .frame(height: Self.panelHeight)
+    }
+
+    /// What the typed text can become, as buttons beside it. At most two: the
+    /// primary is what Return does; the other is the next step it can take —
+    /// a link, or making the typed text a word of its own.
+    private struct TypingGuide: Identifiable {
+        enum Action { case text(String), commit }
+        let id: String
+        let title: String
+        let subtitle: String
+        let isPrimary: Bool
+        let action: Action
+    }
+
+    private var guides: [TypingGuide] {
+        guard draft != nil else { return [] }
+        let text = (draft ?? "").trimmingCharacters(in: .whitespaces)
+        if text.contains(">") { return [] }
+        if text.isEmpty {
+            // Nothing typed: the cell can be a folder.
+            return [TypingGuide(id: "folder", title: "> Page", subtitle: "folder",
+                                isPrimary: false, action: .text("> "))]
+        }
+        func add(_ shown: String, _ subtitle: String) -> TypingGuide {
+            TypingGuide(id: "add", title: "Add \(shown)", subtitle: subtitle,
+                        isPrimary: true, action: .commit)
+        }
+        func link(_ shown: String, _ typed: String) -> TypingGuide {
+            TypingGuide(id: "link", title: "\(shown) >", subtitle: "link to a page",
+                        isPrimary: false, action: .text("\(typed) > "))
+        }
+        let parts = text.split(separator: ",", maxSplits: 1, omittingEmptySubsequences: false)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+        if parts.count == 2 {
+            // `pony, animal`: a whole new word, ready to make or to link.
+            guard !parts[0].isEmpty,
+                  VocabularyClasses.known(parts[1].lowercased())?.isCaregiverSelectable == true
+            else { return [] }
+            return [add(parts[0], "new word"), link(parts[0], "\(parts[0]), \(parts[1])")]
+        }
+        switch BoardCell.existingWord(parts[0], lookup: lookup) {
+        case .found(let key):
+            let shown = lookup[key]?.displayName ?? key
+            return [add(shown, "this word"), link(shown, parts[0])]
+        case .missing:
+            let makeNew = TypingGuide(id: "new", title: "Add \(parts[0])", subtitle: "new word",
+                                      isPrimary: false, action: .text("\(parts[0]), "))
+            // Half a word: Return takes the highlighted one.
+            if suggestions.indices.contains(highlighted), case .word(let key) = suggestions[highlighted] {
+                return [add(lookup[key]?.displayName ?? key, "current selection"), makeNew]
+            }
+            // The classes are already on show below: choosing one is the step.
+            return []
+        case .ambiguous:
+            return []
+        }
+    }
+
+    /// A capsule the size of the well's filter chips, with its caption under
+    /// it, outside: the row stays the input's, not the buttons'.
+    private func guideButton(_ guide: TypingGuide) -> some View {
+        VStack(spacing: 1) {
+            Button { apply(guide) } label: {
+                Text(guide.title)
+                    .font(.subheadline.weight(guide.isPrimary ? .semibold : .regular))
+                    .lineLimit(1)
+                    .padding(.horizontal, 12).padding(.vertical, 5)
+                    .foregroundStyle(guide.isPrimary ? Color.white : Color.accentColor)
+                    .background(Capsule().fill(guide.isPrimary
+                                               ? Color.accentColor
+                                               : Color.accentColor.opacity(0.12)))
+            }
+            .buttonStyle(.plain)
+            Text(guide.subtitle)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+    }
+
+    private func apply(_ guide: TypingGuide) {
+        switch guide.action {
+        case .commit:
+            _ = key(.enter)
+        case .text(let text):
+            draft = text
+            highlighted = 0
+            error = nil
+        }
+    }
+
     private var suggestionStrip: some View {
         ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
@@ -513,6 +655,11 @@ struct PageSpreadsheetView: View {
             Label("New page \u{201C}\(PageNaming.displayName(key))\u{201D}", systemImage: "folder.badge.plus")
                 .font(.subheadline)
                 .padding(.horizontal, 8).padding(.vertical, 6)
+        case .systemPages(let count):
+            Label("BlasterAI 60 pages (\(count))…", systemImage: "square.grid.3x3.fill")
+                .font(.subheadline.weight(.medium))
+                .padding(.horizontal, 10).padding(.vertical, 7)
+                .background(Capsule().fill(Color.accentColor.opacity(0.12)))
         case .wordClass(let name):
             let color = TileColorResolver.color(for: VocabularyClasses.known(name)?.defaultPartOfSpeech)
             HStack(spacing: 6) {
@@ -522,6 +669,12 @@ struct PageSpreadsheetView: View {
             .padding(.horizontal, 10).padding(.vertical, 7)
             .background(Capsule().fill(color.opacity(0.18)))
         }
+    }
+
+    /// The strip is offering classes for a word the vocabulary lacks.
+    private var choosingClass: Bool {
+        draft != nil && suggestions.contains { $0.isWordClass }
+            && !suggestions.contains { if case .word = $0 { return true }; return false }
     }
 
     private var suggestions: [CellSuggestion] {
@@ -534,7 +687,17 @@ struct PageSpreadsheetView: View {
     private func grid(width: CGFloat) -> some View {
         let side = max(40, (width - spacing * CGFloat(cells.cols - 1)) / CGFloat(cells.cols))
         let columns = Array(repeating: GridItem(.fixed(side), spacing: spacing), count: cells.cols)
-        return VStack(alignment: .leading, spacing: 20) {
+        // Typing on the on-screen keyboard: the row being typed, alone, so
+        // the keyboard never covers the cell and the panel above stays near.
+        if softKeyboardUp, hasCursor, selection.isEmpty {
+            return AnyView(LazyVGrid(columns: columns, spacing: spacing) {
+                ForEach(0..<cells.cols, id: \.self) { col in
+                    let cell = PageCells.Cell(screen: selected.screen, row: selected.row, col: col)
+                    cellView(cell, side: side).id(cell)
+                }
+            })
+        }
+        return AnyView(VStack(alignment: .leading, spacing: 20) {
             ForEach(0..<screens, id: \.self) { screen in
                 VStack(alignment: .leading, spacing: 8) {
                     if screens > 1 {
@@ -563,7 +726,7 @@ struct PageSpreadsheetView: View {
                     .font(.subheadline)
             }
             .buttonStyle(.bordered)
-        }
+        })
     }
 
     @ViewBuilder
@@ -1192,7 +1355,7 @@ struct PageSpreadsheetView: View {
             cancelEdit()
             keyboardRun = false
         case .tab:
-            if count > 0, highlighted < count,
+            if suggestions.indices.contains(highlighted),
                suggestions[highlighted].applied(to: draft ?? "") != draft {
                 accept(suggestions[highlighted])
             } else {
@@ -1204,12 +1367,13 @@ struct PageSpreadsheetView: View {
             // A half-typed word or page takes the highlighted suggestion
             // first, so `go > pl` ⏎ opens Places rather than making page "pl".
             // A new page is then an explicit choice: the last suggestion.
-            if let text = draft, !resolvesToExisting(text), highlighted < count {
+            if let text = draft, !resolvesToExisting(text), suggestions.indices.contains(highlighted) {
                 let suggestion = suggestions[highlighted]
                 accept(suggestion)
                 // A class fills in and waits: `pony` ⏎ shows `pony, people`
                 // for a look before a word is made with the first class offered.
                 if suggestion.isWordClass, !text.contains(",") { return true }
+                if suggestion.opensMore { return true }
             }
             // Across, then on to the next row: a page is filled a row at a time.
             commit(thenMove: (0, 1))
@@ -1247,6 +1411,9 @@ enum CellSuggestion: Hashable {
     case newPage(String)
     /// A class for a word not in the vocabulary: `pony` → `pony, animal`.
     case wordClass(String)
+    /// After `>` with nothing typed: the scene's own pages are all listed,
+    /// and this opens BlasterAI 60's (`> sys:`), which would otherwise bury them.
+    case systemPages(count: Int)
 
     static let limit = 8
 
@@ -1288,11 +1455,21 @@ enum CellSuggestion: Hashable {
         return words + VocabularyClasses.caregiverSelectable.map { .wordClass($0.name) }
     }
 
+    /// Fills the field and waits for the next choice, rather than being one.
+    var opensMore: Bool {
+        if case .systemPages = self { return true }
+        return false
+    }
+
     var isWordClass: Bool {
         if case .wordClass = self { return true }
         return false
     }
 
+    /// Link targets for what follows `>`. Nothing typed yet: every page of
+    /// the scene, then one chip for BlasterAI 60's pages, so the whole set
+    /// is in view before a letter is typed. Typing narrows both. After
+    /// `sys:` (`scenePages` empty), every BlasterAI 60 page.
     private static func pages(matching query: String, scenePages: [PageSpec],
                               systemPages: [PageSpec], allowNew: Bool) -> [CellSuggestion] {
         let q = WordFinder.normalize(query)
@@ -1302,7 +1479,14 @@ enum CellSuggestion: Hashable {
         }
         let own = scenePages.filter(matches).map { CellSuggestion.page($0.key, isSystem: false) }
         let system = systemPages.filter(matches).map { CellSuggestion.page($0.key, isSystem: true) }
-        var result = Array((own + system).prefix(limit))
+        var result: [CellSuggestion]
+        if !allowNew {
+            result = system                                   // `> sys:`
+        } else if q.isEmpty {
+            result = own + (systemPages.isEmpty ? [] : [.systemPages(count: systemPages.count)])
+        } else {
+            result = own + system.prefix(limit)
+        }
         let key = BoardCell.pageKey(query)
         if allowNew, !key.isEmpty, !scenePages.contains(where: { $0.key == key }) {
             result.append(.newPage(key))
@@ -1323,6 +1507,9 @@ enum CellSuggestion: Hashable {
             return lhs.isEmpty ? "> \(page)" : "\(lhs) > \(page)"
         case .newPage(let key):
             return lhs.isEmpty ? "> \(key)" : "\(lhs) > \(key)"
+        case .systemPages:
+            let page = BoardCell.systemMarker
+            return lhs.isEmpty ? "> \(page)" : "\(lhs) > \(page)"
         case .wordClass(let name):
             let side = arrow.map { String(text[..<$0]) } ?? text
             let word = side.split(separator: ",", maxSplits: 1).first
@@ -1389,6 +1576,9 @@ struct CellTextField: UIViewRepresentable {
 
     func updateUIView(_ field: KeyedTextField, context: Context) {
         context.coordinator.parent = self
+        // Set on every update: it says what a tap or a key does now, and that
+        // changes as a cell is chosen.
+        if field.placeholder != placeholder { field.placeholder = placeholder }
         field.onKey = onKey
         field.onRaise = onRaise
         field.onLowered = onLowered
