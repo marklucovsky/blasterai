@@ -114,6 +114,8 @@ struct PageSpreadsheetView: View {
     /// The on-screen keyboard is showing (not a hardware keyboard's bar):
     /// the grid then narrows to the row being typed.
     @State private var softKeyboardUp = false
+    /// Not observed: a cache the body fills, so writing it never re-renders.
+    @State private var suggestionMemo = SuggestionMemo()
     @State private var error: String?
     @State private var highlighted = 0
     /// Screens shown beyond those the page fills, so a new screen can be typed into.
@@ -124,13 +126,25 @@ struct PageSpreadsheetView: View {
     @State private var wellSearchToken = 0
     @AppStorage("pageEditorWellVisible") private var wellVisible = true
     @Environment(\.horizontalSizeClass) private var hSizeClass
+    @Environment(\.verticalSizeClass) private var vSizeClass
+    /// A phone held upright: the page's columns are shown a band at a time,
+    /// sideways. Turned on its side, a phone has the width for every column
+    /// and gets the iPad's grid, scrolling down.
+    private var isPhoneWidth: Bool { hSizeClass == .compact && vSizeClass != .compact }
+    /// The phone's whole-page view: every column, small, to find a cell.
+    @State private var wholePage = false
+    /// The band in view on a phone: its first column.
+    @State private var bandShown: Int? = 0
 
     /// Where the well goes: beside the grid on a landscape iPad or a wide Mac
     /// window, above it on a portrait iPad (the grid keeps its 10×6 there,
-    /// with room to spare below the keyboard's reach), nowhere on a phone.
+    /// with room to spare below the keyboard's reach), nowhere on a phone
+    /// either way up.
     private enum WellPlacement { case side, top, none }
     private func wellPlacement(_ size: CGSize) -> WellPlacement {
-        guard hSizeClass == .regular else { return .none }
+        // A phone on its side, even a large one the system calls regular
+        // width, has no height to spare for a well beside the grid.
+        guard hSizeClass == .regular, vSizeClass != .compact else { return .none }
         return size.width > size.height * 1.15 ? .side : .top
     }
     /// The cell a drag is over, and whether it is over the cell's leading
@@ -181,16 +195,31 @@ struct PageSpreadsheetView: View {
                     GeometryReader { geo in
                         ScrollViewReader { proxy in
                             ScrollView {
-                                grid(width: geo.size.width - 32)
-                                    .padding(16)
+                                if isPhoneWidth && !wholePage {
+                                    bandedGrid(width: geo.size.width)
+                                } else {
+                                    grid(side: fittedSide(geo.size.width - 32,
+                                                          minimum: isPhoneWidth ? 18 : 40))
+                                        .padding(16)
+                                }
                             }
-                            .onChange(of: selected) { proxy.scrollTo(selected, anchor: nil) }
+                            .onChange(of: selected) {
+                                proxy.scrollTo(selected, anchor: nil)
+                                showBand(of: selected)
+                            }
+                            .onChange(of: wholePage) {
+                                DispatchQueue.main.async { showBand(of: selected) }
+                            }
                             // The keyboard rising, the suggestion strip opening
                             // or the bars hiding all shrink or move the grid:
                             // bring the cursor's cell back into view once the
                             // new layout has landed — scrolling in the same pass
                             // scrolls against the old one and misses.
                             .onChange(of: geo.size.height) {
+                                // Folded to the typing row, the row is in view
+                                // already: a second animation only fights the
+                                // keyboard's.
+                                guard !softKeyboardUp else { return }
                                 DispatchQueue.main.async {
                                     withAnimation { proxy.scrollTo(selected, anchor: nil) }
                                 }
@@ -212,10 +241,10 @@ struct PageSpreadsheetView: View {
         .onReceive(NotificationCenter.default.publisher(
             for: UIResponder.keyboardWillChangeFrameNotification)) { note in
             let end = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect
-            softKeyboardUp = (end?.height ?? 0) > 150
+            setSoftKeyboardUp((end?.height ?? 0) > 150, note)
         }
         .onReceive(NotificationCenter.default.publisher(
-            for: UIResponder.keyboardWillHideNotification)) { _ in softKeyboardUp = false }
+            for: UIResponder.keyboardWillHideNotification)) { note in setSoftKeyboardUp(false, note) }
         // Undo can take away the screen the cursor was on.
         .onChange(of: tiles) {
             let last = screens * cells.perScreen - 1
@@ -264,14 +293,20 @@ struct PageSpreadsheetView: View {
                     }
                     .accessibilityLabel(wellVisible ? "Hide words" : "Show words")
                 }
+                if isPhoneWidth {
+                    Button { wholePage.toggle() } label: {
+                        Image(systemName: wholePage ? "arrow.left.and.right.square" : "square.grid.3x3")
+                    }
+                    .accessibilityLabel(wholePage ? "Show columns up close" : "Show the whole page")
+                }
                 Text(hasCursor && selection.isEmpty ? address(selected) : "")
                     .font(.subheadline.monospacedDigit().weight(.semibold))
                     .foregroundStyle(.secondary)
-                    .frame(minWidth: 64, alignment: .leading)
+                    .frame(minWidth: isPhoneWidth ? 0 : 64, alignment: .leading)
                 CellTextField(text: draftBinding,
                               placeholder: hasCursor
-                                  ? "word · word, class · word > page · > page"
-                                  : "Tap a cell, or type to fill the next empty one",
+                                  ? (isPhoneWidth ? "word · word > page" : "word · word, class · word > page · > page")
+                                  : (isPhoneWidth ? "Tap a cell, or type" : "Tap a cell, or type to fill the next empty one"),
                               isEditing: draft != nil,
                               showsKeyboard: keyboardRun,
                               arrowsChoose: draft != nil && !suggestions.isEmpty,
@@ -291,11 +326,13 @@ struct PageSpreadsheetView: View {
                               onClear: { clear(targets) },
                               onRaise: { keyboardRun = true },
                               onLowered: keyboardLowered)
-                    .frame(height: 34)
+                    .frame(maxWidth: .infinity, minHeight: 34, maxHeight: 34)
                 // What the typed text can become, beside it: the primary is
                 // what Return does.
-                ForEach(guides) { guide in
-                    guideButton(guide)
+                if !isPhoneWidth {
+                    ForEach(guides) { guide in
+                        guideButton(guide)
+                    }
                 }
             }
             // One height with or without the buttons, so they never move the grid.
@@ -382,7 +419,7 @@ struct PageSpreadsheetView: View {
             Button { copy([index]) } label: { barLabel("Copy", "doc.on.doc", labelled) }
             Button { paste() } label: { barLabel("Paste", "doc.on.clipboard", labelled) }
             Button(role: .destructive) { clear([index]) } label: {
-                barLabel("Clear", "xmark.square", labelled)
+                barLabel("Clear", "trash", labelled)
             }
             .tint(.red)
         } else {
@@ -411,7 +448,7 @@ struct PageSpreadsheetView: View {
         Button { copy(selection) } label: { barLabel("Copy", "doc.on.doc", labelled) }
             .disabled(filled.isEmpty)
         Button(role: .destructive) { clear(selection) } label: {
-            barLabel("Clear", "xmark.square", labelled)
+            barLabel("Clear", "trash", labelled)
         }
         .tint(.red)
         .disabled(filled.isEmpty)
@@ -447,7 +484,7 @@ struct PageSpreadsheetView: View {
         Button { paste() } label: { Label("Paste", systemImage: "doc.on.clipboard") }
         if !filled.isEmpty {
             Button(role: .destructive) { clear(indices) } label: {
-                Label(filled.count == 1 ? "Clear Cell" : "Clear \(filled.count) Cells", systemImage: "xmark.square")
+                Label(filled.count == 1 ? "Clear Cell" : "Clear \(filled.count) Cells", systemImage: "trash")
             }
         }
     }
@@ -502,6 +539,19 @@ struct PageSpreadsheetView: View {
     static let panelHeight: CGFloat = 96
 
     private var typingPanel: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            // A phone's input row has no room beside the field.
+            if isPhoneWidth, !guides.isEmpty {
+                HStack(spacing: 10) {
+                    ForEach(guides) { guideButton($0) }
+                }
+            }
+            typingStrip
+        }
+        .frame(height: isPhoneWidth ? Self.panelHeight + 44 : Self.panelHeight)
+    }
+
+    private var typingStrip: some View {
         HStack(spacing: 10) {
             if suggestions.isEmpty {
                 Text(draft?.isEmpty ?? true
@@ -521,7 +571,7 @@ struct PageSpreadsheetView: View {
                 }
             }
         }
-        .frame(height: Self.panelHeight)
+        .frame(maxHeight: .infinity)
     }
 
     /// What the typed text can become, as buttons beside it. At most two: the
@@ -677,15 +727,149 @@ struct PageSpreadsheetView: View {
             && !suggestions.contains { if case .word = $0 { return true }; return false }
     }
 
+    /// Ranked once per draft, not once per reader: a render reads this from
+    /// the bar, the strip, the panel and `choosingClass`, and each ranking
+    /// walks the whole vocabulary (a 100 ms hitch per keystroke on an
+    /// iPhone 16 Pro before it was kept).
     private var suggestions: [CellSuggestion] {
-        CellSuggestion.suggestions(for: draft ?? "", lookup: lookup,
-                                   scenePages: scene.pages, systemPages: systemPages)
+        let key = SuggestionMemo.Key(draft: draft ?? "", words: lookup.count,
+                                     scenePages: scene.pages.count, systemPages: systemPages.count)
+        if let kept = suggestionMemo.value, suggestionMemo.key == key { return kept }
+        let fresh = CellSuggestion.suggestions(for: draft ?? "", lookup: lookup,
+                                               scenePages: scene.pages, systemPages: systemPages)
+        suggestionMemo.key = key
+        suggestionMemo.value = fresh
+        return fresh
     }
 
     // MARK: - Grid
 
-    private func grid(width: CGFloat) -> some View {
-        let side = max(40, (width - spacing * CGFloat(cells.cols - 1)) / CGFloat(cells.cols))
+    /// A cell's side when `width` holds every column.
+    private func fittedSide(_ width: CGFloat, minimum: CGFloat) -> CGFloat {
+        max(minimum, (width - spacing * CGFloat(cells.cols - 1)) / CGFloat(cells.cols))
+    }
+
+    // MARK: - Phone bands
+
+    /// Columns a phone shows at once: the phone board's own width, so a band
+    /// here is a screen there.
+    private var bandWidth: Int { min(cells.cols, BoardLayout.standard.grid(phone: true).cols) }
+
+    /// Where the page's bands start, cut by the child board's rule
+    /// (`ColumnBands`): a column with nothing in it on any screen is a gap a
+    /// band does not start on. An empty page is cut every `bandWidth`.
+    private var bandStarts: [Int] {
+        let total = screens * cells.perScreen
+        let filled = Set((0..<total).compactMap { i in
+            cells.entry(at: i, in: tiles).map { _ in cells.cell(at: i).col }
+        })
+        guard !filled.isEmpty else { return Array(stride(from: 0, to: cells.cols, by: bandWidth)) }
+        let starts = ColumnBands.bandStarts(sourceCols: cells.cols, cols: bandWidth) { !filled.contains($0) }
+        return starts.isEmpty ? [0] : starts
+    }
+
+    private func bandSide(_ width: CGFloat) -> CGFloat {
+        (width - 32 - spacing * CGFloat(bandWidth - 1)) / CGFloat(bandWidth)
+    }
+
+    /// The bands: every column in one, none wider than a phone screen. A
+    /// band runs from a start (`bandStarts`) for `bandWidth` columns, cut
+    /// short where the next starts. Blank columns after the last word are
+    /// still bands, so an empty column can be typed into. Running each band
+    /// to the next start made one band six wide on a five-column page, wider
+    /// than the screen, and the scroll snapped back to its start.
+    private var bands: [Range<Int>] {
+        let starts = bandStarts
+        var result: [Range<Int>] = []
+        var c = 0
+        while c < cells.cols {
+            let next = starts.first { $0 > c } ?? cells.cols
+            let end = min(c + bandWidth, next)
+            result.append(c..<end)
+            c = end
+        }
+        return result
+    }
+
+    /// The page at a size a finger can hit, a band in view. Built a band at a
+    /// time, side by side, so the scroll settles on a band's first column
+    /// (`.viewAligned`) and the cursor's band can be scrolled to by id.
+    private func bandedGrid(width: CGFloat) -> some View {
+        let side = bandSide(width)
+        return ScrollView(.horizontal, showsIndicators: false) {
+            HStack(alignment: .top, spacing: spacing) {
+                ForEach(bands, id: \.lowerBound) { band in
+                    bandColumns(band, side: side).id(band.lowerBound)
+                }
+                // A short last band (folders in 9–10) pads out to a full
+                // one, as the child board's does, so it can sit at the left
+                // edge like the rest instead of half-showing the band before.
+                let short = bandWidth - (bands.last?.count ?? bandWidth)
+                if short > 0 {
+                    Color.clear.frame(width: CGFloat(short) * (side + spacing) - spacing, height: 1)
+                }
+            }
+            .scrollTargetLayout()
+        }
+        .contentMargins(.horizontal, 16, for: .scrollContent)
+        .scrollTargetBehavior(.viewAligned)
+        .scrollPosition(id: $bandShown, anchor: .leading)
+        .padding(.vertical, 16)
+    }
+
+    /// One band's columns: every screen, the system row on each, and only the
+    /// cursor's row while the on-screen keyboard is up.
+    private func bandColumns(_ band: Range<Int>, side: CGFloat) -> some View {
+        let typingRow = softKeyboardUp && hasCursor && selection.isEmpty
+        return VStack(alignment: .leading, spacing: 20) {
+            ForEach(typingRow ? [selected.screen] : Array(0..<screens), id: \.self) { screen in
+                VStack(alignment: .leading, spacing: spacing) {
+                    if screens > 1, !typingRow {
+                        Text(band.lowerBound == 0 ? "Screen \(screen + 1)" : " ")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                    if !typingRow, !chrome.isEmpty {
+                        HStack(spacing: spacing) {
+                            ForEach(band, id: \.self) { col in
+                                let entry = col < chrome.count ? chrome[col] : TileEntry.spacer()
+                                entryView(entry)
+                                    .frame(width: side, height: side)
+                                    .opacity(entry.isEmptyCell ? 0 : 0.4)
+                                    .allowsHitTesting(false)
+                            }
+                        }
+                    }
+                    ForEach(typingRow ? [selected.row] : Array(0..<cells.rows), id: \.self) { row in
+                        HStack(spacing: spacing) {
+                            ForEach(band, id: \.self) { col in
+                                let cell = PageCells.Cell(screen: screen, row: row, col: col)
+                                cellView(cell, side: side).frame(width: side).id(cell)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// The grid folds to the typing row (or back out) in step with the
+    /// keyboard, over the keyboard's own duration: one movement, not a jump
+    /// after it lands. The frame notification fires again for the suggestion
+    /// strip and the bars, so an unchanged value is not set again.
+    private func setSoftKeyboardUp(_ up: Bool, _ note: Notification) {
+        KeyboardMotion.set($softKeyboardUp, to: up, note)
+    }
+
+    /// Scrolls sideways to the band holding `cell`.
+    private func showBand(of cell: PageCells.Cell) {
+        guard isPhoneWidth, !wholePage else { return }
+        let start = bands.first { $0.contains(cell.col) }?.lowerBound ?? 0
+        guard bandShown != start else { return }
+        withAnimation { bandShown = start }
+    }
+
+    private func grid(side: CGFloat) -> some View {
         let columns = Array(repeating: GridItem(.fixed(side), spacing: spacing), count: cells.cols)
         // Typing on the on-screen keyboard: the row being typed, alone, so
         // the keyboard never covers the cell and the panel above stays near.
@@ -759,7 +943,9 @@ struct PageSpreadsheetView: View {
             // ring, filled with a check on the chosen ones. Its corner is its
             // own target, so a tap there adds to the selection or takes away
             // from it, where a tap on the rest of the cell selects only it.
-            if entry != nil {
+            // Not on the phone's whole page: there a cell is for finding, and
+            // a ring would cover it.
+            if entry != nil, !wholePage {
                 Image(systemName: isChecked ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: max(14, side * 0.22), weight: .semibold))
                     .symbolRenderingMode(.palette)
@@ -802,7 +988,10 @@ struct PageSpreadsheetView: View {
             onUpdate: { inserts in dropTarget = index; dropInserts = inserts },
             onExit: { if dropTarget == index { dropTarget = nil } },
             onDrop: { text, inserts in drop(text, at: index, inserting: inserts) }))
-        .contextMenu {
+        // Right-click only. On touch a long press is the drag: the menu on
+        // the same press popped up as a drag began, and everything it held is
+        // on the option bar once the cell is tapped.
+        .modifier(MacContextMenu(isEnabled: RuntimePlatform.isMac) {
             let menuTargets = isInSelection ? targets : [index]
             if menuTargets.count == 1, let entry, lookup[entry.key] != nil {
                 Button { onProperties(entry.key) } label: {
@@ -810,7 +999,7 @@ struct PageSpreadsheetView: View {
                 }
             }
             selectionActions(menuTargets)
-        }
+        })
         .accessibilityLabel(address(cell) + ": " + (entry.map { cellText(index: index, $0) } ?? "empty"))
     }
 
@@ -830,7 +1019,7 @@ struct PageSpreadsheetView: View {
         } else if let tile = lookup[entry.key] {
             PageTileCell(tile: tile, link: entry.link, linkColor: entry.linkColor,
                          isAudible: entry.isAudible, isConcealed: entry.isConcealed,
-                         revealLevel: scene.revealLevelCount > 0 ? entry.revealLevel : 0,
+                         revealLevel: scene.revealLevelCount > 0 && !wholePage ? entry.revealLevel : 0,
                          isAbovePreview: previewLevel > 0 && entry.isAboveLevel(previewLevel))
                 .overlay(alignment: .bottomTrailing) {
                     TileReviewBadge(tile: tile,
@@ -883,6 +1072,13 @@ struct PageSpreadsheetView: View {
     // MARK: - Selection
 
     private func tap(_ cell: PageCells.Cell) {
+        // The whole page is for finding a cell: the tap chooses it and goes
+        // back to the band it sits in.
+        if wholePage {
+            wholePage = false
+            select(cell)
+            return
+        }
         // Tapping away from an edit keeps it, as a spreadsheet does; Cancel
         // is there to drop it. One that cannot be made yet (`pony` with no
         // class) stays open with its error instead of being lost.
@@ -1389,6 +1585,20 @@ struct PageSpreadsheetView: View {
     }
 }
 
+/// A context menu where it is a right-click (the Mac), none on touch.
+private struct MacContextMenu<Items: View>: ViewModifier {
+    let isEnabled: Bool
+    @ViewBuilder var items: () -> Items
+
+    func body(content: Content) -> some View {
+        if isEnabled {
+            content.contextMenu { items() }
+        } else {
+            content
+        }
+    }
+}
+
 /// Makes a filled cell draggable; an empty one (nil payload) is only a target.
 private struct DragSource<Preview: View>: ViewModifier {
     let payload: String?
@@ -1571,6 +1781,9 @@ struct CellTextField: UIViewRepresentable {
         field.delegate = context.coordinator
         field.addTarget(context.coordinator, action: #selector(Coordinator.changed(_:)), for: .editingChanged)
         field.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        // Its placeholder must not set the row's width: a long one pushed a
+        // phone's whole editor wider than the screen.
+        field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         return field
     }
 
@@ -1854,5 +2067,37 @@ private struct CellDropDelegate: DropDelegate {
             DispatchQueue.main.async { onDrop(text, inserting) }
         }
         return true
+    }
+}
+
+/// The typing strip's suggestions for one draft, kept across the reads of a
+/// render. A class, so the body can fill it without invalidating itself.
+final class SuggestionMemo {
+    struct Key: Equatable {
+        var draft: String
+        var words: Int
+        var scenePages: Int
+        var systemPages: Int
+    }
+    var key: Key?
+    var value: [CellSuggestion]?
+}
+
+/// The on-screen keyboard's own motion, for views that move with it. The
+/// keyboard runs a spring UIKit does not name; this one is the usual match
+/// for it, over the duration the notification gives.
+enum KeyboardMotion {
+    static func animation(_ note: Notification) -> Animation {
+        let duration = note.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double ?? 0.25
+        guard duration > 0 else { return .linear(duration: 0) }
+        return .interpolatingSpring(mass: 3, stiffness: 1000, damping: 500, initialVelocity: 0)
+    }
+
+    /// Sets `value` on the keyboard's curve. The frame notification fires
+    /// again for the suggestion strip and the bars; an unchanged value is
+    /// not set again, so nothing re-renders for it.
+    static func set(_ value: Binding<Bool>, to new: Bool, _ note: Notification) {
+        guard value.wrappedValue != new else { return }
+        withAnimation(animation(note)) { value.wrappedValue = new }
     }
 }

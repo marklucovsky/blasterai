@@ -261,7 +261,9 @@ struct PageEditorView: View {
         Group {
             if page != nil {
                 VStack(spacing: 0) {
-                    if !keyboardUp { pageHeader }
+                    if !keyboardUp {
+                        pageHeader.transition(.move(edge: .top).combined(with: .opacity))
+                    }
                     PageSpreadsheetView(
                         scene: scene,
                         tiles: tilesBinding,
@@ -291,15 +293,18 @@ struct PageEditorView: View {
                             ?? "\(boardGrid.cols)×\(boardGrid.rows) · this device's layout")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(keyboardUp ? .hidden : .automatic, for: .navigationBar, .tabBar)
-        .animation(.easeOut(duration: 0.2), value: keyboardUp)
         // A hardware keyboard reports only its shortcut bar, well under this.
+        // The header steps aside on the keyboard's own curve, so it and the
+        // keyboard read as one movement rather than a blink and then a rise.
         .onReceive(NotificationCenter.default.publisher(
             for: UIResponder.keyboardWillChangeFrameNotification)) { note in
             let end = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect
-            keyboardUp = (end?.height ?? 0) > 150
+            KeyboardMotion.set($keyboardUp, to: (end?.height ?? 0) > 150, note)
         }
         .onReceive(NotificationCenter.default.publisher(
-            for: UIResponder.keyboardWillHideNotification)) { _ in keyboardUp = false }
+            for: UIResponder.keyboardWillHideNotification)) { note in
+            KeyboardMotion.set($keyboardUp, to: false, note)
+        }
         // Editing a page can change what the folders pointing AT it should
         // look like. Automatic folder colors are stored, not computed when
         // drawn, so this is the one moment they are allowed to move — see
