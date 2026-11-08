@@ -102,9 +102,15 @@ enum SceneLinkColors {
     static func refresh(scene: BlasterScene, context: ModelContext) {
         let descriptor = FetchDescriptor<TileModel>()
         let tiles = (try? context.fetch(descriptor)) ?? []
+        refresh(scene: scene, vocabulary: tiles.map(\.key))
+    }
+
+    /// The same, with the vocabulary the caller already has: the page editor
+    /// holds every tile in a query, and fetching them again cost it time.
+    static func refresh(scene: BlasterScene, vocabulary: [String]) {
         var pages = scene.pages
         let changed = refresh(&pages,
-                              vocabulary: tiles.map(\.key),
+                              vocabulary: vocabulary,
                               partOfSpeech: { PartOfSpeechIndex.partOfSpeech(for: $0) })
         if changed { scene.pages = pages }
     }
