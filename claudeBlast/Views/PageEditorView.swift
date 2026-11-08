@@ -79,15 +79,25 @@ struct PageEditorView: View {
     /// binding, and deliberately NOT the presentation state.
     @State private var renameDraft = ""
 
-    /// Read once per render and handed to the grid. Each call rebuilds the
-    /// dictionary over every TileModel, so reading it per cell cost
-    /// (all tiles × cells) SwiftData property reads on every render.
+    /// Every tile by key, handed to the grid. Built once per vocabulary, not
+    /// once per render: each build reads `key` from every TileModel, ~30 ms
+    /// on an iPhone 16 Pro, and the editor renders on every keystroke.
+    /// Rebuilt when a tile is added or removed; a tile's key never changes.
     private var tileLookup: [String: TileModel] {
+        let key = TileLookupMemo.Key(count: allTiles.count,
+                                     first: allTiles.first?.persistentModelID,
+                                     last: allTiles.last?.persistentModelID)
+        if let kept = tileLookupMemo.value, tileLookupMemo.key == key { return kept }
         let state = PerfSignposts.signposter.beginInterval(
             "pageEditor.tileLookup", "\(allTiles.count) tiles")
         defer { PerfSignposts.signposter.endInterval("pageEditor.tileLookup", state) }
-        return Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
+        let built = Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
+        tileLookupMemo.key = key
+        tileLookupMemo.value = built
+        return built
     }
+    /// Not observed: filled from the body, so writing it never re-renders.
+    @State private var tileLookupMemo = TileLookupMemo()
     private var pageIndex: Int? { scene.pages.firstIndex { $0.key == pageKey } }
     private var page: PageSpec? { scene.pages.first { $0.key == pageKey } }
 
@@ -314,9 +324,16 @@ struct PageEditorView: View {
         // Watches the whole scene, not `page?.tiles`. A folder's color depends
         // on a *different* page's contents than the one it sits on, so the
         // narrower dependency was simply the wrong one.
-        .onAppear { SceneLinkColors.refresh(scene: scene, context: modelContext) }
+        //
+        // On open it waits for the editor to be on screen: it is not needed
+        // to draw the page, and run in `onAppear` it lengthened the freeze
+        // between tapping Edit This Page and the editor appearing.
+        .task {
+            try? await Task.sleep(for: .milliseconds(500))
+            SceneLinkColors.refresh(scene: scene, vocabulary: allTiles.map(\.key))
+        }
         .onChange(of: scene.pages) {
-            SceneLinkColors.refresh(scene: scene, context: modelContext)
+            SceneLinkColors.refresh(scene: scene, vocabulary: allTiles.map(\.key))
         }
         .toolbar { pageEditorToolbar }
         .sheet(isPresented: $isLinkingPage) {
@@ -1268,4 +1285,15 @@ struct LinkColorPickerList: View {
             }
         }
     }
+}
+
+/// The page editor's tile lookup, kept across renders (`tileLookup`).
+final class TileLookupMemo {
+    struct Key: Equatable {
+        var count: Int
+        var first: PersistentIdentifier?
+        var last: PersistentIdentifier?
+    }
+    var key: Key?
+    var value: [String: TileModel]?
 }

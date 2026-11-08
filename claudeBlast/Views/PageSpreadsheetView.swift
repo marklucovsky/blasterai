@@ -797,7 +797,9 @@ struct PageSpreadsheetView: View {
     private func bandedGrid(width: CGFloat) -> some View {
         let side = bandSide(width)
         return ScrollView(.horizontal, showsIndicators: false) {
-            HStack(alignment: .top, spacing: spacing) {
+            // Lazy: a phone shows one band, so the editor opens building that
+            // band and its neighbour, not every column of every screen.
+            LazyHStack(alignment: .top, spacing: spacing) {
                 ForEach(bands, id: \.lowerBound) { band in
                     bandColumns(band, side: side).id(band.lowerBound)
                 }
