@@ -34,6 +34,25 @@ enum ColumnBands {
         return tiles.chunked(into: max(1, cols * contentRows))
     }
 
+    /// The columns where bands of `cols` start: a band starts at its first
+    /// column with something in it and runs `cols` columns from there, blank
+    /// ones included — only the blanks before a band are skipped. Collapsing
+    /// every blank column pulled the next cluster into a short one's gap
+    /// (Seasons' three months took winter as their fourth column, Mark
+    /// 2026-10-29). Shared by the child board's screens and the phone editor's
+    /// bands, so the two cut a page the same way.
+    static func bandStarts(sourceCols: Int, cols: Int, isBlank: (Int) -> Bool) -> [Int] {
+        guard cols > 0 else { return [0] }
+        var starts: [Int] = []
+        var c = 0
+        while c < sourceCols {
+            if isBlank(c) { c += 1; continue }
+            starts.append(c)
+            c += cols
+        }
+        return starts
+    }
+
     /// Screens of `cols × rows` cells, row-major, cut from `tiles` laid out
     /// `sourceCols × sourceRows` to a screen. Each source screen is cut on its
     /// own. Short bands and windows are padded with spacers so every word sits
@@ -52,18 +71,8 @@ enum ColumnBands {
             let isBlank = { (c: Int) in
                 !(0..<sourceRows).contains { r in at(r, c).map { !$0.isSpacer } ?? false }
             }
-            // A band starts at its first column with something in it and runs
-            // `cols` columns from there, blank ones included: only the blanks
-            // before a band are skipped. Collapsing every blank column pulled
-            // the next cluster into a short one's gap — Seasons' three months
-            // took winter as their fourth column (Mark 2026-10-29).
-            var bands: [[Int]] = []
-            var c = 0
-            while c < sourceCols {
-                if isBlank(c) { c += 1; continue }
-                bands.append(Array(c..<min(c + cols, sourceCols)))
-                c += cols
-            }
+            let bands = bandStarts(sourceCols: sourceCols, cols: cols, isBlank: isBlank)
+                .map { Array($0..<min($0 + cols, sourceCols)) }
             for band in bands {
                 for top in stride(from: 0, to: sourceRows, by: rows) {
                     var cells: [TileEntry] = []
