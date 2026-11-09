@@ -496,7 +496,8 @@ struct ShareBoardSheet: View {
             let systemLevel = BoardLevels.clamp(level, to: system.revealLevelCount)
             return ExportPages(scenePages: scene.pages(atLevel: level),
                                systemPages: system.pages(atLevel: systemLevel),
-                               systemHomePageKey: system.homePageKey).pages
+                               systemHomePageKey: system.homePageKey,
+                               rowKeys: BoardChrome.inherits(scene) ? BoardChrome.pageKeys : []).pages
         case .page(let page, let scene):
             // The page and everything it opens, in the scene and in BlasterAI
             // 60 alike — the I page prints with Play, Games and the rest.

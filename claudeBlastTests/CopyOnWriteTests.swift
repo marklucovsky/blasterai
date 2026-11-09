@@ -222,6 +222,18 @@ struct CopyOnWriteTests {
         #expect(whole.reachable(from: "me").map(\.key) == ["me", "actions", "feelings", "cats"])
     }
 
+    /// The row's folders open pages Home never links to; a scene that draws
+    /// the row exports them too.
+    @Test func anExportBringsWhatTheRowOpens() {
+        let system = makeSystem()
+        let home = PageSpec(key: "home", tiles: [TileEntry(key: "lion")])
+
+        let whole = ExportPages(scenePages: [home], systemPages: system.pages,
+                                systemHomePageKey: "home", rowKeys: ["people", "actions"])
+
+        #expect(whole.pages.map(\.key) == ["home", "people", "actions", "feelings"])
+    }
+
     @Test func anOpenBoardExportOfACopyCarriesTheCoreBoard() {
         let ctx = TestStore.freshContext()
         var lookup: [String: TileModel] = [:]

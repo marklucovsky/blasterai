@@ -87,13 +87,13 @@ enum OBFExporter {
         // OBF has no levels, so the board travels as the sharer's child sees it:
         // words above the current level go out as gaps, like concealed ones.
         //
-        // Only pages the scene's own links reach come along, not everything
-        // behind the system row: that is most of BlasterAI 60, and a zoo
-        // board would export as the whole core board. A row folder whose page
-        // came along goes out on every page, as it is drawn.
+        // A scene that draws the system row reaches its pages from every
+        // page, so they come along too: that is the board the child has. A
+        // copy of BlasterAI 60 reaches most of it only that way.
         let inheritsRow = BoardChrome.inherits(scene) && !scene.isDefault
         let whole = ExportPages(scenePages: scene.visiblePages, systemPages: systemPages,
-                                systemHomePageKey: systemHomePageKey)
+                                systemHomePageKey: systemHomePageKey,
+                                rowKeys: inheritsRow ? BoardChrome.pageKeys : [])
         let scenePages = whole.pages
         let pageKeys = Set(scenePages.map(\.key))
 
