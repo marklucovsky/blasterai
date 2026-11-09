@@ -77,10 +77,28 @@ struct WordModerationService {
         "penis", "vagina",
     ]
 
+    /// A verdict per word, and the class the rubric would give each word it
+    /// rated. Both keyed by the ORIGINAL string.
+    struct Review {
+        var verdicts: [String: WordVerdict] = [:]
+        /// Only classes a caregiver could choose (`VocabularyClasses.assignable`);
+        /// anything else the model invents is dropped. Empty when the rubric did
+        /// not run — a key out of credit leaves a word unclassified, not guessed.
+        var classes: [String: String] = [:]
+    }
+
     /// Audit a batch of proposed words. Returns a verdict per input word (keyed by
     /// the ORIGINAL string). Runs the three tiers in order, short-circuiting each
     /// word once it's blocked; a failed network tier leaves the prior verdict.
     func audit(_ words: [String]) async -> [String: WordVerdict] {
+        await review(words).verdicts
+    }
+
+    /// `audit`, plus a suggested class for every word the rubric rated. The
+    /// class rides on the call the audit already makes: one request, no extra
+    /// cost worth counting.
+    func review(_ words: [String]) async -> Review {
+        var classes: [String: String] = [:]
         var result: [String: WordVerdict] = [:]
         var pending: [String] = []
 
@@ -96,7 +114,7 @@ struct WordModerationService {
                 pending.append(word)
             }
         }
-        guard !pending.isEmpty, !apiKey.isEmpty else { return result }
+        guard !pending.isEmpty, !apiKey.isEmpty else { return Review(verdicts: result) }
 
         // Why a failed tier is recorded rather than shrugged off.
         //
@@ -130,7 +148,8 @@ struct WordModerationService {
         // enumerate them. Losing this quietly is the whole problem.
         if !stillAllowed.isEmpty {
             do {
-                let ratings = try await appropriatenessRatings(for: stillAllowed)
+                let (ratings, suggested) = try await appropriatenessRatings(for: stillAllowed)
+                classes = suggested
                 for (word, rating) in ratings {
                     switch rating {
                     case .inappropriate:
@@ -149,7 +168,7 @@ struct WordModerationService {
         if let unavailable {
             result = Self.downgradingUnchecked(result, among: pending, reason: unavailable)
         }
-        return result
+        return Review(verdicts: result, classes: classes)
     }
 
     /// Turn "nothing objected" into "nothing checked" for the words a failed
@@ -195,16 +214,21 @@ struct WordModerationService {
 
     enum Rating: String { case appropriate, questionable, inappropriate }
 
-    private func appropriatenessRatings(for words: [String]) async throws -> [String: Rating] {
+    private func appropriatenessRatings(for words: [String]) async throws
+        -> (ratings: [String: Rating], classes: [String: String]) {
         let content = try await chat(body: Self.rubricRequestBody(words: words))
-        return Self.parseRatings(content, words: words)
+        return (Self.parseRatings(content, words: words), Self.parseClasses(content, words: words))
     }
 
     /// The exact chat-completions body the rubric sends. Pure, so the prompt
     /// fixtures (`PromptFixtureTests`) can pin it without a network call.
     nonisolated static func rubricRequestBody(words: [String]) -> [String: Any] {
-        ChatRequest.body(model: ModelID.wordAudit,
-                         messages: [["role": "system", "content": PromptTemplate.raw("moderation_rubric_system")],
+        let system = PromptTemplate.render("moderation_rubric_system", [
+            "class_list": VocabularyClasses.assignableList,
+            "class_guidance": VocabularyClasses.classSelectionGuidance,
+        ])
+        return ChatRequest.body(model: ModelID.wordAudit,
+                         messages: [["role": "system", "content": system],
                                     ["role": "user", "content": words.joined(separator: ", ")]],
                          temperature: 0)
     }
@@ -222,6 +246,26 @@ struct WordModerationService {
         for word in words {
             if let raw = ratings[word] as? String, let r = Rating(rawValue: raw.lowercased()) {
                 out[word] = r
+            }
+        }
+        return out
+    }
+
+    /// Parse the rubric's `"classes"` — the class it would give each word. Only
+    /// a class a caregiver could choose survives: the model sometimes invents
+    /// one ("clothes"), and a word with an unknown class would draw grey and
+    /// mean nothing. Pure, so it is testable without a network.
+    nonisolated static func parseClasses(_ content: String, words: [String]) -> [String: String] {
+        guard let start = content.firstIndex(of: "{"),
+              let data = String(content[start...]).data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let classes = json["classes"] as? [String: Any] else { return [:] }
+        let allowed = Set(VocabularyClasses.assignable.map(\.name))
+        var out: [String: String] = [:]
+        for word in words {
+            if let raw = classes[word] as? String {
+                let name = raw.lowercased().trimmingCharacters(in: .whitespaces)
+                if allowed.contains(name) { out[word] = name }
             }
         }
         return out
@@ -274,6 +318,58 @@ struct WordModerationService {
         return Self.parseFlags(data: data, words: words)
     }
 
+    // MARK: - Catch-up (words that were never checked)
+
+    /// The words on a page that came in with no class — typically while AI was
+    /// off, so they were never checked either. Hidden and system words are
+    /// left alone; each word once, however many cells it fills.
+    static func catchUpCandidates(_ entries: [TileEntry],
+                                  lookup: [String: TileModel]) -> [TileModel] {
+        var seen: Set<String> = []
+        return entries.compactMap { entry in
+            guard seen.insert(entry.key).inserted, let tile = lookup[entry.key],
+                  !tile.isSystem, !tile.isRetired,
+                  VocabularyClasses.isUnspecified(tile.wordClass) else { return nil }
+            return tile
+        }
+    }
+
+    /// Check words that were never checked, with the caregiver looking at them
+    /// in the page editor. Unlike a word being added, these may already be on
+    /// the child's board, so nothing is hidden behind the caregiver's back:
+    ///   • a word with no class takes the suggested one
+    ///   • blocked or flagged → `needsReview` (🟡 on the tile, counted on the
+    ///     page row) — the caregiver keeps or hides it; a blocked word is
+    ///     never retired here
+    ///   • allowed, or no verdict reached → untouched (never `approveReview`,
+    ///     which would un-hide a word a caregiver hid)
+    @MainActor
+    static func catchUp(_ tiles: [TileModel], apiKey: String, context: ModelContext) async {
+        guard !tiles.isEmpty, !apiKey.isEmpty else { return }
+        let review = await WordModerationService(apiKey: apiKey).review(tiles.map(reviewName))
+        applyCatchUp(review, to: tiles)
+        try? context.save()
+    }
+
+    /// `catchUp`'s effect, apart from the network so it can be tested.
+    @MainActor
+    static func applyCatchUp(_ review: Review, to tiles: [TileModel]) {
+        for tile in tiles {
+            let name = reviewName(tile)
+            if VocabularyClasses.isUnspecified(tile.wordClass), let suggested = review.classes[name] {
+                tile.wordClass = suggested
+            }
+            switch review.verdicts[name] {
+            case .blocked, .flagged: tile.flagForReview()
+            default: break
+            }
+        }
+    }
+
+    private static func reviewName(_ tile: TileModel) -> String {
+        tile.displayName.isEmpty ? tile.value : tile.displayName
+    }
+
     // MARK: - Add-Tiles path (persist review state on materialized tiles)
 
     /// Audit already-materialized NEW tiles (the Add-Tiles flow has no Accept gate)
@@ -286,9 +382,15 @@ struct WordModerationService {
     static func reviewTiles(_ tiles: [TileModel], apiKey: String, context: ModelContext) async {
         guard !tiles.isEmpty, !apiKey.isEmpty else { return }
         let name: (TileModel) -> String = { $0.displayName.isEmpty ? $0.value : $0.displayName }
-        let verdicts = await WordModerationService(apiKey: apiKey).audit(tiles.map(name))
+        let review = await WordModerationService(apiKey: apiKey).review(tiles.map(name))
+        let verdicts = review.verdicts
         let cache = SentenceCacheManager(modelContext: context)
         for tile in tiles {
+            // A word added without a class takes the one the rubric suggests;
+            // a class someone chose is never replaced. Changeable afterwards.
+            if VocabularyClasses.isUnspecified(tile.wordClass), let suggested = review.classes[name(tile)] {
+                tile.wordClass = suggested
+            }
             switch verdicts[name(tile)] {
             case .blocked(let reason):
                 tile.retire(reason: reason)

@@ -37,6 +37,10 @@ final class NewWordReviewModel {
     /// from the preview during review (that would change the word set and re-fire
     /// the analysis, wiping keep/remove choices); it's dropped on Accept instead.
     private(set) var removed: Set<String> = []
+    /// The class the audit would give each NEW word, by tile key. The preview
+    /// gives it to a word that came without one; a class already chosen is
+    /// left alone.
+    private(set) var suggestedClasses: [String: String] = [:]
 
     /// The word set last analyzed (keys), so `analyze` can no-op on an unchanged
     /// set (e.g. a re-render) but re-run when Retry/Refine changes the words.
@@ -51,6 +55,7 @@ final class NewWordReviewModel {
         analyzedKeys = keys
         kept = []
         removed = []
+        suggestedClasses = [:]
 
         guard !words.isEmpty, !apiKey.isEmpty else {
             verdicts = [:]
@@ -58,13 +63,17 @@ final class NewWordReviewModel {
             return
         }
         phase = .analyzing
-        let byName = await WordModerationService(apiKey: apiKey).audit(words.map(\.name))
+        let review = await WordModerationService(apiKey: apiKey).review(words.map(\.name))
         guard keys == analyzedKeys else { return }   // superseded by a newer set
+        let byName = review.verdicts
         var out: [String: WordVerdict] = [:]
         for w in words where byName[w.name] != nil && byName[w.name] != .allowed {
             out[w.key] = byName[w.name]
         }
         verdicts = out
+        var classes: [String: String] = [:]
+        for w in words { if let c = review.classes[w.name] { classes[w.key] = c } }
+        suggestedClasses = classes
         phase = .complete
     }
 

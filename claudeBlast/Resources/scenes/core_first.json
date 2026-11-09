@@ -1734,7 +1734,7 @@
             "door",
             "window",
             "fork",
-            "bowl",
+            "bowl_",
             "toothbrush",
             "music",
             "chair",
@@ -4265,7 +4265,7 @@
             "knife",
             "napkin",
             "fork",
-            "bowl",
+            "bowl_",
             "bottle",
             "bib"
           ]

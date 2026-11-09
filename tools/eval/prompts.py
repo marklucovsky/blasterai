@@ -219,7 +219,8 @@ def tile_suggest_body(goal: str) -> dict:
 
 
 def moderation_rubric_body(words: list[str]) -> dict:
-    return _chat("gpt-4o-mini", 0, _two(raw("moderation_rubric_system"), ", ".join(words)), None)
+    system = render("moderation_rubric_system", _class_values())
+    return _chat("gpt-4o-mini", 0, _two(system, ", ".join(words)), None)
 
 
 # MARK: - Topic words (TopicWordsService)

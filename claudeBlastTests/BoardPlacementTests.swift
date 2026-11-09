@@ -234,7 +234,7 @@ struct BoardPlacementTests {
             ("animals", ["dog", "cat", "bird", "fish", "horse", "cow", "pig", "duck", "chicken", "sheep"]),
             ("clothes", ["shoes", "socks", "shirt", "pants", "coat", "hat", "pajamas"]),
             ("things", ["bed", "blanket", "book", "phone", "tv", "music", "toothbrush", "cup", "plate", "spoon",
-                        "fork", "bowl", "door", "window"]),
+                        "fork", "bowl_", "door", "window"]),
             ("vehicles", ["car", "bus", "truck", "train", "bicycle", "airplane", "boat", "helicopter",
                           "fire_truck", "ambulance", "police_car"]),
         ] {

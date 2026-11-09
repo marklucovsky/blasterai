@@ -4167,6 +4167,10 @@
     "glitter": {
       "source": "prompts.json",
       "subject": "prompts.json"
+    },
+    "bowl_": {
+      "source": "prompts.json",
+      "subject": "prompts.json"
     }
   },
   "special": {

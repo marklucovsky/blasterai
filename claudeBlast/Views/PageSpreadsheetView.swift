@@ -1255,11 +1255,27 @@ struct PageSpreadsheetView: View {
             let entry = BoardCell.commit(plan, replacing: old, in: scene,
                                          systemPages: systemPages,
                                          lookup: lookup, context: modelContext)
+            reviewIfNew(plan, entry)
             apply(cells.setting(entry.isSpacer ? nil : entry, at: selectedIndex, in: tiles))
             draft = nil
             move(thenMove.0, thenMove.1)
             return true
         }
+    }
+
+    /// A word typed into the grid that the vocabulary did not have gets the
+    /// same audit as one added from the word picker: blocked words are hidden,
+    /// doubtful ones flagged. One with no class takes the class the audit
+    /// suggests — still changeable from the word's ? / inspector. Without a
+    /// key nothing runs, and a word with no class keeps its ?.
+    private func reviewIfNew(_ plan: BoardCell.Plan, _ entry: TileEntry) {
+        guard plan.newWord != nil, !entry.key.isEmpty,
+              let key = OpenAIKeyVault.currentKey(), !key.isEmpty else { return }
+        let made = entry.key
+        var descriptor = FetchDescriptor<TileModel>(predicate: #Predicate { $0.key == made })
+        descriptor.fetchLimit = 1
+        guard let tile = try? modelContext.fetch(descriptor).first else { return }
+        Task { await WordModerationService.reviewTiles([tile], apiKey: key, context: modelContext) }
     }
 
     /// Writes the page in one undoable step, keeping any screens added but
@@ -1384,6 +1400,7 @@ struct PageSpreadsheetView: View {
             let old = inserting ? nil : cells.entry(at: target, in: tiles)
             let entry = BoardCell.commit(plan, replacing: old, in: scene, systemPages: systemPages,
                                          lookup: lookup, context: modelContext)
+            reviewIfNew(plan, entry)
             guard !entry.isSpacer else { return }
             apply(inserting ? cells.inserting([entry], before: target, in: tiles)
                             : cells.setting(entry, at: target, in: tiles))
