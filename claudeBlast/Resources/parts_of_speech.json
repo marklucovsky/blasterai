@@ -396,6 +396,7 @@
     "december",
     "deer",
     "dentist",
+    "dentists_office",
     "desk",
     "diaper",
     "dining_room",
@@ -404,6 +405,7 @@
     "dirt",
     "dish",
     "doctor",
+    "doctors_office",
     "dog",
     "doll",
     "donut",
@@ -485,8 +487,6 @@
     "horse",
     "hose",
     "hospital",
-    "doctors_office",
-    "dentists_office",
     "hot",
     "hot_chocolate",
     "hot_dog",
@@ -776,7 +776,8 @@
     "yogurt",
     "zebra",
     "zipper",
-    "zoo"
+    "zoo",
+    "bowl_"
   ],
   "preposition": [
     "above",

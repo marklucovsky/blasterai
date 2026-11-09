@@ -372,6 +372,16 @@ struct PageEditorView: View {
                                     cellEditRequest += 1
                                 })
         }
+        // Words on this page with no class were most likely added while AI was
+        // off, so nothing ever checked them. Opening the page is when the
+        // caregiver can see the result: classes fill in, and a doubtful word
+        // shows 🟡 to keep or hide. Waits for the editor to be on screen.
+        .task {
+            try? await Task.sleep(for: .milliseconds(700))
+            guard let key = OpenAIKeyVault.currentKey(), !key.isEmpty else { return }
+            let words = WordModerationService.catchUpCandidates(page?.tiles ?? [], lookup: tileLookup)
+            await WordModerationService.catchUp(words, apiKey: key, context: modelContext)
+        }
         .task {
             guard !autoOpenPickerWithKeys.isEmpty else { return }
             pickerInitialKeys = autoOpenPickerWithKeys

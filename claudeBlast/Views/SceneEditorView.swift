@@ -1733,6 +1733,14 @@ struct PagePreviewView: View {
         }
         // Moderation runs here, in the open — not silently at image-gen time.
         .task(id: presentNewKeys) { await review.analyze(newWords, apiKey: apiKey) }
+        // The audit also suggests a class: a word that came without one takes
+        // it, and its ? becomes a coloured tile with a green check — whose
+        // menu still changes the class.
+        .onChange(of: review.suggestedClasses) { _, suggested in
+            for gt in allSections.flatMap(\.tiles) where isUnclassed(gt) {
+                if let cls = suggested[gt.key] { setClass(cls, for: gt.key) }
+            }
+        }
     }
 
     /// One cell of the board: the page's own word, or a tile the template

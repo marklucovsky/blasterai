@@ -58,6 +58,28 @@ import SwiftData
         #expect(WordModerationService.parseRatings(#"{"nope": 1}"#, words: ["x"]).isEmpty)
     }
 
+    /// The rubric's class rides along with its rating. Only a class a
+    /// caregiver could choose is kept: an invented one ("clothes") or the
+    /// no-meaning `unspecified` is dropped, so the word keeps its ?.
+    @Test func parseClassesKeepsOnlyAssignableClasses() {
+        let content = """
+        {"ratings": {"pony": "appropriate"}, "classes": {"pony": "Animal", "sock": "clothes",         "zorb": "unspecified", "hello": "social"}}
+        """
+        let c = WordModerationService.parseClasses(content, words: ["pony", "sock", "zorb", "hello", "missing"])
+        #expect(c == ["pony": "animal", "hello": "social"])
+        #expect(WordModerationService.parseClasses(#"{"ratings": {}}"#, words: ["pony"]).isEmpty)
+    }
+
+    /// The rubric is told which classes it may give, and never `unspecified`.
+    @Test func theRubricOffersTheAssignableClasses() throws {
+        let body = WordModerationService.rubricRequestBody(words: ["pony"])
+        let messages = try #require(body["messages"] as? [[String: String]])
+        let system = try #require(messages.first?["content"])
+        #expect(system.contains(VocabularyClasses.assignableList))
+        #expect(!system.contains("unspecified"))
+        #expect(!system.contains("{{"))
+    }
+
     @Test func parseFlagsMapsFlaggedCategoriesByInputOrder() {
         let json = """
         {"results":[
@@ -153,5 +175,57 @@ import SwiftData
         #expect(tile.needsReview)
         #expect(tile.isHiddenFromChild)
         #expect(!tile.isRetired)   // held for review, not hidden as if judged
+    }
+
+    /// Catch-up picks the page's words with no class, once each, and leaves
+    /// hidden and system words alone.
+    @MainActor
+    @Test func catchUpTakesOnlyThePagesUnclassedWords() {
+        let zorb = TileModel(key: "zorb", wordClass: VocabularyClasses.unspecified)
+        let pony = TileModel(key: "pony", wordClass: "animal")
+        let gone = TileModel(key: "gone", wordClass: VocabularyClasses.unspecified)
+        gone.retire()
+        let lookup = ["zorb": zorb, "pony": pony, "gone": gone]
+        let entries = ["zorb", "pony", "gone", "zorb", "missing"].map {
+            TileEntry(key: $0)
+        }
+        #expect(WordModerationService.catchUpCandidates(entries, lookup: lookup).map(\.key) == ["zorb"])
+    }
+
+    /// A word caught up may already be on the child's board: it is flagged for
+    /// the caregiver, never retired, and an allowed verdict never un-hides.
+    @MainActor
+    @Test func catchUpFlagsButNeverHides() {
+        let blocked = TileModel(key: "sword", wordClass: VocabularyClasses.unspecified)
+        let fine = TileModel(key: "zorb", wordClass: VocabularyClasses.unspecified)
+        let chosen = TileModel(key: "pony", wordClass: "toy")
+        var review = WordModerationService.Review()
+        review.verdicts = ["sword": .blocked(reason: "weapon"), "zorb": .allowed, "pony": .allowed]
+        review.classes = ["sword": "object", "zorb": "describe", "pony": "animal"]
+
+        WordModerationService.applyCatchUp(review, to: [blocked, fine, chosen])
+
+        #expect(!blocked.isRetired)
+        #expect(blocked.needsReview)
+        #expect(blocked.wordClass == "object")
+        #expect(!fine.needsReview)
+        #expect(fine.wordClass == "describe")
+        #expect(chosen.wordClass == "toy")   // a class someone chose is kept
+    }
+
+    /// A class audit in the bundle reaches a store seeded before it; a word a
+    /// caregiver added keeps the class they gave it.
+    @MainActor
+    @Test func bundledClassesReachExistingSystemWords() {
+        let context = TestStore.freshContainer().mainContext
+        let next = TileModel(key: "next", wordClass: "describe"); next.isSystem = true
+        let mine = TileModel(key: "zorb", wordClass: "toy")
+        context.insert(next); context.insert(mine)
+        let vocab = [TileModelCodable(key: "next", wordClass: "time"),
+                     TileModelCodable(key: "zorb", wordClass: "animal")]
+
+        #expect(BootstrapLoader.applyBundledClasses(vocab, context: context) == 1)
+        #expect(next.wordClass == "time")
+        #expect(mine.wordClass == "toy")
     }
 }

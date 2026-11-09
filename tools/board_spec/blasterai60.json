@@ -2390,7 +2390,7 @@
               "plate"
             ],
             "fork",
-            "bowl",
+            "bowl_",
             "toothbrush",
             "music",
             [
@@ -2426,7 +2426,7 @@
                   "spoon",
                   "plate",
                   "fork",
-                  "bowl"
+                  "bowl_"
                 ],
                 "fridge",
                 "oven",

@@ -364,6 +364,30 @@ enum BootstrapLoader {
         return changed
     }
 
+    /// Give existing bundled words the class the bundle now has for them —
+    /// `therapy` moving from places to health, `next` from describe to time.
+    ///
+    /// A bundled word's class is the bundle's: no edit surface lets a
+    /// caregiver change a system word's class, so there is nothing of theirs
+    /// to keep. Without this a store seeded before a class audit keeps the old
+    /// class, and the sentence prompt goes on reading `next (describe)`.
+    ///
+    /// Returns how many words changed.
+    @discardableResult
+    static func applyBundledClasses(_ vocab: [TileModelCodable], context: ModelContext) -> Int {
+        let tiles = (try? context.fetch(FetchDescriptor<TileModel>(
+            predicate: #Predicate { $0.isSystem }))) ?? []
+        let byKey = Dictionary(tiles.map { ($0.key, $0) }, uniquingKeysWith: { a, _ in a })
+        var changed = 0
+        for entry in vocab where !entry.wordClass.isEmpty {
+            guard let tile = byKey[TileModel.normalizeKey(entry.key)],
+                  tile.wordClass != entry.wordClass else { continue }
+            tile.wordClass = entry.wordClass
+            changed += 1
+        }
+        return changed
+    }
+
     @discardableResult
     static func updateSystemScene(context: ModelContext) -> Bool {
         guard let url = Bundle.main.url(forResource: "core_first", withExtension: "json"),
@@ -431,6 +455,10 @@ enum BootstrapLoader {
             let relabeled = applyBundledLabels(vocab, context: context)
             if relabeled > 0 {
                 print("updateSystemScene: relabeled \(relabeled) word(s)")
+            }
+            let reclassed = applyBundledClasses(vocab, context: context)
+            if reclassed > 0 {
+                print("updateSystemScene: reclassed \(reclassed) word(s)")
             }
 
             let key = materialized.key
