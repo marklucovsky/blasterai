@@ -146,7 +146,10 @@ def sentence_body(stage: str, tiles: list[dict], history: list[str] = (),
         system.append(render("sentence_refine", {"previous": refine[0], "instruction": refine[1]}))
 
     # SentencePromptBuilder.formatUserPrompt, then .context
-    user_prompt = ", ".join(f"{t['value']} ({t['wordClass']})" for t in tiles)
+    # VocabularyClasses.promptLabel: a word with no class goes in bare.
+    user_prompt = ", ".join(
+        t['value'] if t['wordClass'] in ("", "unspecified") else f"{t['value']} ({t['wordClass']})"
+        for t in tiles)
     if escalating:
         note = "sentence_escalation_hold" if repetition > TOP_RUNG else "sentence_escalation_note"
         user_prompt += "\n" + render(note, {"count": str(repetition)})

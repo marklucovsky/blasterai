@@ -35,10 +35,12 @@ struct BulkWordParserTests {
 
         justoneword
         astronaut, people
+        , people
         """)
-        #expect(r.words.map(\.key) == ["rocket", "astronaut"])
+        #expect(r.words.map(\.key) == ["rocket", "justoneword", "astronaut"])
         #expect(r.words[0].wordClass == "object")          // lowercased
-        #expect(r.skipped == ["justoneword"])              // needs ≥2 columns
+        #expect(r.words[1].wordClass == VocabularyClasses.unspecified)  // no class given
+        #expect(r.skipped == [", people"])                 // no word
     }
 
     @Test func blankAndHashLinesIgnoredNotSkipped() {

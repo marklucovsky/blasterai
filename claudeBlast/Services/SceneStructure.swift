@@ -176,7 +176,7 @@ enum SceneStructure {
         for pack in packs where plan.packIDs.contains(pack.id) { add(.pack(pack)) }
 
         // 2. Word classes, in canonical class order.
-        for cls in VocabularyClasses.caregiverSelectable where plan.wordClasses.contains(cls.name) {
+        for cls in VocabularyClasses.assignable where plan.wordClasses.contains(cls.name) {
             add(.wordClass(classes: [cls.name]))
         }
 
@@ -245,7 +245,7 @@ enum SceneStructure {
             add(title: pack.displayName, baseKey: pack.slug, tileCount: pack.words.count)
         }
 
-        for cls in VocabularyClasses.caregiverSelectable where plan.wordClasses.contains(cls.name) {
+        for cls in VocabularyClasses.assignable where plan.wordClasses.contains(cls.name) {
             add(title: cls.label, baseKey: cls.name, tileCount: classCount([cls.name]))
         }
 

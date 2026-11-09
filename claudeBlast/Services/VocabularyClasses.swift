@@ -91,6 +91,29 @@ enum VocabularyClasses {
 
     /// Classes offered in the caregiver "New Word" creator, in display order.
     static var caregiverSelectable: [VocabularyClass] { all.filter(\.isCaregiverSelectable) }
+
+    /// The class of a word nobody has classified yet. A caregiver can leave a
+    /// new word here rather than stop to choose; the edit surfaces keep
+    /// asking. It carries no meaning, so nothing sent to a model says it.
+    static let unspecified = "unspecified"
+
+    static func isUnspecified(_ name: String) -> Bool { name == unspecified }
+
+    /// The classes a model may assign, as `class_list` in every generation
+    /// prompt: the caregiver's, less Unspecified, which is a missing answer
+    /// and never one to give.
+    static var assignable: [VocabularyClass] {
+        caregiverSelectable.filter { !isUnspecified($0.name) }
+    }
+
+    /// `assignable`, as the comma list the prompts take.
+    static var assignableList: String { assignable.map(\.name).joined(separator: ", ") }
+
+    /// A word as a prompt names it: `pony (animal)`, so the class can settle
+    /// what the word means, or just `pony` when there is no class to say.
+    static func promptLabel(_ value: String, wordClass: String) -> String {
+        isUnspecified(wordClass) || wordClass.isEmpty ? value : "\(value) (\(wordClass))"
+    }
 }
 
 /// Single source of truth for tile color.
@@ -255,8 +278,16 @@ enum TileColorResolver {
     /// missing tile is chrome: no word, no word color.
     static func color(for tile: TileModel?) -> Color {
         guard let tile else { return chrome }
+        if tile.resolvedPartOfSpeech == nil, VocabularyClasses.isUnspecified(tile.wordClass) {
+            return unspecified
+        }
         return color(for: tile.resolvedPartOfSpeech)
     }
+
+    /// A word with no class and no part of speech: plain white, not chrome's
+    /// grey, so it reads as an unfinished word rather than board furniture.
+    /// Choosing a class is what gives it a color.
+    static let unspecified = Color(white: 0.97)
 
     /// The color a page link draws in.
     ///
@@ -369,6 +400,7 @@ enum TileColorResolver {
     /// derivation, which is the weakest of the four layers. It is right for a
     /// swatch that stands for a whole class; it is wrong for a word.
     static func color(forWordClass wordClass: String) -> Color {
-        color(for: VocabularyClasses.known(wordClass)?.defaultPartOfSpeech)
+        if VocabularyClasses.isUnspecified(wordClass) { return unspecified }
+        return color(for: VocabularyClasses.known(wordClass)?.defaultPartOfSpeech)
     }
 }

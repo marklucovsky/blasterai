@@ -78,7 +78,7 @@ struct SentencePromptBuilder {
     /// count, because a single note that said "hold if you're at the top" let
     /// statements and questions stall at rung 2.
     func formatUserPrompt(tiles: [TileSelection]) -> String {
-        let selection = tiles.map { "\($0.value) (\($0.wordClass))" }
+        let selection = tiles.map { VocabularyClasses.promptLabel($0.value, wordClass: $0.wordClass) }
             .joined(separator: ", ")
         guard repetitionCount > 0 else { return selection }
         let note = repetitionCount > Self.topRung ? "sentence_escalation_hold" : "sentence_escalation_note"

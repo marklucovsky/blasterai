@@ -92,7 +92,7 @@ struct SceneRefinerService {
         return PromptTemplate.render("scene_refine_system", [
             "current_tiles": listing,
             "class_guidance": VocabularyClasses.classSelectionGuidance,
-            "class_list": VocabularyClasses.caregiverSelectable.map(\.name).joined(separator: ", "),
+            "class_list": VocabularyClasses.assignableList,
         ])
     }
 
@@ -101,13 +101,6 @@ struct SceneRefinerService {
     }
 
     private func buildVocabBlock(allTiles: [TileModel]) -> String {
-        var byClass: [String: [String]] = [:]
-        for tile in allTiles {
-            guard !tile.isStructuralChrome else { continue }
-            byClass[tile.wordClass, default: []].append(tile.key)
-        }
-        return byClass.keys.sorted().map { wc in
-            "\(wc): \(byClass[wc]!.joined(separator: ", "))"
-        }.joined(separator: "\n")
+        SceneGeneratorService.vocabBlock(allTiles: allTiles)
     }
 }

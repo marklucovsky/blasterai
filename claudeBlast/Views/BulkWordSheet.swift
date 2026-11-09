@@ -17,8 +17,8 @@ import SwiftData
 
 /// Shared parser for the `key, class[, Display Name]` CSV format used by both the
 /// bulk-word sheet and the tile picker's editable selection list. One word per
-/// line; blank / '#' lines ignored; a word needs ≥2 non-empty columns
-/// (key, class), an optional 3rd column overrides the display name.
+/// line; blank / '#' lines ignored; a word without a class goes in as
+/// Unspecified; an optional 3rd column overrides the display name.
 enum BulkWordParser {
     struct Word: Hashable {
         let key: String         // column 0 (raw; caller normalizes)
@@ -38,12 +38,14 @@ enum BulkWordParser {
             if line.isEmpty || line.hasPrefix("#") { continue }
             let cols = line.split(separator: ",", omittingEmptySubsequences: false)
                 .map { $0.trimmingCharacters(in: .whitespaces) }
-            guard cols.count >= 2, !cols[0].isEmpty, !cols[1].isEmpty else {
+            guard !cols[0].isEmpty else {
                 skipped.append(line)
                 continue
             }
             let key = cols[0]
-            let wordClass = cols[1].lowercased()
+            // No class given: the word goes in Unspecified, to be classed later.
+            let wordClass = cols.count >= 2 && !cols[1].isEmpty
+                ? cols[1].lowercased() : VocabularyClasses.unspecified
             let displayName = (cols.count >= 3 && !cols[2].isEmpty) ? cols[2] : key
             words.append(Word(key: key, wordClass: wordClass, displayName: displayName))
         }
@@ -63,6 +65,12 @@ enum WordCreator {
                              keys: inout Set<String>, context: ModelContext) -> TileModel? {
         let base = TileModel.normalizeKey(w.key)
         guard !base.isEmpty else { return nil }
+        // No class given, and the word exists → that word, whatever its
+        // class. Unspecified is a missing answer, not a second sense of `cat`.
+        if VocabularyClasses.isUnspecified(w.wordClass),
+           let tile = existing.first(where: { $0.key == base }) {
+            return tile
+        }
         // Same key + same class already exists → reuse it (place, don't dup).
         if let tile = existing.first(where: { $0.key == base && $0.wordClass == w.wordClass }) {
             return tile

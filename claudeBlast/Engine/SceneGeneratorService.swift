@@ -79,7 +79,7 @@ struct SceneGeneratorService {
     private func buildSystemPrompt(tileCount: Int) -> String {
         PromptTemplate.render("scene_generate_system", [
             "class_guidance": VocabularyClasses.classSelectionGuidance,
-            "class_list": VocabularyClasses.caregiverSelectable.map(\.name).joined(separator: ", "),
+            "class_list": VocabularyClasses.assignableList,
         ])
     }
 
@@ -100,9 +100,15 @@ struct SceneGeneratorService {
             guard !tile.isStructuralChrome else { continue }
             byClass[tile.wordClass, default: []].append(tile.key)
         }
-        return byClass.keys.sorted().map { wc in
+        // Words with no class yet are listed apart, without a class name:
+        // "unspecified" is not a meaning, and a model shown it as one could
+        // hand it back as the class of a word it proposes.
+        let unclassed = byClass.removeValue(forKey: VocabularyClasses.unspecified)
+        var lines = byClass.keys.sorted().map { wc in
             "\(wc): \(byClass[wc]!.joined(separator: ", "))"
-        }.joined(separator: "\n")
+        }
+        if let unclassed { lines.append("other words: \(unclassed.joined(separator: ", "))") }
+        return lines.joined(separator: "\n")
     }
 
     // MARK: - Response parsing

@@ -22,7 +22,7 @@ struct VocabManagerView: View {
     @Query private var scenes: [BlasterScene]
 
     enum Scope: String, CaseIterable, Identifiable {
-        case all = "All", review = "Needs review", hidden = "Hidden", added = "Added by you"
+        case all = "All", review = "Needs review", unclassified = "No class", hidden = "Hidden", added = "Added by you"
         var id: String { rawValue }
     }
     enum Order: String, CaseIterable, Identifiable {
@@ -62,6 +62,7 @@ struct VocabManagerView: View {
         switch s {
         case .all:    return true
         case .review: return tile.needsReview && !tile.isRetired
+        case .unclassified: return VocabularyClasses.isUnspecified(tile.wordClass) && !tile.isRetired
         case .hidden: return tile.isRetired
         case .added:  return !tile.isSystem && !tile.isRetired && !tile.needsReview
         }
@@ -259,7 +260,11 @@ struct VocabManagerView: View {
             // the tile's actual color on the board, so this row is also how you
             // find a word whose color looks wrong without hunting the grid.
             HStack(spacing: 5) {
-                Text(tile.wordClass)
+                if VocabularyClasses.isUnspecified(tile.wordClass) {
+                    Text("no class yet").foregroundStyle(.purple)
+                } else {
+                    Text(tile.wordClass)
+                }
                 if let pos = tile.resolvedPartOfSpeech {
                     Text("·")
                     Circle()
@@ -315,6 +320,13 @@ struct VocabManagerView: View {
             Button("Hide", role: .destructive) { hide(tile) }
                 .buttonStyle(.bordered).controlSize(.small)
         } else {
+            // Every word someone added, so a wrong class can be put right;
+            // purple while there is none yet.
+            if !tile.isSystem {
+                WordClassMenu(tile: tile) { Text("Class") }
+                    .buttonStyle(.bordered).controlSize(.small)
+                    .tint(VocabularyClasses.isUnspecified(tile.wordClass) ? .purple : .blue)
+            }
             Button("Hide", role: .destructive) { hide(tile) }
                 .buttonStyle(.bordered).controlSize(.small)
         }

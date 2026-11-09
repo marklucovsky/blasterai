@@ -142,7 +142,7 @@ struct BoardWorkbookTests {
     }
 
     @Test func problemsSayWhereTheyAre() {
-        let tabs = [SpreadsheetTab(name: "home", rows: [[], ["", "zebra"], ["cat"] + Array(repeating: "", count: 9) + ["cat"]]),
+        let tabs = [SpreadsheetTab(name: "home", rows: [[], ["", "zebra, action"], ["cat"] + Array(repeating: "", count: 9) + ["cat"]]),
                     SpreadsheetTab(name: "HOME", rows: [["cat"]])]
         let preview = BoardWorkbook.preview(tabs, cols: 10, scenePages: [], lookup: lookup, systemPages: system)
         #expect(preview.problems.map(\.id) == ["home!K3", "HOME!0", "home!B2"])
@@ -232,15 +232,40 @@ struct BoardWorkbookTests {
         #expect(second?.key == "right_describe")
     }
 
+    /// A word written without a class that already exists is that word,
+    /// whatever its class: no `cat_unspecified` beside `cat`.
+    @Test func aWordWithoutAClassReusesTheWordThatExists() {
+        let ctx = TestStore.freshContext()
+        ctx.insert(tile("cat", "animal"))
+        try? ctx.save()
+        var keys: Set<String> = ["cat"]
+        let bare = BulkWordParser.Word(key: "cat", wordClass: VocabularyClasses.unspecified, displayName: "cat")
+        let found = WordCreator.findOrCreate(bare, existing: currentLookup(ctx).values.map { $0 }, keys: &keys, context: ctx)
+        #expect(found?.key == "cat")
+        #expect(found?.wordClass == "animal")
+        let new = BulkWordParser.Word(key: "zorb", wordClass: VocabularyClasses.unspecified, displayName: "zorb")
+        let made = WordCreator.findOrCreate(new, existing: currentLookup(ctx).values.map { $0 }, keys: &keys, context: ctx)
+        #expect(made?.key == "zorb")
+        #expect(made?.wordClass == VocabularyClasses.unspecified)
+    }
+
     // MARK: - Fixes in the preview
 
-    /// A word the vocabulary lacks is reported as such, and giving it a class
-    /// in the preview makes it a new word in every cell that names it, its
-    /// link kept.
+    /// A word the vocabulary lacks, written without a class, comes in as one
+    /// new Unspecified word in every cell that names it, its link kept; it is
+    /// not a problem to settle before the import.
+    @Test func aMissingWordComesInUnspecified() {
+        let tabs = [SpreadsheetTab(name: "home", rows: [["finished", "finished > done"]])]
+        let preview = BoardWorkbook.preview(tabs, cols: 10, scenePages: [], lookup: lookup, systemPages: system)
+        #expect(preview.problems.isEmpty)
+        #expect(preview.newWords == [BulkWordParser.Word(key: "finished", wordClass: VocabularyClasses.unspecified,
+                                                         displayName: "finished")])
+        #expect(preview.pages[0].placed == 2)
+    }
+
+    /// Giving a word a class in the sheet makes it a new word of that class.
     @Test func aMissingWordIsFixedByGivingItAClass() {
         let tabs = [SpreadsheetTab(name: "home", rows: [["finished", "finished > done"]])]
-        let before = BoardWorkbook.preview(tabs, cols: 10, scenePages: [], lookup: lookup, systemPages: system)
-        #expect(before.problems.map(\.kind) == [.missingWord("finished"), .missingWord("finished")])
         let fixed = BoardWorkbook.applying(["finished": .newWord(wordClass: "describe")], to: tabs)
         #expect(fixed[0].rows[0] == ["finished, describe", "finished, describe > done"])
         let after = BoardWorkbook.preview(fixed, cols: 10, scenePages: [], lookup: lookup, systemPages: system)
@@ -284,6 +309,35 @@ struct BoardWorkbookTests {
                             systemPages: [], context: ctx)
         #expect(currentLookup(ctx)["pony"] == nil)
         #expect(scene.page(withKey: "home")?.tiles.map { $0.isSpacer ? "" : $0.key } == ["", "cat"])
+    }
+
+    /// The class on a new word's preview tile is the class it is made with:
+    /// picked for a bare word, or changed from the sheet's. A word left alone
+    /// stays as it came, and a word that already existed is never recoloured.
+    @Test func aClassPickedInThePreviewIsKept() throws {
+        let ctx = TestStore.freshContext()
+        let scene = freshScene(ctx)
+        let tabs = [SpreadsheetTab(name: "home", rows: [["zebu", "quokka", "pony, animal"]])]
+        let preview = BoardWorkbook.preview(tabs, cols: 10, scenePages: scene.pages,
+                                            lookup: currentLookup(ctx), systemPages: [])
+        let before = Set(currentLookup(ctx).keys)
+        BoardWorkbook.apply(preview, to: scene, cols: 10, replacing: [], systemPages: [], context: ctx)
+        let created = Set(currentLookup(ctx).keys).subtracting(before)
+        #expect(created.isSuperset(of: ["zebu", "quokka", "pony"]))
+        let catClass = currentLookup(ctx)["cat"]?.wordClass
+        let accepted = [
+            GeneratedTile(key: "zebu", isAudible: true, link: "", displayName: "zebu", wordClass: "animal"),
+            GeneratedTile(key: "quokka", isAudible: true, link: "", displayName: "quokka",
+                          wordClass: VocabularyClasses.unspecified),
+            GeneratedTile(key: "pony", isAudible: true, link: "", displayName: "pony", wordClass: "toy"),
+            GeneratedTile(key: "cat", isAudible: true, link: "", displayName: "cat", wordClass: "food"),
+        ]
+        BoardWorkbook.applyPickedClasses(accepted, created: created, context: ctx)
+        let words = currentLookup(ctx)
+        #expect(words["zebu"]?.wordClass == "animal")
+        #expect(words["quokka"]?.wordClass == VocabularyClasses.unspecified)
+        #expect(words["pony"]?.wordClass == "toy")
+        #expect(words["cat"]?.wordClass == catClass)
     }
 
     // MARK: - Routing and the page preview
@@ -392,7 +446,7 @@ struct BoardWorkbookTests {
 
     /// A chosen start wins, and problems keep the sheet's own addresses.
     @Test func aChosenStartWinsAndAddressesStayTheSheets() {
-        let tabs = [SpreadsheetTab(name: "home", rows: [["Title"], ["cat", "zebra"]])]
+        let tabs = [SpreadsheetTab(name: "home", rows: [["Title"], ["cat", "zebra goes here"]])]
         let moved = BoardWorkbook.preview(tabs, cols: 10, scenePages: [], lookup: lookup, systemPages: [],
                                           origins: ["home": BoardWorkbook.Origin(row: 1, col: 1)])
         #expect(moved.pages[0].origin.cell == "B2")

@@ -131,7 +131,7 @@ struct SceneStructurePicker: View {
             guard !tile.isRetired else { return }
             totals[tile.wordClass, default: 0] += 1
         }
-        return VocabularyClasses.caregiverSelectable.compactMap { cls in
+        return VocabularyClasses.assignable.compactMap { cls in
             let n = counts[cls.name] ?? 0
             return n > 0 ? (cls, n) : nil
         }

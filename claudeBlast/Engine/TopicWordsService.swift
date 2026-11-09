@@ -141,7 +141,7 @@ struct TopicWordsService {
         let system = PromptTemplate.render("topic_words_system", [
             "budget": String(Self.budget),
             "max_words": String(Self.maxWords),
-            "class_list": VocabularyClasses.caregiverSelectable.map(\.name).joined(separator: ", "),
+            "class_list": VocabularyClasses.assignableList,
         ])
         let frame = template.frameKeys
         let exclude = frame.isEmpty ? "" :

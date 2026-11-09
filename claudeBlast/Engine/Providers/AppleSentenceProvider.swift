@@ -59,7 +59,7 @@ struct AppleSentenceProvider: SentenceProvider {
         )
 
         // Include word class to disambiguate (e.g. "play" as action vs noun)
-        let words = tiles.map { "\($0.value) (\($0.wordClass))" }
+        let words = tiles.map { VocabularyClasses.promptLabel($0.value, wordClass: $0.wordClass) }
         let userMessage = "Words: " + words.joined(separator: ", ")
 
         let response = try await session.respond(

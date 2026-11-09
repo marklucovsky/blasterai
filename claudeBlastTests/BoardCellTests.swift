@@ -37,7 +37,20 @@ struct BoardCellTests {
 
     @Test func rejectsHalfWrittenCells() {
         if case .invalid = BoardCell.parse("go >") {} else { Issue.record("empty page accepted") }
-        if case .invalid = BoardCell.parse("starfish,") {} else { Issue.record("classless word accepted") }
+    }
+
+    /// A word written without a class is a new word in Unspecified: the
+    /// caregiver can be lazy, and the edit surfaces ask for its class later.
+    @Test func aWordWithoutAClassIsUnspecified() {
+        #expect(BoardCell.parse("starfish,")
+                == .cell(word: .new(.init(key: "starfish", wordClass: VocabularyClasses.unspecified,
+                                          displayName: "starfish")), link: nil))
+        guard case .plan(let plan) = BoardCell.resolve(BoardCell.parse("zebra"), lookup: [:],
+                                                       scenePages: [], systemPages: []) else {
+            Issue.record("a bare new word was refused"); return
+        }
+        #expect(plan.entry.key == "zebra")
+        #expect(plan.newWord?.wordClass == VocabularyClasses.unspecified)
     }
 
     // MARK: - Resolve
@@ -121,10 +134,6 @@ struct BoardCellTests {
         if case .error = BoardCell.resolve(BoardCell.parse("right"), lookup: lookup,
                                            scenePages: [], systemPages: []) {} else {
             Issue.record("ambiguous label resolved")
-        }
-        if case .error = BoardCell.resolve(BoardCell.parse("zebra"), lookup: lookup,
-                                           scenePages: [], systemPages: []) {} else {
-            Issue.record("unknown word resolved")
         }
     }
 

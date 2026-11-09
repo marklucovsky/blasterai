@@ -133,6 +133,12 @@
       "note": "Drawn, not generated. A determiner: 'three cookies' quantifies."
     },
     {
+      "name": "unspecified",
+      "partOfSpeech": null,
+      "caregiverSelectable": true,
+      "note": "A word added without a class: in the editor, from a spreadsheet, in bulk. Nobody has to stop and choose, as in Avaz, whose new words are type None. Not a meaning: prompts never see it, the AI never picks it, and the tile draws plain so the edit surfaces can keep asking for a real class, which is what gives a word its color."
+    },
+    {
       "name": "core",
       "partOfSpeech": "preposition",
       "caregiverSelectable": false,
