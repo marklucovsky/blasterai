@@ -169,7 +169,7 @@ struct PromptFixtureTests {
             stages[stage.rawValue + "/escalating"] = stage.promptDescriptor(escalating: true)
         }
         try check("_inputs", [
-            "class_list": VocabularyClasses.caregiverSelectable.map(\.name).joined(separator: ", "),
+            "class_list": VocabularyClasses.assignableList,
             "class_guidance": VocabularyClasses.classSelectionGuidance,
             "vocab_block": block(Self.vocabulary.filter { !$0.isStructuralChrome }),
             "vocab_block_all": block(Self.vocabulary),

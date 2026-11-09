@@ -213,7 +213,12 @@ enum BoardCell {
                 switch existingWord(text, lookup: lookup) {
                 case .found(let key): plan.entry.key = key
                 case .missing:
-                    return .error("No word \u{201C}\(text)\u{201D}. Add a class to make one: \(text), class")
+                    // A word nobody has classed yet goes in as Unspecified,
+                    // and the edit surfaces ask for its class from then on.
+                    let new = BulkWordParser.Word(key: text, wordClass: VocabularyClasses.unspecified,
+                                                  displayName: text)
+                    plan.newWord = new
+                    plan.entry.key = TileModel.normalizeKey(new.key)
                 case .ambiguous(let keys):
                     return .error("\u{201C}\(text)\u{201D} could be \(keys.joined(separator: ", "))")
                 }

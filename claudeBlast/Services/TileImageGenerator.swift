@@ -288,7 +288,7 @@ enum TileImageGenerator {
     private static func referencePrompt(displayName: String, wordClass: String,
                                         imageSet: ImageSetID, detail: String) -> String {
         let trimmed = detail.trimmingCharacters(in: .whitespacesAndNewlines)
-        let subject = "\(displayName) (\(promptClass(wordClass)))" + (trimmed.isEmpty ? "" : ", \(trimmed)")
+        let subject = Self.subject(displayName, wordClass) + (trimmed.isEmpty ? "" : ", \(trimmed)")
         return """
         The reference images are tiles from one AAC pictogram symbol set. Draw ONE new tile \
         for this set showing: \(subject).
@@ -648,7 +648,7 @@ enum TileImageGenerator {
     /// ambiguous words resolve correctly (e.g. "snack bar (food)" → a granola bar,
     /// "snack bar (place)" → a building).
     private static func prompt(displayName: String, wordClass: String, imageSet: ImageSetID, detail: String) -> String {
-        let base = "\(style(for: imageSet)) Subject: \(displayName) (\(promptClass(wordClass)))."
+        let base = "\(style(for: imageSet)) Subject: \(subject(displayName, wordClass))."
         let trimmed = detail.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? base : "\(base) \(trimmed)."
     }
@@ -658,6 +658,13 @@ enum TileImageGenerator {
     /// topic in one picture.
     static func promptClass(_ wordClass: String) -> String {
         wordClass == PageLink.wordClass ? "a topic, shown as one picture" : wordClass
+    }
+
+    /// `cat (animal)`, or just `cat` for a word with no class yet: Unspecified
+    /// is a missing answer, and naming it would ask for a picture of one.
+    static func subject(_ displayName: String, _ wordClass: String) -> String {
+        VocabularyClasses.isUnspecified(wordClass)
+            ? displayName : "\(displayName) (\(promptClass(wordClass)))"
     }
 
     /// Style prefix per image set. Loaded from the shared `image_styles.json`

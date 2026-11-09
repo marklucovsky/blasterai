@@ -126,12 +126,12 @@ struct PageGeneratorService {
         return PromptTemplate.render("page_refine_system", [
             "current_tiles": listing,
             "class_guidance": VocabularyClasses.classSelectionGuidance,
-            "class_list": VocabularyClasses.caregiverSelectable.map(\.name).joined(separator: ", "),
+            "class_list": VocabularyClasses.assignableList,
         ])
     }
 
     private func buildSystemPrompt() -> String {
-        PromptTemplate.render("page_generate_system", ["class_list": VocabularyClasses.caregiverSelectable.map(\.name).joined(separator: ", ")])
+        PromptTemplate.render("page_generate_system", ["class_list": VocabularyClasses.assignableList])
     }
 
     private func buildUserPrompt(pageGoal: String, pageName: String, vocabBlock: String, sceneBlock: String) -> String {
@@ -147,16 +147,7 @@ struct PageGeneratorService {
     // MARK: - Vocab formatting
 
     private func buildVocabBlock(allTiles: [TileModel]) -> String {
-        var byClass: [String: [String]] = [:]
-        for tile in allTiles {
-            // Hide structural navigation + page_link tiles so the model treats
-            // them as neither selectable words nor page switchers.
-            guard !tile.isStructuralChrome else { continue }
-            byClass[tile.wordClass, default: []].append(tile.key)
-        }
-        return byClass.keys.sorted().map { wc in
-            "\(wc): \(byClass[wc]!.joined(separator: ", "))"
-        }.joined(separator: "\n")
+        SceneGeneratorService.vocabBlock(allTiles: allTiles)
     }
 
     /// Describe the existing scene's pages and their tiles (key + class) so the
@@ -167,7 +158,7 @@ struct PageGeneratorService {
         return scenePages.map { page in
             let home = page.key == homePageKey ? " [home]" : ""
             let tiles = page.tiles.map { entry in
-                "\(entry.key) (\(lookup[entry.key] ?? "?"))"
+                VocabularyClasses.promptLabel(entry.key, wordClass: lookup[entry.key] ?? "?")
             }.joined(separator: ", ")
             return "page '\(page.key)'\(home): \(tiles)"
         }.joined(separator: "\n")

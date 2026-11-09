@@ -55,7 +55,7 @@ struct TileSuggestionService {
         let vocabBlock = buildVocabBlock(allTiles: allTiles)
         let systemMessage = PromptTemplate.render("tile_suggest_system", [
             "class_guidance": VocabularyClasses.classSelectionGuidance,
-            "class_list": VocabularyClasses.caregiverSelectable.map(\.name).joined(separator: ", "),
+            "class_list": VocabularyClasses.assignableList,
         ])
         let userMessage = PromptTemplate.render("tile_suggest_user", ["goal": goal, "vocab_block": vocabBlock])
 
@@ -68,17 +68,7 @@ struct TileSuggestionService {
     // MARK: - Helpers
 
     private func buildVocabBlock(allTiles: [TileModel]) -> String {
-        var byClass: [String: [String]] = [:]
-        for tile in allTiles {
-            // Navigation and page-link tiles are not words to suggest — the
-            // folder tiles (`folder_moving`…) would otherwise read as vocabulary.
-            // Same rule as `SceneGeneratorService.vocabBlock`.
-            guard !tile.isStructuralChrome else { continue }
-            byClass[tile.wordClass, default: []].append(tile.key)
-        }
-        return byClass.keys.sorted().map { wc in
-            "\(wc): \(byClass[wc]!.joined(separator: ", "))"
-        }.joined(separator: "\n")
+        SceneGeneratorService.vocabBlock(allTiles: allTiles)
     }
 
     /// Lenient new-word shape — a single malformed element must not sink the

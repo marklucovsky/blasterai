@@ -18,6 +18,7 @@
 import Foundation
 import Observation
 import SwiftUI
+import SwiftData
 
 @MainActor
 @Observable
@@ -186,6 +187,8 @@ struct TileReviewBadge: View {
             menu(reviewBadgeIcon("xmark.circle.fill", .red))
         } else if tile.needsReview {
             menu(reviewBadgeIcon("flag.fill", .orange))
+        } else if VocabularyClasses.isUnspecified(tile.wordClass) {
+            TileClassBadge(tile: tile)
         }
     }
 
@@ -199,15 +202,72 @@ struct TileReviewBadge: View {
     }
 }
 
+/// A word with no class yet: a reminder on the tile, every time it is shown in
+/// an edit surface, and the classes one tap away. Choosing one is what gives
+/// the word its color; there is nothing to dismiss.
+struct TileClassBadge: View {
+    let tile: TileModel
+
+    var body: some View {
+        WordClassMenu(tile: tile) {
+            reviewBadgeIcon("questionmark.circle.fill", .purple)
+        }
+        .accessibilityLabel("No class. Choose a class")
+    }
+}
+
+/// Choose or change a word's class. The badge on an unclassified tile, the
+/// word inspector and Manage Vocabulary all use it, so a class picked in a
+/// hurry can be corrected wherever the word is seen next.
+struct WordClassMenu<MenuLabel: View>: View {
+    let tile: TileModel
+    @ViewBuilder let label: () -> MenuLabel
+    @Environment(\.modelContext) private var modelContext
+
+    var body: some View {
+        Menu {
+            Section("Class of \u{201C}\(tile.displayName)\u{201D}") {
+                ForEach(VocabularyClasses.assignable) { cls in
+                    Button {
+                        tile.wordClass = cls.name
+                        try? modelContext.save()
+                    } label: {
+                        if cls.name == tile.wordClass { Label(cls.label, systemImage: "checkmark") }
+                        else { Text(cls.label) }
+                    }
+                }
+            }
+        } label: { label() }
+    }
+}
+
 /// The at-a-glance review status shown above the Accept row in Page/Scene
 /// preview: analyzing, "N flagged — resolve to continue", "N blocked", or all-clear.
 struct NewWordReviewStatus: View {
     let review: NewWordReviewModel
     let present: Set<String>
+    /// New words with no class yet. A reminder under the status, never a gate.
+    var unclassed: Int = 0
 
     var body: some View {
         let unresolved = review.unresolvedFlags(present: present).count
         let dropped = review.droppedKeys(present: present).count
+        VStack(alignment: .leading, spacing: 3) {
+            status(unresolved: unresolved, dropped: dropped)
+            if unclassed > 0 {
+                Label("\(unclassed) new word\(unclassed == 1 ? "" : "s") without a class — tap its ? to choose one",
+                      systemImage: "questionmark.circle.fill")
+                    .foregroundStyle(.purple)
+            }
+        }
+        .font(.caption)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 14)
+        .padding(.top, 6)
+    }
+
+    @ViewBuilder
+    private func status(unresolved: Int, dropped: Int) -> some View {
         Group {
             switch review.phase {
             case .idle:
@@ -226,9 +286,5 @@ struct NewWordReviewStatus: View {
                 }
             }
         }
-        .font(.caption)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 14)
-        .padding(.top, 6)
     }
 }

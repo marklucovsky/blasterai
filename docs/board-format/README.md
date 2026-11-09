@@ -31,7 +31,7 @@ working example.
 
 | Cell | Meaning |
 |---|---|
-| `cat` | a word the app already has |
+| `cat` | a word the app already has, or a new word with no class yet |
 | `cat, animal` | a new word, with its class |
 | `cat, animal, Kitty` | a new word with a different name shown |
 | `go > places` | says *go*, then opens this scene's Places page |
@@ -45,8 +45,13 @@ is created empty, so a folder can link to a page you'll write later. BlasterAI
 
 ## Word classes
 
-A new word needs a class. The list is published as data, so you can check a
-class without opening the app:
+Give a new word a class: the class is what colors the tile, and it tells
+sentence generation which sense you mean (*bat* the animal or the bat you
+swing). A word written without one still comes in, as `unspecified`, and the
+app's edit surfaces keep asking for its class until it has one.
+
+The list is published as data, so you can check a class without opening the
+app:
 
 [`word_classes.json`](../../claudeBlast/Resources/word_classes.json), also at
 https://raw.githubusercontent.com/marklucovsky/blasterai/main/claudeBlast/Resources/word_classes.json
@@ -54,5 +59,6 @@ https://raw.githubusercontent.com/marklucovsky/blasterai/main/claudeBlast/Resour
 It is the file the app itself loads, so it is always the current list. Use the
 classes marked `"caregiverSelectable": true`; the others are the app's own.
 
-If a word is missing or has no class, the import preview lists it. You can
-give it a class right there, without going back to the sheet.
+If a word is written with a class the app doesn't have, or written bare in one
+cell and with an unknown class in another, the import preview lists it. You
+can give it a class right there, without going back to the sheet.

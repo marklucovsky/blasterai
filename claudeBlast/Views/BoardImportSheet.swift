@@ -586,8 +586,12 @@ struct BoardImportSheet: View {
             target.descriptionText = sceneDescription
             modelContext.insert(target)
         }
+        let before = Set(lookup.keys)
         let result = BoardWorkbook.apply(preview, to: target, cols: cols, replacing: replacing,
                                          dropping: dropped, systemPages: systemPages, context: modelContext)
+        let after = Set(((try? modelContext.fetch(FetchDescriptor<TileModel>())) ?? []).map(\.key))
+        BoardWorkbook.applyPickedClasses(([accepted.primaryPage] + accepted.subPages).flatMap(\.tiles),
+                                          created: after.subtracting(before), context: modelContext)
         // A page made here that no tile of the scene opens is unreachable
         // until a folder to it is placed — Add Page offers that, so this does.
         let made = Set(preview.pages.filter { $0.existing == .none }.map(\.key))

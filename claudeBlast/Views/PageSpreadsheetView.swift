@@ -623,8 +623,9 @@ struct PageSpreadsheetView: View {
             if suggestions.indices.contains(highlighted), case .word(let key) = suggestions[highlighted] {
                 return [add(lookup[key]?.displayName ?? key, "current selection"), makeNew]
             }
-            // The classes are already on show below: choosing one is the step.
-            return []
+            // The classes are on show below; choosing one is the better step,
+            // but the word can go in now and be classed later.
+            return [add(parts[0], "no class yet")]
         case .ambiguous:
             return []
         }

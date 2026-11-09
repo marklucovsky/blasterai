@@ -196,6 +196,17 @@ enum BoardWorkbook {
         // Every new word is a word before any cell is resolved, so `pony` on
         // one tab finds the `pony, animal` written on a later one.
         var simulated = lookup
+        // Every key the sheet writes with a class, known or not. A bare `pony`
+        // waits for the `pony, animal` written elsewhere, and a bare word whose
+        // only class is one to settle stays a word to settle with it.
+        var classedKeys: Set<String> = []
+        for plan in preview.pages {
+            for (_, text) in plan.cells {
+                if case .cell(.new(let word)?, _) = BoardCell.parse(text) {
+                    classedKeys.insert(TileModel.normalizeKey(word.key))
+                }
+            }
+        }
         for plan in preview.pages {
             for (_, text) in plan.cells {
                 guard case .cell(.new(let word)?, _) = BoardCell.parse(text),
@@ -207,6 +218,20 @@ enum BoardWorkbook {
                 if simulated[key] == nil {
                     simulated[key] = TileModel(key: key, value: word.displayName, wordClass: word.wordClass)
                 }
+            }
+        }
+        // A bare word the vocabulary still lacks is a new word with no class
+        // yet, unless it is a note (three words or more, left out).
+        for plan in preview.pages {
+            for (_, text) in plan.cells {
+                guard case .cell(.existing(let bare)?, _) = BoardCell.parse(text), !Self.isNote(bare),
+                      case .missing = BoardCell.existingWord(bare, lookup: simulated) else { continue }
+                let key = TileModel.normalizeKey(bare)
+                guard !key.isEmpty, !classedKeys.contains(key) else { continue }
+                let word = BulkWordParser.Word(key: bare, wordClass: VocabularyClasses.unspecified,
+                                               displayName: bare)
+                preview.newWords.append(word)
+                simulated[key] = TileModel(key: key, value: bare, wordClass: word.wordClass)
             }
         }
         // Covers, before any folder is resolved, so `> people` shows People's.
@@ -242,6 +267,23 @@ enum BoardWorkbook {
             var placed = 0
             preview.pages[i].resolved = []
             for (index, text) in preview.pages[i].cells {
+                // A bare word the planning above left unmade — a note, or a
+                // word whose class is still to settle — is a problem, as it
+                // was before words could go in unclassified; resolving it now
+                // would make it a word.
+                if case .cell(.existing(let bare)?, _) = BoardCell.parse(text),
+                   case .missing = BoardCell.existingWord(bare, lookup: simulated) {
+                    let cells = PageCells(grid: (cols, 1), inheritsChrome: false)
+                    let origin = preview.pages[i].origin
+                    let isNote = Self.isNote(bare)
+                    preview.problems.append(Problem(page: preview.pages[i].key,
+                                                    row: origin.row + cells.absoluteRow(index) + 1,
+                                                    column: XLSX.column(origin.col + cells.column(index)), text: text,
+                                                    message: isNote ? "A note, left out"
+                                                        : "No word \u{201C}\(bare)\u{201D}. Add a class to make one",
+                                                    kind: isNote ? .note : .missingWord(bare)))
+                    continue
+                }
                 if case .cell(.new(let word)?, _) = BoardCell.parse(text), !isKnownClass(word.wordClass) {
                     let cells = PageCells(grid: (cols, 1), inheritsChrome: false)
                     preview.problems.append(Problem(
@@ -259,7 +301,7 @@ enum BoardWorkbook {
                     if case .cell(.existing(let word)?, _) = BoardCell.parse(text) {
                         switch BoardCell.existingWord(word, lookup: simulated) {
                         case .missing:
-                            kind = word.split(whereSeparator: \.isWhitespace).count >= 3 ? .note : .missingWord(word)
+                            kind = Self.isNote(word) ? .note : .missingWord(word)
                         case .ambiguous(let keys): kind = .ambiguous(word, keys)
                         case .found: break
                         }
@@ -308,6 +350,11 @@ enum BoardWorkbook {
     }
 
     /// A class a new word may have: one of the caregiver's.
+    /// Three words or more in a cell is a note to the reader, not a word.
+    static func isNote(_ text: String) -> Bool {
+        text.split(whereSeparator: \.isWhitespace).count >= 3
+    }
+
     static func isKnownClass(_ name: String) -> Bool {
         VocabularyClasses.known(name)?.isCaregiverSelectable == true
     }
@@ -350,6 +397,29 @@ enum BoardWorkbook {
     /// - Parameter dropping: new words, by key, the caregiver chose not to
     ///   make (the moderation review). Cells naming them are left empty.
     @MainActor
+    /// The classes the preview's tiles carry, given to the words this import
+    /// made. A bare word comes in Unspecified, and the caregiver may have
+    /// picked a class on its tile; a classed word may have had its class
+    /// changed there. Only words in `created` — made by this import — change:
+    /// a tile can carry the key of a word that already existed (the sheet's
+    /// `cat, animal` beside the vocabulary's `cat`), and that word is not the
+    /// import's to recolour.
+    static func applyPickedClasses(_ tiles: [GeneratedTile], created: Set<String>, context: ModelContext) {
+        var picked: [String: String] = [:]
+        for gt in tiles where gt.isProposedNew {
+            let key = TileModel.normalizeKey(gt.key)
+            guard created.contains(key), let wc = gt.wordClass else { continue }
+            picked[key] = wc
+        }
+        guard !picked.isEmpty else { return }
+        let keys = Array(picked.keys)
+        let descriptor = FetchDescriptor<TileModel>(predicate: #Predicate { keys.contains($0.key) })
+        for tile in (try? context.fetch(descriptor)) ?? [] {
+            if let wc = picked[tile.key], tile.wordClass != wc { tile.wordClass = wc }
+        }
+        try? context.save()
+    }
+
     @discardableResult
     static func apply(_ preview: Preview, to scene: BlasterScene, cols: Int, replacing: Set<String>,
                       dropping: Set<String> = [],
@@ -390,6 +460,17 @@ enum BoardWorkbook {
             for (index, text) in plan.cells {
                 if case .cell(.new(let word)?, _) = BoardCell.parse(text),
                    dropping.contains(TileModel.normalizeKey(word.key)) { continue }
+                // A bare word the vocabulary lacks is made only if the preview
+                // planned it (Unspecified, not dropped); otherwise it was a
+                // problem, and a cell with a problem is left empty.
+                if case .cell(.existing(let bare)?, _) = BoardCell.parse(text),
+                   case .missing = BoardCell.existingWord(bare, lookup: lookup) {
+                    let key = TileModel.normalizeKey(bare)
+                    let planned = preview.newWords.contains {
+                        TileModel.normalizeKey($0.key) == key && VocabularyClasses.isUnspecified($0.wordClass)
+                    }
+                    if !planned || dropping.contains(key) { continue }
+                }
                 guard case .plan(let cell) = BoardCell.resolve(
                     BoardCell.parse(text), lookup: lookup, scenePages: scene.pages,
                     systemPages: systemPages) else { continue }

@@ -45,7 +45,40 @@ struct SceneEditorView: View {
         return Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
     }
 
-    /// (flagged, blocked) counts for a page's tiles — one pass over a single
+    /// "60 tiles, 2 flagged, 3 missing art" — the page row's second line. The
+    /// warnings are words, in the flag's orange, rather than the icon chips
+    /// they replaced: a chip reading "2" next to a flag was easy to miss, and
+    /// missing art had no mark at all until the page was opened.
+    ///
+    /// Missing art is the word well's "No art yet": nothing resolves, so the
+    /// tile draws blank. Counted per distinct word on the page.
+    private func pageSummary(_ page: PageSpec, lookup: [String: TileModel]) -> Text {
+        let n = page.tiles.count
+        var text = Text("\(n) tile\(n == 1 ? "" : "s")").foregroundStyle(.secondary)
+        func add(_ count: Int, _ label: String, _ color: Color) {
+            guard count > 0 else { return }
+            text = text + Text(", ").foregroundStyle(.secondary)
+                + Text("\(count) \(label)").foregroundStyle(color).fontWeight(.semibold)
+        }
+        let counts = reviewCounts(page, lookup: lookup)
+        add(counts.flagged, "flagged", .orange)
+        add(missingArtCount(page, lookup: lookup), "missing art", .orange)
+        add(counts.unclassified, "no class", .purple)
+        add(counts.blocked, "hidden", .red)
+        return text
+    }
+
+    private func missingArtCount(_ page: PageSpec, lookup: [String: TileModel]) -> Int {
+        PerfSignposts.interval("art.pageMissing") {
+            var seen = Set<String>()
+            return page.tiles.count(where: { entry in
+                guard seen.insert(entry.key).inserted, let t = lookup[entry.key] else { return false }
+                return !imageResolver.hasResolvedArt(for: t.bundleImage)
+            })
+        }
+    }
+
+    /// (flagged, blocked, unclassified) counts for a page's tiles — one pass over a single
     /// hoisted lookup — shown as chips so a caregiver spots pages needing attention.
     /// Counted the way `TileReviewBadge` draws: retired wins, and a tile is one
     /// thing or the other, never both.
@@ -60,14 +93,15 @@ struct SceneEditorView: View {
     /// Takes the lookup rather than reading `tileLookup`: this runs once per page
     /// row, and each read rebuilds the dictionary over every TileModel.
     private func reviewCounts(_ page: PageSpec,
-                              lookup: [String: TileModel]) -> (flagged: Int, blocked: Int) {
-        var flagged = 0, blocked = 0
+                              lookup: [String: TileModel]) -> (flagged: Int, blocked: Int, unclassified: Int) {
+        var flagged = 0, blocked = 0, unclassified = 0
         for entry in page.tiles {
             guard let t = lookup[entry.key] else { continue }
             if t.isRetired { blocked += 1 }
             else if t.needsReview { flagged += 1 }
+            else if VocabularyClasses.isUnspecified(t.wordClass) { unclassified += 1 }
         }
-        return (flagged, blocked)
+        return (flagged, blocked, unclassified)
     }
 
     /// Tile placements across the scene's pages — the sum of the per-page counts
@@ -75,16 +109,6 @@ struct SceneEditorView: View {
     /// pages is three, which is what the rows below add up to.
     private var sceneTileCount: Int {
         scene.pages.reduce(0) { $0 + $1.tiles.count }
-    }
-
-    private func countChip(_ text: String, _ system: String, _ color: Color) -> some View {
-        HStack(spacing: 3) {
-            Image(systemName: system).font(.caption2)
-            Text(text).font(.caption2.weight(.semibold))
-        }
-        .foregroundStyle(color)
-        .padding(.horizontal, 6).padding(.vertical, 2)
-        .background(Capsule().fill(color.opacity(0.12)))
     }
 
     /// Caregiver words this scene introduced that still have no art.
@@ -441,14 +465,8 @@ struct SceneEditorView: View {
                                         .foregroundStyle(.blue)
                                 }
                             }
-                            HStack(spacing: 8) {
-                                Text("\(page.tiles.count) tile\(page.tiles.count == 1 ? "" : "s")")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                let counts = reviewCounts(page, lookup: lookup)
-                                if counts.flagged > 0 { countChip("\(counts.flagged)", "flag.fill", .orange) }
-                                if counts.blocked > 0 { countChip("\(counts.blocked)", "eye.slash.fill", .red) }
-                            }
+                            pageSummary(page, lookup: lookup)
+                                .font(.caption)
                         }
                         .padding(.vertical, 2)
                     }
@@ -848,7 +866,7 @@ private struct PageGeneratorSheet: View {
     /// vocabulary, with counts — the "add a page of one class" options.
     private var classQueryOptions: [(cls: VocabularyClass, count: Int)] {
         let counts = allTiles.reduce(into: [String: Int]()) { $0[$1.wordClass, default: 0] += 1 }
-        return VocabularyClasses.caregiverSelectable.compactMap { c in
+        return VocabularyClasses.assignable.compactMap { c in
             let n = counts[c.name] ?? 0
             return n > 0 ? (c, n) : nil
         }
@@ -1540,6 +1558,32 @@ struct PagePreviewView: View {
     }
     private var currentTiles: [GeneratedTile] { allSections[sectionIndex].tiles }
 
+    /// A proposed new word nobody gave a class — an imported bare `cat`.
+    /// Only a word not yet in the vocabulary: a class chosen here travels on
+    /// its `GeneratedTile` to Accept, which makes the word.
+    private func isUnclassed(_ gt: GeneratedTile) -> Bool {
+        gt.isProposedNew && tileLookup[gt.key] == nil
+            && VocabularyClasses.isUnspecified(gt.wordClass ?? "")
+    }
+
+    /// Unclassed new words across every section, each once — the count the
+    /// status line shows. Removed ones don't count: they won't be made.
+    private var unclassedCount: Int {
+        Set(allSections.flatMap(\.tiles).filter(isUnclassed).map(\.key))
+            .filter { review.state(for: $0) != .removed }.count
+    }
+
+    /// Give a new word its class, on every section that shows it.
+    private func setClass(_ wordClass: String, for key: String) {
+        func retag(_ tiles: inout [GeneratedTile]) {
+            for i in tiles.indices where tiles[i].key == key && tiles[i].isProposedNew {
+                tiles[i].wordClass = wordClass
+            }
+        }
+        retag(&preview.primaryPage.tiles)
+        for i in preview.subPages.indices { retag(&preview.subPages[i].tiles) }
+    }
+
     /// The current section's tiles as an editable `[TileEntry]` binding. Writes
     /// map the new order/membership back onto the section's `GeneratedTile`s by
     /// key (preserving each tile's full data), so the preview prunes/reorders in
@@ -1576,6 +1620,18 @@ struct PagePreviewView: View {
                                     .foregroundStyle(selectedSection == i ? .white : .primary)
                                     // Where the words still to review are: a page
                                     // other than the one showing says so.
+                                    // A white light: words here have no class
+                                        // yet. Nothing to resolve — a reminder.
+                                    .overlay(alignment: .topLeading) {
+                                        if allSections[i].tiles.contains(where: isUnclassed) {
+                                            Circle().fill(.white)
+                                                .frame(width: 9, height: 9)
+                                                .overlay(Circle().stroke(Color.secondary.opacity(0.5), lineWidth: 1))
+                                                .shadow(color: .white.opacity(0.9), radius: 3)
+                                                .offset(x: -2, y: -2)
+                                                .accessibilityLabel("Has words without a class")
+                                        }
+                                    }
                                     .overlay(alignment: .topTrailing) {
                                         if let mark = reviewMark(for: allSections[i]) {
                                             Image(systemName: mark.symbol)
@@ -1649,7 +1705,7 @@ struct PagePreviewView: View {
 
             Divider()
 
-            NewWordReviewStatus(review: review, present: presentNewKeys)
+            NewWordReviewStatus(review: review, present: presentNewKeys, unclassed: unclassedCount)
 
             HStack(spacing: 10) {
                 Button("Cancel", role: .destructive) { onCancel() }
@@ -1734,11 +1790,40 @@ struct PagePreviewView: View {
                                       wordClass: wc, link: gt.link, isNew: true,
                                       imageData: previewImages[gt.key])
                         .overlay(alignment: .bottomTrailing) {
-                            NewWordReviewBadge(key: gt.key, review: review)
+                            // Moderation first: a flag must be settled. A word
+                            // that passed offers its class: a ? while it has
+                            // none (ignoring it is fine), the green check once
+                            // it has one — still a menu, so a wrong pick can
+                            // be changed before Accept.
+                            if review.state(for: gt.key) == .approved {
+                                classMenu(for: gt.key, name: name, current: wc,
+                                          label: isUnclassed(gt)
+                                              ? reviewBadgeIcon("questionmark.circle.fill", .purple)
+                                              : reviewBadgeIcon("checkmark.circle.fill", .green))
+                            } else {
+                                NewWordReviewBadge(key: gt.key, review: review)
+                            }
                         }
                 }
             }
         }
+    }
+
+    /// The page editor's class badge, for a word not made yet: choosing sets
+    /// the class it will be made with; Remove is the green check's own.
+    private func classMenu(for key: String, name: String, current: String,
+                           label: some View) -> some View {
+        Menu {
+            Section("Class of \u{201C}\(name)\u{201D}") {
+                ForEach(VocabularyClasses.assignable) { cls in
+                    Button { setClass(cls.name, for: key) } label: {
+                        if cls.name == current { Label(cls.label, systemImage: "checkmark") }
+                        else { Text(cls.label) }
+                    }
+                }
+            }
+            Button(role: .destructive) { review.remove(key) } label: { Label("Remove", systemImage: "trash") }
+        } label: { label }
     }
 }
 

@@ -905,9 +905,27 @@ struct TilePropertiesSheet: View {
                             Text(tile?.displayName ?? tileKey)
                                 .font(.headline)
                             HStack(spacing: 6) {
-                                Text(tile?.wordClass ?? "")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                // A word someone added can have its class
+                                // changed here; a bundled word's class is
+                                // the vocabulary's, and an update would put
+                                // it back.
+                                if let tile, !tile.isSystem {
+                                    WordClassMenu(tile: tile) {
+                                        HStack(spacing: 2) {
+                                            Text(VocabularyClasses.isUnspecified(tile.wordClass)
+                                                 ? "No class" : tile.wordClass)
+                                            Image(systemName: "chevron.up.chevron.down")
+                                                .font(.caption2)
+                                        }
+                                        .font(.caption)
+                                        .foregroundStyle(VocabularyClasses.isUnspecified(tile.wordClass)
+                                                         ? Color.purple : Color.accentColor)
+                                    }
+                                } else {
+                                    Text(tile?.wordClass ?? "")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                                 if let tile, !tile.isSystem {
                                     Label("Added", systemImage: "person.crop.circle.badge.plus")
                                         .font(.caption2)
