@@ -611,8 +611,11 @@ final class BlasterScene {
     ///
     /// Inserts into `context` and returns the copy; the caller activates it.
     @discardableResult
+    ///
+    /// A copy of BlasterAI 60 is sparse — see `copiedPages(of:alsoShadowing:)`.
     static func cloneForEditing(_ source: BlasterScene, in context: ModelContext,
-                                authorID: String, authorName: String) -> BlasterScene {
+                                authorID: String, authorName: String,
+                                alsoShadowing: String? = nil) -> BlasterScene {
         let copy = BlasterScene(
             name: copyName(of: source, in: context),
             descriptionText: copyProvenance(of: source),
@@ -620,7 +623,7 @@ final class BlasterScene {
             isDefault: false,
             isActive: false
         )
-        copy.pages = source.pages           // deep copy via the Codable round-trip
+        copy.pages = copiedPages(of: source, alsoShadowing: alsoShadowing)
         copy.designedFor = source.designedFor
         copy.revealLevelCount = source.revealLevelCount
         copy.revealLevel = source.revealLevel
@@ -630,6 +633,78 @@ final class BlasterScene {
         copy.ensureIdentity(authorID: authorID, authorName: authorName)
         context.insert(copy)
         return copy
+    }
+
+    // MARK: - Copy-on-write
+
+    /// The pages a copy of `source` starts with.
+    ///
+    /// Any scene but BlasterAI 60 copies whole. A copy of BlasterAI 60 is
+    /// sparse: its Home, plus the page being edited when the copy was made
+    /// for Edit This Page. Every other page is still BlasterAI 60's, reached
+    /// through `<system>:` links, and keeps following its updates until a
+    /// caregiver edits it (`shadowSystemPage`). Duplicate and Make a Copy both
+    /// come here, so they make the same copy. Copied whole, the pages were
+    /// unreachable: row 1 and every folder open BlasterAI 60's own.
+    static func copiedPages(of source: BlasterScene, alsoShadowing: String? = nil) -> [PageSpec] {
+        guard source.isDefault else { return source.pages }
+        let systemHome = source.homePageKey
+        guard var home = source.page(withKey: systemHome) else { return source.pages }
+        home.tiles = home.tiles.map { linkedIntoSystem($0, systemHomePageKey: systemHome) }
+        var pages = [home]
+        if let key = alsoShadowing, key != systemHome, let page = source.page(withKey: key) {
+            pages.append(shadow(of: page, systemHomePageKey: systemHome, key: key))
+        }
+        return pages
+    }
+
+    /// `entry` as it reads once its page leaves BlasterAI 60: a link to one of
+    /// the core board's pages names it as such, and one to its Home is Home.
+    static func linkedIntoSystem(_ entry: TileEntry, systemHomePageKey: String) -> TileEntry {
+        let link = entry.link
+        guard !link.isEmpty, link != TileToken.home,
+              TileToken.systemPageKey(link) == nil,
+              TileToken.scenePageKey(link) == nil else { return entry }
+        var out = entry
+        out.link = link == systemHomePageKey ? TileToken.home : TileToken.systemLink(to: link)
+        return out
+    }
+
+    /// The scene's own copy of BlasterAI 60's `page`, standing in for it.
+    static func shadow(of page: PageSpec, systemHomePageKey: String, key: String) -> PageSpec {
+        var copy = page
+        copy.key = key
+        copy.shadows = page.key
+        copy.tiles = page.tiles.map { linkedIntoSystem($0, systemHomePageKey: systemHomePageKey) }
+        return copy
+    }
+
+    /// The scene's page standing in for BlasterAI 60's `systemKey`, if any.
+    func shadowPage(for systemKey: String) -> PageSpec? {
+        pages.first { $0.shadows == systemKey }
+    }
+
+    /// The BlasterAI 60 pages this scene has its own copy of.
+    var shadowedSystemKeys: Set<String> {
+        Set(pages.compactMap { $0.isShadow ? $0.shadows : nil })
+    }
+
+    /// Copy BlasterAI 60's `page` into this scene to stand in for it, and
+    /// return the copy's key. Copy-on-write: called when a caregiver edits a
+    /// core-board page from this scene. A page already copied is returned as
+    /// it is. The copy takes the system key when the scene has no page by
+    /// that name, else the next free `key_2`, `key_3`.
+    @discardableResult
+    func shadowSystemPage(_ page: PageSpec, systemHomePageKey: String) -> String {
+        if let existing = shadowPage(for: page.key) { return existing.key }
+        var pages = self.pages
+        let taken = Set(pages.map(\.key))
+        var key = page.key
+        var n = 2
+        while taken.contains(key) { key = "\(page.key)_\(n)"; n += 1 }
+        pages.append(Self.shadow(of: page, systemHomePageKey: systemHomePageKey, key: key))
+        self.pages = pages
+        return key
     }
 
     // MARK: - Duplicate
@@ -663,7 +738,7 @@ final class BlasterScene {
             isDefault: false,
             isActive: false
         )
-        copy.pages = source.pages  // deep copy via Codable round-trip in the setter
+        copy.pages = copiedPages(of: source)
         copy.designedFor = source.designedFor
         copy.revealLevelCount = source.revealLevelCount
         copy.revealLevel = source.revealLevel

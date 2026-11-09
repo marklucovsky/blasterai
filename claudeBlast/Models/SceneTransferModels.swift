@@ -162,6 +162,10 @@ struct ExportablePage: Codable {
     /// The page's cover (`PageCover`), when one is written down. Optional so
     /// an older file decodes as nil and the page takes its default.
     var cover: String? = nil
+    /// The BlasterAI 60 page this page stands in for (`PageSpec.shadows`).
+    /// Absent for an ordinary page; the receiving device has BlasterAI 60 too,
+    /// so a copy-on-write scene travels sparse and keeps following its updates.
+    var shadows: String? = nil
 }
 
 struct ExportableScene: Codable {

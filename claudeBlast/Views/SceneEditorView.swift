@@ -465,6 +465,14 @@ struct SceneEditorView: View {
                                         .foregroundStyle(.blue)
                                 }
                             }
+                            if page.isShadow {
+                                // Copy-on-write: this page is the scene's own
+                                // copy of a BlasterAI 60 page.
+                                Label("Replaces \(SystemLinks.displayName(of: TileToken.systemLink(to: page.shadows)))",
+                                      systemImage: "square.on.square")
+                                    .font(.caption)
+                                    .foregroundStyle(.indigo)
+                            }
                             pageSummary(page, lookup: lookup)
                                 .font(.caption)
                         }
@@ -678,6 +686,9 @@ struct SceneEditorView: View {
         }
     }
 
+    /// On a page standing in for a BlasterAI 60 page, deleting the copy is
+    /// going back to BlasterAI 60's, and says so: its links lead to the
+    /// original again, and its updates reach it again.
     @ViewBuilder
     private func deletePageButton(_ page: PageSpec) -> some View {
         Button(role: .destructive) {
@@ -685,7 +696,11 @@ struct SceneEditorView: View {
                 deletePages(at: IndexSet(integer: index))
             }
         } label: {
-            Label("Delete", systemImage: "trash")
+            if page.isShadow {
+                Label("Use BlasterAI 60\u{2019}s", systemImage: "arrow.uturn.backward")
+            } else {
+                Label("Delete", systemImage: "trash")
+            }
         }
     }
 

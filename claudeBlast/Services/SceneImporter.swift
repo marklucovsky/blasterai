@@ -309,7 +309,8 @@ enum SceneImporter {
             let cover = exportPage.cover.flatMap { tileLookup[$0] == nil ? nil : $0 } ?? ""
             return PageSpec(key: exportPage.key,
                             displayName: exportPage.displayName ?? "",
-                            tiles: tiles, cover: cover)
+                            tiles: tiles, cover: cover,
+                            shadows: exportPage.shadows ?? "")
         }
 
         // Decentralized identity carried in the file (absent on legacy exports).

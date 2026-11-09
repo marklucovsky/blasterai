@@ -73,13 +73,29 @@ enum OBFExporter {
     /// pictures the package has to carry.
     ///
     /// Pure, so the mapping can be tested without writing a zip.
+    ///
+    /// `systemPages`: BlasterAI 60's pages, at the board's level. The pages a
+    /// scene reaches in the core board travel with it (`ExportPages`): an OBF
+    /// reader has no BlasterAI 60 to open them from. Empty for BlasterAI 60
+    /// itself.
     static func boards(for scene: BlasterScene,
-                       tileLookup: [String: TileModel]) -> (boards: [OBFBoard], imageKeys: [String]) {
+                       tileLookup: [String: TileModel],
+                       systemPages: [PageSpec] = [],
+                       systemHomePageKey: String? = nil) -> (boards: [OBFBoard], imageKeys: [String]) {
         var imageKeys: [String] = []
         var seenImages = Set<String>()
         // OBF has no levels, so the board travels as the sharer's child sees it:
         // words above the current level go out as gaps, like concealed ones.
-        let scenePages = scene.visiblePages
+        //
+        // A scene that draws the system row reaches its pages from every
+        // page, so they come along too: that is the board the child has. A
+        // copy of BlasterAI 60 reaches most of it only that way.
+        let inheritsRow = BoardChrome.inherits(scene) && !scene.isDefault
+        let whole = ExportPages(scenePages: scene.visiblePages, systemPages: systemPages,
+                                systemHomePageKey: systemHomePageKey,
+                                rowKeys: inheritsRow ? BoardChrome.pageKeys : [])
+        let scenePages = whole.pages
+        let pageKeys = Set(scenePages.map(\.key))
 
         let boards: [OBFBoard] = scenePages.map { page in
             var buttons: [OBFButton] = []
@@ -96,11 +112,16 @@ enum OBFExporter {
             //
             // The system row is not stored either. On BlasterAI 60 its folders
             // open the board's own pages, so they go out on every page as they
-            // are drawn. Another scene's row opens BlasterAI 60, which is not
-            // in the package, so there is nothing for it to open.
+            // are drawn. Another scene's row opens BlasterAI 60's pages, which
+            // travel with it (`ExportPages`), so its folders go out too.
             let rowPages = Set(BoardChrome.rowPages(of: scene))
             let row = BoardChrome.row(for: scene, level: scene.effectiveRevealLevel)
-                .filter { rowPages.contains($0.link) }
+                .map { entry -> TileEntry in
+                    var entry = entry
+                    entry.link = whole.link(entry.link)
+                    return entry
+                }
+                .filter { rowPages.contains($0.link) || (inheritsRow && pageKeys.contains($0.link)) }
             var pageEntries = row + page.tiles
             if page.key != scene.homePageKey,
                scenePages.contains(where: { $0.key == scene.homePageKey }),
@@ -240,11 +261,14 @@ enum OBFExporter {
     /// The zip holds the boards, the manifest, and a PNG per tile.
     static func exportOBZ(scene: BlasterScene,
                           tileLookup: [String: TileModel],
+                          systemPages: [PageSpec] = [],
+                          systemHomePageKey: String? = nil,
                           imageSet: ImageSetID,
                           resolver: TileImageResolver,
                           basename: String,
                           progress: @MainActor (Int, Int) -> Void = { _, _ in }) async throws -> URL {
-        let built = boards(for: scene, tileLookup: tileLookup)
+        let built = boards(for: scene, tileLookup: tileLookup,
+                           systemPages: systemPages, systemHomePageKey: systemHomePageKey)
 
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]

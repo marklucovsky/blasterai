@@ -644,8 +644,13 @@ enum BoardPDFRenderer {
                                          orientation: options.orientation,
                                          columns: options.resolvedColumns,
                                          pinnedRows: options.pinnedRows)
+        // On another scene that draws the row, its folders' pages are printed
+        // in too (`ExportPages`), and walk in the same order.
         let rowPages = Set(BoardChrome.rowPages(of: scene))
-        let roots = BoardChrome.row(inSystemScene: true).filter { rowPages.contains($0.link) }
+        let printed = Set(pages.map(\.key))
+        let roots = BoardChrome.row(inSystemScene: true).filter {
+            rowPages.contains($0.link) || (BoardChrome.inherits(scene) && printed.contains($0.link))
+        }
         let walked = BoardPagination.boardOrder(pages, homeKey: scene.homePageKey, roots: roots,
                                                 label: { tileLookup[$0.key]?.displayName })
         let visible = BoardPagination.filtered(walked, filter: options.filter, tileLookup: tileLookup)
