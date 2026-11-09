@@ -1004,12 +1004,16 @@ struct TileGridView: View {
     /// The page Edit would open: one of the active scene's own. On BlasterAI
     /// 60 that is its page too: the editor offers a copy to edit
     /// (`SystemSceneCopyOffer`) and opens the same page in it.
+    /// A BlasterAI 60 page on another scene's board is editable too: the
+    /// editor opens the scene's own copy of it, offering to make one first
+    /// (copy-on-write, `RailPageEditor`).
     private var editablePageKey: String? {
         guard let scene = activeScene,
-              TileToken.systemPageKey(identityPageKey) == nil,
-              TileToken.scenePageKey(identityPageKey) == nil,
-              scene.page(withKey: identityPageKey) != nil else { return nil }
-        return identityPageKey
+              TileToken.scenePageKey(identityPageKey) == nil else { return nil }
+        if let systemKey = TileToken.systemPageKey(identityPageKey) {
+            return scene.isDefault || systemScene?.page(withKey: systemKey) == nil ? nil : identityPageKey
+        }
+        return scene.page(withKey: identityPageKey) != nil ? identityPageKey : nil
     }
 
     /// The level dial, inline on the caregiver rail; nil when neither board
@@ -1058,7 +1062,8 @@ struct TileGridView: View {
             of: entry.link, fromPage: identityPageKey,
             homePageKey: activeScene?.homePageKey ?? "home",
             systemHomePageKey: systemScene?.homePageKey,
-            systemIsActive: activeScene?.isDefault == true)
+            systemIsActive: activeScene?.isDefault == true,
+            shadowed: activeScene?.shadowedSystemKeys ?? [])
     }
 
     private func wayMark(for entry: TileEntry) -> WayMark? {

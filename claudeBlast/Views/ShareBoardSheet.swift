@@ -97,6 +97,7 @@ struct ShareBoardSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(TileImageResolver.self) private var imageResolver
     @Query private var allTiles: [TileModel]
+    @Query(filter: #Predicate<BlasterScene> { $0.isDefault }) private var systemScenes: [BlasterScene]
 
     @State private var setScope: ExportSetScope = .activeSet
     /// Seeded from the scene's designed grid. See `BoardPrintOptions.forScene`.
@@ -478,11 +479,33 @@ struct ShareBoardSheet: View {
         return "\(count) sheet\(count == 1 ? "" : "s")"
     }
 
+    /// BlasterAI 60, when the scene being shared is not it.
+    private var linkedSystem: BlasterScene? {
+        guard let system = systemScenes.first, system.id != subject.scene.id else { return nil }
+        return system
+    }
+
+    /// A scene prints with the BlasterAI 60 pages its links reach
+    /// (`ExportPages`) — paper has no core board to open them from, and a
+    /// copy of BlasterAI 60 holds only the pages a caregiver edited.
     private var printablePages: [PageSpec] {
         let level = printLevel > 0 ? printLevel : nil
         switch subject {
-        case .scene(let scene): return scene.pages(atLevel: level)
-        case .page(let page, _): return BlasterScene.project([page], atLevel: level)
+        case .scene(let scene):
+            guard let system = linkedSystem else { return scene.pages(atLevel: level) }
+            let systemLevel = BoardLevels.clamp(level, to: system.revealLevelCount)
+            return ExportPages(scenePages: scene.pages(atLevel: level),
+                               systemPages: system.pages(atLevel: systemLevel),
+                               systemHomePageKey: system.homePageKey).pages
+        case .page(let page, let scene):
+            // The page and everything it opens, in the scene and in BlasterAI
+            // 60 alike — the I page prints with Play, Games and the rest.
+            let systemLevel = linkedSystem.flatMap { BoardLevels.clamp(level, to: $0.revealLevelCount) }
+            let whole = ExportPages(scenePages: scene.pages(atLevel: level),
+                                    systemPages: linkedSystem?.pages(atLevel: systemLevel) ?? [],
+                                    systemHomePageKey: linkedSystem?.homePageKey)
+            let reached = whole.reachable(from: page.key)
+            return reached.isEmpty ? BlasterScene.project([page], atLevel: level) : reached
         }
     }
 
@@ -633,8 +656,13 @@ struct ShareBoardSheet: View {
     }
 
     private func openBoardPackage() async throws -> ExportedFile {
+        let system = linkedSystem
         let url = try await OBFExporter.exportOBZ(scene: subject.scene,
                                                   tileLookup: tileLookup,
+                                                  systemPages: system.map {
+                                                      BoardLevels(scene: subject.scene, system: $0).systemPages
+                                                  } ?? [],
+                                                  systemHomePageKey: system?.homePageKey,
                                                   imageSet: imageResolver.activeSet,
                                                   resolver: imageResolver,
                                                   basename: subject.basename,

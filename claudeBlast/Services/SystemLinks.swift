@@ -31,9 +31,15 @@ enum SystemLinks {
     /// mounted page (a Me page doorway to `<system>:i_page`) can carry such a
     /// link onto the system board; kept prefixed, it named a page nothing
     /// could find and the board showed "This Scene Has No Home Page".
+    ///
+    /// `shadowed`: the system pages the active scene has its own copy of
+    /// (`PageSpec.shadows`). On such a page the links are the scene's — the
+    /// copy's links to the core board were written out as `<system>:` when it
+    /// was made — so a plain link there is a page of the scene.
     static func destination(of link: String, fromPage: String,
                             homePageKey: String, systemHomePageKey: String?,
-                            systemIsActive: Bool = false) -> String {
+                            systemIsActive: Bool = false,
+                            shadowed: Set<String> = []) -> String {
         if link == TileToken.home { return homePageKey }
         if let systemKey = TileToken.systemPageKey(link) {
             guard systemIsActive else { return link }
@@ -43,7 +49,8 @@ enum SystemLinks {
         if let mounted = TileToken.scenePageKey(fromPage) {
             return TileToken.sceneLink(mounted.sceneID, to: link)
         }
-        if TileToken.systemPageKey(fromPage) != nil {
+        if let fromSystem = TileToken.systemPageKey(fromPage) {
+            if shadowed.contains(fromSystem) { return link }
             return link == systemHomePageKey ? homePageKey : TileToken.systemLink(to: link)
         }
         return link
@@ -54,6 +61,9 @@ enum SystemLinks {
     /// page of the mounted scene `mountedPages` finds for ID (nil when that
     /// scene is gone, e.g. deleted on another device).
     ///
+    /// A `<system>:` key opens the scene's own copy of that page when it has
+    /// one (copy-on-write, `PageSpec.shadows`), else BlasterAI 60's.
+    ///
     /// A system page shows all its words. Graded reveal is set per scene, and
     /// the level a caregiver chose for BlasterAI 60 says nothing about a child
     /// who is using another board.
@@ -61,6 +71,7 @@ enum SystemLinks {
                      systemPages: [PageSpec],
                      mountedPages: (String) -> [PageSpec]? = { _ in nil }) -> PageSpec? {
         if let systemKey = TileToken.systemPageKey(key) {
+            if let own = scenePages.first(where: { $0.shadows == systemKey }) { return own }
             return systemPages.first { $0.key == systemKey }
         }
         if let mounted = TileToken.scenePageKey(key) {
@@ -140,8 +151,10 @@ struct BoardLevels {
     func visibleTileCount(atLevel level: Int) -> Int {
         let own = scene.visibleTileCount(atLevel: Self.clamp(level, to: scene.revealLevelCount))
         guard let system else { return own }
+        // A page the scene has its own copy of is counted once, as its own.
         let reachable = Self.reachableSystemKeys(from: scene.pages, system: system,
                                                  inheritsRow: BoardChrome.inherits(scene))
+            .subtracting(scene.shadowedSystemKeys)
         let pages = system.pages(atLevel: Self.clamp(level, to: system.revealLevelCount))
         return own + pages.filter { reachable.contains($0.key) }
             .reduce(0) { $0 + $1.tiles.count { !$0.isEmptyCell } }

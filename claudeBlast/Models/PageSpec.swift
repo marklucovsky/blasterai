@@ -52,12 +52,29 @@ struct PageSpec: Codable, Hashable, Identifiable {
     /// (`PageCover`). Empty until chosen; `PageCover.key` supplies the default.
     var cover: String = ""
 
-    init(key: String, displayName: String = "", tiles: [TileEntry], cover: String = "") {
+    /// The BlasterAI 60 page this page stands in for, or empty for an ordinary
+    /// page — copy-on-write.
+    ///
+    /// A scene that links into the core board does not copy it. When a
+    /// caregiver edits one of its pages, that page alone is copied into the
+    /// scene and marked here, and every `<system>:` link to it — the system
+    /// row, folders, a trail through system pages — opens the copy instead
+    /// (`SystemLinks.page(forKey:)`). Pages nobody edited keep following
+    /// BlasterAI 60 as it is updated. Explicit rather than matched by key, so a
+    /// scene that happens to have its own `actions` page shadows nothing.
+    var shadows: String = ""
+
+    init(key: String, displayName: String = "", tiles: [TileEntry], cover: String = "",
+         shadows: String = "") {
         self.key = key
         self.displayName = displayName
         self.tiles = tiles
         self.cover = cover
+        self.shadows = shadows
     }
+
+    /// True when this page stands in for a BlasterAI 60 page.
+    var isShadow: Bool { !shadows.isEmpty }
 
     /// The name to show. The single resolution point — no surface should reach
     /// for `key` or `displayName` directly to label a page.
@@ -78,6 +95,7 @@ struct PageSpec: Codable, Hashable, Identifiable {
         displayName = try container.decodeIfPresent(String.self, forKey: .displayName) ?? ""
         tiles = try container.decodeIfPresent([TileEntry].self, forKey: .tiles) ?? []
         cover = try container.decodeIfPresent(String.self, forKey: .cover) ?? ""
+        shadows = try container.decodeIfPresent(String.self, forKey: .shadows) ?? ""
     }
 }
 

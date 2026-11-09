@@ -55,7 +55,8 @@ struct ScenePreviewBoardView: View {
         let dest = SystemLinks.destination(of: link, fromPage: fromPage,
                                            homePageKey: scene.homePageKey,
                                            systemHomePageKey: systemHomePageKey,
-                                           systemIsActive: scene.isDefault)
+                                           systemIsActive: scene.isDefault,
+                                           shadowed: scene.shadowedSystemKeys)
         guard SystemLinks.page(forKey: dest, scenePages: scene.pages, systemPages: systemPages) != nil
         else { return nil }
         return dest
