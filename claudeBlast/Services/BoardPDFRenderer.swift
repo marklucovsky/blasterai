@@ -648,7 +648,13 @@ enum BoardPDFRenderer {
         // in too (`ExportPages`), and walk in the same order.
         let rowPages = Set(BoardChrome.rowPages(of: scene))
         let printed = Set(pages.map(\.key))
-        let roots = BoardChrome.row(inSystemScene: true).filter {
+        // A scene's own row walks first in its order, as BlasterAI 60's does.
+        let rowEntries = BoardChrome.ownRow(of: scene)?.tiles.map { entry -> TileEntry in
+            var entry = entry
+            entry.link = TileToken.systemPageKey(entry.link) ?? entry.link
+            return entry
+        } ?? BoardChrome.row(inSystemScene: true)
+        let roots = rowEntries.filter {
             rowPages.contains($0.link) || (BoardChrome.inherits(scene) && printed.contains($0.link))
         }
         let walked = BoardPagination.boardOrder(pages, homeKey: scene.homePageKey, roots: roots,

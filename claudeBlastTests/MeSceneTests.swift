@@ -264,15 +264,41 @@ struct MeSceneTests {
         #expect(me.page(withKey: MeScene.contextPageKey(for: "people")) == nil)
     }
 
-    @Test func contextEntriesReadPlainKeysWhenTheSystemIsTheBoard() {
+    /// A page counts by its name, on any board: a scene's own I page shows
+    /// what is listed for I, as BlasterAI 60's does (Mark 2026-11-09). Before,
+    /// a plain key off BlasterAI 60 matched nothing.
+    @Test func contextEntriesMatchAPageByNameOnAnyBoard() {
         let ctx = TestStore.freshContainer().mainContext
         let me = MeScene.ensure(profileID: "p1", context: ctx)
         let farm = topic("Farm", id: "s1", words: ["cow"], in: ctx)
         MeScene.setContexts(["i_page"], for: farm, in: me, context: ctx, titles: [:])
         #expect(MeScene.contextEntries(forNavKey: "i_page", systemIsActive: true, in: me).count == 1)
         #expect(MeScene.contextEntries(forNavKey: "<system>:i_page", systemIsActive: false, in: me).count == 1)
-        #expect(MeScene.contextEntries(forNavKey: "i_page", systemIsActive: false, in: me).isEmpty)
+        #expect(MeScene.contextEntries(forNavKey: "i_page", systemIsActive: false, in: me).count == 1)
+        #expect(MeScene.contextEntries(forNavKey: "barn", systemIsActive: false, in: me).isEmpty)
         #expect(MeScene.contextEntries(forNavKey: "<scene:s1>:home", systemIsActive: true, in: me).isEmpty)
+    }
+
+    /// The pages a caregiver can choose: BlasterAI 60's, then their own
+    /// scenes' — every page of each, homes and the Me page left out; a name
+    /// two boards share is marked as one context.
+    @Test func contextChoicesListEveryBoardsPagesOnce() {
+        let ctx = TestStore.freshContainer().mainContext
+        let system = BlasterScene(name: "BlasterAI 60", homePageKey: "home", isDefault: true)
+        system.pages = [PageSpec(key: "home", tiles: []), PageSpec(key: "places", tiles: [])]
+        let church = BlasterScene(name: "Sunday School", homePageKey: "home")
+        church.designedFor = "ipad-10x6"
+        church.pages = [PageSpec(key: "home", tiles: []), PageSpec(key: "places", tiles: []),
+                        PageSpec(key: "bible", tiles: [])]
+        let me = MeScene.ensure(profileID: "p1", context: ctx)
+        ctx.insert(system); ctx.insert(church)
+
+        let groups = MeScene.contextChoices(system: system, scenes: [church, me])
+
+        #expect(groups.map(\.board) == ["BlasterAI 60", "Sunday School"])
+        #expect(groups.map { $0.pages.map(\.key) } == [["places"], ["places", "bible"]])
+        #expect(MeScene.sharedContextKeys(groups) == ["places"])
+        #expect(MeScene.contextTitle("bible", system: system, scenes: [church]) == "Bible")
     }
 
     @Test func removingATopicTakesItOffItsContextsAndRefreshKeepsThemCurrent() {

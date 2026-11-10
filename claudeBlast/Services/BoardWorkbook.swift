@@ -150,14 +150,18 @@ enum BoardWorkbook {
         for (t, tab) in pageTabs.enumerated() {
             // Sheet1 is no page's name: the first one is Home.
             let unnamed = t == 0 && isDefaultTabName(tab.name)
-            let key = BoardCell.pageKey(unnamed ? unnamedTab : tab.name)
+            // The SystemRow tab is the scene's own row 1, not a page.
+            let key = isRowTab(tab.name) ? BlasterScene.rowPageKey
+                : BoardCell.pageKey(unnamed ? unnamedTab : tab.name)
             guard !key.isEmpty, seen.insert(key).inserted else {
                 preview.problems.append(Problem(page: tab.name, row: 0, column: "", text: tab.name,
                                                 message: key.isEmpty ? "A tab needs a name" : "Two tabs are both \u{201C}\(key)\u{201D}; the second was skipped"))
                 continue
             }
             let existing: PagePlan.Existing
-            if let page = scenePages.first(where: { $0.key == key }) {
+            if key == BlasterScene.rowPageKey {
+                existing = .none
+            } else if let page = scenePages.first(where: { $0.key == key }) {
                 let words = page.tiles.filter { !$0.isSpacer }.count
                 existing = words == 0 ? .empty : .filled(tiles: words)
             } else {
@@ -179,14 +183,16 @@ enum BoardWorkbook {
                 }
             }
             let shown = unnamed ? unnamedTab : tab.name
-            let title = PageNaming.displayName(key) == shown || shown == key || key == "home" ? "" : shown
+            let title = key == BlasterScene.rowPageKey || PageNaming.displayName(key) == shown
+                || shown == key || key == "home" ? "" : shown
             var plan = PagePlan(key: key, title: title, existing: existing, cells: cells, placed: 0)
             plan.origin = origin
             plan.tabName = tab.name
             preview.pages.append(plan)
         }
         guard !preview.pages.isEmpty else { return preview }
-        preview.homeKey = preview.pages.first { $0.key == "home" }?.key ?? preview.pages[0].key
+        let boardPages = preview.pages.filter { $0.key != BlasterScene.rowPageKey }
+        preview.homeKey = boardPages.first { $0.key == "home" }?.key ?? boardPages.first?.key
 
         // Every tab is a page before any cell is resolved.
         var pages = scenePages
@@ -442,7 +448,8 @@ enum BoardWorkbook {
         }
         result.pagesSkipped = preview.pages.map(\.key).filter { key in !writing.contains { $0.key == key } }
         var pages = scene.pages
-        for plan in writing where !pages.contains(where: { $0.key == plan.key }) {
+        for plan in writing where plan.key != BlasterScene.rowPageKey
+            && !pages.contains(where: { $0.key == plan.key }) {
             pages.append(PageSpec(key: plan.key, displayName: plan.title, tiles: []))
             PageLink.mint(pageKey: plan.key, displayName: plan.title.isEmpty ? PageNaming.displayName(plan.key) : plan.title,
                           context: context, existing: lookup)
@@ -451,6 +458,10 @@ enum BoardWorkbook {
             if let i = pages.firstIndex(where: { $0.key == plan.key }) { pages[i].cover = plan.cover }
         }
         scene.pages = pages
+        // A SystemRow tab makes the row the scene's own.
+        if writing.contains(where: { $0.key == BlasterScene.rowPageKey }), scene.ownRow == nil {
+            scene.ownRow = PageSpec(key: BlasterScene.rowPageKey, tiles: [])
+        }
         try? context.save()
         lookup = currentLookup(context)
 
@@ -481,12 +492,10 @@ enum BoardWorkbook {
                 }
                 tiles = geometry.setting(entry, at: index, in: tiles)
             }
-            var pages = scene.pages
-            if let i = pages.firstIndex(where: { $0.key == plan.key }) {
-                pages[i].tiles = tiles
-                if !plan.title.isEmpty { pages[i].displayName = plan.title }
+            scene.updatePage(plan.key) { page in
+                page.tiles = tiles
+                if !plan.title.isEmpty { page.displayName = plan.title }
             }
-            scene.pages = pages
             result.pagesWritten.append(plan.key)
         }
         try? context.save()
@@ -506,13 +515,16 @@ enum BoardWorkbook {
     ///
     /// Levels, conceal and per-page labels do not travel: a cell's text does
     /// not carry them.
+    ///
+    /// `row`: the scene's own row 1, written as a SystemRow tab after the pages.
     static func tabs(for pages: [PageSpec], homeKey: String, cols: Int,
-                     systemPages: [PageSpec] = [], isSystemScene: Bool = false) -> [SpreadsheetTab] {
+                     systemPages: [PageSpec] = [], isSystemScene: Bool = false,
+                     row: PageSpec? = nil) -> [SpreadsheetTab] {
         let ordered = pages.filter { $0.key == homeKey } + pages.filter { $0.key != homeKey }
         let geometry = PageCells(grid: (cols, 1), inheritsChrome: false)
         let cover = BoardCell.covers(scenePages: pages, systemPages: systemPages, isSystemScene: isSystemScene)
         let covers = ordered.map { [$0.key, PageCover.key(of: $0, in: pages, isSystemScene: isSystemScene)] }
-        return ordered.map { page in
+        return (ordered + (row.map { [$0] } ?? [])).map { page in
             var rows: [[String]] = []
             for (index, entry) in page.tiles.enumerated() where !entry.isSpacer {
                 let r = geometry.absoluteRow(index), c = geometry.column(index)
@@ -521,6 +533,7 @@ enum BoardWorkbook {
                 rows[r][c] = BoardCell.format(entry, cover: cover)
             }
             // A custom name is the tab's name when it still finds the page.
+            if page.key == BlasterScene.rowPageKey { return SpreadsheetTab(name: rowTab, rows: rows) }
             let name = page.hasCustomName && BoardCell.pageKey(page.displayName) == page.key
                 ? page.displayName : page.key
             return SpreadsheetTab(name: name, rows: rows)
@@ -529,6 +542,16 @@ enum BoardWorkbook {
 
     /// The tab that names each page's cover.
     static let coversTab = "#covers"
+
+    /// The tab that is the scene's own navigation bar (row 1 on a 10×6
+    /// board): one row, the grid's width.
+    static let rowTab = "Navigation Bar"
+
+    /// `Navigation Bar`, `NavBar`, `SystemRow` or `Row 1`, in any case.
+    static func isRowTab(_ name: String) -> Bool {
+        let squeezed = name.lowercased().filter { !$0.isWhitespace && $0 != "_" && $0 != "-" }
+        return ["navigationbar", "navbar", "systemrow", "row1"].contains(squeezed)
+    }
 }
 
 /// A Google Sheets link as the workbook Google serves for it.

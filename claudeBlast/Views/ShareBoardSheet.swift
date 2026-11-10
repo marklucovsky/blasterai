@@ -497,7 +497,7 @@ struct ShareBoardSheet: View {
             return ExportPages(scenePages: scene.pages(atLevel: level),
                                systemPages: system.pages(atLevel: systemLevel),
                                systemHomePageKey: system.homePageKey,
-                               rowKeys: BoardChrome.inherits(scene) ? BoardChrome.pageKeys : []).pages
+                               rowKeys: BoardChrome.inherits(scene) ? BoardChrome.systemPageKeys(of: scene) : []).pages
         case .page(let page, let scene):
             // The page and everything it opens, in the scene and in BlasterAI
             // 60 alike — the I page prints with Play, Games and the rest.
@@ -601,7 +601,9 @@ struct ShareBoardSheet: View {
         case .scene(let scene): pages = scene.pages
         case .page(let page, _): pages = [page]
         }
-        let tabs = BoardWorkbook.tabs(for: pages, homeKey: scene.homePageKey, cols: cols)
+        // A whole scene takes its own row 1 along, as a SystemRow tab.
+        let row: PageSpec? = if case .scene(let scene) = subject { BoardChrome.ownRow(of: scene) } else { nil }
+        let tabs = BoardWorkbook.tabs(for: pages, homeKey: scene.homePageKey, cols: cols, row: row)
         return try ExportedFile.write(XLSX.write(tabs), named: "\(subject.basename).xlsx")
     }
 

@@ -92,7 +92,8 @@ struct BoardImportSheet: View {
                         onEdit: {},
                         onRetry: nil,
                         onCancel: { isPreviewing = false },
-                        fixedLayout: true)
+                        fixedLayout: true,
+                        navBar: boards[BlasterScene.rowPageKey]?.tiles ?? existingNavBar)
                 } else {
                     settleForm
                 }
@@ -392,7 +393,8 @@ struct BoardImportSheet: View {
     }
 
     private func title(_ page: BoardWorkbook.PagePlan) -> String {
-        page.title.isEmpty ? PageNaming.displayName(page.key) : page.title
+        if page.key == BlasterScene.rowPageKey { return "Navigation Bar" }
+        return page.title.isEmpty ? PageNaming.displayName(page.key) : page.title
     }
 
     // MARK: - Step 3: Preview
@@ -404,6 +406,11 @@ struct BoardImportSheet: View {
             if case .filled = page.existing { return replacing.contains(page.key) }
             return true
         }
+    }
+
+    /// The bar of the scene being imported into, when it has its own.
+    private var existingNavBar: [TileEntry]? {
+        scene.flatMap(BoardChrome.ownRow(of:))?.tiles
     }
 
     private var boards: [String: PageSpec] {

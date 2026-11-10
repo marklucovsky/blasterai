@@ -40,14 +40,16 @@ enum SceneExporter {
         // Every key the scene references, so art is collected in one pass rather
         // than one fetch per tile.
         // Spacers name no word, so they have no art to collect.
-        let allKeys = scene.pages.flatMap { page in
+        // The scene's own row 1 travels as a page under its reserved key.
+        let sharedPages = scene.pages + (scene.ownRow.map { [$0] } ?? [])
+        let allKeys = sharedPages.flatMap { page in
             page.tiles.filter { !$0.isSpacer }.map(\.key) + (page.cover.isEmpty ? [] : [page.cover])
         }
         let storedArt = context.map {
             ExportArtResolver.storedArt(for: allKeys, tileLookup: tileLookup, context: $0)
         } ?? [:]
 
-        let exportPages: [ExportablePage] = scene.pages.map { page in
+        let exportPages: [ExportablePage] = sharedPages.map { page in
             let pageTiles: [ExportablePageTile] = page.tiles.compactMap { entry in
                 // A gap travels as itself. It resolves to no TileModel, so the
                 // lookup guard below would drop it — and dropping it closes the

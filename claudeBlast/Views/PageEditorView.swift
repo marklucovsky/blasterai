@@ -98,8 +98,9 @@ struct PageEditorView: View {
     }
     /// Not observed: filled from the body, so writing it never re-renders.
     @State private var tileLookupMemo = TileLookupMemo()
-    private var pageIndex: Int? { scene.pages.firstIndex { $0.key == pageKey } }
-    private var page: PageSpec? { scene.pages.first { $0.key == pageKey } }
+    private var page: PageSpec? { scene.editablePage(pageKey) }
+    /// The scene's own row 1, edited as a one-row page.
+    private var isRow: Bool { pageKey == BlasterScene.rowPageKey }
 
     /// The page's tiles as an editable binding: each assignment records one undo
     /// snapshot and persists, so the grid editor's bulk/reorder ops are each a
@@ -108,11 +109,9 @@ struct PageEditorView: View {
         Binding(
             get: { page?.tiles ?? [] },
             set: { newTiles in
-                guard let idx = pageIndex else { return }
+                guard page != nil else { return }
                 recordUndo(page?.tiles ?? [])
-                var pages = scene.pages
-                pages[idx].tiles = newTiles
-                scene.pages = pages
+                scene.updatePage(pageKey) { $0.tiles = newTiles }
                 try? modelContext.save()
             }
         )
@@ -167,6 +166,14 @@ struct PageEditorView: View {
     /// Cover (tap to change it), name (tap to rename), and a Home badge.
     private var pageIdentity: some View {
         HStack(spacing: 10) {
+            if isRow {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Navigation Bar").font(.headline)
+                    Text("On every page of \(scene.name)")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
+            } else {
             if !scene.isDefault {
                 // The picture every folder into this page shows. See `PageCover`.
                 Button { isChoosingCover = true } label: {
@@ -201,6 +208,7 @@ struct PageEditorView: View {
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
             }
+            }
         }
     }
 
@@ -213,11 +221,13 @@ struct PageEditorView: View {
     @ViewBuilder
     private func pageSettings(labelled: Bool) -> some View {
         HStack(spacing: 8) {
-            Button { toggleHome() } label: {
-                settingLabel(isHome ? "Home Page" : "Set as Home",
-                             isHome ? "house.fill" : "house", labelled)
+            if !isRow {
+                Button { toggleHome() } label: {
+                    settingLabel(isHome ? "Home Page" : "Set as Home",
+                                 isHome ? "house.fill" : "house", labelled)
+                }
+                .tint(isHome ? .blue : .secondary)
             }
-            .tint(isHome ? .blue : .secondary)
             if scene.revealLevelCount > 0 {
                 Menu {
                     Picker("Preview Level", selection: $previewLevel) {
@@ -231,7 +241,7 @@ struct PageEditorView: View {
                                  "stairs", labelled)
                 }
             }
-            if !scene.isDefault, scene.pages.contains(where: { $0.key != pageKey }) {
+            if !scene.isDefault, !isRow, scene.pages.contains(where: { $0.key != pageKey }) {
                 // Put a folder to this page on others — the step Add Page and
                 // Import Page offer once, here whenever it was skipped.
                 Button { isLinkingPage = true } label: {
@@ -280,7 +290,7 @@ struct PageEditorView: View {
                         lookup: tileLookup,
                         systemPages: systemScenes.first.map { $0.id == scene.id ? [] : $0.pages } ?? [],
                         cells: pageCells,
-                        chrome: BoardChrome.inherits(scene)
+                        chrome: BoardChrome.inherits(scene) && !isRow
                             ? BoardChrome.row(for: scene, level: scene.effectiveRevealLevel) : [],
                         previewLevel: previewLevel,
                         onProperties: { editingTileKey = $0 },
@@ -393,7 +403,9 @@ struct PageEditorView: View {
     // MARK: - Add / Remove
 
     private var pageCells: PageCells {
-        PageCells(grid: boardGrid, inheritsChrome: BoardChrome.inherits(scene))
+        // Row 1 is one row of the grid's width.
+        isRow ? PageCells(grid: (boardGrid.cols, 1), inheritsChrome: false)
+            : PageCells(grid: boardGrid, inheritsChrome: BoardChrome.inherits(scene))
     }
 
     private func openPicker(from start: Int) {
@@ -510,11 +522,9 @@ struct PageEditorView: View {
     /// share it and both labels move together — rare, and the alternative (a
     /// board still showing the old word) is the worse surprise.
     private func rename(to newName: String) {
-        guard let idx = pageIndex else { return }
+        guard page != nil else { return }
         let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
-        var pages = scene.pages
-        pages[idx].displayName = trimmed
-        scene.pages = pages
+        scene.updatePage(pageKey) { $0.displayName = trimmed }
 
         let title = trimmed.isEmpty ? PageNaming.displayName(pageKey) : trimmed
         if let link = tileLookup[PageLink.key(forPage: pageKey)] {
@@ -526,7 +536,7 @@ struct PageEditorView: View {
     }
 
     /// Whether the page has anything on it — gates Share.
-    private var hasTiles: Bool { page.map { !$0.tiles.isEmpty } == true }
+    private var hasTiles: Bool { !isRow && page.map { !$0.tiles.isEmpty } == true }
 
     // MARK: - Undo / redo (snapshot stack)
 
@@ -538,10 +548,7 @@ struct PageEditorView: View {
     }
 
     private func setTiles(_ tiles: [TileEntry]) {
-        guard let idx = pageIndex else { return }
-        var pages = scene.pages
-        pages[idx].tiles = tiles
-        scene.pages = pages
+        scene.updatePage(pageKey) { $0.tiles = tiles }
         try? modelContext.save()
     }
 
@@ -771,7 +778,7 @@ struct TilePropertiesSheet: View {
     }
 
     private var entry: TileEntry? {
-        scene.pages.first { $0.key == pageKey }?.tiles.first { $0.key == tileKey }
+        scene.editablePage(pageKey)?.tiles.first { $0.key == tileKey }
     }
 
     private var automaticLabel: String {
@@ -783,18 +790,20 @@ struct TilePropertiesSheet: View {
         let link = Binding<String>(
             get: { entry?.link ?? "" },
             set: { newValue in
-                var pages = scene.pages
-                guard let p = pages.firstIndex(where: { $0.key == pageKey }),
-                      let t = pages[p].tiles.firstIndex(where: { $0.key == tileKey }) else { return }
-                let wasEmpty = pages[p].tiles[t].link.isEmpty
-                pages[p].tiles[t].link = newValue
+                guard scene.editablePage(pageKey)?.tiles.contains(where: { $0.key == tileKey }) == true
+                else { return }
+                let allPages = scene.pages
+                scene.updatePage(pageKey) { page in
+                guard let t = page.tiles.firstIndex(where: { $0.key == tileKey }) else { return }
+                let wasEmpty = page.tiles[t].link.isEmpty
+                page.tiles[t].link = newValue
                 // Adding a link → default to navigate-only (caregiver can re-enable
                 // "also speak" via the now-enabled toggle); removing it → a plain
                 // word tile, which always speaks.
                 if wasEmpty && !newValue.isEmpty {
-                    pages[p].tiles[t].isAudible = false
+                    page.tiles[t].isAudible = false
                 } else if !wasEmpty && newValue.isEmpty {
-                    pages[p].tiles[t].isAudible = true
+                    page.tiles[t].isAudible = true
                 }
                 // Resolve the color the moment the link is made or repointed,
                 // rather than waiting for the next page edit — otherwise a
@@ -802,34 +811,38 @@ struct TilePropertiesSheet: View {
                 // unrelated happens, which reads as the feature not working.
                 // An explicitly chosen color is left alone.
                 if newValue.isEmpty {
-                    pages[p].tiles[t].linkColor = nil
-                    pages[p].tiles[t].linkColorIsAuto = true
-                } else if pages[p].tiles[t].linkColorIsAuto {
-                    pages[p].tiles[t].linkColor = automaticSlot(
-                        forLinkTo: newValue, isAudible: pages[p].tiles[t].isAudible,
-                        in: pages).rawValue
+                    page.tiles[t].linkColor = nil
+                    page.tiles[t].linkColorIsAuto = true
+                } else if page.tiles[t].linkColorIsAuto {
+                    page.tiles[t].linkColor = automaticSlot(
+                        forLinkTo: newValue, isAudible: page.tiles[t].isAudible,
+                        in: allPages).rawValue
                 }
-                scene.pages = pages
+                }
             }
         )
         let audible = Binding<Bool>(
             get: { entry?.isAudible ?? true },
             set: { newValue in
-                var pages = scene.pages
-                guard let p = pages.firstIndex(where: { $0.key == pageKey }),
-                      let t = pages[p].tiles.firstIndex(where: { $0.key == tileKey }) else { return }
-                pages[p].tiles[t].isAudible = newValue
-                scene.pages = pages
+                guard scene.editablePage(pageKey)?.tiles.contains(where: { $0.key == tileKey }) == true
+                else { return }
+                let allPages = scene.pages
+                scene.updatePage(pageKey) { page in
+                guard let t = page.tiles.firstIndex(where: { $0.key == tileKey }) else { return }
+                page.tiles[t].isAudible = newValue
+                }
             }
         )
         let concealed = Binding<Bool>(
             get: { entry?.isConcealed ?? false },
             set: { newValue in
-                var pages = scene.pages
-                guard let p = pages.firstIndex(where: { $0.key == pageKey }),
-                      let t = pages[p].tiles.firstIndex(where: { $0.key == tileKey }) else { return }
-                pages[p].tiles[t].isConcealed = newValue
-                scene.pages = pages
+                guard scene.editablePage(pageKey)?.tiles.contains(where: { $0.key == tileKey }) == true
+                else { return }
+                let allPages = scene.pages
+                scene.updatePage(pageKey) { page in
+                guard let t = page.tiles.firstIndex(where: { $0.key == tileKey }) else { return }
+                page.tiles[t].isConcealed = newValue
+                }
             }
         )
         return (link, audible, concealed)
@@ -845,12 +858,14 @@ struct TilePropertiesSheet: View {
                 return entry.revealLevel > 1 ? entry.revealLevel : 0
             },
             set: { newValue in
-                var pages = scene.pages
-                guard let p = pages.firstIndex(where: { $0.key == pageKey }),
-                      let t = pages[p].tiles.firstIndex(where: { $0.key == tileKey }) else { return }
-                pages[p].tiles[t].isConcealed = newValue < 0
-                if newValue >= 0 { pages[p].tiles[t].revealLevel = newValue }
-                scene.pages = pages
+                guard scene.editablePage(pageKey)?.tiles.contains(where: { $0.key == tileKey }) == true
+                else { return }
+                let allPages = scene.pages
+                scene.updatePage(pageKey) { page in
+                guard let t = page.tiles.firstIndex(where: { $0.key == tileKey }) else { return }
+                page.tiles[t].isConcealed = newValue < 0
+                if newValue >= 0 { page.tiles[t].revealLevel = newValue }
+                }
             }
         )
     }
@@ -869,19 +884,21 @@ struct TilePropertiesSheet: View {
                 return TileColorSlot(rawValue: raw)
             },
             set: { newValue in
-                var pages = scene.pages
-                guard let p = pages.firstIndex(where: { $0.key == pageKey }),
-                      let t = pages[p].tiles.firstIndex(where: { $0.key == tileKey }) else { return }
+                guard scene.editablePage(pageKey)?.tiles.contains(where: { $0.key == tileKey }) == true
+                else { return }
+                let allPages = scene.pages
+                scene.updatePage(pageKey) { page in
+                guard let t = page.tiles.firstIndex(where: { $0.key == tileKey }) else { return }
                 if let newValue {
-                    pages[p].tiles[t].linkColor = newValue.rawValue
-                    pages[p].tiles[t].linkColorIsAuto = false
+                    page.tiles[t].linkColor = newValue.rawValue
+                    page.tiles[t].linkColorIsAuto = false
                 } else {
-                    pages[p].tiles[t].linkColorIsAuto = true
-                    pages[p].tiles[t].linkColor = automaticSlot(
-                        forLinkTo: pages[p].tiles[t].link,
-                        isAudible: pages[p].tiles[t].isAudible, in: pages).rawValue
+                    page.tiles[t].linkColorIsAuto = true
+                    page.tiles[t].linkColor = automaticSlot(
+                        forLinkTo: page.tiles[t].link,
+                        isAudible: page.tiles[t].isAudible, in: allPages).rawValue
                 }
-                scene.pages = pages
+                }
             }
         )
     }

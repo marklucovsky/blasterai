@@ -1057,9 +1057,16 @@ struct TileGridView: View {
     }
 
     /// Where a tap on `entry` would go, from the page showing.
+    ///
+    /// A folder on the scene's own row 1 belongs to the board, not to the
+    /// page showing: its links resolve as Home's do, so a plain link opens a
+    /// page of the scene even from a BlasterAI 60 page or a mounted one.
     private func destination(of entry: TileEntry) -> String {
-        entry.link.isEmpty ? "" : SystemLinks.destination(
-            of: entry.link, fromPage: identityPageKey,
+        let isOwnRow = activeScene.flatMap(BoardChrome.ownRow(of:))?.tiles
+            .contains { $0.key == entry.key && $0.link == entry.link } == true
+        let from = isOwnRow ? (activeScene?.homePageKey ?? identityPageKey) : identityPageKey
+        return entry.link.isEmpty ? "" : SystemLinks.destination(
+            of: entry.link, fromPage: from,
             homePageKey: activeScene?.homePageKey ?? "home",
             systemHomePageKey: systemScene?.homePageKey,
             systemIsActive: activeScene?.isDefault == true,

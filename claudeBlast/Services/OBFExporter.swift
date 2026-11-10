@@ -93,7 +93,7 @@ enum OBFExporter {
         let inheritsRow = BoardChrome.inherits(scene) && !scene.isDefault
         let whole = ExportPages(scenePages: scene.visiblePages, systemPages: systemPages,
                                 systemHomePageKey: systemHomePageKey,
-                                rowKeys: inheritsRow ? BoardChrome.pageKeys : [])
+                                rowKeys: inheritsRow ? BoardChrome.systemPageKeys(of: scene) : [])
         let scenePages = whole.pages
         let pageKeys = Set(scenePages.map(\.key))
 

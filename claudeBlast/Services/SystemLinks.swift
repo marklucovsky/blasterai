@@ -153,7 +153,8 @@ struct BoardLevels {
         guard let system else { return own }
         // A page the scene has its own copy of is counted once, as its own.
         let reachable = Self.reachableSystemKeys(from: scene.pages, system: system,
-                                                 inheritsRow: BoardChrome.inherits(scene))
+                                                 inheritsRow: BoardChrome.inherits(scene),
+                                                 rowKeys: BoardChrome.systemPageKeys(of: scene))
             .subtracting(scene.shadowedSystemKeys)
         let pages = system.pages(atLevel: Self.clamp(level, to: system.revealLevelCount))
         return own + pages.filter { reachable.contains($0.key) }
@@ -175,12 +176,14 @@ struct BoardLevels {
     /// on those pages (the system home is Home, so it is not a way in).
     /// `inheritsRow`: the scene draws the system row, so its folders are ways
     /// in from every page.
+    /// `rowKeys`: the system pages the row opens, when not the template's
+    /// (a scene's own row, `BoardChrome.systemPageKeys`).
     static func reachableSystemKeys(from pages: [PageSpec], system: BlasterScene,
-                                    inheritsRow: Bool = false) -> Set<String> {
+                                    inheritsRow: Bool = false, rowKeys: [String]? = nil) -> Set<String> {
         let byKey = Dictionary(system.pages.map { ($0.key, $0) },
                                uniquingKeysWith: { first, _ in first })
         var queue = pages.flatMap { $0.tiles.compactMap { TileToken.systemPageKey($0.link) } }
-        if inheritsRow { queue += BoardChrome.pageKeys }
+        if inheritsRow { queue += rowKeys ?? BoardChrome.pageKeys }
         var seen = Set<String>()
         while let key = queue.popLast() {
             guard key != system.homePageKey, !seen.contains(key),

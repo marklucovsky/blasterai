@@ -253,23 +253,53 @@ final class BlasterScene {
     /// read used to decode the whole scene — ~1 ms for a full board — and
     /// editors read this per cell and per binding access: one Add Word cost
     /// thousands of decodes on an iPad mini.
+    ///
+    /// The scene's own row 1 (`ownRow`) is stored among them and left out
+    /// here: it is not a page anything opens, lists or exports as one.
     var pages: [PageSpec] {
-        get {
-            let data = pagesData
-            guard !data.isEmpty else { return [] }
-            if let hit = decodedPages.pages(for: data) { return hit }
-            let state = PerfSignposts.signposter.beginInterval(
-                "pages.decode", "\(data.count) bytes")
-            defer { PerfSignposts.signposter.endInterval("pages.decode", state) }
-            let pages = (try? JSONDecoder().decode([PageSpec].self, from: data)) ?? []
-            decodedPages.store(pages, for: data)
-            return pages
-        }
+        get { decodedAll().pages }
         set {
-            pagesData = (try? JSONEncoder().encode(newValue)) ?? Data()
-            lastModified = .now
+            write(newValue.filter { $0.key != Self.rowPageKey }, row: ownRow)
             adoptHomePageIfNeeded(newValue)
         }
+    }
+
+    /// Key of the stored row page. Angle brackets keep it clear of every key
+    /// a page can be given.
+    static let rowPageKey = "<row>"
+
+    /// The scene's own system row, drawn across every page in place of
+    /// BlasterAI 60's (`BoardChrome.row(for:)`); nil when the scene inherits
+    /// that one. Kept in `pagesData` as a page with a reserved key, so it
+    /// syncs with the pages and needs no schema change. A copy of BlasterAI
+    /// 60's row, made when a caregiver makes the row their own
+    /// (`makeRowOwn`) — copy-on-write, like a page (`PageSpec.shadows`).
+    var ownRow: PageSpec? {
+        get { decodedAll().row }
+        set {
+            var row = newValue
+            row?.key = Self.rowPageKey
+            write(pages, row: row)
+        }
+    }
+
+    private func decodedAll() -> (pages: [PageSpec], row: PageSpec?) {
+        let data = pagesData
+        guard !data.isEmpty else { return ([], nil) }
+        if let hit = decodedPages.pages(for: data) { return (hit, decodedPages.row) }
+        let state = PerfSignposts.signposter.beginInterval(
+            "pages.decode", "\(data.count) bytes")
+        defer { PerfSignposts.signposter.endInterval("pages.decode", state) }
+        let all = (try? JSONDecoder().decode([PageSpec].self, from: data)) ?? []
+        let pages = all.filter { $0.key != Self.rowPageKey }
+        let row = all.first { $0.key == Self.rowPageKey }
+        decodedPages.store(pages, row: row, for: data)
+        return (pages, row)
+    }
+
+    private func write(_ pages: [PageSpec], row: PageSpec?) {
+        pagesData = (try? JSONEncoder().encode(pages + (row.map { [$0] } ?? []))) ?? Data()
+        lastModified = .now
     }
 
     /// The pages as a child at `level` sees them: placements above the level
@@ -442,6 +472,27 @@ final class BlasterScene {
     /// Find a page by key in this scene.
     func page(withKey key: String) -> PageSpec? {
         pages.first { $0.key == key }
+    }
+
+    /// A page the editors can open: one of the scene's pages, or its own row
+    /// 1 under `rowPageKey`.
+    func editablePage(_ key: String) -> PageSpec? {
+        key == Self.rowPageKey ? ownRow : page(withKey: key)
+    }
+
+    /// Change the editable page `key` in place — a page, or the scene's own
+    /// row. One write, so an editor's change is one undoable step.
+    func updatePage(_ key: String, _ change: (inout PageSpec) -> Void) {
+        if key == Self.rowPageKey {
+            guard var row = ownRow else { return }
+            change(&row)
+            ownRow = row
+            return
+        }
+        var pages = self.pages
+        guard let idx = pages.firstIndex(where: { $0.key == key }) else { return }
+        change(&pages[idx])
+        self.pages = pages
     }
 
     /// Remove every tile whose key is in `keys` from page `pageKey` (bulk delete).
@@ -624,6 +675,7 @@ final class BlasterScene {
             isActive: false
         )
         copy.pages = copiedPages(of: source, alsoShadowing: alsoShadowing)
+        copy.ownRow = source.ownRow
         copy.designedFor = source.designedFor
         copy.revealLevelCount = source.revealLevelCount
         copy.revealLevel = source.revealLevel
@@ -739,6 +791,7 @@ final class BlasterScene {
             isActive: false
         )
         copy.pages = copiedPages(of: source)
+        copy.ownRow = source.ownRow
         copy.designedFor = source.designedFor
         copy.revealLevelCount = source.revealLevelCount
         copy.revealLevel = source.revealLevel
@@ -756,6 +809,7 @@ final class BlasterScene {
 final class DecodedPagesCache {
     private var data: Data?
     private var pages: [PageSpec] = []
+    private(set) var row: PageSpec?
     private var projectionData: Data?
     private var projectionLevel: Int?
     private var projected: [PageSpec] = []
@@ -764,9 +818,10 @@ final class DecodedPagesCache {
         self.data == data ? pages : nil
     }
 
-    func store(_ pages: [PageSpec], for data: Data) {
+    func store(_ pages: [PageSpec], row: PageSpec?, for data: Data) {
         self.data = data
         self.pages = pages
+        self.row = row
     }
 
     func projection(for data: Data, level: Int) -> [PageSpec]? {

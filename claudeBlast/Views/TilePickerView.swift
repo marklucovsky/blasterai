@@ -54,7 +54,7 @@ struct TilePickerView: View {
     }
 
     private var existingKeys: Set<String> {
-        Set(scene.pages.first { $0.key == pageKey }?.tiles.map(\.key) ?? [])
+        Set(scene.editablePage(pageKey)?.tiles.map(\.key) ?? [])
     }
 
     private var wordClasses: [String] {
@@ -1072,13 +1072,12 @@ struct TilePickerView: View {
             return tile.key
         }
         guard !keysToAdd.isEmpty else { return }
-        var pages = scene.pages
-        guard let idx = pages.firstIndex(where: { $0.key == pageKey }) else { return }
+        guard scene.editablePage(pageKey) != nil else { return }
         // Insert at the FRONT (next to the slot-0 add cell) so just-added tiles are
         // immediately visible on a long page rather than buried at the end. The
         // bulk-move tools make repositioning a group easy afterward.
-        pages[idx].tiles.insert(contentsOf: keysToAdd.map { pageEntry(for: $0) }, at: 0)
-        scene.pages = pages
+        let added = keysToAdd.map { pageEntry(for: $0) }
+        scene.updatePage(pageKey) { $0.tiles.insert(contentsOf: added, at: 0) }
         try? modelContext.save()
 
         // Moderate the newly-added NEW words (no Accept gate for Add Tiles). Mark

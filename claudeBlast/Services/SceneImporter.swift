@@ -312,6 +312,9 @@ enum SceneImporter {
                             tiles: tiles, cover: cover,
                             shadows: exportPage.shadows ?? "")
         }
+        // The scene's own row 1 travels as a page with the reserved key; the
+        // `pages` setter leaves it out, so it is put back as the row.
+        let importedRow = pages.first { $0.key == BlasterScene.rowPageKey }
 
         // Decentralized identity carried in the file (absent on legacy exports).
         let incomingID = exportable.id ?? ""
@@ -359,6 +362,7 @@ enum SceneImporter {
             s.isImported = true
             s.sourceURL = sourceURL
             s.pages = pages
+            s.ownRow = importedRow
             s.designedFor = incomingDesignedFor
             applyLevels(s, takeFileLevel: takeFileLevel)
         }
@@ -391,6 +395,7 @@ enum SceneImporter {
                 fork.sourceURL = sourceURL
                 fork.authorName = incomingAuthor
                 fork.pages = pages
+                fork.ownRow = importedRow
                 fork.designedFor = incomingDesignedFor
                 applyLevels(fork)
                 fork.ensureIdentity(authorID: DeviceProfileStore.ensureAuthorID(context: context),
@@ -418,6 +423,7 @@ enum SceneImporter {
             newScene.sceneVersion = incomingVersion
             newScene.authorName = incomingAuthor
             newScene.pages = pages
+            newScene.ownRow = importedRow
             newScene.designedFor = incomingDesignedFor
             applyLevels(newScene)
             newScene.importedContentHash = newScene.contentHash
