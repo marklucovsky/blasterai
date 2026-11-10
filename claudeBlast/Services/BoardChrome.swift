@@ -55,9 +55,14 @@ enum BoardChrome {
     /// opened `<scene:me-…>:actions`, which does not exist, and the child was
     /// sent Home. Under a mounted page the links keep the system prefix;
     /// `destination` makes them plain again when BlasterAI 60 is the board.
+    ///
+    /// A scene with its own row (`BlasterScene.ownRow`) draws that instead.
     static func row(for scene: BlasterScene, level: Int?,
                     underMountedPage: Bool = false) -> [TileEntry] {
-        row(inSystemScene: scene.isDefault && !underMountedPage).map { entry in
+        let entries = ownRow(of: scene).map {
+            padded($0.tiles, to: scene.designedLayout?.grid.cols ?? PageTemplate.cols)
+        } ?? row(inSystemScene: scene.isDefault && !underMountedPage)
+        return entries.map { entry in
             guard entry.isAboveLevel(level) else { return entry }
             var hidden = entry
             hidden.isConcealed = true
@@ -68,6 +73,39 @@ enum BoardChrome {
     /// The BlasterAI 60 pages the row opens.
     static var pageKeys: [String] { PageTemplate.scheme.systemRow.map(\.page) }
 
+    /// A bar shorter than the grid, filled out with gaps. A bar is stored
+    /// only as far as its last word, but it takes the grid's whole width:
+    /// anything laying the bar and a page out as one run of cells would
+    /// otherwise start the page in the bar's empty cells. The gaps' keys are
+    /// fixed, so the same bar is the same views from one render to the next.
+    static func padded(_ entries: [TileEntry], to cols: Int) -> [TileEntry] {
+        guard entries.count < cols else { return entries }
+        return entries + (entries.count..<cols).map {
+            TileEntry(key: TileToken.spacerPrefix + "bar\($0)", link: "", isAudible: false)
+        }
+    }
+
+    /// The scene's own row, when it has one and draws a row at all.
+    /// BlasterAI 60's row is the template's, never stored.
+    static func ownRow(of scene: BlasterScene) -> PageSpec? {
+        guard !scene.isDefault, inherits(scene) else { return nil }
+        return scene.ownRow
+    }
+
+    /// The BlasterAI 60 pages `scene`'s row opens: its own row's links into
+    /// the core board, else the template's.
+    static func systemPageKeys(of scene: BlasterScene) -> [String] {
+        guard let own = ownRow(of: scene) else { return pageKeys }
+        return own.tiles.compactMap { TileToken.systemPageKey($0.link) }
+    }
+
+    /// Row 1 as a scene starts its own: BlasterAI 60's, its folders opening
+    /// the core board's pages. Copy-on-write, like a page — the scene's row
+    /// follows BlasterAI 60's until a caregiver makes it theirs.
+    static func ownRowStart() -> PageSpec {
+        PageSpec(key: BlasterScene.rowPageKey, displayName: "Navigation Bar", tiles: row(inSystemScene: false))
+    }
+
     /// The rail's Keyboard opens BlasterAI 60's keyboard page from every page.
     static let keyboardPage = "keyboard"
 
@@ -76,6 +114,14 @@ enum BoardChrome {
     /// BlasterAI 60's pages, not its own, so there are none. A folder above
     /// the board's level is an empty cell, not a way in.
     static func rowPages(of scene: BlasterScene) -> [String] {
+        if let own = ownRow(of: scene) {
+            // Its own row may open the scene's pages: those are ways in from
+            // every page, as BlasterAI 60's folders are on BlasterAI 60.
+            let level = scene.effectiveRevealLevel
+            return own.tiles.filter { !$0.isAboveLevel(level) }.map(\.link)
+                .filter { !$0.isEmpty && $0 != TileToken.home
+                    && TileToken.systemPageKey($0) == nil && TileToken.scenePageKey($0) == nil }
+        }
         guard scene.isDefault, inherits(scene) else { return [] }
         let level = scene.effectiveRevealLevel
         return PageTemplate.scheme.systemRow

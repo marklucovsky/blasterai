@@ -251,15 +251,68 @@ enum MeScene {
     }
 
     /// What the Me page shows for the page the child came from, a navigation
-    /// key. With BlasterAI 60 as the board its pages are plain keys, so
-    /// `systemIsActive` reads them as system pages.
+    /// key.
+    ///
+    /// Pages are matched by name, not by scene: a scene's own Places page
+    /// shows what is listed for Places, as BlasterAI 60's does. The caregiver
+    /// listed those items for "when we are on Places"; which scene drew the
+    /// page is a detail of how the board was built. A mounted page (the Me
+    /// page, a topic) is never a context.
     static func contextEntries(forNavKey navKey: String, systemIsActive: Bool,
                                in me: BlasterScene) -> [TileEntry] {
         let systemKey = TileToken.systemPageKey(navKey)
-            ?? (systemIsActive && TileToken.scenePageKey(navKey) == nil ? navKey : nil)
+            ?? (TileToken.scenePageKey(navKey) == nil ? navKey : nil)
         guard let systemKey else { return [] }
         return (me.page(withKey: contextPageKey(for: systemKey))?.tiles ?? [])
             .filter { !$0.isEmptyCell }
+    }
+
+    // MARK: - Pages a context can be for
+
+    /// The pages a caregiver can list Me items or a topic for, grouped by the
+    /// board they come from: BlasterAI 60's, then each scene of the caregiver's
+    /// own that draws on the 10 × 6 layout. Every board lists all its pages,
+    /// so a scene reads as the caregiver built it; a name two boards share is
+    /// one context (`contextEntries`), and `sharedContextKeys` says which.
+    /// Homes are left out: Home clears the context. A page standing in for a
+    /// BlasterAI 60 page is listed under its own scene too.
+    static func contextChoices(system: BlasterScene?, scenes: [BlasterScene])
+        -> [(board: String, pages: [PageSpec])] {
+        var groups: [(board: String, pages: [PageSpec])] = []
+        func add(_ board: BlasterScene) {
+            var seen = Set<String>()
+            let pages = board.pages.compactMap { page -> PageSpec? in
+                // A copy of a BlasterAI 60 page is reached as that page.
+                var page = page
+                if page.isShadow { page.key = page.shadows }
+                return page.key != board.homePageKey && seen.insert(page.key).inserted ? page : nil
+            }
+            if !pages.isEmpty { groups.append((BlasterScene.copyRoot(of: board.name), pages)) }
+        }
+        if let system { add(system) }
+        for scene in scenes where !scene.isDefault && !scene.isSystemOwned
+            && !isMeScene(scene) && BoardChrome.inherits(scene) {
+            add(scene)
+        }
+        return groups
+    }
+
+    /// Page names more than one board in `groups` has: choosing one chooses
+    /// them all, so the list says so.
+    static func sharedContextKeys(_ groups: [(board: String, pages: [PageSpec])]) -> Set<String> {
+        var count: [String: Int] = [:]
+        for group in groups { for page in group.pages { count[page.key, default: 0] += 1 } }
+        return Set(count.filter { $0.value > 1 }.keys)
+    }
+
+    /// A context page's title: BlasterAI 60's name for it, else the first
+    /// scene page of that key, else one made from the key.
+    static func contextTitle(_ key: String, system: BlasterScene?, scenes: [BlasterScene]) -> String {
+        if let page = system?.page(withKey: key) { return page.title }
+        for scene in scenes where !scene.isDefault && !isMeScene(scene) {
+            if let page = scene.page(withKey: key) { return page.title }
+        }
+        return PageNaming.displayName(key)
     }
 
     // MARK: - Context items

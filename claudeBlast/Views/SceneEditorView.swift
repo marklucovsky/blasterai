@@ -431,6 +431,8 @@ struct SceneEditorView: View {
 
             levelsSection
 
+            rowSection
+
             Section {
                 Button {
                     showStructureSheet = true
@@ -689,6 +691,53 @@ struct SceneEditorView: View {
     /// On a page standing in for a BlasterAI 60 page, deleting the copy is
     /// going back to BlasterAI 60's, and says so: its links lead to the
     /// original again, and its updates reach it again.
+    /// Row 1: BlasterAI 60's, followed as it changes, until the caregiver
+    /// makes it the scene's own — then edited like a page of one row.
+    /// "Use BlasterAI 60's" deletes the copy. Copy-on-write, as for pages.
+    @ViewBuilder
+    private var rowSection: some View {
+        if BoardChrome.inherits(scene), !scene.isDefault, !scene.isSystemOwned {
+            Section {
+                if scene.ownRow != nil {
+                    NavigationLink(destination: PageEditorView(scene: scene, pageKey: BlasterScene.rowPageKey)) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Navigation Bar").font(.headline)
+                            Text("This scene\u{2019}s own").font(.caption).foregroundStyle(.indigo)
+                        }
+                    }
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) { useInheritedRowButton }
+                    .contextMenu { useInheritedRowButton }
+                } else {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Navigation Bar").font(.headline)
+                        Text("BlasterAI 60\u{2019}s").font(.caption).foregroundStyle(.secondary)
+                    }
+                    Button {
+                        scene.ownRow = BoardChrome.ownRowStart()
+                        try? modelContext.save()
+                    } label: {
+                        Label("Make the Navigation Bar Your Own", systemImage: "square.on.square")
+                    }
+                }
+            } header: {
+                Text("Navigation Bar")
+            } footer: {
+                Text(scene.ownRow != nil
+                     ? "The folders and words on every page. BlasterAI 60\u{2019}s updates to its bar no longer reach this one."
+                     : "The folders and words on every page, following BlasterAI 60\u{2019}s. Make it your own to choose them.")
+            }
+        }
+    }
+
+    private var useInheritedRowButton: some View {
+        Button(role: .destructive) {
+            scene.ownRow = nil
+            try? modelContext.save()
+        } label: {
+            Label("Use BlasterAI 60\u{2019}s", systemImage: "arrow.uturn.backward")
+        }
+    }
+
     @ViewBuilder
     private func deletePageButton(_ page: PageSpec) -> some View {
         Button(role: .destructive) {
@@ -1527,6 +1576,9 @@ struct PagePreviewView: View {
     /// Every section is laid out by `placed` and cannot be pruned: a sheet's
     /// cells have addresses, and removing one would move every later cell.
     var fixedLayout: Bool = false
+    /// The navigation bar the pages will sit under, when not BlasterAI 60's —
+    /// an import's own bar tab.
+    var navBar: [TileEntry]? = nil
 
     @State private var selectedSection = 0  // 0 = primary, 1+ = sub-pages
     @State private var isSelecting = false
@@ -1701,7 +1753,13 @@ struct PagePreviewView: View {
             // to the list to prune it, and the board re-lays out from the list.
             if !isSelecting, sectionIndex == 0 || fixedLayout, let board = placed?(allSections[sectionIndex]) {
                 ScrollView {
-                    TemplateBoardGrid(page: board) { entry in boardCell(entry) }
+                    // The bar's own tab previews as the bar, over an empty page.
+                    if board.key == BlasterScene.rowPageKey {
+                        TemplateBoardGrid(page: PageSpec(key: board.key, tiles: []),
+                                          navBar: board.tiles) { entry in boardCell(entry) }
+                    } else {
+                        TemplateBoardGrid(page: board, navBar: navBar) { entry in boardCell(entry) }
+                    }
                 }
             } else {
                 // Editable like the page editor (prune / reorder / bulk-delete before

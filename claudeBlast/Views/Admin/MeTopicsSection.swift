@@ -42,7 +42,7 @@ struct MeTopicsSection: View {
         let keys = MeScene.contexts(of: topic.sceneID, in: me)
         guard !keys.isEmpty else { return "Not shown on any page" }
         return "Shown on " + keys.map { key in
-            system.page(withKey: key)?.title ?? PageNaming.displayName(key)
+            MeScene.contextTitle(key, system: system, scenes: scenes)
         }.joined(separator: ", ")
     }
 
@@ -72,14 +72,20 @@ struct MeTopicsSection: View {
                     ContextPageView(me: me, system: system, systemKey: key)
                 } label: {
                     let count = me.page(withKey: MeScene.contextPageKey(for: key))?.tiles.count ?? 0
-                    LabeledContent(system.page(withKey: key)?.title ?? PageNaming.displayName(key),
+                    LabeledContent(MeScene.contextTitle(key, system: system, scenes: scenes),
                                    value: count == 1 ? "1 item" : "\(count) items")
                 }
             }
             NavigationLink {
-                List(ContextPageView.boardPages(system), id: \.key) { page in
-                    NavigationLink(page.title) {
+                // BlasterAI 60's pages, then the pages of the caregiver's own
+                // scenes: a page is matched by name on any board.
+                let groups = MeScene.contextChoices(system: system, scenes: scenes)
+                let shared = MeScene.sharedContextKeys(groups)
+                BoardSectionsList(groups: groups) { page in
+                    NavigationLink {
                         ContextPageView(me: me, system: system, systemKey: page.key)
+                    } label: {
+                        ContextChoiceLabel(title: page.title, isShared: shared.contains(page.key))
                     }
                 }
                 .navigationTitle("Add a Page")
@@ -89,7 +95,7 @@ struct MeTopicsSection: View {
         } header: {
             Text("Me Page by Page")
         } footer: {
-            Text("When the child presses the heart from one of these pages of the main board, the Me page adds what is listed: folders from column 8, and words below your own tiles.")
+            Text("When the child presses the heart from one of these pages, the Me page adds what is listed: folders from column 8, and words below your own tiles. A page counts by its name, on BlasterAI 60 or any of your scenes.")
         }
     }
 
@@ -180,7 +186,7 @@ struct ContextPageView: View {
         system.pages.filter { $0.key != system.homePageKey }
     }
 
-    private var title: String { system.page(withKey: systemKey)?.title ?? PageNaming.displayName(systemKey) }
+    private var title: String { MeScene.contextTitle(systemKey, system: system, scenes: scenes) }
     private var items: [TileEntry] { me.page(withKey: MeScene.contextPageKey(for: systemKey))?.tiles ?? [] }
     private var topics: [BlasterScene] { scenes.filter(MeScene.isEligibleTopic) }
 
@@ -365,17 +371,21 @@ struct TopicContextsView: View {
     let system: BlasterScene
 
     @Environment(\.modelContext) private var modelContext
+    @Query(sort: \BlasterScene.name) private var scenes: [BlasterScene]
 
-    /// Every page of the main board but its home, which clears the context.
-    private var pages: [PageSpec] {
-        system.pages.filter { $0.key != system.homePageKey }
+    /// Every page a context can be for, by board: BlasterAI 60's, then the
+    /// caregiver's own scenes'. The topic's own pages are left out.
+    private var groups: [(board: String, pages: [PageSpec])] {
+        MeScene.contextChoices(system: system, scenes: scenes.filter { $0.sceneID != topic.sceneID })
     }
+
+    private var pages: [PageSpec] { groups.flatMap(\.pages) }
 
     var body: some View {
         let on = Set(MeScene.contexts(of: topic.sceneID, in: me))
-        List {
-            Section {
-                ForEach(pages, id: \.key) { page in
+        let shared = MeScene.sharedContextKeys(groups)
+        BoardSectionsList(groups: groups,
+                          footer: "When the child presses the heart from one of these pages, \(topic.name) appears on their Me page, from column 8 into the free cells of columns 9 and 10. A page counts by its name, on any board. Each page's order is set in Edit Me Page, on its \"On …\" page.") { page in
                     Button {
                         var keys = on
                         if keys.contains(page.key) { keys.remove(page.key) } else { keys.insert(page.key) }
@@ -385,17 +395,13 @@ struct TopicContextsView: View {
                         try? modelContext.save()
                     } label: {
                         HStack {
-                            Text(page.title).foregroundStyle(.primary)
+                            ContextChoiceLabel(title: page.title, isShared: shared.contains(page.key))
                             Spacer()
                             if on.contains(page.key) {
                                 Image(systemName: "checkmark").foregroundStyle(.tint)
                             }
                         }
                     }
-                }
-            } footer: {
-                Text("When the child presses the heart from one of these pages, \(topic.name) appears on their Me page, from column 8 into the free cells of columns 9 and 10. Each page's order is set in Edit Me Page, on its \"On …\" page.")
-            }
         }
         .navigationTitle("Show \(topic.name) On")
         .navigationBarTitleDisplayMode(.inline)
@@ -472,5 +478,54 @@ struct ContextWordPicker: View {
 
     private func toggle(_ key: String) {
         if let i = picked.firstIndex(of: key) { picked.remove(at: i) } else { picked.append(key) }
+    }
+}
+
+/// A page a context can be for. A name more than one board has is one
+/// context, so it says so: choosing Places on Sunday School chooses
+/// BlasterAI 60's Places too.
+struct ContextChoiceLabel: View {
+    let title: String
+    let isShared: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title).foregroundStyle(.primary)
+            if isShared {
+                Text("Same name on another board: one list for both")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+/// Pages grouped by board, each board's section collapsible: a caregiver
+/// with several scenes would otherwise scroll past all of BlasterAI 60 to
+/// reach their own. Every section starts open.
+struct BoardSectionsList<Row: View>: View {
+    let groups: [(board: String, pages: [PageSpec])]
+    var footer: String? = nil
+    @ViewBuilder let row: (PageSpec) -> Row
+    @State private var collapsed: Set<String> = []
+
+    var body: some View {
+        List {
+            ForEach(groups, id: \.board) { group in
+                Section(isExpanded: Binding(
+                    get: { !collapsed.contains(group.board) },
+                    set: { open in
+                        if open { collapsed.remove(group.board) } else { collapsed.insert(group.board) }
+                    })) {
+                    ForEach(group.pages, id: \.key) { page in row(page) }
+                } header: {
+                    Text(group.board)
+                }
+            }
+            if let footer {
+                Section {} footer: { Text(footer) }
+            }
+        }
+        .listStyle(.sidebar)
     }
 }

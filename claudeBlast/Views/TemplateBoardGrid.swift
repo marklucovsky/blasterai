@@ -14,11 +14,14 @@ import SwiftUI
 struct TemplateBoardGrid<Cell: View>: View {
     /// The page from r2c1 on, as `PagePlacer.place` returns it.
     let page: PageSpec
+    /// The navigation bar drawn over it; BlasterAI 60's when nil.
+    var navBar: [TileEntry]? = nil
     @ViewBuilder let cell: (TileEntry) -> Cell
 
     var body: some View {
         let content = PageTemplate.cols * (PageTemplate.rows - 1)
-        let cells = BoardChrome.row(inSystemScene: false) + page.tiles
+        let bar = BoardChrome.padded(navBar ?? BoardChrome.row(inSystemScene: false), to: PageTemplate.cols)
+        let cells = bar + page.tiles
             + Array(repeating: TileEntry.spacer(), count: max(0, content - page.tiles.count))
         // The board's own gaps: the square tiles sit 2pt apart.
         let gap: CGFloat = TileLook.current() == .square ? TileLayout.gap : 4

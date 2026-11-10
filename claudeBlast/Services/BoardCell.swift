@@ -201,8 +201,20 @@ enum BoardCell {
                     }
                 } else {
                     let pageKey = target.link == TileToken.home ? "home" : key(of: target)
-                    plan.entry.key = folderKey(for: target, scenePages: scenePages, systemPages: systemPages)
-                        ?? PageLink.key(forPage: pageKey)
+                    let glyph = PageLink.key(forPage: pageKey)
+                    var folder = folderKey(for: target, scenePages: scenePages, systemPages: systemPages)
+                    // A page nobody chose a picture for, with no folder yet,
+                    // takes the picture of a word that merely opens it
+                    // (`love > people`): the first real folder borrows instead.
+                    let onlySpoken = scenePages.first { $0.key == pageKey }.map { page in
+                        page.cover.isEmpty && !scenePages.contains {
+                            $0.tiles.contains { PageCover.isFolder($0) && $0.link == pageKey }
+                        }
+                    } ?? false
+                    if folder == nil || folder == glyph || onlySpoken {
+                        folder = borrowedCover(forPage: pageKey, systemPages: systemPages, lookup: lookup) ?? folder
+                    }
+                    plan.entry.key = folder ?? glyph
                     // A page whose cover is still its own page-link tile, not
                     // yet made: make it.
                     if plan.entry.key == PageLink.key(forPage: pageKey), lookup[plan.entry.key] == nil {
@@ -304,6 +316,22 @@ enum BoardCell {
                 }
             }
         }
+        return nil
+    }
+
+    /// A picture for a folder to a scene page that has none of its own yet,
+    /// rather than its initial: BlasterAI 60's cover when the core board has
+    /// a page of that name (`> people` on a scene's own People page shows
+    /// People's picture), else the word of that name. Nil leaves the initial.
+    /// The scene's page stays its own; only the picture is borrowed, and a
+    /// cover chosen later replaces it.
+    static func borrowedCover(forPage pageKey: String, systemPages: [PageSpec],
+                              lookup: [String: TileModel]) -> String? {
+        if let page = systemPages.first(where: { $0.key == pageKey }) {
+            let key = PageCover.key(of: page, in: systemPages, isSystemScene: true)
+            if key != PageLink.key(forPage: pageKey) { return key }
+        }
+        if let word = lookup[pageKey], !word.isRetired { return word.key }
         return nil
     }
 
