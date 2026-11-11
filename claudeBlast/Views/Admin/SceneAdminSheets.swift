@@ -67,6 +67,11 @@ struct AuthorNameField: View {
 struct SceneRow: View {
     let scene: BlasterScene
     let onActivate: () -> Void
+    /// What the scene is built on: a template's name, "missing", or nil for
+    /// BlasterAI 60. Worked out by the list, which already has every scene.
+    var builtOn: TemplateNote? = nil
+
+    enum TemplateNote { case template(String), missing(String) }
 
     private var isSystemScene: Bool { scene.isSystemOwned }
 
@@ -117,6 +122,19 @@ struct SceneRow: View {
                     Text(scene.descriptionText)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                }
+                switch builtOn {
+                case .template(let name):
+                    Label("Built on \(name)", systemImage: "square.stack.3d.down.right")
+                        .font(.caption)
+                        .foregroundStyle(.indigo)
+                case .missing(let name):
+                    Label("Its template \(name) isn\u{2019}t on this device — using BlasterAI 60",
+                          systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                case nil:
+                    EmptyView()
                 }
             }
 

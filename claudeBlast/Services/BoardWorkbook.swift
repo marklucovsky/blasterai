@@ -138,7 +138,12 @@ enum BoardWorkbook {
         var seen = Set<String>()
         let coverTab = tabs.first { $0.name.lowercased() == coversTab }
         let pageTabs = tabs.filter { $0.name.lowercased() != coversTab }
-        preview.details = pageTabs.first.map(details(of:)) ?? [:]
+        // Details may sit on any tab — the first is often the navigation
+        // bar's, with Name: and Is Template: over Home. The first tab to say
+        // a thing wins.
+        for tab in pageTabs {
+            preview.details.merge(details(of: tab)) { first, _ in first }
+        }
         let reads: (String) -> Bool = { text in
             switch BoardCell.parse(text) {
             case .spacer, .invalid: return false

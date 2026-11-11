@@ -52,8 +52,9 @@ struct PageSpec: Codable, Hashable, Identifiable {
     /// (`PageCover`). Empty until chosen; `PageCover.key` supplies the default.
     var cover: String = ""
 
-    /// The BlasterAI 60 page this page stands in for, or empty for an ordinary
-    /// page — copy-on-write.
+    /// The BlasterAI 60 page this page stands in for (`actions`), or the
+    /// template's (`template:random`), or empty for an ordinary page —
+    /// copy-on-write.
     ///
     /// A scene that links into the core board does not copy it. When a
     /// caregiver edits one of its pages, that page alone is copied into the
@@ -137,15 +138,54 @@ enum TileToken {
     /// inside BlasterAI 60. Home still returns to the *active* scene's home.
     nonisolated static let systemPrefix = "<system>:"
 
-    /// The link that opens `pageKey` of the system scene.
+    /// Prefix for a link into the scene's **template** (`TemplateChain`):
+    /// `<template>:random` opens the Random page of the template the scene is
+    /// built on, never BlasterAI 60's. Like `<system>:` it is relative: it
+    /// names whichever template the scene is bound to now.
+    ///
+    /// The two never stand for each other (Mark, 2026-11-10). A scene built on
+    /// Brandi's board may link to both her People and BlasterAI 60's, and each
+    /// has its own read-only master and its own copy-on-write copy.
+    nonisolated static let templatePrefix = "<template>:"
+
+    /// How a template page is keyed among the pages links reach
+    /// (`TemplateChain.pages`): `template:random`, apart from BlasterAI 60's
+    /// `random`. Not a legal page key, so it never meets a scene's own page.
+    nonisolated static let templateKeyPrefix = "template:"
+
+    /// The link that opens `pageKey` of the system scene, or of the template
+    /// when `pageKey` is a template key (`template:random`).
     nonisolated static func systemLink(to pageKey: String) -> String {
-        systemPrefix + pageKey
+        if pageKey.hasPrefix(templateKeyPrefix) {
+            return templatePrefix + pageKey.dropFirst(templateKeyPrefix.count)
+        }
+        return systemPrefix + pageKey
     }
 
-    /// The system scene's page a link or page key names, or nil when it is an
-    /// ordinary page of the scene itself.
+    /// The link that opens the template's page `pageKey`.
+    nonisolated static func templateLink(to pageKey: String) -> String {
+        templatePrefix + pageKey
+    }
+
+    /// The page a link or page key names outside the scene itself: BlasterAI
+    /// 60's key for `<system>:`, a template key (`template:random`) for
+    /// `<template>:`; nil for an ordinary page of the scene.
     static func systemPageKey(_ link: String) -> String? {
-        link.hasPrefix(systemPrefix) ? String(link.dropFirst(systemPrefix.count)) : nil
+        if link.hasPrefix(systemPrefix) { return String(link.dropFirst(systemPrefix.count)) }
+        if link.hasPrefix(templatePrefix) {
+            return templateKeyPrefix + link.dropFirst(templatePrefix.count)
+        }
+        return nil
+    }
+
+    /// True when `key` (from `systemPageKey`) is a template's page.
+    nonisolated static func isTemplateKey(_ key: String) -> Bool {
+        key.hasPrefix(templateKeyPrefix)
+    }
+
+    /// The page name in a key from `systemPageKey`, without `template:`.
+    nonisolated static func bareKey(_ key: String) -> String {
+        isTemplateKey(key) ? String(key.dropFirst(templateKeyPrefix.count)) : key
     }
 
     /// Prefix for a page of a **mounted** scene: `<scene:ID>:home` opens the

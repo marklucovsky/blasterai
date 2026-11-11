@@ -82,7 +82,9 @@ extension WellItem {
                 var text = entry.key
                 if !entry.link.isEmpty, entry.link != TileToken.home {
                     let page = TileToken.systemPageKey(entry.link) ?? entry.link
-                    text = (entry.isAudible ? entry.key + " " : "") + "> " + BoardCell.systemMarker + page
+                    // A template's page is `template:random` already.
+                    let target = TileToken.isTemplateKey(page) ? page : BoardCell.systemMarker + page
+                    text = (entry.isAudible ? entry.key + " " : "") + "> " + target
                 }
                 return item(entry, text: text, lookup: lookup)
             }
@@ -376,11 +378,16 @@ struct WordWellView: View {
         let lower = text.lowercased()
         func match(_ name: String, in pages: [PageSpec]) -> PageSpec? {
             let key = BoardCell.pageKey(name)
-            return pages.first { $0.key == key }
+            return pages.first { TileToken.bareKey($0.key) == key }
                 ?? pages.first { WordFinder.normalize($0.title) == WordFinder.normalize(name) }
         }
         if lower.hasPrefix(BoardCell.systemMarker),
-           let page = match(String(text.dropFirst(BoardCell.systemMarker.count)), in: systemPages) {
+           let page = match(String(text.dropFirst(BoardCell.systemMarker.count)),
+                            in: systemPages.filter { !TileToken.isTemplateKey($0.key) }) {
+            setSource(.systemPage(page.key)); query = ""
+        } else if lower.hasPrefix(BoardCell.templateMarker),
+                  let page = match(String(text.dropFirst(BoardCell.templateMarker.count)),
+                                   in: systemPages.filter { TileToken.isTemplateKey($0.key) }) {
             setSource(.systemPage(page.key)); query = ""
         } else if lower.hasPrefix("page:"), let page = match(String(text.dropFirst(5)), in: scenePages) {
             setSource(.scenePage(page.key)); query = ""
@@ -392,7 +399,7 @@ struct WordWellView: View {
         switch source {
         case .vocabulary: return "All Words"
         case .scenePage(let key): return scenePages.first { $0.key == key }?.title ?? key
-        case .systemPage(let key): return "BlasterAI › " + PageNaming.displayName(key)
+        case .systemPage(let key): return SystemLinks.displayName(of: TileToken.systemLink(to: key))
         case .pack(let id): return PackCatalog.pack(id: id)?.displayName ?? id
         }
     }

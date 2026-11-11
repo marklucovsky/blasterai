@@ -23,6 +23,8 @@ struct ScenePreviewBoardView: View {
     @Environment(\.dismiss) private var dismiss
     @Query(filter: #Predicate<BlasterScene> { $0.isDefault })
     private var systemScenes: [BlasterScene]
+    @Query(filter: #Predicate<BlasterScene> { $0.isTemplate })
+    private var templateScenes: [BlasterScene]
     @State private var currentPageKey: String
     @State private var displayPage: Int? = 0
     @AppStorage(AppSettingsKey.boardLayout) private var boardLayoutRaw: String =
@@ -42,11 +44,15 @@ struct ScenePreviewBoardView: View {
             ?? pages.first
     }
 
-    /// BlasterAI 60's pages, for the links into it. Empty when previewing it.
-    private var systemPages: [PageSpec] {
-        guard let system = systemScenes.first, system.id != scene.id else { return [] }
-        return system.pages
+    /// The pages of what the scene is built on — its templates over
+    /// BlasterAI 60 (`TemplateChain`) — for the links into them. Empty when
+    /// previewing BlasterAI 60.
+    private var chain: TemplateChain? {
+        guard let system = systemScenes.first, system.id != scene.id else { return nil }
+        return TemplateChain(scene: scene, templates: templateScenes, system: system)
     }
+
+    private var systemPages: [PageSpec] { chain?.pages(atLevel: nil) ?? [] }
 
     /// The page a tapped link opens, as the board resolves it: a scene page, a
     /// BlasterAI 60 page (`<system>:`), or nil when there is no such page.
@@ -83,7 +89,8 @@ struct ScenePreviewBoardView: View {
                         let spec = GridLayoutCalculator.compute(geo: geo.size, grid: grid, look: TileLook.current())
                         // The system row on every screen, as the board draws it.
                         let chrome = BoardChrome.inherits(scene)
-                            ? BoardChrome.row(for: scene, level: scene.effectiveRevealLevel) : []
+                            ? BoardChrome.row(for: scene, level: scene.effectiveRevealLevel,
+                                              inherited: chain?.navBar) : []
                         let perScreen = max(1, spec.perPage - (chrome.isEmpty ? 0 : spec.cols))
                         let chunks = visibleTiles(page).chunked(into: perScreen)
                         let columns = Array(repeating: GridItem(.fixed(spec.tileSize),
@@ -145,7 +152,7 @@ struct ScenePreviewBoardView: View {
     private var pageTitle: String {
         let name = scene.name.isEmpty ? "Preview" : scene.name
         return currentPageKey != scene.homePageKey
-            ? "\(name) · \(SystemLinks.displayName(of: currentPageKey))" : name
+            ? "\(name) · \(SystemLinks.displayName(of: currentPageKey, chain: chain))" : name
     }
 
     @ViewBuilder
@@ -166,7 +173,7 @@ struct ScenePreviewBoardView: View {
             guard isLink else { return }
             if let dest = Self.destination(of: entry.link, fromPage: currentPageKey, scene: scene,
                                            systemPages: systemPages,
-                                           systemHomePageKey: systemScenes.first?.homePageKey) {
+                                           systemHomePageKey: chain?.homePageKey ?? systemScenes.first?.homePageKey) {
                 go(to: dest)
             }
         } label: {

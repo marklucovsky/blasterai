@@ -1,8 +1,8 @@
 # Writing a BlasterAI board in a spreadsheet
 
 A scene can be drawn in Google Sheets, Numbers or Excel, then imported in the
-app: **Settings › Scenes › Import from a Spreadsheet**, or **Import Pages from a
-Spreadsheet** inside a scene. Bring it in as a Google Sheets link shared
+app: **Settings › Scenes › Import from a Spreadsheet**, or **Import or Update from a
+Spreadsheet** inside a scene, which replaces the scene's pages the sheet draws. Bring it in as a Google Sheets link shared
 "Anyone with the link", an `.xlsx` file, or a CSV of one page.
 
 Any scene exported from the app's Share sheet as **Spreadsheet (.xlsx)** is a
@@ -38,10 +38,25 @@ working example.
 | `> animals` | a folder that opens Animals, showing that page's cover |
 | `[lion] > animals` | the same folder, showing *lion*'s picture instead |
 | `go > sys:places` | opens BlasterAI 60's Places page |
+| `go > template:places` | opens the template's Places page (see below) |
 
 A bare page name is always one of this scene's pages. A page no tab draws yet
 is created empty, so a folder can link to a page you'll write later. BlasterAI
-60's pages need `sys:`.
+60's pages need `sys:`, and a template's pages need `template:`.
+
+## Templates
+
+A scene can be a **template** that other scenes are built on, as every scene
+is built on BlasterAI 60: they draw its navigation bar and link to its pages.
+
+- `Is Template: yes` in the details rows makes the imported scene a template.
+- `Template: Brandi Board` (its name) builds the imported scene on that
+  template, which must already be on the device.
+
+`sys:` and `template:` are different pages, even with the same name. In a
+scene built on Brandi Board, `> template:people` opens Brandi's People and
+`> sys:people` opens BlasterAI 60's. `template:` never falls back to BlasterAI
+60: a page the template doesn't have is an error in the import preview.
 
 ## Word classes
 

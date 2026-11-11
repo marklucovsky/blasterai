@@ -23,6 +23,26 @@ struct PageEditorView: View {
     @Query(sort: \TileModel.key) private var allTiles: [TileModel]
     @Query(filter: #Predicate<BlasterScene> { $0.isDefault })
     private var systemScenes: [BlasterScene]
+    @Query(filter: #Predicate<BlasterScene> { $0.isTemplate })
+    private var templateScenes: [BlasterScene]
+
+    /// What the scene is built on: its templates over BlasterAI 60. Nil when
+    /// editing BlasterAI 60 itself.
+    private var chain: TemplateChain? {
+        guard let system = systemScenes.first, system.id != scene.id else { return nil }
+        return TemplateChain(scene: scene, templates: templateScenes, system: system)
+    }
+
+    /// The template each `template:` page comes from, by name, by its key
+    /// (`template:random`).
+    private var templatePageOwners: [String: String] {
+        guard let chain, !chain.templates.isEmpty else { return [:] }
+        var owners: [String: String] = [:]
+        for page in chain.pages(atLevel: nil) where TileToken.isTemplateKey(page.key) {
+            owners[page.key] = chain.owner(ofSystemPage: page.key).map { BlasterScene.copyRoot(of: $0.name) }
+        }
+        return owners
+    }
     @Environment(\.modelContext) private var modelContext
 
     @State private var isPickingTiles = false
@@ -288,10 +308,13 @@ struct PageEditorView: View {
                         scene: scene,
                         tiles: tilesBinding,
                         lookup: tileLookup,
-                        systemPages: systemScenes.first.map { $0.id == scene.id ? [] : $0.pages } ?? [],
+                        systemPages: chain?.pages(atLevel: nil) ?? [],
+                        pageOwners: templatePageOwners,
+                        templateName: chain.flatMap { $0.templates.isEmpty ? nil : $0.name },
                         cells: pageCells,
                         chrome: BoardChrome.inherits(scene) && !isRow
-                            ? BoardChrome.row(for: scene, level: scene.effectiveRevealLevel) : [],
+                            ? BoardChrome.row(for: scene, level: scene.effectiveRevealLevel,
+                                              inherited: chain?.navBar) : [],
                         previewLevel: previewLevel,
                         onProperties: { editingTileKey = $0 },
                         onAddWords: { openPicker(from: $0) },
@@ -702,6 +725,15 @@ struct TilePropertiesSheet: View {
     /// BlasterAI 60, whose pages any scene can link to (`TileToken.systemPrefix`).
     @Query(filter: #Predicate<BlasterScene> { $0.isDefault })
     private var systemScenes: [BlasterScene]
+    @Query(filter: #Predicate<BlasterScene> { $0.isTemplate })
+    private var templateScenes: [BlasterScene]
+
+    /// What the scene is built on: its templates over BlasterAI 60. Nil when
+    /// editing BlasterAI 60 itself.
+    private var chain: TemplateChain? {
+        guard let system = systemScenes.first, system.id != scene.id else { return nil }
+        return TemplateChain(scene: scene, templates: templateScenes, system: system)
+    }
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(TileImageResolver.self) private var resolver
@@ -918,7 +950,7 @@ struct TilePropertiesSheet: View {
             forLinkTo: systemKey ?? link,
             spokenAs: tileKey,
             isAudible: isAudible,
-            in: systemKey == nil ? pages : (systemScenes.first?.pages ?? []),
+            in: systemKey == nil ? pages : (chain?.pages(atLevel: nil) ?? []),
             vocabulary: allTiles.map(\.key),
             partOfSpeech: { PartOfSpeechIndex.partOfSpeech(for: $0) })
     }
@@ -1043,17 +1075,21 @@ struct TilePropertiesSheet: View {
                         // Each label names the board: a menu-style picker does
                         // not draw a Section header, so a heading would not say
                         // whose Actions page this is.
-                        if let system = systemScenes.first, system.id != scene.id {
+                        if let chain {
                             Divider()
-                            ForEach(system.pages, id: \.key) { page in
+                            // The template's pages first: the nearer, smaller set.
+                            let pages = chain.pages(atLevel: nil)
+                            ForEach(pages.filter { TileToken.isTemplateKey($0.key) }
+                                    + pages.filter { !TileToken.isTemplateKey($0.key) },
+                                    id: \.key) { page in
                                 let link = TileToken.systemLink(to: page.key)
-                                Text(SystemLinks.displayName(of: link)).tag(link)
+                                Text(SystemLinks.displayName(of: link, chain: chain)).tag(link)
                             }
                         }
                     }
                     let currentLink = entry?.link ?? ""
                     if !currentLink.isEmpty {
-                        Text("Tapping this tile navigates to \"\(SystemLinks.displayName(of: currentLink))\".")
+                        Text("Tapping this tile navigates to \"\(SystemLinks.displayName(of: currentLink, chain: chain))\".")
                             .font(.caption)
                             .foregroundStyle(.secondary)
 

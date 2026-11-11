@@ -57,11 +57,15 @@ enum BoardChrome {
     /// `destination` makes them plain again when BlasterAI 60 is the board.
     ///
     /// A scene with its own row (`BlasterScene.ownRow`) draws that instead.
+    ///
+    /// `inherited`: the bar the scene's template gives it
+    /// (`TemplateChain.navBar`), drawn when it has none of its own.
     static func row(for scene: BlasterScene, level: Int?,
-                    underMountedPage: Bool = false) -> [TileEntry] {
-        let entries = ownRow(of: scene).map {
-            padded($0.tiles, to: scene.designedLayout?.grid.cols ?? PageTemplate.cols)
-        } ?? row(inSystemScene: scene.isDefault && !underMountedPage)
+                    underMountedPage: Bool = false, inherited: [TileEntry]? = nil) -> [TileEntry] {
+        let cols = scene.designedLayout?.grid.cols ?? PageTemplate.cols
+        let entries = ownRow(of: scene).map { padded($0.tiles, to: cols) }
+            ?? (scene.isDefault ? nil : inherited.map { padded($0, to: cols) })
+            ?? row(inSystemScene: scene.isDefault && !underMountedPage)
         return entries.map { entry in
             guard entry.isAboveLevel(level) else { return entry }
             var hidden = entry
@@ -94,16 +98,17 @@ enum BoardChrome {
 
     /// The BlasterAI 60 pages `scene`'s row opens: its own row's links into
     /// the core board, else the template's.
-    static func systemPageKeys(of scene: BlasterScene) -> [String] {
-        guard let own = ownRow(of: scene) else { return pageKeys }
-        return own.tiles.compactMap { TileToken.systemPageKey($0.link) }
+    static func systemPageKeys(of scene: BlasterScene, inherited: [TileEntry]? = nil) -> [String] {
+        guard let tiles = ownRow(of: scene)?.tiles ?? inherited else { return pageKeys }
+        return tiles.compactMap { TileToken.systemPageKey($0.link) }
     }
 
     /// Row 1 as a scene starts its own: BlasterAI 60's, its folders opening
     /// the core board's pages. Copy-on-write, like a page — the scene's row
     /// follows BlasterAI 60's until a caregiver makes it theirs.
-    static func ownRowStart() -> PageSpec {
-        PageSpec(key: BlasterScene.rowPageKey, displayName: "Navigation Bar", tiles: row(inSystemScene: false))
+    static func ownRowStart(from inherited: [TileEntry]? = nil) -> PageSpec {
+        PageSpec(key: BlasterScene.rowPageKey, displayName: "Navigation Bar",
+                 tiles: inherited ?? row(inSystemScene: false))
     }
 
     /// The rail's Keyboard opens BlasterAI 60's keyboard page from every page.

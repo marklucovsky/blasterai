@@ -51,6 +51,9 @@ enum SystemLinks {
         }
         if let fromSystem = TileToken.systemPageKey(fromPage) {
             if shadowed.contains(fromSystem) { return link }
+            // A template's pages carry whole links (`TemplateChain.absolute`);
+            // a plain one left on one is the template's page.
+            if TileToken.isTemplateKey(fromSystem) { return TileToken.templateLink(to: link) }
             return link == systemHomePageKey ? homePageKey : TileToken.systemLink(to: link)
         }
         return link
@@ -81,10 +84,14 @@ enum SystemLinks {
     }
 
     /// A short, readable name for where a link goes — "BlasterAI › Actions"
-    /// for a system page — for the editor and for print.
-    static func displayName(of link: String) -> String {
+    /// for a system page, "Brandi Board › Random" for a template's — for the
+    /// editor and for print.
+    static func displayName(of link: String, chain: TemplateChain? = nil) -> String {
         if let systemKey = TileToken.systemPageKey(link) {
-            return "BlasterAI › " + PageNaming.displayName(systemKey)
+            let board = TileToken.isTemplateKey(systemKey)
+                ? (chain?.owner(ofSystemPage: systemKey).map { BlasterScene.copyRoot(of: $0.name) } ?? "Template")
+                : "BlasterAI"
+            return board + " › " + PageNaming.displayName(systemKey)
         }
         if let mounted = TileToken.scenePageKey(link) {
             return PageNaming.displayName(mounted.page)
@@ -111,21 +118,35 @@ struct BoardLevels {
     /// The system scene, when this board links into it; nil otherwise and
     /// for the system scene itself, whose dial is its own.
     let system: BlasterScene?
+    /// The templates the scene is built on, ending at BlasterAI 60
+    /// (`TemplateChain`); nil exactly when `system` is.
+    let chain: TemplateChain?
 
-    init(scene: BlasterScene, system: BlasterScene?) {
+    /// - Parameter templates: every scene marked as a template, for a scene
+    ///   built on one. Without them the board is BlasterAI 60's, as before.
+    init(scene: BlasterScene, system: BlasterScene?, templates: [BlasterScene] = []) {
         self.scene = scene
         // A scene under the system row reaches BlasterAI 60 from every page,
         // whether or not any page stores a link into it.
         if let system, system.persistentModelID != scene.persistentModelID,
            BoardChrome.inherits(scene) || Self.linksIntoSystem(scene.pages) {
             self.system = system
+            self.chain = TemplateChain(scene: scene, templates: templates, system: system)
         } else {
             self.system = nil
+            self.chain = nil
         }
     }
 
     /// Steps on the dial; 0 when neither board has levels.
-    var count: Int { max(scene.revealLevelCount, system?.revealLevelCount ?? 0) }
+    var count: Int { max(scene.revealLevelCount, chain?.revealLevelCount ?? 0) }
+
+    /// The key `<system>:` links treat as Home.
+    var systemHomePageKey: String? { chain?.homePageKey ?? system?.homePageKey }
+
+    /// The navigation bar the scene's templates give it, when it has none of
+    /// its own (`TemplateChain.navBar`).
+    var inheritedNavBar: [TileEntry]? { chain?.navBar }
 
     /// Where the dial is, or nil when there are no levels.
     var level: Int? {
@@ -142,21 +163,21 @@ struct BoardLevels {
     /// The system scene's pages as this board shows them: at the dial, or at
     /// the core board's top when the dial is above it.
     var systemPages: [PageSpec] {
-        guard let system else { return [] }
-        return system.pages(atLevel: Self.clamp(level, to: system.revealLevelCount))
+        chain?.pages(atLevel: level) ?? []
     }
 
     /// Words and folders a child at `level` can press: the scene's own, plus
     /// those on every core-board page the scene can reach.
     func visibleTileCount(atLevel level: Int) -> Int {
         let own = scene.visibleTileCount(atLevel: Self.clamp(level, to: scene.revealLevelCount))
-        guard let system else { return own }
+        guard let chain else { return own }
+        let pages = chain.pages(atLevel: level)
         // A page the scene has its own copy of is counted once, as its own.
-        let reachable = Self.reachableSystemKeys(from: scene.pages, system: system,
+        let reachable = Self.reachableSystemKeys(from: scene.pages, systemPages: pages,
+                                                 homePageKey: chain.homePageKey,
                                                  inheritsRow: BoardChrome.inherits(scene),
-                                                 rowKeys: BoardChrome.systemPageKeys(of: scene))
+                                                 rowKeys: BoardChrome.systemPageKeys(of: scene, inherited: chain.navBar))
             .subtracting(scene.shadowedSystemKeys)
-        let pages = system.pages(atLevel: Self.clamp(level, to: system.revealLevelCount))
         return own + pages.filter { reachable.contains($0.key) }
             .reduce(0) { $0 + $1.tiles.count { !$0.isEmptyCell } }
     }
@@ -180,16 +201,27 @@ struct BoardLevels {
     /// (a scene's own row, `BoardChrome.systemPageKeys`).
     static func reachableSystemKeys(from pages: [PageSpec], system: BlasterScene,
                                     inheritsRow: Bool = false, rowKeys: [String]? = nil) -> Set<String> {
-        let byKey = Dictionary(system.pages.map { ($0.key, $0) },
+        reachableSystemKeys(from: pages, systemPages: system.pages, homePageKey: system.homePageKey,
+                            inheritsRow: inheritsRow, rowKeys: rowKeys)
+    }
+
+    /// The same, over the pages a template chain gives (`TemplateChain.pages`).
+    static func reachableSystemKeys(from pages: [PageSpec], systemPages: [PageSpec], homePageKey: String?,
+                                    inheritsRow: Bool = false, rowKeys: [String]? = nil) -> Set<String> {
+        let byKey = Dictionary(systemPages.map { ($0.key, $0) },
                                uniquingKeysWith: { first, _ in first })
         var queue = pages.flatMap { $0.tiles.compactMap { TileToken.systemPageKey($0.link) } }
         if inheritsRow { queue += rowKeys ?? BoardChrome.pageKeys }
         var seen = Set<String>()
         while let key = queue.popLast() {
-            guard key != system.homePageKey, !seen.contains(key),
+            guard key != homePageKey, !seen.contains(key),
                   let page = byKey[key] else { continue }
             seen.insert(key)
-            queue += page.tiles.map(\.link).filter { !$0.isEmpty && $0 != TileToken.home }
+            // A BlasterAI 60 page's plain links are its own pages; a
+            // template page's are whole (`TemplateChain.absolute`).
+            queue += page.tiles.map(\.link).filter { !$0.isEmpty && $0 != TileToken.home
+                && TileToken.scenePageKey($0) == nil }
+                .map { TileToken.systemPageKey($0) ?? $0 }
         }
         return seen
     }

@@ -172,6 +172,8 @@ enum CloudKitSchemaExerciser {
             scene.sourceURL = marker
             scene.importedContentHash = marker
             scene.designedFor = marker
+            scene.templateID = marker
+            scene.isTemplate = true
             // Non-zero, so the fields are written with values Production keeps.
             scene.revealLevelCount = 3
             scene.revealLevel = 1

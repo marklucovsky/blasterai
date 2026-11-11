@@ -24,6 +24,7 @@ struct RailPageEditor: View {
     let pageKey: String
     @Query(filter: #Predicate<BlasterScene> { $0.isActive }) private var activeScenes: [BlasterScene]
     @Query(filter: #Predicate<BlasterScene> { $0.isDefault }) private var systemScenes: [BlasterScene]
+    @Query(filter: #Predicate<BlasterScene> { $0.isTemplate }) private var templateScenes: [BlasterScene]
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -34,8 +35,12 @@ struct RailPageEditor: View {
                 } else if let scene = activeScenes.first, let systemKey = TileToken.systemPageKey(pageKey) {
                     if let own = scene.shadowPage(for: systemKey) {
                         PageEditorView(scene: scene, pageKey: own.key)
-                    } else if let system = systemScenes.first, let page = system.page(withKey: systemKey) {
-                        SystemPageCopyOffer(scene: scene, page: page, systemHomePageKey: system.homePageKey)
+                    } else if let system = systemScenes.first,
+                              case let chain = TemplateChain(scene: scene, templates: templateScenes, system: system),
+                              let page = chain.pages(atLevel: nil).first(where: { $0.key == systemKey }) {
+                        SystemPageCopyOffer(scene: scene, page: page,
+                                            systemHomePageKey: chain.homePageKey ?? system.homePageKey,
+                                            owner: chain.pageInOwner(systemKey))
                     } else {
                         ContentUnavailableView("This Page Can't Be Edited",
                                                systemImage: "pencil.slash",
@@ -129,32 +134,52 @@ struct SystemSceneCopyOffer: View {
     }
 }
 
-/// Edit This Page on a BlasterAI 60 page, from a scene of the caregiver's
-/// own: the page becomes the scene's, copied and standing in for the
-/// original wherever the board links to it (`PageSpec.shadows`). Asked, not
-/// done silently, because from then on BlasterAI 60's updates no longer
-/// reach that page. Going back is deleting the copy, in the scene editor.
+/// Edit This Page on a BlasterAI 60 or template page, from a scene of the
+/// caregiver's own: the page becomes the scene's, copied and standing in for
+/// the original wherever the board links to it (`PageSpec.shadows`). Asked,
+/// not done silently, because from then on the original's updates no longer
+/// reach that page. Going back is deleting the copy, in the scene editor. A
+/// template's page can instead be changed in the template, for every scene
+/// built on it.
 struct SystemPageCopyOffer: View {
     let scene: BlasterScene
     let page: PageSpec
     let systemHomePageKey: String
+    /// The template the page is from, and its key there; nil for a
+    /// BlasterAI 60 page.
+    var owner: (template: BlasterScene, pageKey: String)? = nil
     @Environment(\.modelContext) private var modelContext
+    @State private var editingInTemplate: String?
+
+    private var template: BlasterScene? { owner?.template }
 
     var body: some View {
         ContentUnavailableView {
-            Label("Make \(page.title) Your Own", systemImage: "square.on.square")
+            Label("Edit \(page.title)", systemImage: "square.on.square")
         } description: {
-            Text("\(page.title) is a BlasterAI 60 page. Edit your own copy of it: "
-                 + "the copy replaces it on \(scene.name), and BlasterAI 60's updates "
-                 + "no longer reach it. You can go back to BlasterAI 60's page in Edit This Scene.")
+            Text(template == nil
+                 ? "\(page.title) is a BlasterAI 60 page. Edit your own copy of it: the copy replaces it on "
+                   + "\(scene.name), and BlasterAI 60's updates no longer reach it. You can go back to "
+                   + "BlasterAI 60's page in Edit This Scene."
+                 : "\(page.title) is \(templateName)'s. Change it in \(templateName) for every scene built on it, "
+                   + "or make a copy for \(scene.name) alone.")
         } actions: {
-            Button("Make a Copy and Edit") {
+            if let owner {
+                Button("Edit in \(templateName)") { editingInTemplate = owner.pageKey }
+                    .buttonStyle(.borderedProminent)
+            }
+            Button(template == nil ? "Make a Copy and Edit" : "Make a Copy for \(scene.name)") {
                 scene.shadowSystemPage(page, systemHomePageKey: systemHomePageKey)
                 try? modelContext.save()
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.bordered)
+        }
+        .navigationDestination(item: $editingInTemplate) { key in
+            if let template { PageEditorView(scene: template, pageKey: key) }
         }
     }
+
+    private var templateName: String { BlasterScene.copyRoot(of: template?.name ?? "") }
 }
 
 /// Child mode off: once the gate has let a caregiver through, the caregiver

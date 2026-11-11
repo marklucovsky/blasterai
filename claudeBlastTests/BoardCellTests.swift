@@ -446,5 +446,24 @@ struct BoardCellTests {
         let all = CellSuggestion.suggestions(for: "cow > sys:", lookup: [:], scenePages: own, systemPages: system)
         #expect(all.count == 20)
     }
+
+    /// Built on a template, `>` offers a chip for its pages beside
+    /// BlasterAI 60's; `template:` lists only the template's, `sys:` only
+    /// BlasterAI 60's.
+    @Test func aBareArrowOffersTheTemplatesPages() {
+        let own = [PageSpec(key: "home", tiles: [])]
+        let system = [PageSpec(key: "actions", tiles: []), PageSpec(key: "template:bible", tiles: [])]
+        let bare = CellSuggestion.suggestions(for: "> ", lookup: [:], scenePages: own, systemPages: system)
+        #expect(bare == [.page("home", isSystem: false), .templatePages(count: 1), .systemPages(count: 1)])
+        #expect(CellSuggestion.templatePages(count: 1).applied(to: "> ") == "> template:")
+        let theirs = CellSuggestion.suggestions(for: "> template:", lookup: [:], scenePages: own, systemPages: system)
+        #expect(theirs == [.page("template:bible", isSystem: true)])
+        #expect(CellSuggestion.page("template:bible", isSystem: true).applied(to: "> ") == "> template:bible")
+        let core = CellSuggestion.suggestions(for: "> sys:", lookup: [:], scenePages: own, systemPages: system)
+        #expect(core == [.page("actions", isSystem: true)])
+        // Typed, the template's come first.
+        let typed = CellSuggestion.suggestions(for: "> b", lookup: [:], scenePages: own, systemPages: system)
+        #expect(typed.first == .page("template:bible", isSystem: true))
+    }
 }
 }

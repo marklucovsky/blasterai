@@ -81,7 +81,8 @@ enum OBFExporter {
     static func boards(for scene: BlasterScene,
                        tileLookup: [String: TileModel],
                        systemPages: [PageSpec] = [],
-                       systemHomePageKey: String? = nil) -> (boards: [OBFBoard], imageKeys: [String]) {
+                       systemHomePageKey: String? = nil,
+                       inheritedNavBar: [TileEntry]? = nil) -> (boards: [OBFBoard], imageKeys: [String]) {
         var imageKeys: [String] = []
         var seenImages = Set<String>()
         // OBF has no levels, so the board travels as the sharer's child sees it:
@@ -93,7 +94,7 @@ enum OBFExporter {
         let inheritsRow = BoardChrome.inherits(scene) && !scene.isDefault
         let whole = ExportPages(scenePages: scene.visiblePages, systemPages: systemPages,
                                 systemHomePageKey: systemHomePageKey,
-                                rowKeys: inheritsRow ? BoardChrome.systemPageKeys(of: scene) : [])
+                                rowKeys: inheritsRow ? BoardChrome.systemPageKeys(of: scene, inherited: inheritedNavBar) : [])
         let scenePages = whole.pages
         let pageKeys = Set(scenePages.map(\.key))
 
@@ -115,7 +116,7 @@ enum OBFExporter {
             // are drawn. Another scene's row opens BlasterAI 60's pages, which
             // travel with it (`ExportPages`), so its folders go out too.
             let rowPages = Set(BoardChrome.rowPages(of: scene))
-            let row = BoardChrome.row(for: scene, level: scene.effectiveRevealLevel)
+            let row = BoardChrome.row(for: scene, level: scene.effectiveRevealLevel, inherited: inheritedNavBar)
                 .map { entry -> TileEntry in
                     var entry = entry
                     entry.link = whole.link(entry.link)
@@ -263,12 +264,14 @@ enum OBFExporter {
                           tileLookup: [String: TileModel],
                           systemPages: [PageSpec] = [],
                           systemHomePageKey: String? = nil,
+                          inheritedNavBar: [TileEntry]? = nil,
                           imageSet: ImageSetID,
                           resolver: TileImageResolver,
                           basename: String,
                           progress: @MainActor (Int, Int) -> Void = { _, _ in }) async throws -> URL {
         let built = boards(for: scene, tileLookup: tileLookup,
-                           systemPages: systemPages, systemHomePageKey: systemHomePageKey)
+                           systemPages: systemPages, systemHomePageKey: systemHomePageKey,
+                           inheritedNavBar: inheritedNavBar)
 
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]

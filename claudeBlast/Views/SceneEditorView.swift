@@ -28,6 +28,8 @@ struct SceneEditorView: View {
     }
 
     @State private var isAddingPage = false
+    /// A Built On choice waiting on what to do with the scene's own bar.
+    @State private var pendingBuiltOn: String?
     @State private var isRefining = false
     @State private var isGeneratingArt = false
     @State private var showPreview = false
@@ -431,6 +433,8 @@ struct SceneEditorView: View {
 
             levelsSection
 
+            templateSection
+
             rowSection
 
             Section {
@@ -469,8 +473,8 @@ struct SceneEditorView: View {
                             }
                             if page.isShadow {
                                 // Copy-on-write: this page is the scene's own
-                                // copy of a BlasterAI 60 page.
-                                Label("Replaces \(SystemLinks.displayName(of: TileToken.systemLink(to: page.shadows)))",
+                                // copy of a BlasterAI 60 or template page.
+                                Label("Replaces \(SystemLinks.displayName(of: TileToken.systemLink(to: page.shadows), chain: chain))",
                                       systemImage: "square.on.square")
                                     .font(.caption)
                                     .foregroundStyle(.indigo)
@@ -518,7 +522,7 @@ struct SceneEditorView: View {
                 Button {
                     isImportingPages = true
                 } label: {
-                    Label("Import Page", systemImage: "square.and.arrow.down")
+                    Label("Import or Update from a Spreadsheet", systemImage: "square.and.arrow.down")
                 }
             } header: {
                 Text("Pages (\(scene.pages.count), \(sceneTileCount))")
@@ -691,9 +695,40 @@ struct SceneEditorView: View {
     /// On a page standing in for a BlasterAI 60 page, deleting the copy is
     /// going back to BlasterAI 60's, and says so: its links lead to the
     /// original again, and its updates reach it again.
-    /// Row 1: BlasterAI 60's, followed as it changes, until the caregiver
-    /// makes it the scene's own — then edited like a page of one row.
-    /// "Use BlasterAI 60's" deletes the copy. Copy-on-write, as for pages.
+    /// BlasterAI 60 and the templates, fetched rather than queried.
+    ///
+    /// Not `@Query`: this view builds a `PageEditorView` for every page row,
+    /// and with two more queries here, opening one of them from an inactive
+    /// scene set the two views invalidating each other — the editor never
+    /// appeared and the app spun at full CPU. A fetch is not observed, which
+    /// costs nothing here: a template appearing while this screen is open is
+    /// picked up the next time it draws.
+    private var systemScenes: [BlasterScene] {
+        (try? modelContext.fetch(FetchDescriptor<BlasterScene>(predicate: #Predicate { $0.isDefault }))) ?? []
+    }
+
+    private var templateScenes: [BlasterScene] {
+        (try? modelContext.fetch(FetchDescriptor<BlasterScene>(predicate: #Predicate { $0.isTemplate }))) ?? []
+    }
+
+    /// What the scene is built on: its templates over BlasterAI 60.
+    private var chain: TemplateChain? {
+        guard let system = systemScenes.first, system.id != scene.id else { return nil }
+        return TemplateChain(scene: scene, templates: templateScenes, system: system)
+    }
+
+    /// Whose navigation bar the scene draws when it has none of its own.
+    private var barOwner: BlasterScene? { chain?.templates.first { $0.ownRow != nil } }
+
+    private var inheritedBarName: String {
+        BlasterScene.copyRoot(of: barOwner?.name ?? "BlasterAI 60")
+    }
+
+    /// The navigation bar: the template's (BlasterAI 60's unless the scene is
+    /// built on another), followed as it changes, until the caregiver makes it
+    /// the scene's own — then edited like a page of one row. "Use …'s"
+    /// deletes the copy. Copy-on-write, as for pages. A template's bar is
+    /// changed in the template, for every scene built on it.
     @ViewBuilder
     private var rowSection: some View {
         if BoardChrome.inherits(scene), !scene.isDefault, !scene.isSystemOwned {
@@ -702,7 +737,8 @@ struct SceneEditorView: View {
                     NavigationLink(destination: PageEditorView(scene: scene, pageKey: BlasterScene.rowPageKey)) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Navigation Bar").font(.headline)
-                            Text("This scene\u{2019}s own").font(.caption).foregroundStyle(.indigo)
+                            Text(scene.isTemplate ? "This template\u{2019}s own, for every scene built on it"
+                                 : "This scene\u{2019}s own").font(.caption).foregroundStyle(.indigo)
                         }
                     }
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) { useInheritedRowButton }
@@ -710,21 +746,28 @@ struct SceneEditorView: View {
                 } else {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Navigation Bar").font(.headline)
-                        Text("BlasterAI 60\u{2019}s").font(.caption).foregroundStyle(.secondary)
+                        Text("\(inheritedBarName)\u{2019}s").font(.caption).foregroundStyle(.secondary)
+                    }
+                    if let owner = barOwner {
+                        NavigationLink(destination: PageEditorView(scene: owner, pageKey: BlasterScene.rowPageKey)) {
+                            Label("Open \(inheritedBarName)\u{2019}s Navigation Bar", systemImage: "arrow.up.forward.square")
+                        }
                     }
                     Button {
-                        scene.ownRow = BoardChrome.ownRowStart()
+                        scene.ownRow = BoardChrome.ownRowStart(from: chain?.navBar)
                         try? modelContext.save()
                     } label: {
-                        Label("Make the Navigation Bar Your Own", systemImage: "square.on.square")
+                        Label("Make the Navigation Bar This Scene\u{2019}s Own", systemImage: "square.on.square")
                     }
                 }
             } header: {
                 Text("Navigation Bar")
             } footer: {
                 Text(scene.ownRow != nil
-                     ? "The folders and words on every page. BlasterAI 60\u{2019}s updates to its bar no longer reach this one."
-                     : "The folders and words on every page, following BlasterAI 60\u{2019}s. Make it your own to choose them.")
+                     ? "The folders and words on every page. \(inheritedBarName)\u{2019}s changes to its bar no longer reach this one."
+                     : barOwner != nil
+                        ? "The folders and words on every page, following \(inheritedBarName)\u{2019}s. Change it there for every scene built on \(inheritedBarName), or make this scene\u{2019}s own."
+                        : "The folders and words on every page, following BlasterAI 60\u{2019}s. Make it your own to choose them.")
             }
         }
     }
@@ -734,8 +777,121 @@ struct SceneEditorView: View {
             scene.ownRow = nil
             try? modelContext.save()
         } label: {
-            Label("Use BlasterAI 60\u{2019}s", systemImage: "arrow.uturn.backward")
+            Label("Use \(inheritedBarName)\u{2019}s", systemImage: "arrow.uturn.backward")
         }
+    }
+
+    /// Built On's choice for a scene on no template with a bar of its own:
+    /// it draws nothing of BlasterAI 60's, so it is not built on it.
+    private static let builtOnNothing = "<none>"
+
+    /// Built on: the template the scene's pages and bar come from, and
+    /// whether other scenes can be built on this one.
+    ///
+    /// Built On says whose navigation bar the scene draws. A scene with its
+    /// own bar and no template is built on nothing ("None"); choosing
+    /// BlasterAI 60 gives it BlasterAI 60's bar, and choosing None makes the
+    /// bar it draws its own. `sys:` links reach BlasterAI 60 either way.
+    @ViewBuilder
+    private var templateSection: some View {
+        if BoardChrome.inherits(scene), !scene.isDefault, !scene.isSystemOwned, !MeScene.isMeScene(scene) {
+            Section {
+                Picker("Built On", selection: Binding(
+                    get: {
+                        scene.templateID.isEmpty && scene.ownRow != nil ? Self.builtOnNothing : scene.templateID
+                    },
+                    set: { choose($0) })) {
+                    Text("None").tag(Self.builtOnNothing)
+                    Text("BlasterAI 60").tag("")
+                    ForEach(TemplateChain.choices(for: scene, templates: templateScenes), id: \.sceneID) { template in
+                        Text(BlasterScene.copyRoot(of: template.name)).tag(template.sceneID)
+                    }
+                    if chain?.isMissingTemplate == true {
+                        Text("\(TemplateChain.missingName(scene.templateID)) (not on this device)").tag(scene.templateID)
+                    }
+                }
+                Toggle("Use as a Template", isOn: Binding(
+                    get: { scene.isTemplate },
+                    set: { on in
+                        if on, scene.sceneID.isEmpty {
+                            scene.ensureIdentity(authorID: DeviceProfileStore.ensureAuthorID(context: modelContext),
+                                                 authorName: DeviceProfileStore.authorName(context: modelContext))
+                        }
+                        scene.isTemplate = on
+                        try? modelContext.save()
+                    }))
+            } header: {
+                Text("Template")
+            } footer: {
+                if chain?.isMissingTemplate == true {
+                    Text("The template this scene was built on is not on this device, so it uses BlasterAI 60\u{2019}s pages and bar until it arrives.")
+                } else {
+                    Text("A scene built on a template draws its navigation bar and links to its pages with template:, as every scene can link to BlasterAI 60\u{2019}s with sys:. Change a template and every scene built on it follows. None: the scene draws its own bar.")
+                }
+            }
+            .alert(pendingBuiltOn.map { "Use \(barName(for: $0))\u{2019}s Navigation Bar?" } ?? "",
+                   isPresented: Binding(get: { pendingBuiltOn != nil },
+                                        set: { if !$0 { pendingBuiltOn = nil } }),
+                   presenting: pendingBuiltOn) { choice in
+                Button("Use \(barName(for: choice))\u{2019}s", role: .destructive) {
+                    scene.ownRow = nil
+                    bind(to: choice)
+                }
+                if !choice.isEmpty {
+                    Button("Keep This Scene\u{2019}s") { bind(to: choice) }
+                }
+                Button("Cancel", role: .cancel) { pendingBuiltOn = nil }
+            } message: { choice in
+                Text("\(scene.name) has its own navigation bar. Using \(barName(for: choice))\u{2019}s removes it.")
+            }
+        }
+    }
+
+    /// Off every template: the template pages the scene links to become its
+    /// own, as when a template is deleted (`TemplateRemoval.keepLook`), so no
+    /// `template:` link is left opening nothing. The template's bar is kept
+    /// as the scene's own only when `keepingBar`.
+    private func leaveTemplates(keepingBar: Bool) {
+        TemplateRemoval.leave(scene, keepingBar: keepingBar, templates: templateScenes,
+                              system: systemScenes.first)
+    }
+
+    /// Whose bar a scene built on `templateID` would draw.
+    private func barName(for templateID: String) -> String {
+        let chain = TemplateChain(templateID: templateID, sceneID: scene.sceneID,
+                                  templates: templateScenes, system: systemScenes.first)
+        return BlasterScene.copyRoot(of: chain.templates.first { $0.ownRow != nil }?.name ?? "BlasterAI 60")
+    }
+
+    /// A Built On choice. None keeps the bar the scene draws, as its own;
+    /// BlasterAI 60 or a template over a bar of the scene's own asks first.
+    private func choose(_ choice: String) {
+        if choice == Self.builtOnNothing {
+            leaveTemplates(keepingBar: true)
+            if scene.ownRow == nil { scene.ownRow = BoardChrome.ownRowStart() }
+            try? modelContext.save()
+        } else if scene.ownRow != nil {
+            pendingBuiltOn = choice
+        } else {
+            bind(to: choice)
+        }
+    }
+
+    /// Build the scene on `templateID`: its pages and bar come from there,
+    /// and it takes the template's grid.
+    private func bind(to templateID: String) {
+        pendingBuiltOn = nil
+        if templateID.isEmpty, !scene.templateID.isEmpty {
+            leaveTemplates(keepingBar: false)
+            try? modelContext.save()
+            return
+        }
+        scene.templateID = templateID
+        if let template = templateScenes.first(where: { $0.sceneID == templateID }),
+           !template.designedFor.isEmpty {
+            scene.designedFor = template.designedFor
+        }
+        try? modelContext.save()
     }
 
     @ViewBuilder

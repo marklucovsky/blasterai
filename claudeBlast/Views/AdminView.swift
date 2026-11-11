@@ -178,6 +178,9 @@ struct AdminView: View {
     /// System-owned scene the caregiver tried to edit. Drives the clone-on-write
     /// confirmation; on confirm we take an editable copy and open that instead.
     @State var sceneToClone: BlasterScene?
+    /// A template being deleted while other scenes are built on it: the
+    /// warning names them before anything goes (`TemplateRemoval`).
+    @State var templateToDelete: BlasterScene?
 
     /// DEBUG only; always false in a shipping build.
     var envKeyOverride: Bool {

@@ -147,11 +147,25 @@ extension BoardWorkbook {
             && text.split(whereSeparator: \.isWhitespace).count >= 2
     }
 
-    /// `Owner: Mark` — a label ending in a colon, and at most a value.
+    /// `Owner: Mark` — a label ending in a colon, and at most a value, in
+    /// two cells or written in one.
     static func isDetailsRow(_ row: [String]) -> Bool {
         let filled = row.filter { !$0.isEmpty }
         guard let first = filled.first, filled.count <= 2 else { return false }
+        if filled.count == 1, labelled(first) != nil { return true }
         return first.hasSuffix(":") && first.count > 1
+    }
+
+    /// `Is Template: yes` written in one cell, as label and value; nil for
+    /// anything else. The label is words alone, so a cell in the board's
+    /// grammar (`go > sys:places`) is never one.
+    static func labelled(_ cell: String) -> (label: String, value: String)? {
+        guard let colon = cell.firstIndex(of: ":") else { return nil }
+        let label = cell[..<colon].trimmingCharacters(in: .whitespaces)
+        let value = cell[cell.index(after: colon)...].trimmingCharacters(in: .whitespaces)
+        guard !label.isEmpty, !value.isEmpty, label.count <= 30,
+              label.allSatisfy({ $0.isLetter || $0 == " " }) else { return nil }
+        return (label, value)
     }
 
     /// The details a sheet's top rows give, by lowercased label: `name`,
@@ -160,8 +174,12 @@ extension BoardWorkbook {
         var out: [String: String] = [:]
         for row in tab.rows {
             let filled = row.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
-            guard isDetailsRow(filled), filled.count == 2 else { continue }
-            out[String(filled[0].dropLast()).lowercased()] = filled[1]
+            guard isDetailsRow(filled) else { continue }
+            if filled.count == 2 {
+                out[String(filled[0].dropLast()).lowercased()] = filled[1]
+            } else if let pair = labelled(filled[0]) {
+                out[pair.label.lowercased()] = pair.value
+            }
         }
         return out
     }

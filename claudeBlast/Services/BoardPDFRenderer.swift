@@ -21,7 +21,7 @@ import UIKit
 /// inline — this is the version print and pack export share.
 enum PageNaming {
     static func displayName(_ pageKey: String) -> String {
-        pageKey.replacingOccurrences(of: "_", with: " ").capitalized
+        TileToken.bareKey(pageKey).replacingOccurrences(of: "_", with: " ").capitalized
     }
 }
 
@@ -634,6 +634,7 @@ enum BoardPDFRenderer {
     /// backfill resolution order, against whichever set the caller names.
     static func render(pages: [PageSpec],
                        scene: BlasterScene,
+                       inheritedNavBar: [TileEntry]? = nil,
                        tileLookup: [String: TileModel],
                        options: BoardPrintOptions,
                        imageSet: ImageSetID,
@@ -649,9 +650,10 @@ enum BoardPDFRenderer {
         let rowPages = Set(BoardChrome.rowPages(of: scene))
         let printed = Set(pages.map(\.key))
         // A scene's own row walks first in its order, as BlasterAI 60's does.
-        let rowEntries = BoardChrome.ownRow(of: scene)?.tiles.map { entry -> TileEntry in
+        let rowEntries = (BoardChrome.ownRow(of: scene)?.tiles ?? inheritedNavBar)?.map { entry -> TileEntry in
             var entry = entry
-            entry.link = TileToken.systemPageKey(entry.link) ?? entry.link
+            // As `ExportPages` keys it: a template's `template:random` is `random`.
+            entry.link = TileToken.systemPageKey(entry.link).map(TileToken.bareKey) ?? entry.link
             return entry
         } ?? BoardChrome.row(inSystemScene: true)
         let roots = rowEntries.filter {
@@ -661,7 +663,8 @@ enum BoardPDFRenderer {
                                                 label: { tileLookup[$0.key]?.displayName })
         let visible = BoardPagination.filtered(walked, filter: options.filter, tileLookup: tileLookup)
         let chrome = options.matchesScreenLayout && BoardChrome.inherits(scene)
-            ? Array(BoardChrome.row(for: scene, level: scene.effectiveRevealLevel).prefix(options.resolvedColumns))
+            ? Array(BoardChrome.row(for: scene, level: scene.effectiveRevealLevel, inherited: inheritedNavBar)
+                .prefix(options.resolvedColumns))
             : []
         let sheets = BoardPagination.paginate(visible, perSheet: layout.perSheet, chrome: chrome)
 
