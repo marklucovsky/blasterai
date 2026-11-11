@@ -444,7 +444,7 @@ struct SceneStructureStep: View {
         scene.pages.first(where: { $0.key == scene.homePageKey }) ?? scene.pages.first
     }
     private var homeTileKeys: Set<String> { Set((homePage?.tiles ?? []).map(\.key)) }
-    private var donors: [BlasterScene] { allScenes.filter { !$0.pages.isEmpty } }
+    private var donors: [BlasterScene] { allScenes.filter { !$0.pages.isEmpty && !$0.isCarriedTemplate } }
     private var tileLookup: [String: TileModel] {
         Dictionary(allTiles.map { ($0.key, $0) }, uniquingKeysWith: { a, _ in a })
     }
@@ -516,7 +516,8 @@ struct SceneStructureSheet: View {
     @State private var showBoard = true
 
     private var donorScenes: [BlasterScene] {
-        allScenes.filter { $0.persistentModelID != scene.persistentModelID && !$0.pages.isEmpty }
+        allScenes.filter { $0.persistentModelID != scene.persistentModelID && !$0.pages.isEmpty
+            && !$0.isCarriedTemplate }
     }
 
     private var existingPageKeys: Set<String> { Set(scene.pages.map(\.key)) }

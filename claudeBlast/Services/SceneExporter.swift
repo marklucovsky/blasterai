@@ -29,11 +29,14 @@ enum SceneExporter {
     ///     for callers that only need the page structure.
     /// - Parameter level: the level the file opens at; nil means the scene's
     ///   current level. Ignored for a scene without levels.
+    /// - Parameter templates: the templates the scene is built on, nearest
+    ///   first (`TemplateChain.templates`), carried inside the file.
     static func export(_ scene: BlasterScene,
                        defaultTileKeys: Set<String> = [],
                        tileLookup: [String: TileModel],
                        context: ModelContext? = nil,
-                       level: Int? = nil) -> ExportableScene {
+                       level: Int? = nil,
+                       templates: [BlasterScene] = []) -> ExportableScene {
         var exportTiles: [ExportableTile] = []
         var seenTileKeys = Set<String>()
 
@@ -111,6 +114,12 @@ enum SceneExporter {
             revealLevels: scene.revealLevelCount > 0 ? scene.revealLevelCount : nil,
             revealLevel: scene.revealLevelCount > 0
                 ? min(max(level ?? scene.effectiveRevealLevel ?? 1, 1), scene.revealLevelCount) : nil,
+            isTemplate: scene.isTemplate ? true : nil,
+            templateID: scene.templateID.isEmpty ? nil : scene.templateID,
+            modified: scene.lastModified,
+            templates: templates.isEmpty ? nil : templates.map {
+                export($0, defaultTileKeys: defaultTileKeys, tileLookup: tileLookup, context: context)
+            },
             tiles: exportTiles.isEmpty ? nil : exportTiles,
             pages: exportPages
         )
@@ -121,9 +130,11 @@ enum SceneExporter {
                            defaultTileKeys: Set<String> = [],
                            tileLookup: [String: TileModel],
                            context: ModelContext? = nil,
-                           level: Int? = nil) throws -> Data {
+                           level: Int? = nil,
+                           templates: [BlasterScene] = []) throws -> Data {
         let exportable = export(scene, defaultTileKeys: defaultTileKeys,
-                                tileLookup: tileLookup, context: context, level: level)
+                                tileLookup: tileLookup, context: context, level: level,
+                                templates: templates)
         return try encode(exportable)
     }
 

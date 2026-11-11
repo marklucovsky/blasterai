@@ -92,7 +92,7 @@ enum MeScene {
     /// board or someone's Me page.
     static func isEligibleTopic(_ scene: BlasterScene) -> Bool {
         !scene.isDefault && !isMeScene(scene) && !scene.sceneID.isEmpty
-            && BoardChrome.inherits(scene)
+            && !scene.isCarriedTemplate && BoardChrome.inherits(scene)
             && scene.page(withKey: scene.homePageKey) != nil
     }
 
@@ -291,7 +291,7 @@ enum MeScene {
             if !pages.isEmpty { groups.append((BlasterScene.copyRoot(of: board.name), pages)) }
         }
         if let system { add(system) }
-        for scene in scenes where !scene.isDefault && !scene.isSystemOwned
+        for scene in scenes where !scene.isDefault && !scene.isSystemOwned && !scene.isCarriedTemplate
             && !isMeScene(scene) && BoardChrome.inherits(scene) {
             add(scene)
         }

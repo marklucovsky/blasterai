@@ -174,6 +174,7 @@ enum CloudKitSchemaExerciser {
             scene.designedFor = marker
             scene.templateID = marker
             scene.isTemplate = true
+            scene.isCarriedTemplate = true
             // Non-zero, so the fields are written with values Production keeps.
             scene.revealLevelCount = 3
             scene.revealLevel = 1

@@ -123,6 +123,17 @@ struct SceneRow: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                if scene.isLockedTemplate {
+                    // Someone else's: theirs to change, the receiver's to build on.
+                    Label("Template from \(scene.authorName.isEmpty ? "someone else" : scene.authorName) \u{2014} updated when they send a new version. Tap to make a copy built on it.",
+                          systemImage: "square.stack.3d.up")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                } else if scene.isTemplate {
+                    Label("Template \u{2014} other scenes can be built on it", systemImage: "square.stack.3d.up")
+                        .font(.caption)
+                        .foregroundStyle(.indigo)
+                }
                 switch builtOn {
                 case .template(let name):
                     Label("Built on \(name)", systemImage: "square.stack.3d.down.right")

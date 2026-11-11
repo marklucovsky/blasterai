@@ -284,6 +284,151 @@ struct TemplateChainTests {
         #expect(core.page(withKey: "bible") != nil)
     }
 
+    // MARK: - Sharing
+
+    private func lookup(in ctx: ModelContext) -> [String: TileModel] {
+        var lookup: [String: TileModel] = [:]
+        for key in ["pray", "jesus", "home", "park", "church", "bible", "actions"] {
+            let t = TileModel(key: key, value: key, wordClass: "object")
+            ctx.insert(t); lookup[key] = t
+        }
+        return lookup
+    }
+
+    /// One file brings the scene and the template it is built on; the
+    /// template arrives read-only.
+    @Test func aSceneFileCarriesItsTemplate() throws {
+        let ctx = TestStore.freshContext()
+        let lookup = lookup(in: ctx)
+        let template = makeTemplate(), scene = makeScene(on: "brandi/core")
+        ctx.insert(template); ctx.insert(scene)
+
+        let file = SceneExporter.export(scene, tileLookup: lookup, templates: [template])
+        #expect(file.templateID == "brandi/core")
+        #expect(file.templates?.first?.isTemplate == true)
+        #expect(file.templates?.first?.id == "brandi/core")
+
+        ctx.delete(scene); ctx.delete(template)
+        try ctx.save()
+        let result = try SceneImporter.importJSON(JSONEncoder().encode(file), context: ctx)
+
+        let scenes = try ctx.fetch(FetchDescriptor<BlasterScene>())
+        let arrived = try #require(scenes.first { $0.sceneID == "brandi/core" })
+        #expect(arrived.isTemplate && arrived.isImported && arrived.isLockedTemplate)
+        // Brought by the scene, not sent on its own: carried, not listed.
+        #expect(arrived.isCarriedTemplate)
+        #expect(!result.scene.isCarriedTemplate)
+        #expect(arrived.ownRow?.tiles.count == 2)
+        #expect(result.scene.templateID == "brandi/core")
+        #expect(!result.scene.isTemplate)
+        let chain = TemplateChain(scene: result.scene, templates: scenes.filter(\.isTemplate), system: makeSystem())
+        #expect(chain.templates.first?.sceneID == "brandi/core")
+    }
+
+    /// `template` as a file whose Home says church; the scene keeps its own.
+    private func exportWithChurchHome(_ template: BlasterScene, lookup: [String: TileModel]) -> ExportableScene {
+        let original = template.pages
+        template.pages = [PageSpec(key: "home", tiles: [TileEntry(key: "church")])]
+            + original.filter { $0.key != "home" }
+        let file = SceneExporter.export(template, tileLookup: lookup)
+        template.pages = original
+        return file
+    }
+
+    /// The template's own file, opened on purpose, makes a carried template
+    /// one of the receiver's scenes.
+    @Test func itsOwnFileListsACarriedTemplate() throws {
+        let ctx = TestStore.freshContext()
+        let lookup = lookup(in: ctx)
+        let template = makeTemplate(), scene = makeScene(on: "brandi/core")
+        ctx.insert(template); ctx.insert(scene)
+        let sceneFile = SceneExporter.export(scene, tileLookup: lookup, templates: [template])
+        let templateFile = SceneExporter.export(template, tileLookup: lookup)
+        ctx.delete(scene); ctx.delete(template)
+        try ctx.save()
+
+        _ = try SceneImporter.importJSON(JSONEncoder().encode(sceneFile), context: ctx)
+        let arrived = try #require(try ctx.fetch(FetchDescriptor<BlasterScene>()).first { $0.sceneID == "brandi/core" })
+        #expect(arrived.isCarriedTemplate)
+        _ = try SceneImporter.importJSON(JSONEncoder().encode(templateFile), context: ctx)
+        #expect(!arrived.isCarriedTemplate)
+        // A later scene file bringing it again leaves it listed.
+        _ = try SceneImporter.importJSON(JSONEncoder().encode(sceneFile), context: ctx)
+        #expect(!arrived.isCarriedTemplate)
+    }
+
+    /// A carried template stays while a scene uses it, directly or through
+    /// another template, and is unused once none does.
+    @Test func aCarriedTemplateGoesWithItsLastScene() {
+        let base = makeTemplate(id: "brandi/core")
+        base.isCarriedTemplate = true
+        let middle = makeTemplate(id: "pastor/bible")
+        middle.templateID = "brandi/core"
+        middle.isCarriedTemplate = true
+        let scene = makeScene(on: "pastor/bible")
+
+        #expect(TemplateRemoval.unusedCarried(in: [base, middle, scene]).isEmpty)
+        #expect(Set(TemplateRemoval.unusedCarried(in: [base, middle]).map(\.sceneID))
+                == ["brandi/core", "pastor/bible"])
+        // A carried template is not offered to build on.
+        #expect(TemplateChain.choices(for: scene, templates: [base, middle]).isEmpty)
+    }
+
+    /// A template inside an old scene file never replaces a newer copy, and
+    /// a newer one replaces it quietly.
+    @Test func aCarriedTemplateNeverRollsBack() throws {
+        let ctx = TestStore.freshContext()
+        let lookup = lookup(in: ctx)
+        let installed = makeTemplate()
+        installed.isImported = true
+        ctx.insert(installed)
+        var carried = exportWithChurchHome(installed, lookup: lookup)
+
+        carried.modified = installed.lastModified.addingTimeInterval(-60)
+        try SceneImporter.installCarried(carried, context: ctx)
+        #expect(installed.page(withKey: "home")?.tiles.first?.key == "pray")
+
+        carried.modified = installed.lastModified.addingTimeInterval(60)
+        try SceneImporter.installCarried(carried, context: ctx)
+        #expect(installed.page(withKey: "home")?.tiles.first?.key == "church")
+        #expect(installed.lastModified == carried.modified)
+    }
+
+    /// The author's own template (not imported) is never replaced by a file.
+    @Test func aCarriedTemplateLeavesTheAuthorsOwn() throws {
+        let ctx = TestStore.freshContext()
+        let lookup = lookup(in: ctx)
+        let own = makeTemplate()
+        ctx.insert(own)
+        var carried = exportWithChurchHome(own, lookup: lookup)
+        carried.modified = own.lastModified.addingTimeInterval(60)
+        try SceneImporter.installCarried(carried, context: ctx)
+        #expect(own.page(withKey: "home")?.tiles.first?.key == "pray")
+        #expect(!own.isLockedTemplate)
+    }
+
+    /// A copy of a template is a scene built on it, as a copy of BlasterAI
+    /// 60 is: its Home alone, linking into the template, drawing its bar.
+    @Test func aCopyOfATemplateIsBuiltOnIt() {
+        let ctx = TestStore.freshContext()
+        let template = makeTemplate()
+        template.pages = [PageSpec(key: "home", tiles: [TileEntry(key: "bible", link: "bible", isAudible: false)])]
+            + template.pages.filter { $0.key != "home" }
+        ctx.insert(template)
+
+        let copy = BlasterScene.duplicate(of: template, in: ctx, authorID: "a", authorName: "")
+        #expect(copy.templateID == template.sceneID)
+        #expect(!copy.isTemplate)
+        #expect(copy.ownRow == nil)
+        #expect(copy.pages.map(\.key) == ["home"])
+        #expect(copy.pages[0].tiles[0].link == "<template>:bible")
+
+        let editing = BlasterScene.cloneForEditing(template, in: ctx, authorID: "a", authorName: "",
+                                                   alsoShadowing: "bible")
+        #expect(editing.shadowPage(for: "template:bible")?.key == "bible")
+        #expect(editing.shadowPage(for: "template:bible")?.tiles[1].link == TileToken.home)
+    }
+
     // MARK: - Typing
 
     /// `template:` names the template's page, `sys:` BlasterAI 60's, and
