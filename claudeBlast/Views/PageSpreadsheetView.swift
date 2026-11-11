@@ -75,6 +75,11 @@ struct PageSpreadsheetView: View {
     let lookup: [String: TileModel]
     /// BlasterAI 60's pages, for links to them. Empty when editing it.
     let systemPages: [PageSpec]
+    /// The template, by name, that each template page of `systemPages`
+    /// (`template:random`) comes from.
+    var pageOwners: [String: String] = [:]
+    /// What the scene is built on, when that is a template.
+    var templateName: String? = nil
     let cells: PageCells
     /// The system row drawn over each screen; empty when not inherited.
     let chrome: [TileEntry]
@@ -697,7 +702,7 @@ struct PageSpreadsheetView: View {
                 Text(key).font(.caption2.monospaced()).foregroundStyle(.secondary)
             }
         case .page(let key, let isSystem):
-            Label(isSystem ? "BlasterAI › \(PageNaming.displayName(key))"
+            Label(isSystem ? "\(pageOwners[key] ?? "BlasterAI") › \(PageNaming.displayName(key))"
                            : (scene.page(withKey: key)?.title ?? key),
                   systemImage: isSystem ? "square.grid.3x3.fill" : "folder")
                 .font(.subheadline)
@@ -706,6 +711,11 @@ struct PageSpreadsheetView: View {
             Label("New page \u{201C}\(PageNaming.displayName(key))\u{201D}", systemImage: "folder.badge.plus")
                 .font(.subheadline)
                 .padding(.horizontal, 8).padding(.vertical, 6)
+        case .templatePages(let count):
+            Label("\(templateName ?? "Template") pages (\(count))…", systemImage: "square.grid.3x3.fill")
+                .font(.subheadline.weight(.medium))
+                .padding(.horizontal, 10).padding(.vertical, 7)
+                .background(Capsule().fill(Color.accentColor.opacity(0.12)))
         case .systemPages(let count):
             Label("BlasterAI 60 pages (\(count))…", systemImage: "square.grid.3x3.fill")
                 .font(.subheadline.weight(.medium))
@@ -1644,6 +1654,8 @@ enum CellSuggestion: Hashable {
     /// After `>` with nothing typed: the scene's own pages are all listed,
     /// and this opens BlasterAI 60's (`> sys:`), which would otherwise bury them.
     case systemPages(count: Int)
+    /// The same for the template's pages (`> template:`).
+    case templatePages(count: Int)
 
     static let limit = 8
 
@@ -1653,13 +1665,20 @@ enum CellSuggestion: Hashable {
                             scenePages: [PageSpec], systemPages: [PageSpec]) -> [CellSuggestion] {
         if let arrow = text.firstIndex(of: ">") {
             var query = text[text.index(after: arrow)...].trimmingCharacters(in: .whitespaces)
-            var systemOnly = false
+            let theirs = systemPages.filter { TileToken.isTemplateKey($0.key) }
+            let core = systemPages.filter { !TileToken.isTemplateKey($0.key) }
             if query.lowercased().hasPrefix(BoardCell.systemMarker) {
-                systemOnly = true
                 query = String(query.dropFirst(BoardCell.systemMarker.count))
+                return pages(matching: query, scenePages: [], templatePages: [], corePages: core,
+                             allowNew: false)
             }
-            return pages(matching: query, scenePages: systemOnly ? [] : scenePages,
-                         systemPages: systemPages, allowNew: !systemOnly)
+            if query.lowercased().hasPrefix(BoardCell.templateMarker) {
+                query = String(query.dropFirst(BoardCell.templateMarker.count))
+                return pages(matching: query, scenePages: [], templatePages: theirs, corePages: [],
+                             allowNew: false)
+            }
+            return pages(matching: query, scenePages: scenePages, templatePages: theirs, corePages: core,
+                         allowNew: true)
         }
         let parts = text.split(separator: ",", omittingEmptySubsequences: false)
             .map { $0.trimmingCharacters(in: .whitespaces) }
@@ -1687,8 +1706,10 @@ enum CellSuggestion: Hashable {
 
     /// Fills the field and waits for the next choice, rather than being one.
     var opensMore: Bool {
-        if case .systemPages = self { return true }
-        return false
+        switch self {
+        case .systemPages, .templatePages: true
+        default: false
+        }
     }
 
     var isWordClass: Bool {
@@ -1697,23 +1718,29 @@ enum CellSuggestion: Hashable {
     }
 
     /// Link targets for what follows `>`. Nothing typed yet: every page of
-    /// the scene, then one chip for BlasterAI 60's pages, so the whole set
-    /// is in view before a letter is typed. Typing narrows both. After
-    /// `sys:` (`scenePages` empty), every BlasterAI 60 page.
+    /// the scene, then a chip for the template's pages and one for BlasterAI
+    /// 60's, so the whole set is in view before a letter is typed. Typing
+    /// narrows all three, the template's before BlasterAI 60's. After
+    /// `template:` or `sys:`, every page of that board alone.
     private static func pages(matching query: String, scenePages: [PageSpec],
-                              systemPages: [PageSpec], allowNew: Bool) -> [CellSuggestion] {
+                              templatePages: [PageSpec], corePages: [PageSpec],
+                              allowNew: Bool) -> [CellSuggestion] {
         let q = WordFinder.normalize(query)
+        let typedKey = BoardCell.pageKey(query)
         func matches(_ page: PageSpec) -> Bool {
-            q.isEmpty || page.key.contains(BoardCell.pageKey(query))
+            q.isEmpty || TileToken.bareKey(page.key).contains(typedKey)
                 || WordFinder.normalize(page.title).contains(q)
         }
         let own = scenePages.filter(matches).map { CellSuggestion.page($0.key, isSystem: false) }
-        let system = systemPages.filter(matches).map { CellSuggestion.page($0.key, isSystem: true) }
+        let system = (templatePages.filter(matches) + corePages.filter(matches))
+            .map { CellSuggestion.page($0.key, isSystem: true) }
         var result: [CellSuggestion]
         if !allowNew {
-            result = system                                   // `> sys:`
+            result = system                                   // `> sys:` / `> template:`
         } else if q.isEmpty {
-            result = own + (systemPages.isEmpty ? [] : [.systemPages(count: systemPages.count)])
+            result = own
+                + (templatePages.isEmpty ? [] : [.templatePages(count: templatePages.count)])
+                + (corePages.isEmpty ? [] : [.systemPages(count: corePages.count)])
         } else {
             result = own + system.prefix(limit)
         }
@@ -1733,12 +1760,16 @@ enum CellSuggestion: Hashable {
             guard let arrow else { return key }
             return key + " " + text[arrow...]
         case .page(let key, let isSystem):
-            let page = (isSystem ? BoardCell.systemMarker : "") + key
+            // A template key is already its typed form, `template:random`.
+            let page = (isSystem && !TileToken.isTemplateKey(key) ? BoardCell.systemMarker : "") + key
             return lhs.isEmpty ? "> \(page)" : "\(lhs) > \(page)"
         case .newPage(let key):
             return lhs.isEmpty ? "> \(key)" : "\(lhs) > \(key)"
         case .systemPages:
             let page = BoardCell.systemMarker
+            return lhs.isEmpty ? "> \(page)" : "\(lhs) > \(page)"
+        case .templatePages:
+            let page = BoardCell.templateMarker
             return lhs.isEmpty ? "> \(page)" : "\(lhs) > \(page)"
         case .wordClass(let name):
             let side = arrow.map { String(text[..<$0]) } ?? text

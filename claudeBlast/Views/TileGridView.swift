@@ -21,6 +21,8 @@ struct TileGridView: View {
     /// BlasterAI 60, whose pages a `<system>:` link opens from any scene.
     @Query(filter: #Predicate<BlasterScene> { $0.isDefault })
     private var systemScenes: [BlasterScene]
+    @Query(filter: #Predicate<BlasterScene> { $0.isTemplate })
+    private var templateScenes: [BlasterScene]
 
     /// All vocabulary tiles. Used to resolve a TileEntry.key back to the
     /// underlying TileModel for display (image, label, wordClass).
@@ -156,6 +158,11 @@ struct TileGridView: View {
     private var activeScene: BlasterScene? { activeScenes.first }
     private var systemScene: BlasterScene? { systemScenes.first }
 
+    /// The board's levels and the templates it is built on (`TemplateChain`).
+    private func levels(_ scene: BlasterScene) -> BoardLevels {
+        BoardLevels(scene: scene, system: systemScene, templates: templateScenes)
+    }
+
     /// All tile keys reachable anywhere in the active scene.
     private var sceneKeySet: Set<String> {
         guard let scene = activeScene else { return [] }
@@ -181,7 +188,7 @@ struct TileGridView: View {
         // The board at its level: words above it draw as concealed cells.
         // A core-board page follows the same dial (`BoardLevels`).
         guard var page = SystemLinks.page(forKey: key, scenePages: scene.visiblePages,
-                                          systemPages: BoardLevels(scene: scene, system: systemScene).systemPages,
+                                          systemPages: levels(scene).systemPages,
                                           mountedPages: { mountedScene($0)?.visiblePages })
         else { return nil }
         // A link into a mounted scene that is gone (deleted, perhaps on
@@ -191,7 +198,8 @@ struct TileGridView: View {
         if let mounted = TileToken.scenePageKey(key), let me = mountedScene(mounted.sceneID),
            MeScene.isMeScene(me), mounted.page == me.homePageKey, let from = meContextKey {
             let rowKeys = BoardChrome.inherits(scene)
-                ? Set(BoardChrome.row(for: scene, level: chromeLevel(scene)).map(\.key)) : []
+                ? Set(BoardChrome.row(for: scene, level: chromeLevel(scene),
+                                      inherited: levels(scene).inheritedNavBar).map(\.key)) : []
             page.tiles = MeScene.compose(
                 page.tiles,
                 items: MeScene.contextEntries(forNavKey: from, systemIsActive: scene.isDefault, in: me),
@@ -217,7 +225,7 @@ struct TileGridView: View {
         }
         guard let systemKey = TileToken.systemPageKey(link) else { return [] }
         let pages = board.isDefault ? board.visiblePages
-            : BoardLevels(scene: board, system: systemScene).systemPages
+            : levels(board).systemPages
         return pages.first { $0.key == systemKey }?.tiles ?? []
     }
 
@@ -597,7 +605,8 @@ struct TileGridView: View {
             let board = VStack(spacing: spec.verticalSpacing) {
                 if inherits, let scene = activeScene {
                     chromeRow(BoardChrome.row(for: scene, level: chromeLevel(scene),
-                                              underMountedPage: TileToken.scenePageKey(identityPageKey) != nil),
+                                              underMountedPage: TileToken.scenePageKey(identityPageKey) != nil,
+                                              inherited: levels(scene).inheritedNavBar),
                               spec: spec, lookup: lookup, padding: gridPadding)
                 }
                 Group {
@@ -688,8 +697,8 @@ struct TileGridView: View {
     /// else the dial applied to the core board, as its pages are.
     private func chromeLevel(_ scene: BlasterScene) -> Int? {
         if scene.isDefault { return scene.effectiveRevealLevel }
-        return BoardLevels.clamp(BoardLevels(scene: scene, system: systemScene).level,
-                                 to: systemScene?.revealLevelCount ?? 0)
+        let board = levels(scene)
+        return BoardLevels.clamp(board.level, to: board.chain?.revealLevelCount ?? 0)
     }
 
     /// Row 1: the system folders. On a grid narrower than the row (Large,
@@ -825,9 +834,9 @@ struct TileGridView: View {
             return PathPlace(owner: .topic(name: owner.name), route: route)
         }
         if let systemKey = TileToken.systemPageKey(key), let system = systemScene {
-            let pages = BoardLevels(scene: scene, system: system).systemPages
+            let board = levels(scene)
             return PathPlace(owner: .board, route: Array(WordPlaces.trail(
-                to: systemKey, pages: pages, homeKey: system.homePageKey,
+                to: systemKey, pages: board.systemPages, homeKey: board.systemHomePageKey ?? system.homePageKey,
                 row: BoardChrome.rowPages(of: system)).dropFirst()))
         }
         return PathPlace(owner: .board, route: Array(WordPlaces.trail(
@@ -1011,7 +1020,8 @@ struct TileGridView: View {
         guard let scene = activeScene,
               TileToken.scenePageKey(identityPageKey) == nil else { return nil }
         if let systemKey = TileToken.systemPageKey(identityPageKey) {
-            return scene.isDefault || systemScene?.page(withKey: systemKey) == nil ? nil : identityPageKey
+            return scene.isDefault || !levels(scene).systemPages.contains(where: { $0.key == systemKey })
+                ? nil : identityPageKey
         }
         return scene.page(withKey: identityPageKey) != nil ? identityPageKey : nil
     }
@@ -1020,7 +1030,7 @@ struct TileGridView: View {
     /// has levels.
     private var railLevel: RailLevel? {
         guard let scene = activeScene else { return nil }
-        let levels = BoardLevels(scene: scene, system: systemScene)
+        let levels = levels(scene)
         guard levels.count > 0, let level = levels.level else { return nil }
         return RailLevel(level: level, count: levels.count) { next in
             levels.setLevel(next)
@@ -1047,8 +1057,9 @@ struct TileGridView: View {
         }
         if let systemKey = TileToken.systemPageKey(key) {
             guard let system = systemScene else { return [key] }
-            let pages = BoardLevels(scene: scene, system: system).systemPages
-            return WordPlaces.trailKeys(to: systemKey, pages: pages, homeKey: system.homePageKey,
+            let board = levels(scene)
+            return WordPlaces.trailKeys(to: systemKey, pages: board.systemPages,
+                                        homeKey: board.systemHomePageKey ?? system.homePageKey,
                                         row: BoardChrome.rowPages(of: system))
                 .map(TileToken.systemLink(to:))
         }
@@ -1068,7 +1079,7 @@ struct TileGridView: View {
         return entry.link.isEmpty ? "" : SystemLinks.destination(
             of: entry.link, fromPage: from,
             homePageKey: activeScene?.homePageKey ?? "home",
-            systemHomePageKey: systemScene?.homePageKey,
+            systemHomePageKey: activeScene.flatMap { levels($0).systemHomePageKey } ?? systemScene?.homePageKey,
             systemIsActive: activeScene?.isDefault == true,
             shadowed: activeScene?.shadowedSystemKeys ?? [])
     }

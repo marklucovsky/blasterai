@@ -60,8 +60,21 @@ struct ExportPages {
 
         let taken = Set(scenePages.map(\.key))
         var keys: [String: String] = [:]
-        for page in included {
-            keys[page.key] = taken.contains(page.key) ? "blasterai_" + page.key : page.key
+        var used = taken
+        for page in included where !TileToken.isTemplateKey(page.key) {
+            let key = taken.contains(page.key) ? "blasterai_" + page.key : page.key
+            keys[page.key] = key
+            used.insert(key)
+        }
+        // A template's page goes by its name (`template:random` → `random`),
+        // or `template_random` beside a page of that name.
+        for page in included where TileToken.isTemplateKey(page.key) {
+            let base = TileToken.bareKey(page.key)
+            var key = used.contains(base) ? "template_" + base : base
+            var n = 2
+            while used.contains(key) { key = "template_\(base)_\(n)"; n += 1 }
+            keys[page.key] = key
+            used.insert(key)
         }
         keyForSystem = keys
 

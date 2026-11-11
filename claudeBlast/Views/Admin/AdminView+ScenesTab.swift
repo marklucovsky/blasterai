@@ -78,6 +78,26 @@ extension AdminView {
         } message: { scene in
             Text("\(scene.baseName) is supplied and updated by BlasterAI, so it can't be edited directly. We'll make you an editable copy and switch to it. Your copy is yours — app updates won't touch it.")
         }
+        // An alert, not a dialog: on iPad a dialog is a popover whose Cancel
+        // is a tap outside it, and this choice wants Cancel in plain sight.
+        .alert(
+            templateToDelete.map { "Delete \(BlasterScene.copyRoot(of: $0.name))?" } ?? "",
+            isPresented: Binding(get: { templateToDelete != nil },
+                                 set: { if !$0 { templateToDelete = nil } }),
+            presenting: templateToDelete
+        ) { template in
+            // The scenes built on it keep the pages and bar they use, so
+            // nothing they show changes.
+            Button("Delete", role: .destructive) {
+                TemplateRemoval.keepLookOfAll(templateDependents(template), without: template,
+                                              templates: scenes.filter(\.isTemplate),
+                                              system: scenes.first(where: \.isDefault))
+                removeScene(template)
+            }
+            Button("Cancel", role: .cancel) { templateToDelete = nil }
+        } message: { template in
+            Text(templateDeleteMessage(template))
+        }
         .sheet(item: $pendingImportURL) { item in
             ImportRouteSheet(url: item.url) { pendingImportURL = nil }
         }
@@ -108,12 +128,12 @@ extension AdminView {
                         Button {
                             sceneToClone = scene
                         } label: {
-                            SceneRow(scene: scene, onActivate: { activateScene(scene) })
+                            SceneRow(scene: scene, onActivate: { activateScene(scene) }, builtOn: templateNote(scene))
                         }
                         .buttonStyle(.plain)
                     } else {
                         NavigationLink(destination: SceneEditorView(scene: scene)) {
-                            SceneRow(scene: scene, onActivate: { activateScene(scene) })
+                            SceneRow(scene: scene, onActivate: { activateScene(scene) }, builtOn: templateNote(scene))
                         }
                     }
                 }
@@ -301,24 +321,46 @@ extension AdminView {
     }
 
     func deleteScenes(at offsets: IndexSet) {
-        for index in offsets {
-            let scene = scenes[index]
-            if scene.isDefault { continue }
-            let wasActive = scene.isActive
-            MeScene.removeTopicEverywhere(sceneID: scene.sceneID, context: modelContext)
-            modelContext.delete(scene)
-            if wasActive {
-                // Restore default
-                if let defaultScene = scenes.first(where: { $0.isDefault }) {
-                    defaultScene.isActive = true
-                }
-            }
-        }
-        try? modelContext.save()
+        // One way to delete, so a template in use is always warned about.
+        for scene in offsets.map({ scenes[$0] }) { deleteScene(scene) }
     }
 
     func deleteScene(_ scene: BlasterScene) {
         guard !scene.isDefault else { return }
+        // A template other scenes are built on is not deleted out from under
+        // them: the warning names them and asks how they should go on.
+        if scene.isTemplate, !templateDependents(scene).isEmpty {
+            templateToDelete = scene
+            return
+        }
+        removeScene(scene)
+    }
+
+    /// The list's line about what a scene is built on.
+    func templateNote(_ scene: BlasterScene) -> SceneRow.TemplateNote? {
+        guard !scene.templateID.isEmpty else { return nil }
+        if let template = scenes.first(where: { $0.isTemplate && $0.sceneID == scene.templateID }) {
+            return .template(BlasterScene.copyRoot(of: template.name))
+        }
+        return .missing(TemplateChain.missingName(scene.templateID))
+    }
+
+    /// The scenes built on `template`, and what deleting it would strand.
+    func templateDependents(_ template: BlasterScene) -> [TemplateRemoval.Dependent] {
+        TemplateRemoval.dependents(of: template, scenes: scenes, system: scenes.first(where: \.isDefault))
+    }
+
+    func templateDeleteMessage(_ template: BlasterScene) -> String {
+        let names = templateDependents(template).map { BlasterScene.copyRoot(of: $0.scene.name) }
+        let list = ListFormatter.localizedString(byJoining: names)
+        return names.count == 1
+            ? "\(list) is built on it and will keep its pages and navigation bar."
+            : "\(list) are built on it and will keep their pages and navigation bars."
+    }
+
+    /// Delete a scene outright.
+    func removeScene(_ scene: BlasterScene) {
+        templateToDelete = nil
         let wasActive = scene.isActive
         MeScene.removeTopicEverywhere(sceneID: scene.sceneID, context: modelContext)
         modelContext.delete(scene)

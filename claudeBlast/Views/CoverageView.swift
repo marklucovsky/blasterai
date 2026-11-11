@@ -85,7 +85,9 @@ struct CoverageView: View {
                 isPhone: GridLayoutCalculator.isPhone(screenSize: GridLayoutCalculator.deviceScreenSize),
                 deviceLayout: BoardLayout(rawValue: boardLayoutRaw) ?? .standard),
             chrome: BoardChrome.inherits(scene)
-                ? BoardChrome.row(for: scene, level: scene.effectiveRevealLevel) : [],
+                ? BoardChrome.row(for: scene, level: scene.effectiveRevealLevel,
+                                  inherited: BoardLevels(scene: scene, system: scenes.first(where: \.isDefault),
+                                                         templates: scenes.filter(\.isTemplate)).inheritedNavBar) : [],
             linksTaken: row.linksTaken)
     }
 

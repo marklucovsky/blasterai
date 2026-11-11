@@ -98,6 +98,7 @@ struct ShareBoardSheet: View {
     @Environment(TileImageResolver.self) private var imageResolver
     @Query private var allTiles: [TileModel]
     @Query(filter: #Predicate<BlasterScene> { $0.isDefault }) private var systemScenes: [BlasterScene]
+    @Query(filter: #Predicate<BlasterScene> { $0.isTemplate }) private var templateScenes: [BlasterScene]
 
     @State private var setScope: ExportSetScope = .activeSet
     /// Seeded from the scene's designed grid. See `BoardPrintOptions.forScene`.
@@ -479,10 +480,11 @@ struct ShareBoardSheet: View {
         return "\(count) sheet\(count == 1 ? "" : "s")"
     }
 
-    /// BlasterAI 60, when the scene being shared is not it.
-    private var linkedSystem: BlasterScene? {
+    /// What the scene is built on — its templates over BlasterAI 60 — when
+    /// the scene being shared is not BlasterAI 60.
+    private var chain: TemplateChain? {
         guard let system = systemScenes.first, system.id != subject.scene.id else { return nil }
-        return system
+        return TemplateChain(scene: subject.scene, templates: templateScenes, system: system)
     }
 
     /// A scene prints with the BlasterAI 60 pages its links reach
@@ -492,19 +494,18 @@ struct ShareBoardSheet: View {
         let level = printLevel > 0 ? printLevel : nil
         switch subject {
         case .scene(let scene):
-            guard let system = linkedSystem else { return scene.pages(atLevel: level) }
-            let systemLevel = BoardLevels.clamp(level, to: system.revealLevelCount)
+            guard let chain else { return scene.pages(atLevel: level) }
             return ExportPages(scenePages: scene.pages(atLevel: level),
-                               systemPages: system.pages(atLevel: systemLevel),
-                               systemHomePageKey: system.homePageKey,
-                               rowKeys: BoardChrome.inherits(scene) ? BoardChrome.systemPageKeys(of: scene) : []).pages
+                               systemPages: chain.pages(atLevel: level),
+                               systemHomePageKey: chain.homePageKey,
+                               rowKeys: BoardChrome.inherits(scene)
+                                   ? BoardChrome.systemPageKeys(of: scene, inherited: chain.navBar) : []).pages
         case .page(let page, let scene):
             // The page and everything it opens, in the scene and in BlasterAI
             // 60 alike — the I page prints with Play, Games and the rest.
-            let systemLevel = linkedSystem.flatMap { BoardLevels.clamp(level, to: $0.revealLevelCount) }
             let whole = ExportPages(scenePages: scene.pages(atLevel: level),
-                                    systemPages: linkedSystem?.pages(atLevel: systemLevel) ?? [],
-                                    systemHomePageKey: linkedSystem?.homePageKey)
+                                    systemPages: chain?.pages(atLevel: level) ?? [],
+                                    systemHomePageKey: chain?.homePageKey)
             let reached = whole.reachable(from: page.key)
             return reached.isEmpty ? BlasterScene.project([page], atLevel: level) : reached
         }
@@ -650,6 +651,7 @@ struct ShareBoardSheet: View {
 
         let data = try await BoardPDFRenderer.render(pages: printablePages,
                                                      scene: subject.scene,
+                                                     inheritedNavBar: chain?.navBar,
                                                      tileLookup: tileLookup,
                                                      options: printOptions,
                                                      imageSet: imageResolver.activeSet,
@@ -659,13 +661,12 @@ struct ShareBoardSheet: View {
     }
 
     private func openBoardPackage() async throws -> ExportedFile {
-        let system = linkedSystem
+        let levels = BoardLevels(scene: subject.scene, system: systemScenes.first, templates: templateScenes)
         let url = try await OBFExporter.exportOBZ(scene: subject.scene,
                                                   tileLookup: tileLookup,
-                                                  systemPages: system.map {
-                                                      BoardLevels(scene: subject.scene, system: $0).systemPages
-                                                  } ?? [],
-                                                  systemHomePageKey: system?.homePageKey,
+                                                  systemPages: levels.systemPages,
+                                                  systemHomePageKey: levels.systemHomePageKey,
+                                                  inheritedNavBar: levels.inheritedNavBar,
                                                   imageSet: imageResolver.activeSet,
                                                   resolver: imageResolver,
                                                   basename: subject.basename,

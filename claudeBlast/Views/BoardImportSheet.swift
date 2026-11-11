@@ -19,7 +19,8 @@ import UniformTypeIdentifiers
 ///    (`ImportRouteSheet`); a spreadsheet stays here.
 /// 2. **Settle** — the words the sheet names that this device does not have, a
 ///    class this app does not know, a name several words share, pages that
-///    would be replaced.
+///    would be replaced. Into a scene, the sheet is the master: every page it
+///    draws replaces the scene's page of that name unless switched off.
 /// 3. **Preview** — the standard page preview (`PagePreviewView`), a section
 ///    per tab laid out cell for cell, its new words reviewed. Nothing is
 ///    written until Accept; Cancel goes back a step.
@@ -35,6 +36,8 @@ struct BoardImportSheet: View {
     @Query(sort: \TileModel.key) private var allTiles: [TileModel]
     @Query(filter: #Predicate<BlasterScene> { $0.isDefault })
     private var systemScenes: [BlasterScene]
+    @Query(filter: #Predicate<BlasterScene> { $0.isTemplate })
+    private var templateScenes: [BlasterScene]
 
     @State private var link = ""
     @State private var isPickingFile = false
@@ -226,7 +229,7 @@ struct BoardImportSheet: View {
                  : "Bring in pages from a spreadsheet — Google Sheets, Excel, Numbers or CSV — from a link or a file. Each tab is a page.")
                 .textCase(nil)
         } footer: {
-            Text("In a spreadsheet each tab is a page, named by the tab; the first tab, or one named home, is the home page. Each row is a row of the board, ten cells wide, below the top row every board shares. Write a cell as you would in the page editor: a word, “word, class” for a new one, “> page” for a folder, “go > page” for a word that opens a page, “sys:page” for a BlasterAI 60 page. A Google sheet must be shared as “Anyone with the link”.\n\n[The spreadsheet format and word classes](https://github.com/marklucovsky/blasterai/blob/main/docs/board-format/README.md)")
+            Text("In a spreadsheet each tab is a page, named by the tab; the first tab, or one named home, is the home page. Each row is a row of the board, ten cells wide, below the top row every board shares. Write a cell as you would in the page editor: a word, “word, class” for a new one, “> page” for a folder, “go > page” for a word that opens a page, “sys:page” for a BlasterAI 60 page, “template:page” for the template’s. A Google sheet must be shared as “Anyone with the link”.\n\n[The spreadsheet format and word classes](https://github.com/marklucovsky/blasterai/blob/main/docs/board-format/README.md)")
         }
     }
 
@@ -244,11 +247,25 @@ struct BoardImportSheet: View {
                 }
             }
             LabeledContent("Source", value: sourceName)
+            if sheetIsTemplate {
+                LabeledContent("Template", value: "Yes — other scenes can be built on it")
+            }
+            if let name = sheetTemplateName {
+                if let template = sheetTemplate {
+                    LabeledContent("Built on", value: BlasterScene.copyRoot(of: template.name))
+                } else {
+                    LabeledContent("Built on", value: "\u{201C}\(name)\u{201D} isn\u{2019}t on this device — BlasterAI 60")
+                }
+            }
         }
         Section {
             ForEach(preview.pages) { page in pageRow(page, isHome: page.key == preview.homeKey && isScene) }
         } header: {
             Text("Pages (\(preview.pages.count))")
+        } footer: {
+            if scene != nil, preview.pages.contains(where: { if case .filled = $0.existing { true } else { false } }) {
+                Text("The sheet replaces the pages it draws. Switch one off to keep the scene\u{2019}s. Pages the sheet doesn\u{2019}t draw are left as they are.")
+            }
         }
         if !preview.newWords.isEmpty {
             Section {
@@ -277,7 +294,7 @@ struct BoardImportSheet: View {
             } header: {
                 Text("Linked pages with no tab (\(preview.emptyPages.count))")
             } footer: {
-                Text("A link names these pages but no tab draws them, so they are made empty, ready to fill — in the page editor, or by importing a tab of the same name later. If you meant BlasterAI 60's page, write sys: before its name.")
+                Text("A link names these pages but no tab draws them, so they are made empty, ready to fill — in the page editor, or by importing a tab of the same name later. If you meant BlasterAI 60's page, write sys: before its name; the template's, template:.")
             }
         }
         let missing = missingWords(preview)
@@ -399,8 +416,8 @@ struct BoardImportSheet: View {
 
     // MARK: - Step 3: Preview
 
-    /// The pages the import writes: a page with words is left alone unless
-    /// the caregiver chose to replace it.
+    /// The pages the import writes: a page with words is replaced only when
+    /// chosen — all of them, to start, when importing into a scene.
     private var writing: [BoardWorkbook.PagePlan] {
         (preview?.pages ?? []).filter { page in
             if case .filled = page.existing { return replacing.contains(page.key) }
@@ -410,7 +427,11 @@ struct BoardImportSheet: View {
 
     /// The bar of the scene being imported into, when it has its own.
     private var existingNavBar: [TileEntry]? {
-        scene.flatMap(BoardChrome.ownRow(of:))?.tiles
+        if let own = scene.flatMap(BoardChrome.ownRow(of:))?.tiles { return own }
+        // Else the bar of the template the scene is, or will be, built on.
+        let templateID = sheetTemplate?.sceneID ?? scene?.templateID ?? ""
+        return TemplateChain(templateID: templateID, sceneID: scene?.sceneID ?? "",
+                             templates: templateScenes, system: systemScenes.first).navBar
     }
 
     private var boards: [String: PageSpec] {
@@ -426,9 +447,30 @@ struct BoardImportSheet: View {
 
     // MARK: - Loading
 
+    /// What `sys:` links name: BlasterAI 60's pages, with the templates the
+    /// scene is built on laid over them.
     private var systemPages: [PageSpec] {
         guard let system = systemScenes.first, system.id != scene?.id else { return [] }
-        return system.pages
+        let templateID = sheetTemplate?.sceneID ?? scene?.templateID ?? ""
+        return TemplateChain(templateID: templateID, sceneID: scene?.sceneID ?? "",
+                             templates: templateScenes, system: system).pages(atLevel: nil)
+    }
+
+    /// The sheet's `Template:` line, as written.
+    private var sheetTemplateName: String? {
+        preview?.details["template"].flatMap { $0.trimmingCharacters(in: .whitespaces).isEmpty ? nil : $0 }
+    }
+
+    /// The sheet's `Is Template: yes` line: the scene it makes is a template
+    /// other scenes can be built on.
+    private var sheetIsTemplate: Bool {
+        guard let value = preview?.details["is template"] ?? preview?.details["template scene"] else { return false }
+        return ["yes", "y", "true", "1", "on"].contains(value.trimmingCharacters(in: .whitespaces).lowercased())
+    }
+
+    /// The template that line names, when this device has it.
+    private var sheetTemplate: BlasterScene? {
+        sheetTemplateName.flatMap { TemplateChain.named($0, in: templateScenes) }
     }
 
     private var cols: Int {
@@ -544,6 +586,14 @@ struct BoardImportSheet: View {
         origins = [:]
         isPreviewing = false
         refresh()
+        // Into a scene, importing the sheet again is refreshing from it:
+        // every page it draws is replaced, unless the caregiver keeps one.
+        if scene != nil {
+            replacing = Set((preview?.pages ?? []).compactMap { page in
+                if case .filled = page.existing { return page.key }
+                return nil
+            })
+        }
         // The sheet's own details name the scene, when it gives them.
         let details = preview?.details ?? [:]
         if sceneName.isEmpty { sceneName = details["name"] ?? details["title"] ?? details["scene"] ?? name }
@@ -593,6 +643,18 @@ struct BoardImportSheet: View {
             target.descriptionText = sceneDescription
             modelContext.insert(target)
         }
+        if sheetIsTemplate {
+            if target.sceneID.isEmpty {
+                target.ensureIdentity(authorID: DeviceProfileStore.ensureAuthorID(context: modelContext),
+                                      authorName: DeviceProfileStore.authorName(context: modelContext))
+            }
+            target.isTemplate = true
+        }
+        // The sheet's `Template:` line builds the scene on that template.
+        if let template = sheetTemplate, template.persistentModelID != target.persistentModelID {
+            target.templateID = template.sceneID
+            if !template.designedFor.isEmpty { target.designedFor = template.designedFor }
+        }
         let before = Set(lookup.keys)
         let result = BoardWorkbook.apply(preview, to: target, cols: cols, replacing: replacing,
                                          dropping: dropped, systemPages: systemPages, context: modelContext)
@@ -602,9 +664,13 @@ struct BoardImportSheet: View {
         // A page made here that no tile of the scene opens is unreachable
         // until a folder to it is placed — Add Page offers that, so this does.
         let made = Set(preview.pages.filter { $0.existing == .none }.map(\.key))
-        let linked = Set(target.pages.flatMap(\.tiles).filter { !$0.isSpacer }.map(\.link))
+        // A page the scene's own bar opens is linked from every page.
+        let linked = Set((target.pages.flatMap(\.tiles) + (target.ownRow?.tiles ?? []))
+            .filter { !$0.isSpacer }.map(\.link))
+        // The navigation bar is not a page anything links to.
         let unlinked = result.pagesWritten.filter {
             made.contains($0) && !linked.contains($0) && $0 != target.homePageKey
+                && $0 != BlasterScene.rowPageKey
         }
         dismiss()
         onImported(target, unlinked)

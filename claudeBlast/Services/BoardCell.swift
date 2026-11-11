@@ -23,6 +23,7 @@ import SwiftData
 /// | `go > places`            | says *go*, then opens this scene's Places       |
 /// | `> animals`              | a silent folder that opens Animals              |
 /// | `go > sys:places`        | opens BlasterAI 60's Places                     |
+/// | `go > template:places`   | opens the template's Places, never BlasterAI 60's |
 /// | `[family] > people`      | a folder showing Family's picture, not People's cover |
 ///
 /// A bare page name is always the scene's own: one not made yet becomes an
@@ -45,6 +46,10 @@ enum BoardCell {
     /// scene's own.
     static let systemMarker = "sys:"
 
+    /// The text after `>` that names the template's page (`TemplateChain`).
+    /// The same text as a template page's key, so `format` writes it back.
+    static let templateMarker = TileToken.templateKeyPrefix
+
     /// The left side of a cell.
     enum Word: Equatable {
         /// A word already in the vocabulary, as typed.
@@ -58,6 +63,8 @@ enum BoardCell {
         var page: String
         /// `sys:` was written.
         var isSystem: Bool
+        /// `template:` was written.
+        var isTemplate: Bool = false
         /// `[word] > page`: a folder showing this word's picture rather than
         /// the page's cover.
         var picture: String? = nil
@@ -79,13 +86,16 @@ enum BoardCell {
         if let arrow = trimmed.firstIndex(of: ">") {
             lhs = trimmed[..<arrow]
             var page = trimmed[trimmed.index(after: arrow)...].trimmingCharacters(in: .whitespaces)
-            var isSystem = false
+            var isSystem = false, isTemplate = false
             if page.lowercased().hasPrefix(systemMarker) {
                 isSystem = true
                 page = String(page.dropFirst(systemMarker.count)).trimmingCharacters(in: .whitespaces)
+            } else if page.lowercased().hasPrefix(templateMarker) {
+                isTemplate = true
+                page = String(page.dropFirst(templateMarker.count)).trimmingCharacters(in: .whitespaces)
             }
             guard !page.isEmpty else { return .invalid("Name a page after >") }
-            link = Link(page: page, isSystem: isSystem)
+            link = Link(page: page, isSystem: isSystem, isTemplate: isTemplate)
         } else {
             lhs = Substring(trimmed)
         }
@@ -147,14 +157,20 @@ enum BoardCell {
     }
 
     /// The scene's page, else a new page of the scene; with `sys:`, BlasterAI
-    /// 60's page or nothing. Matched by key or by title.
+    /// 60's page or nothing; with `template:`, the template's or nothing.
+    /// Matched by key or by title.
     static func target(_ link: Link, scenePages: [PageSpec],
                        systemPages: [PageSpec]) -> Target? {
         if link.page == TileToken.home { return .scene(TileToken.home) }
         let key = pageKey(link.page)
         guard !key.isEmpty else { return nil }
         if link.isSystem {
-            return match(link.page, key: key, in: systemPages).map { .system($0.key) }
+            return match(link.page, key: key,
+                         in: systemPages.filter { !TileToken.isTemplateKey($0.key) }).map { .system($0.key) }
+        }
+        if link.isTemplate {
+            return match(link.page, key: templateMarker + key,
+                         in: systemPages.filter { TileToken.isTemplateKey($0.key) }).map { .system($0.key) }
         }
         if let page = match(link.page, key: key, in: scenePages) { return .scene(page.key) }
         return .newPage(key)
@@ -177,7 +193,11 @@ enum BoardCell {
             var target: Target?
             if let link {
                 guard let found = Self.target(link, scenePages: scenePages, systemPages: systemPages) else {
-                    return .error("BlasterAI 60 has no page \u{201C}\(link.page)\u{201D}")
+                    return .error(link.isTemplate
+                        ? (systemPages.contains { TileToken.isTemplateKey($0.key) }
+                            ? "The template has no page \u{201C}\(link.page)\u{201D}"
+                            : "This scene isn\u{2019}t built on a template")
+                        : "BlasterAI 60 has no page \u{201C}\(link.page)\u{201D}")
                 }
                 target = found
             }
@@ -200,7 +220,8 @@ enum BoardCell {
                         return .error("No word \u{201C}\(picture)\u{201D} for the folder's picture")
                     }
                 } else {
-                    let pageKey = target.link == TileToken.home ? "home" : key(of: target)
+                    // A template's page (`template:random`) is Random by name.
+                    let pageKey = target.link == TileToken.home ? "home" : TileToken.bareKey(key(of: target))
                     let glyph = PageLink.key(forPage: pageKey)
                     var folder = folderKey(for: target, scenePages: scenePages, systemPages: systemPages)
                     // A page nobody chose a picture for, with no folder yet,
@@ -370,7 +391,8 @@ enum BoardCell {
         if entry.link == TileToken.home {
             page = TileToken.home
         } else if let system = TileToken.systemPageKey(entry.link) {
-            page = systemMarker + system
+            // A template key is already its typed form, `template:random`.
+            page = TileToken.isTemplateKey(system) ? system : systemMarker + system
         } else {
             page = entry.link
         }

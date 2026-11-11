@@ -260,7 +260,8 @@ enum MeScene {
     /// page, a topic) is never a context.
     static func contextEntries(forNavKey navKey: String, systemIsActive: Bool,
                                in me: BlasterScene) -> [TileEntry] {
-        let systemKey = TileToken.systemPageKey(navKey)
+        // A template's page is its name too: `template:random` is Random.
+        let systemKey = TileToken.systemPageKey(navKey).map(TileToken.bareKey)
             ?? (TileToken.scenePageKey(navKey) == nil ? navKey : nil)
         guard let systemKey else { return [] }
         return (me.page(withKey: contextPageKey(for: systemKey))?.tiles ?? [])
@@ -284,7 +285,7 @@ enum MeScene {
             let pages = board.pages.compactMap { page -> PageSpec? in
                 // A copy of a BlasterAI 60 page is reached as that page.
                 var page = page
-                if page.isShadow { page.key = page.shadows }
+                if page.isShadow { page.key = TileToken.bareKey(page.shadows) }
                 return page.key != board.homePageKey && seen.insert(page.key).inserted ? page : nil
             }
             if !pages.isEmpty { groups.append((BlasterScene.copyRoot(of: board.name), pages)) }

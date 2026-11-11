@@ -68,6 +68,20 @@ final class BlasterScene {
     /// The declared grid, typed. Nil when undeclared or unrecognised.
     var designedLayout: DesignedLayout? { DesignedLayout(rawValue: designedFor) }
 
+    // MARK: - Templates
+
+    /// Other scenes can be built on this one (`TemplateChain`): its pages and
+    /// navigation bar are theirs to link to and draw, as BlasterAI 60's are
+    /// for every scene. BlasterAI 60 is the template that ships with the app;
+    /// this marks a caregiver's own. Defaulted Bool, per `SchemaVersions`.
+    var isTemplate: Bool = false
+
+    /// The `sceneID` of the template this scene is built on. Empty means
+    /// BlasterAI 60 — every scene before templates. A template that is gone
+    /// (deleted, not yet synced) falls back to BlasterAI 60 too, so a stale id
+    /// is never a broken board. Defaulted String, per `SchemaVersions`.
+    var templateID: String = ""
+
     // MARK: - Levels (graded reveal)
 
     /// How many levels the board declares; 0 means it has none. Authored, like
@@ -123,6 +137,9 @@ final class BlasterScene {
         if revealLevelCount > 0 {
             hasher.update(data: Data("levels:\(revealLevelCount)".utf8))
         }
+        // Templates, the same way: only when set.
+        if !templateID.isEmpty { hasher.update(data: Data("template:\(templateID)".utf8)) }
+        if isTemplate { hasher.update(data: Data("isTemplate".utf8)) }
         return hasher.finalize().map { String(format: "%02x", $0) }.joined()
     }
 
@@ -741,7 +758,8 @@ final class BlasterScene {
         Set(pages.compactMap { $0.isShadow ? $0.shadows : nil })
     }
 
-    /// Copy BlasterAI 60's `page` into this scene to stand in for it, and
+    /// Copy BlasterAI 60's `page`, or a template's (`TemplateChain.pages`),
+    /// into this scene to stand in for it, and
     /// return the copy's key. Copy-on-write: called when a caregiver edits a
     /// core-board page from this scene. A page already copied is returned as
     /// it is. The copy takes the system key when the scene has no page by
@@ -751,9 +769,11 @@ final class BlasterScene {
         if let existing = shadowPage(for: page.key) { return existing.key }
         var pages = self.pages
         let taken = Set(pages.map(\.key))
-        var key = page.key
+        // A template's page (`template:random`) is copied as `random`.
+        let base = TileToken.bareKey(page.key)
+        var key = base
         var n = 2
-        while taken.contains(key) { key = "\(page.key)_\(n)"; n += 1 }
+        while taken.contains(key) { key = "\(base)_\(n)"; n += 1 }
         pages.append(Self.shadow(of: page, systemHomePageKey: systemHomePageKey, key: key))
         self.pages = pages
         return key

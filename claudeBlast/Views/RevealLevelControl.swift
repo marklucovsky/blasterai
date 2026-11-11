@@ -21,8 +21,12 @@ struct RevealLevelControl: View {
     /// BlasterAI 60: a board that links into it steps its pages too.
     @Query(filter: #Predicate<BlasterScene> { $0.isDefault })
     private var systemScenes: [BlasterScene]
+    @Query(filter: #Predicate<BlasterScene> { $0.isTemplate })
+    private var templateScenes: [BlasterScene]
 
-    private var levels: BoardLevels { BoardLevels(scene: scene, system: systemScenes.first) }
+    private var levels: BoardLevels {
+        BoardLevels(scene: scene, system: systemScenes.first, templates: templateScenes)
+    }
 
     var body: some View {
         let levels = levels
