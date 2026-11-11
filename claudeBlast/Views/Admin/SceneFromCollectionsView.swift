@@ -39,7 +39,7 @@ struct SceneFromCollectionsView: View {
     /// structure result then fills with a link per page.
     private static let homeKey = "home"
 
-    private var donorScenes: [BlasterScene] { allScenes.filter { !$0.pages.isEmpty } }
+    private var donorScenes: [BlasterScene] { allScenes.filter { !$0.pages.isEmpty && !$0.isCarriedTemplate } }
 
     private var canCreate: Bool {
         !sceneName.trimmingCharacters(in: .whitespaces).isEmpty && !plan.isEmpty

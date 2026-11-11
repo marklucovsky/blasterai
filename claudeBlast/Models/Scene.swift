@@ -82,6 +82,31 @@ final class BlasterScene {
     /// is never a broken board. Defaulted String, per `SchemaVersions`.
     var templateID: String = ""
 
+    /// A template someone else made, received as a file: read-only here, as
+    /// BlasterAI 60 is. Its author's new versions replace it, and every scene
+    /// built on it follows; a scene that wants a page changed makes its own
+    /// copy. Its author's own devices (synced, or the file sent back to
+    /// itself) are not imported, so it stays theirs to edit.
+    var isLockedTemplate: Bool { isTemplate && isImported }
+
+    /// A template on this device only because a scene built on it brought it
+    /// (`ExportableScene.templates`): the bible board's congregation never
+    /// asked for Brandi's board, so it is not one of their scenes. Listed
+    /// apart, under Templates in Use, and deleted with the last scene that
+    /// uses it. Opening the template's own file makes it a scene of theirs.
+    /// State, not content: not in `contentHash`. Defaulted Bool, per
+    /// `SchemaVersions`.
+    var isCarriedTemplate: Bool = false
+
+    /// Why a locked template can't be edited, naming whose it is.
+    static func lockedTemplateNote(_ scene: BlasterScene) -> String {
+        let name = copyRoot(of: scene.name)
+        let author = scene.authorName.trimmingCharacters(in: .whitespaces)
+        return author.isEmpty
+            ? "\(name) is a template from someone else, updated when they send a new version, so it can\u{2019}t be edited here."
+            : "\(name) is \(author)\u{2019}s template, updated when \(author) sends a new version, so it can\u{2019}t be edited here."
+    }
+
     // MARK: - Levels (graded reveal)
 
     /// How many levels the board declares; 0 means it has none. Authored, like
@@ -692,7 +717,7 @@ final class BlasterScene {
             isActive: false
         )
         copy.pages = copiedPages(of: source, alsoShadowing: alsoShadowing)
-        copy.ownRow = source.ownRow
+        (copy.templateID, copy.ownRow) = copyBinding(of: source)
         copy.designedFor = source.designedFor
         copy.revealLevelCount = source.revealLevelCount
         copy.revealLevel = source.revealLevel
@@ -716,6 +741,7 @@ final class BlasterScene {
     /// come here, so they make the same copy. Copied whole, the pages were
     /// unreachable: row 1 and every folder open BlasterAI 60's own.
     static func copiedPages(of source: BlasterScene, alsoShadowing: String? = nil) -> [PageSpec] {
+        if source.isTemplate { return copiedTemplatePages(of: source, alsoShadowing: alsoShadowing) }
         guard source.isDefault else { return source.pages }
         let systemHome = source.homePageKey
         guard var home = source.page(withKey: systemHome) else { return source.pages }
@@ -725,6 +751,33 @@ final class BlasterScene {
             pages.append(shadow(of: page, systemHomePageKey: systemHome, key: key))
         }
         return pages
+    }
+
+    /// A copy of a template is built on it (`copyBinding`), sparse as a copy
+    /// of BlasterAI 60 is: the template's Home, its links made `template:`
+    /// links, plus the page being edited when the copy was made, as the
+    /// scene's own copy of the template's.
+    private static func copiedTemplatePages(of source: BlasterScene, alsoShadowing: String?) -> [PageSpec] {
+        let own = source.pages
+        guard var home = source.page(withKey: source.homePageKey) else { return own }
+        home.tiles = home.tiles.map { TemplateChain.absolute($0, in: source, pages: own) }
+        var pages = [home]
+        if let key = alsoShadowing, key != source.homePageKey,
+           let page = own.first(where: { $0.key == key }) {
+            var copy = page
+            copy.key = TileToken.bareKey(TemplateChain.templateKey(of: page))
+            copy.shadows = TemplateChain.templateKey(of: page)
+            copy.tiles = page.tiles.map { TemplateChain.absolute($0, in: source, pages: own) }
+            pages.append(copy)
+        }
+        return pages
+    }
+
+    /// What a copy of `source` is built on, and the bar it keeps: a copy of
+    /// a template is built on that template and draws its bar; any other
+    /// copy is built on what its source was, with the source's own bar.
+    static func copyBinding(of source: BlasterScene) -> (templateID: String, ownRow: PageSpec?) {
+        source.isTemplate ? (source.sceneID, nil) : (source.templateID, source.ownRow)
     }
 
     /// `entry` as it reads once its page leaves BlasterAI 60: a link to one of
@@ -811,7 +864,7 @@ final class BlasterScene {
             isActive: false
         )
         copy.pages = copiedPages(of: source)
-        copy.ownRow = source.ownRow
+        (copy.templateID, copy.ownRow) = copyBinding(of: source)
         copy.designedFor = source.designedFor
         copy.revealLevelCount = source.revealLevelCount
         copy.revealLevel = source.revealLevel

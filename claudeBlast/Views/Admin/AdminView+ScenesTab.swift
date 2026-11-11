@@ -26,6 +26,7 @@ extension AdminView {
             List {
                 AuthorNameField()
                 scenesSection
+                carriedTemplatesSection
                 newSceneSection
                 Section {
                     NavigationLink {
@@ -67,7 +68,7 @@ extension AdminView {
             BoardImportSheet(scene: nil) { scene, _ in navigateToNewScene = scene }
         }
         .confirmationDialog(
-            "This is a built-in board",
+            sceneToClone?.isLockedTemplate == true ? "This template is someone else\u{2019}s" : "This is a built-in board",
             isPresented: Binding(get: { sceneToClone != nil },
                                  set: { if !$0 { sceneToClone = nil } }),
             titleVisibility: .visible,
@@ -76,7 +77,11 @@ extension AdminView {
             Button("Make My Copy") { cloneSystemSceneForEditing(scene) }
             Button("Cancel", role: .cancel) { sceneToClone = nil }
         } message: { scene in
-            Text("\(scene.baseName) is supplied and updated by BlasterAI, so it can't be edited directly. We'll make you an editable copy and switch to it. Your copy is yours — app updates won't touch it.")
+            if scene.isLockedTemplate {
+                Text(BlasterScene.lockedTemplateNote(scene) + " We\u{2019}ll make you a copy built on it and switch to it: the pages you change are yours, and the rest keeps following its updates.")
+            } else {
+                Text("\(scene.baseName) is supplied and updated by BlasterAI, so it can't be edited directly. We'll make you an editable copy and switch to it. Your copy is yours — app updates won't touch it.")
+            }
         }
         // An alert, not a dialog: on iPad a dialog is a popover whose Cancel
         // is a tap outside it, and this choice wants Cancel in plain sight.
@@ -118,9 +123,9 @@ extension AdminView {
         Section {
             // A Me page is reached from its profile, and is mounted rather
             // than activated, shared or duplicated.
-            ForEach(scenes.filter { !MeScene.isMeScene($0) }) { scene in
+            ForEach(scenes.filter { !MeScene.isMeScene($0) && !$0.isCarriedTemplate }) { scene in
                 Group {
-                    if scene.isSystemOwned {
+                    if scene.isSystemOwned || scene.isLockedTemplate {
                         // System scenes are immutable — the editor is the single
                         // door to every scene mutation, so refusing to open it
                         // here is what keeps them pristine. Tapping offers an
@@ -327,6 +332,16 @@ extension AdminView {
 
     func deleteScene(_ scene: BlasterScene) {
         guard !scene.isDefault else { return }
+        // A template someone else sent, that scenes here are built on, only
+        // leaves the list: it goes on supplying them, under Templates in Use,
+        // until the last of them is deleted.
+        if scene.isLockedTemplate, !templateDependents(scene).isEmpty {
+            let wasActive = scene.isActive
+            scene.isCarriedTemplate = true
+            if wasActive, let system = scenes.first(where: \.isDefault) { _ = try? system.activate(context: modelContext) }
+            try? modelContext.save()
+            return
+        }
         // A template other scenes are built on is not deleted out from under
         // them: the warning names them and asks how they should go on.
         if scene.isTemplate, !templateDependents(scene).isEmpty {
@@ -369,7 +384,52 @@ extension AdminView {
                 defaultScene.isActive = true
             }
         }
+        // A carried template goes with the last scene that used it.
+        let remaining = scenes.filter { $0.persistentModelID != scene.persistentModelID }
+        for unused in TemplateRemoval.unusedCarried(in: remaining) {
+            modelContext.delete(unused)
+        }
         try? modelContext.save()
+    }
+
+    // MARK: - Templates in Use
+
+    /// Templates here only because a scene built on them brought them along
+    /// (`BlasterScene.isCarriedTemplate`). Collapsed: they are how those
+    /// scenes work, not boards of the caregiver's own.
+    @ViewBuilder
+    var carriedTemplatesSection: some View {
+        let carried = scenes.filter(\.isCarriedTemplate)
+        if !carried.isEmpty {
+            Section {
+                DisclosureGroup("Templates in Use (\(carried.count))") {
+                    ForEach(carried) { template in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(BlasterScene.copyRoot(of: template.name)).font(.headline)
+                            Text(carriedUsers(template))
+                                .font(.caption).foregroundStyle(.secondary)
+                            Button("Add to My Scenes") {
+                                template.isCarriedTemplate = false
+                                try? modelContext.save()
+                            }
+                            .buttonStyle(.borderless)
+                            .font(.caption)
+                        }
+                        .padding(.vertical, 2)
+                    }
+                }
+            } footer: {
+                Text("Boards here are built on these. They came with those boards and update when a newer one arrives; each is removed with the last board that uses it.")
+            }
+        }
+    }
+
+    /// "Used by Bible Board" — the scenes a carried template supplies.
+    func carriedUsers(_ template: BlasterScene) -> String {
+        let names = templateDependents(template)
+            .filter { !$0.scene.isCarriedTemplate }
+            .map { BlasterScene.copyRoot(of: $0.scene.name) }
+        return names.isEmpty ? "Used by another template" : "Used by " + ListFormatter.localizedString(byJoining: names)
     }
 
     var resolvedAPIKey: String {

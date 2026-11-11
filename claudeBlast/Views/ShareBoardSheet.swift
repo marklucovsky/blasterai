@@ -627,11 +627,14 @@ struct ShareBoardSheet: View {
             // first-party AND absent from a fresh install, so `isSystem` here
             // dropped every pack word. See `BundledVocabulary`.
             let defaultKeys = BundledVocabulary.keys
+            // A scene built on a template carries it, so one file is
+            // everything the receiver needs.
             let data = try SceneExporter.exportJSON(scene,
                                                     defaultTileKeys: defaultKeys,
                                                     tileLookup: tileLookup,
                                                     context: modelContext,
-                                                    level: sharesLevels ? sceneLevel : nil)
+                                                    level: sharesLevels ? sceneLevel : nil,
+                                                    templates: chain?.templates ?? [])
             return try ExportedFile.write(data, named: "\(subject.basename).\(BlasterSceneFormat.fileExtension)")
 
         case .page(let page, let scene):

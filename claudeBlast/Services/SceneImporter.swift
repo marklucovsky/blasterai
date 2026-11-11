@@ -141,6 +141,31 @@ enum SceneImporter {
         return ImportAnalysis(newWords: newWords, fillWords: fillWords, collisions: collisions)
     }
 
+    /// Install a template carried inside a scene's file (`ExportableScene.templates`).
+    ///
+    /// Added when the device lacks it. An installed copy is updated only when
+    /// the carried one is newer — a scene shared long ago must not roll a
+    /// template back — and never when it is this device's own (not imported):
+    /// its author edits it, a file does not.
+    static func installCarried(_ template: ExportableScene, context: ModelContext,
+                               sourceURL: String = "") throws {
+        guard let id = template.id, !id.isEmpty else { return }
+        let installed = (try? context.fetch(
+            FetchDescriptor<BlasterScene>(predicate: #Predicate { $0.sceneID == id })
+        ))?.first
+        if let installed {
+            guard installed.isImported,
+                  let modified = template.modified, modified > installed.lastModified else { return }
+        }
+        var carried = template
+        carried.templates = nil
+        // A received template is read-only, so it has nothing of the
+        // receiver's to keep: the newer version replaces it.
+        _ = try importJSON(SceneExporter.encode(carried), context: context, sourceURL: sourceURL,
+                           resolution: installed?.isLockedTemplate == true ? .takeUpdate : .keepMine,
+                           asCarried: true)
+    }
+
     /// Import a scene from JSON data.
     /// - Parameters:
     ///   - data: Raw JSON data in the ExportableScene format.
@@ -150,7 +175,8 @@ enum SceneImporter {
                            context: ModelContext,
                            sourceURL: String = "",
                            acceptedImageCollisions: Set<String> = [],
-                           resolution: SceneImportResolution? = nil) throws -> ImportResult {
+                           resolution: SceneImportResolution? = nil,
+                           asCarried: Bool = false) throws -> ImportResult {
         let decoder = JSONDecoder()
         let exportable: ExportableScene
         do {
@@ -171,6 +197,12 @@ enum SceneImporter {
 
         guard !exportable.pages.isEmpty else {
             throw SceneImportError.noPages
+        }
+
+        // The templates a scene is built on travel inside its file. They go
+        // in first, farthest first, so the scene finds them when it lands.
+        for template in (exportable.templates ?? []).reversed() {
+            try installCarried(template, context: context, sourceURL: sourceURL)
         }
 
         // Fetch existing tiles + categorize the file's custom tiles.
@@ -351,6 +383,20 @@ enum SceneImporter {
             }
         }
 
+        // A scene this device authored, coming back (a reinstall, a file sent
+        // to oneself), is its own again: not imported, so a template of its
+        // own stays editable here.
+        let myAuthorID = DeviceProfileStore.current(context: context)?.authorID ?? ""
+        let isOwnScene = !myAuthorID.isEmpty && incomingID.hasPrefix(myAuthorID + "/")
+
+        // Template fields, and the sender's last change: written after the
+        // pages, whose setter stamps now.
+        func applyTemplateFields(_ s: BlasterScene) {
+            s.isTemplate = exportable.isTemplate ?? false
+            s.templateID = exportable.templateID ?? ""
+            if let modified = exportable.modified { s.lastModified = modified }
+        }
+
         // Apply `pages` + file metadata to a scene in place.
         func refresh(_ s: BlasterScene, takeFileLevel: Bool = false) {
             s.name = exportable.name
@@ -359,12 +405,13 @@ enum SceneImporter {
             s.slug = incomingSlug
             s.sceneVersion = incomingVersion
             s.authorName = incomingAuthor
-            s.isImported = true
+            s.isImported = !isOwnScene
             s.sourceURL = sourceURL
             s.pages = pages
             s.ownRow = importedRow
             s.designedFor = incomingDesignedFor
             applyLevels(s, takeFileLevel: takeFileLevel)
+            applyTemplateFields(s)
         }
 
         let scene: BlasterScene
@@ -398,6 +445,9 @@ enum SceneImporter {
                 fork.ownRow = importedRow
                 fork.designedFor = incomingDesignedFor
                 applyLevels(fork)
+                // A fork is a new scene: built on the same template, but not
+                // one itself (its id is not the one others are built on).
+                fork.templateID = exportable.templateID ?? ""
                 fork.ensureIdentity(authorID: DeviceProfileStore.ensureAuthorID(context: context),
                                     authorName: incomingAuthor)
                 fork.importedContentHash = fork.contentHash
@@ -416,7 +466,7 @@ enum SceneImporter {
                 descriptionText: exportable.description,
                 homePageKey: exportable.homePageKey
             )
-            newScene.isImported = true
+            newScene.isImported = !isOwnScene
             newScene.sourceURL = sourceURL
             newScene.sceneID = incomingID
             newScene.slug = incomingSlug
@@ -426,9 +476,19 @@ enum SceneImporter {
             newScene.ownRow = importedRow
             newScene.designedFor = incomingDesignedFor
             applyLevels(newScene)
+            applyTemplateFields(newScene)
             newScene.importedContentHash = newScene.contentHash
             try context.transaction { context.insert(newScene) }
             scene = newScene; wasUpdate = false
+        }
+
+        // A template brought by a scene built on it is carried — not one of
+        // the receiver's scenes — unless it already was one. Its own file,
+        // opened on purpose, makes it theirs.
+        if asCarried {
+            if !wasUpdate { scene.isCarriedTemplate = true }
+        } else {
+            scene.isCarriedTemplate = false
         }
 
         // Judge what landed, not what was in the file: `pages` has already had

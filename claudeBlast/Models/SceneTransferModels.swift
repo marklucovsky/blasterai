@@ -192,6 +192,16 @@ struct ExportableScene: Codable {
     /// another when sharing. Both absent when the scene has no levels.
     var revealLevels: Int? = nil
     var revealLevel: Int? = nil
+    /// Other scenes can be built on this one (`BlasterScene.isTemplate`).
+    var isTemplate: Bool? = nil
+    /// The template this scene is built on, by its id; absent for BlasterAI 60.
+    var templateID: String? = nil
+    /// When the sender last changed it, so a template carried inside an older
+    /// scene file never rolls back a newer copy already installed.
+    var modified: Date? = nil
+    /// The templates a scene is built on, nearest first, so one file brings
+    /// everything it draws. Each is installed (or updated) before the scene.
+    var templates: [ExportableScene]? = nil
     var tiles: [ExportableTile]?
     let pages: [ExportablePage]
 
@@ -205,6 +215,7 @@ struct ExportableScene: Codable {
         case id, slug, sceneVersion, authorName
         case designedFor
         case revealLevels, revealLevel
+        case isTemplate, templateID, modified, templates
         case tiles, pages
     }
 }

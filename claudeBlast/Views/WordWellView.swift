@@ -332,7 +332,8 @@ struct WordWellView: View {
                     }
                 }
             }
-            let others = allScenes.filter { !$0.isDefault && $0.sceneID != sceneID && !$0.pages.isEmpty }
+            let others = allScenes.filter { !$0.isDefault && $0.sceneID != sceneID && !$0.pages.isEmpty
+                && !$0.isCarriedTemplate }
             if !others.isEmpty {
                 Menu("Other Scenes") {
                     ForEach(others, id: \.persistentModelID) { scene in

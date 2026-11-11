@@ -186,7 +186,10 @@ struct TemplateChain {
     /// chain already runs through it.
     static func choices(for scene: BlasterScene, templates: [BlasterScene]) -> [BlasterScene] {
         templates.filter { candidate in
-            guard candidate.isTemplate, candidate.persistentModelID != scene.persistentModelID,
+            // A carried template is not one of the caregiver's boards to
+            // choose; adding it to their scenes first makes it one.
+            guard candidate.isTemplate, !candidate.isCarriedTemplate,
+                  candidate.persistentModelID != scene.persistentModelID,
                   !candidate.sceneID.isEmpty else { return false }
             let chain = TemplateChain(scene: candidate, templates: templates, system: nil)
             return !chain.templates.contains { $0.persistentModelID == scene.persistentModelID }
@@ -304,6 +307,18 @@ enum TemplateRemoval {
         }
         if !keepingBar, !hadOwnBar { scene.ownRow = nil }
         scene.templateID = ""
+    }
+
+    /// Carried templates (`BlasterScene.isCarriedTemplate`) no scene uses
+    /// any more, directly or through another template: theirs to delete.
+    static func unusedCarried(in scenes: [BlasterScene]) -> [BlasterScene] {
+        let templates = scenes.filter(\.isTemplate)
+        var used = Set<String>()
+        for scene in scenes where !scene.isCarriedTemplate {
+            let chain = TemplateChain(scene: scene, templates: templates, system: nil)
+            used.formUnion(chain.templates.map(\.sceneID))
+        }
+        return scenes.filter { $0.isCarriedTemplate && !used.contains($0.sceneID) }
     }
 
     /// Keep every dependent's look, then let the template go.

@@ -129,7 +129,7 @@ struct CoverageView: View {
     private var scenePicker: some View {
         Section {
             Picker("Scene", selection: $selectedSceneID) {
-                ForEach(scenes) { scene in
+                ForEach(scenes.filter { !$0.isCarriedTemplate }) { scene in
                     Text(scene.name).tag(scene.sceneID)
                 }
             }

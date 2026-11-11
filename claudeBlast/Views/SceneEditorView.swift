@@ -748,7 +748,8 @@ struct SceneEditorView: View {
                         Text("Navigation Bar").font(.headline)
                         Text("\(inheritedBarName)\u{2019}s").font(.caption).foregroundStyle(.secondary)
                     }
-                    if let owner = barOwner {
+                    // A template from someone else is changed only by them.
+                    if let owner = barOwner, !owner.isLockedTemplate {
                         NavigationLink(destination: PageEditorView(scene: owner, pageKey: BlasterScene.rowPageKey)) {
                             Label("Open \(inheritedBarName)\u{2019}s Navigation Bar", systemImage: "arrow.up.forward.square")
                         }
@@ -765,6 +766,8 @@ struct SceneEditorView: View {
             } footer: {
                 Text(scene.ownRow != nil
                      ? "The folders and words on every page. \(inheritedBarName)\u{2019}s changes to its bar no longer reach this one."
+                     : barOwner?.isLockedTemplate == true
+                        ? "The folders and words on every page, following \(inheritedBarName)\u{2019}s as its author updates it, or make this scene\u{2019}s own."
                      : barOwner != nil
                         ? "The folders and words on every page, following \(inheritedBarName)\u{2019}s. Change it there for every scene built on \(inheritedBarName), or make this scene\u{2019}s own."
                         : "The folders and words on every page, following BlasterAI 60\u{2019}s. Make it your own to choose them.")
@@ -805,6 +808,11 @@ struct SceneEditorView: View {
                     Text("BlasterAI 60").tag("")
                     ForEach(TemplateChain.choices(for: scene, templates: templateScenes), id: \.sceneID) { template in
                         Text(BlasterScene.copyRoot(of: template.name)).tag(template.sceneID)
+                    }
+                    // A carried template is not offered, but the one this
+                    // scene is built on still names itself.
+                    if let carried = templateScenes.first(where: { $0.isCarriedTemplate && $0.sceneID == scene.templateID }) {
+                        Text(BlasterScene.copyRoot(of: carried.name)).tag(carried.sceneID)
                     }
                     if chain?.isMissingTemplate == true {
                         Text("\(TemplateChain.missingName(scene.templateID)) (not on this device)").tag(scene.templateID)

@@ -30,7 +30,7 @@ struct RailPageEditor: View {
     var body: some View {
         NavigationStack {
             Group {
-                if let scene = activeScenes.first, scene.isDefault || scene.isSystemOwned {
+                if let scene = activeScenes.first, scene.isDefault || scene.isSystemOwned || scene.isLockedTemplate {
                     SystemSceneCopyOffer(scene: scene, pageKey: pageKey)
                 } else if let scene = activeScenes.first, let systemKey = TileToken.systemPageKey(pageKey) {
                     if let own = scene.shadowPage(for: systemKey) {
@@ -73,7 +73,7 @@ struct RailSceneEditor: View {
         NavigationStack {
             Group {
                 if let scene = activeScenes.first {
-                    if scene.isDefault || scene.isSystemOwned {
+                    if scene.isDefault || scene.isSystemOwned || scene.isLockedTemplate {
                         SystemSceneCopyOffer(scene: scene)
                     } else {
                         SceneEditorView(scene: scene)
@@ -107,8 +107,11 @@ struct SystemSceneCopyOffer: View {
         ContentUnavailableView {
             Label("Make Your Own Copy", systemImage: "square.on.square")
         } description: {
-            Text("\(BlasterScene.copyRoot(of: scene.name)) is the system's board, so it can't be changed. "
-                 + "Make a copy to edit; the copy becomes the board the child uses.")
+            Text(scene.isLockedTemplate
+                 ? BlasterScene.lockedTemplateNote(scene) + " Make a copy built on it to edit; "
+                   + "the copy becomes the board the child uses."
+                 : "\(BlasterScene.copyRoot(of: scene.name)) is the system's board, so it can't be changed. "
+                   + "Make a copy to edit; the copy becomes the board the child uses.")
         } actions: {
             Button("Make a Copy and Edit") { makeCopy() }
                 .buttonStyle(.borderedProminent)
@@ -161,10 +164,15 @@ struct SystemPageCopyOffer: View {
                  ? "\(page.title) is a BlasterAI 60 page. Edit your own copy of it: the copy replaces it on "
                    + "\(scene.name), and BlasterAI 60's updates no longer reach it. You can go back to "
                    + "BlasterAI 60's page in Edit This Scene."
-                 : "\(page.title) is \(templateName)'s. Change it in \(templateName) for every scene built on it, "
-                   + "or make a copy for \(scene.name) alone.")
+                 : owner?.template.isLockedTemplate == true
+                   ? "\(page.title) is \(templateName)'s, which updates when its author sends a new version. "
+                     + "Make a copy for \(scene.name): it replaces \(templateName)'s here, and its updates no longer reach it."
+                   : "\(page.title) is \(templateName)'s. Change it in \(templateName) for every scene built on it, "
+                     + "or make a copy for \(scene.name) alone.")
         } actions: {
-            if let owner {
+            // A template received from someone else changes only when they
+            // send a new version.
+            if let owner, !owner.template.isLockedTemplate {
                 Button("Edit in \(templateName)") { editingInTemplate = owner.pageKey }
                     .buttonStyle(.borderedProminent)
             }
