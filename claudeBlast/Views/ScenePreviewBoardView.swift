@@ -92,6 +92,7 @@ struct ScenePreviewBoardView: View {
                             ? BoardChrome.row(for: scene, level: scene.effectiveRevealLevel,
                                               inherited: chain?.navBar) : []
                         let perScreen = max(1, spec.perPage - (chrome.isEmpty ? 0 : spec.cols))
+                        let placement = BoardChrome.placement(for: scene, inherited: chain?.navBarPlacement)
                         let chunks = visibleTiles(page).chunked(into: perScreen)
                         let columns = Array(repeating: GridItem(.fixed(spec.tileSize),
                                                                 spacing: spec.horizontalSpacing),
@@ -100,10 +101,9 @@ struct ScenePreviewBoardView: View {
                             ForEach(Array((chunks.isEmpty ? [[]] : chunks).enumerated()),
                                     id: \.offset) { index, tiles in
                                 LazyVGrid(columns: columns, spacing: spec.verticalSpacing) {
-                                    ForEach(Array(chrome.prefix(spec.cols).enumerated()), id: \.offset) { _, entry in
-                                        previewCell(entry, labelFontSize: spec.labelFontSize)
-                                    }
-                                    ForEach(tiles) { entry in
+                                    ForEach(Array(BoardChrome.arrange(content: tiles, chrome: Array(chrome.prefix(spec.cols)),
+                                                                      placement: placement, perScreen: perScreen)
+                                        .enumerated()), id: \.offset) { _, entry in
                                         previewCell(entry, labelFontSize: spec.labelFontSize)
                                     }
                                 }

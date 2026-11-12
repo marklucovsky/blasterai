@@ -216,8 +216,9 @@ struct TilePickerView: View {
     }
 
     /// Scenes with at least one page — the "From a page…" menu's sources.
+    /// Not a carried template, which is not among the caregiver's scenes.
     private var pageSourceScenes: [BlasterScene] {
-        allScenes.filter { !$0.pages.isEmpty }
+        allScenes.filter { !$0.pages.isEmpty && !$0.isCarriedTemplate }
     }
 
     /// Filter the grid to `page`'s word tiles (structural links/navigation

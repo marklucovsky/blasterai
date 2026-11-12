@@ -254,9 +254,10 @@ struct TileGridView: View {
     }
 
     /// Scenes the caregiver can make the board. A Me page is mounted, never
-    /// activated.
+    /// activated; a carried template is in the Scenes list's Templates in
+    /// Use, not among the scenes, until it is added to them.
     private var switchableScenes: [BlasterScene] {
-        allScenes.filter { !MeScene.isMeScene($0) }
+        allScenes.filter { !MeScene.isMeScene($0) && (!$0.isCarriedTemplate || $0.isActive) }
     }
 
     /// The active profile's Me page, made on first use.
@@ -602,13 +603,19 @@ struct TileGridView: View {
             let isSide = rail == .side
             let gridPadding = isSide ? 0 : spec.horizontalPadding
             let gridWidth = CGFloat(spec.cols) * spec.tileSize + CGFloat(spec.cols - 1) * spec.horizontalSpacing
-            let board = VStack(spacing: spec.verticalSpacing) {
+            // The bar sits where its owner puts it: across the top, as
+            // BlasterAI 60 draws it, or under the page (`NavBarPlacement`).
+            let barAtBottom = inherits && activeScene.map { levels($0).navBarPlacement == .bottom } == true
+            let bar = Group {
                 if inherits, let scene = activeScene {
                     chromeRow(BoardChrome.row(for: scene, level: chromeLevel(scene),
                                               underMountedPage: TileToken.scenePageKey(identityPageKey) != nil,
                                               inherited: levels(scene).inheritedNavBar),
                               spec: spec, lookup: lookup, padding: gridPadding)
                 }
+            }
+            let board = VStack(spacing: spec.verticalSpacing) {
+                if !barAtBottom { bar }
                 Group {
                     if isLandscape {
                         landscapeTabView(chunks: chunkedTiles, spec: spec, lookup: lookup, padding: gridPadding)
@@ -618,6 +625,7 @@ struct TileGridView: View {
                     }
                 }
                 .frame(height: contentHeight)
+                if barAtBottom { bar }
             }
             .environment(\.tileAspect, spec.tileHeight.map { spec.tileSize / $0 } ?? 1)
             VStack(alignment: .leading, spacing: 0) {

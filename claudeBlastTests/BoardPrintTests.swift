@@ -149,6 +149,21 @@ struct BoardPrintTests {
         #expect(words.count == 40)
     }
 
+    /// A bar at the bottom of the board closes every sheet, on the last row
+    /// even when the sheet's words run short.
+    @Test("A bottom bar closes every sheet")
+    func bottomBarClosesEverySheet() {
+        let chrome = Array(BoardChrome.row(inSystemScene: false).prefix(4))
+        let sheets = BoardPagination.paginate([page("describe", 40)], perSheet: 16, chrome: chrome,
+                                              placement: .bottom)
+        #expect(sheets.count == 4)
+        for sheet in sheets {
+            #expect(sheet.tiles.count == 16)
+            #expect(Array(sheet.tiles.suffix(4).map(\.key)) == chrome.map(\.key))
+        }
+        #expect(sheets.flatMap { $0.tiles.dropLast(4) }.filter { !$0.isSpacer }.count == 40)
+    }
+
     /// Off by default, so a sheet that is not the board's grid gets no row it
     /// did not ask for.
     @Test("Without the system row a sheet is unchanged")

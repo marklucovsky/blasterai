@@ -96,7 +96,8 @@ struct BoardImportSheet: View {
                         onRetry: nil,
                         onCancel: { isPreviewing = false },
                         fixedLayout: true,
-                        navBar: boards[BlasterScene.rowPageKey]?.tiles ?? existingNavBar)
+                        navBar: boards[BlasterScene.rowPageKey]?.tiles ?? existingNavBar,
+                        navBarPlacement: importedPlacement)
                 } else {
                     settleForm
                 }
@@ -251,7 +252,9 @@ struct BoardImportSheet: View {
                 LabeledContent("Template", value: "Yes — other scenes can be built on it")
             }
             if let name = sheetTemplateName {
-                if let template = sheetTemplate {
+                if sheetNamesItself {
+                    LabeledContent("Built on", value: "Its own name \u{2014} ignored. Built On names the template this scene uses.")
+                } else if let template = sheetTemplate {
                     LabeledContent("Built on", value: BlasterScene.copyRoot(of: template.name))
                 } else {
                     LabeledContent("Built on", value: "\u{201C}\(name)\u{201D} isn\u{2019}t on this device — BlasterAI 60")
@@ -425,6 +428,16 @@ struct BoardImportSheet: View {
         }
     }
 
+    /// Where the pages' bar will sit: the sheet's `Bar Placement:` line when
+    /// it has one, else where the scene's bar, or its template's, sits now.
+    private var importedPlacement: NavBarPlacement {
+        if let said = preview.flatMap({ BoardWorkbook.barPlacement($0.details) }) { return said }
+        if let own = scene.flatMap(BoardChrome.ownRow(of:)) { return NavBarPlacement(own.barPlacement) }
+        let templateID = sheetTemplate?.sceneID ?? scene?.templateID ?? ""
+        return TemplateChain(templateID: templateID, sceneID: scene?.sceneID ?? "",
+                             templates: templateScenes, system: systemScenes.first).navBarPlacement ?? .top
+    }
+
     /// The bar of the scene being imported into, when it has its own.
     private var existingNavBar: [TileEntry]? {
         if let own = scene.flatMap(BoardChrome.ownRow(of:))?.tiles { return own }
@@ -456,9 +469,10 @@ struct BoardImportSheet: View {
                              templates: templateScenes, system: system).pages(atLevel: nil)
     }
 
-    /// The sheet's `Template:` line, as written.
+    /// The sheet's `Built On:` line (or `Uses Template:`, `Template:`), as
+    /// written.
     private var sheetTemplateName: String? {
-        preview?.details["template"].flatMap { $0.trimmingCharacters(in: .whitespaces).isEmpty ? nil : $0 }
+        preview.flatMap { BoardWorkbook.builtOn($0.details) }
     }
 
     /// The sheet's `Is Template: yes` line: the scene it makes is a template
@@ -470,7 +484,20 @@ struct BoardImportSheet: View {
 
     /// The template that line names, when this device has it.
     private var sheetTemplate: BlasterScene? {
-        sheetTemplateName.flatMap { TemplateChain.named($0, in: templateScenes) }
+        guard !sheetNamesItself else { return nil }
+        return sheetTemplateName.flatMap { TemplateChain.named($0, in: templateScenes) }
+    }
+
+    /// The sheet's `Built On:` line names the scene the sheet is: a
+    /// template's own sheet carrying its name there as well as under
+    /// `Is Template:`. Ignored — building a scene on itself, or a new copy
+    /// of a template on the old one, is never what was meant.
+    private var sheetNamesItself: Bool {
+        guard let name = sheetTemplateName else { return false }
+        if let scene, let named = TemplateChain.named(name, in: templateScenes) {
+            return named.persistentModelID == scene.persistentModelID
+        }
+        return BoardWorkbook.sameName(name, sceneName.isEmpty ? (scene?.name ?? "") : sceneName)
     }
 
     private var cols: Int {
@@ -650,7 +677,7 @@ struct BoardImportSheet: View {
             }
             target.isTemplate = true
         }
-        // The sheet's `Template:` line builds the scene on that template.
+        // The sheet's `Built On:` line builds the scene on that template.
         if let template = sheetTemplate, template.persistentModelID != target.persistentModelID {
             target.templateID = template.sceneID
             if !template.designedFor.isEmpty { target.designedFor = template.designedFor }

@@ -166,6 +166,9 @@ struct ExportablePage: Codable {
     /// Absent for an ordinary page; the receiving device has BlasterAI 60 too,
     /// so a copy-on-write scene travels sparse and keeps following its updates.
     var shadows: String? = nil
+    /// Where the navigation bar sits (`PageSpec.barPlacement`), on the bar's
+    /// own page only. Absent for the top.
+    var barPlacement: String? = nil
 }
 
 struct ExportableScene: Codable {

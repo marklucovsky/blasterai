@@ -44,14 +44,36 @@ A bare page name is always one of this scene's pages. A page no tab draws yet
 is created empty, so a folder can link to a page you'll write later. BlasterAI
 60's pages need `sys:`, and a template's pages need `template:`.
 
+## The navigation bar
+
+A tab named `Navigation Bar` (or `NavBar`) is the scene's own navigation bar,
+not a page: one row of folders and words that every page draws. Without it
+the scene uses its template's bar, or BlasterAI 60's.
+
+The bar sits across the top of each page, as BlasterAI 60 draws it. To put it
+across the bottom, add a details row:
+
+- `Bar Placement: bottom` (or `top`), in one cell or two, on any tab.
+
+The page rows don't change: write a page the same way wherever its bar sits.
+A template's placement applies to every scene built on it.
+
 ## Templates
 
 A scene can be a **template** that other scenes are built on, as every scene
 is built on BlasterAI 60: they draw its navigation bar and link to its pages.
 
-- `Is Template: yes` in the details rows makes the imported scene a template.
-- `Template: Brandi Board` (its name) builds the imported scene on that
-  template, which must already be on the device.
+- `Is Template: yes` in the details rows makes the imported scene a template:
+  other scenes can be built on it.
+- `Built On: Brandi Board` (or `Uses Template: Brandi Board`) builds the
+  imported scene on that template, by its name. The template must already be
+  on the device.
+
+They answer different questions. Brandi Board's own sheet says only
+`Is Template: yes`; the sheet of a board built on it says
+`Built On: Brandi Board`. A template's sheet that names itself under
+`Built On:` is ignored, never a template built on its own older copy.
+(`Template:` is read as `Built On:`, for sheets written before the rename.)
 
 `sys:` and `template:` are different pages, even with the same name. In a
 scene built on Brandi Board, `> template:people` opens Brandi's People and

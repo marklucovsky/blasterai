@@ -743,10 +743,18 @@ struct SceneEditorView: View {
                     }
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) { useInheritedRowButton }
                     .contextMenu { useInheritedRowButton }
+                    // Placement belongs to the bar: a template's reaches every
+                    // scene built on it, as its folders do.
+                    Picker("Placement", selection: barPlacementBinding) {
+                        ForEach(NavBarPlacement.allCases) { Text($0.title).tag($0) }
+                    }
                 } else {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Navigation Bar").font(.headline)
                         Text("\(inheritedBarName)\u{2019}s").font(.caption).foregroundStyle(.secondary)
+                    }
+                    if barOwner != nil {
+                        LabeledContent("Placement", value: (chain?.navBarPlacement ?? .top).title)
                     }
                     // A template from someone else is changed only by them.
                     if let owner = barOwner, !owner.isLockedTemplate {
@@ -755,7 +763,8 @@ struct SceneEditorView: View {
                         }
                     }
                     Button {
-                        scene.ownRow = BoardChrome.ownRowStart(from: chain?.navBar)
+                        scene.ownRow = BoardChrome.ownRowStart(from: chain?.navBar,
+                                                                placement: chain?.navBarPlacement ?? .top)
                         try? modelContext.save()
                     } label: {
                         Label("Make the Navigation Bar This Scene\u{2019}s Own", systemImage: "square.on.square")
@@ -772,6 +781,16 @@ struct SceneEditorView: View {
                         ? "The folders and words on every page, following \(inheritedBarName)\u{2019}s. Change it there for every scene built on \(inheritedBarName), or make this scene\u{2019}s own."
                         : "The folders and words on every page, following BlasterAI 60\u{2019}s. Make it your own to choose them.")
             }
+        }
+    }
+
+    /// The scene's own bar's placement, written onto the bar.
+    private var barPlacementBinding: Binding<NavBarPlacement> {
+        Binding {
+            NavBarPlacement(scene.ownRow?.barPlacement)
+        } set: { placement in
+            scene.updatePage(BlasterScene.rowPageKey) { $0.barPlacement = placement.stored }
+            try? modelContext.save()
         }
     }
 
@@ -1743,6 +1762,8 @@ struct PagePreviewView: View {
     /// The navigation bar the pages will sit under, when not BlasterAI 60's —
     /// an import's own bar tab.
     var navBar: [TileEntry]? = nil
+    /// Where that bar sits.
+    var navBarPlacement: NavBarPlacement = .top
 
     @State private var selectedSection = 0  // 0 = primary, 1+ = sub-pages
     @State private var isSelecting = false
@@ -1920,9 +1941,10 @@ struct PagePreviewView: View {
                     // The bar's own tab previews as the bar, over an empty page.
                     if board.key == BlasterScene.rowPageKey {
                         TemplateBoardGrid(page: PageSpec(key: board.key, tiles: []),
-                                          navBar: board.tiles) { entry in boardCell(entry) }
+                                          navBar: board.tiles, placement: navBarPlacement) { entry in boardCell(entry) }
                     } else {
-                        TemplateBoardGrid(page: board, navBar: navBar) { entry in boardCell(entry) }
+                        TemplateBoardGrid(page: board, navBar: navBar,
+                                          placement: navBarPlacement) { entry in boardCell(entry) }
                     }
                 }
             } else {

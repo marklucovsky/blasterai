@@ -655,6 +655,7 @@ struct ShareBoardSheet: View {
         let data = try await BoardPDFRenderer.render(pages: printablePages,
                                                      scene: subject.scene,
                                                      inheritedNavBar: chain?.navBar,
+                                                     inheritedPlacement: chain?.navBarPlacement,
                                                      tileLookup: tileLookup,
                                                      options: printOptions,
                                                      imageSet: imageResolver.activeSet,

@@ -74,6 +74,35 @@ enum BoardChrome {
         }
     }
 
+    /// Where `scene` draws its bar: its own bar's placement, else the one its
+    /// template gives it (`inherited`, `TemplateChain.navBarPlacement`), else
+    /// the top, where BlasterAI 60 puts its own. Follows `row(for:)`, so the
+    /// bar drawn and the place it is drawn always come from the same owner.
+    static func placement(for scene: BlasterScene, inherited: NavBarPlacement? = nil) -> NavBarPlacement {
+        if let own = ownRow(of: scene) { return NavBarPlacement(own.barPlacement) }
+        guard !scene.isDefault, inherits(scene) else { return .top }
+        return inherited ?? .top
+    }
+
+    /// One screen of a board as one run of cells, the bar first or last:
+    /// `content` padded with gaps to `perScreen` so a bar at the bottom sits
+    /// on the last row rather than straight after the last word. Every
+    /// surface that lays the bar and a page out in one grid goes through here.
+    static func arrange(content: [TileEntry], chrome: [TileEntry], placement: NavBarPlacement,
+                        perScreen: Int) -> [TileEntry] {
+        guard !chrome.isEmpty else { return content }
+        switch placement {
+        case .top:
+            return chrome + content
+        case .bottom:
+            let gaps = max(0, perScreen - content.count)
+            let filled = content + (0..<gaps).map {
+                TileEntry(key: TileToken.spacerPrefix + "fill\($0)", link: "", isAudible: false)
+            }
+            return filled + chrome
+        }
+    }
+
     /// The BlasterAI 60 pages the row opens.
     static var pageKeys: [String] { PageTemplate.scheme.systemRow.map(\.page) }
 
@@ -106,9 +135,10 @@ enum BoardChrome {
     /// Row 1 as a scene starts its own: BlasterAI 60's, its folders opening
     /// the core board's pages. Copy-on-write, like a page — the scene's row
     /// follows BlasterAI 60's until a caregiver makes it theirs.
-    static func ownRowStart(from inherited: [TileEntry]? = nil) -> PageSpec {
+    static func ownRowStart(from inherited: [TileEntry]? = nil,
+                            placement: NavBarPlacement = .top) -> PageSpec {
         PageSpec(key: BlasterScene.rowPageKey, displayName: "Navigation Bar",
-                 tiles: inherited ?? row(inSystemScene: false))
+                 tiles: inherited ?? row(inSystemScene: false), barPlacement: placement.stored)
     }
 
     /// The rail's Keyboard opens BlasterAI 60's keyboard page from every page.
@@ -135,5 +165,31 @@ enum BoardChrome {
                 return first <= level
             }
             .map(\.page) + [keyboardPage]
+    }
+}
+
+/// Where a navigation bar sits: across the top, as BlasterAI 60 draws it, or
+/// across the bottom. Content is stored row by row over the area the bar
+/// leaves, so moving the bar between the two changes drawing only.
+enum NavBarPlacement: String, CaseIterable, Identifiable {
+    case top, bottom
+
+    var id: String { rawValue }
+
+    /// Anything unrecognised reads as the top, so a file from a later build
+    /// with a placement this one does not know still draws its bar.
+    init(_ stored: String?) {
+        self = stored.flatMap(NavBarPlacement.init(rawValue:)) ?? .top
+    }
+
+    /// The `PageSpec.barPlacement` value: nil for the top, which every bar
+    /// stored before placement existed already means.
+    var stored: String? { self == .top ? nil : rawValue }
+
+    var title: String {
+        switch self {
+        case .top: "Top"
+        case .bottom: "Bottom"
+        }
     }
 }

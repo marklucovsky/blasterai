@@ -503,9 +503,44 @@ enum BoardWorkbook {
             }
             result.pagesWritten.append(plan.key)
         }
+        // `Bar Placement: bottom` moves the scene's own bar; a sheet without
+        // the line leaves it where it is.
+        if let placement = barPlacement(preview.details), scene.ownRow != nil {
+            scene.updatePage(BlasterScene.rowPageKey) { $0.barPlacement = placement.stored }
+        }
         try? context.save()
         return result
     }
+
+    /// The navigation bar's placement a sheet's details give
+    /// (`Bar Placement: bottom`); nil when it says nothing this build reads.
+    static func barPlacement(_ details: [String: String]) -> NavBarPlacement? {
+        guard let value = details[barPlacementLabel.lowercased()]
+                ?? details["navigation bar placement"] ?? details["navigation bar"] else { return nil }
+        return NavBarPlacement(rawValue: value.trimmingCharacters(in: .whitespaces).lowercased())
+    }
+
+    /// The template a sheet's details say the scene is built on:
+    /// `Built On:`, `Uses Template:`, or the first spelling, `Template:`.
+    /// Nil when none is given.
+    static func builtOn(_ details: [String: String]) -> String? {
+        for label in ["built on", "uses template", "template"] {
+            if let value = details[label]?.trimmingCharacters(in: .whitespaces), !value.isEmpty { return value }
+        }
+        return nil
+    }
+
+    /// Two scene names that are one name: any case, a copy number aside
+    /// (`Brandi Board (2)` is Brandi Board's copy).
+    static func sameName(_ a: String, _ b: String) -> Bool {
+        let a = BlasterScene.copyRoot(of: a.trimmingCharacters(in: .whitespaces)).lowercased()
+        let b = BlasterScene.copyRoot(of: b.trimmingCharacters(in: .whitespaces)).lowercased()
+        return !a.isEmpty && a == b
+    }
+
+    /// The details label for the bar's placement, written over the
+    /// Navigation Bar tab.
+    static let barPlacementLabel = "Bar Placement"
 
     @MainActor
     private static func currentLookup(_ context: ModelContext) -> [String: TileModel] {
@@ -538,7 +573,13 @@ enum BoardWorkbook {
                 rows[r][c] = BoardCell.format(entry, cover: cover)
             }
             // A custom name is the tab's name when it still finds the page.
-            if page.key == BlasterScene.rowPageKey { return SpreadsheetTab(name: rowTab, rows: rows) }
+            if page.key == BlasterScene.rowPageKey {
+                // A bar at the bottom says so over its row, where the import
+                // reads it as a details line, not a board row.
+                let placement = NavBarPlacement(page.barPlacement)
+                let lines = placement == .top ? [] : [["\(barPlacementLabel):", placement.rawValue]]
+                return SpreadsheetTab(name: rowTab, rows: lines + rows)
+            }
             let name = page.hasCustomName && BoardCell.pageKey(page.displayName) == page.key
                 ? page.displayName : page.key
             return SpreadsheetTab(name: name, rows: rows)
