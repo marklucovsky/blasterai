@@ -179,13 +179,194 @@ final class TileImageResolver {
         }
         let cacheKey = "\(activeSet.rawValue):\(key)"
         if let known = cutOutCache[cacheKey] { return known }
-        let cut = image(for: key)?.cgImage.map(TileCutout.hasTransparency) ?? false
+        // Never decode to answer this. Bundled art still on its way is cut
+        // exactly when its set cuts art — a cut set ships no opaque tile
+        // (`tools/board_spec/cutout.json`) — and the answer is not kept, so
+        // the next render after the picture lands asks the picture itself.
+        let picture: UIImage?
+        switch peekImage(for: key) {
+        case .loading: return activeSet.cutsArt
+        case .ready(let image): picture = image
+        case .none: picture = nil
+        }
+        let cut = picture?.cgImage.map(TileCutout.hasTransparency) ?? false
         cutOutCache[cacheKey] = cut
         return cut
     }
 
     @ObservationIgnored private var cutOutCache: [String: Bool] = [:]
     @ObservationIgnored private var cutOutRevision = 0
+
+    // MARK: - Drawing without waiting
+
+    /// What a tile can draw this instant.
+    enum Peek {
+        /// The picture, ready to draw.
+        case ready(UIImage)
+        /// Bundled art that exists but is not decoded yet; `loadImage` brings it.
+        case loading(String)
+        /// No picture anywhere in the ladder: draw the letter placeholder.
+        case none
+    }
+
+    /// `image(for:)` without decoding bundled art on the main thread.
+    ///
+    /// The same ladder as `resolved(_:in:)` against the active set. Every step
+    /// answers as before except bundled art that is not in `cache` yet: that
+    /// stops the ladder at `.loading` — never falling on to the backfill or the
+    /// placeholder, which would flash the wrong picture — and the view asks
+    /// `loadImage` for it.
+    ///
+    /// Opening the page editor decoded every tile's 512 px HEIC here, serially,
+    /// on the main thread: ~400 ms of frozen screen on an iPhone 16 Pro (2026-11).
+    /// Photos and variants stay synchronous — they are few, and they come from
+    /// the main context.
+    func peekImage(for key: String) -> Peek {
+        if let photo = userPhoto(for: key) { return .ready(photo) }
+        let art = artKey(for: key)
+        if let glyph = GlyphTile.image(for: art, in: activeSet) { return .ready(glyph) }
+        var sets = [activeSet]
+        if activeSet != ImageSetID.universalBackfill { sets.append(ImageSetID.universalBackfill) }
+        for set in sets {
+            let name = Self.resourceName(art, set)
+            if let cached = cache.object(forKey: NSString(string: name)) { return .ready(cached) }
+            if bundleURL(for: name) != nil { return .loading(name) }
+            if let variant = variantImage(for: art, in: set) { return .ready(variant) }
+        }
+        if let variant = anyVariantImage(for: art) { return .ready(variant) }
+        if let placeholder = placeholderImage(for: activeSet) { return .ready(placeholder) }
+        return .none
+    }
+
+    /// The picture `peekImage` is waiting on, decoded off the main thread.
+    /// Nil when there is no picture at all.
+    func loadImage(for key: String) async -> UIImage? {
+        switch peekImage(for: key) {
+        case .ready(let image): return image
+        case .none: return nil
+        case .loading(let name): return await decode(name, lane: .visible)
+        }
+    }
+
+    /// Decode the bundled art of `keys` while nothing visible is waiting, so a
+    /// page reached by a link is drawn before the child gets there.
+    ///
+    /// Bundled art only, found without a fetch: a photo or variant would win
+    /// over it, but asking costs a SwiftData fetch per word on the main thread,
+    /// which is what prefetching is meant to save. Decoding art a photo then
+    /// covers costs one background decode.
+    func prefetch(_ keys: some Sequence<String>) {
+        for key in keys {
+            let art = artKey(for: key)
+            if GlyphTile.isGlyphKey(art) { continue }
+            var name = Self.resourceName(art, activeSet)
+            if bundleURL(for: name) == nil {
+                name = Self.resourceName(art, ImageSetID.universalBackfill)
+                if bundleURL(for: name) == nil { continue }
+            }
+            if cache.object(forKey: NSString(string: name)) == nil { enqueue(name, lane: .prefetch) }
+        }
+    }
+
+    // MARK: - The decoder
+
+    /// **Exactly one decode in flight, off the main thread.**
+    ///
+    /// The one-at-a-time rule is what keeps HEIC from deadlocking (see
+    /// `decodedImage`); the main thread was only ever the way it was enforced.
+    /// Here a single worker queue enforces it instead, and the bookkeeping —
+    /// the two lanes, who is waiting — stays on the main actor, so none of it
+    /// needs a lock.
+    ///
+    /// Two lanes: what is on screen, and what is prefetched for later. The
+    /// prefetch lane runs only when nothing visible is waiting, and a visible
+    /// request for a prefetched picture moves it up.
+    enum Lane { case visible, prefetch }
+
+    @ObservationIgnored private var visibleQueue: [String] = []
+    @ObservationIgnored private var prefetchQueue: [String] = []
+    @ObservationIgnored private var decoding: String?
+    @ObservationIgnored private var waiters: [String: [CheckedContinuation<UIImage?, Never>]] = [:]
+    @ObservationIgnored private let decodeQueue = DispatchQueue(label: "tile-art-decode", qos: .userInitiated)
+    /// Decodes finished, and the most ever running at once. Tests read these.
+    @ObservationIgnored private(set) var decodeCount = 0
+    @ObservationIgnored private(set) var peakDecodesInFlight = 0
+    @ObservationIgnored private var decodesInFlight = 0
+
+    private func decode(_ name: String, lane: Lane) async -> UIImage? {
+        if let cached = cache.object(forKey: NSString(string: name)) { return cached }
+        return await withCheckedContinuation { continuation in
+            waiters[name, default: []].append(continuation)
+            enqueue(name, lane: lane)
+        }
+    }
+
+    private func enqueue(_ name: String, lane: Lane) {
+        guard decoding != name, !visibleQueue.contains(name) else { return }
+        switch lane {
+        case .visible:
+            prefetchQueue.removeAll { $0 == name }
+            visibleQueue.append(name)
+        case .prefetch:
+            guard !prefetchQueue.contains(name) else { return }
+            prefetchQueue.append(name)
+        }
+        pump()
+    }
+
+    private func pump() {
+        while decoding == nil {
+            let next: String
+            if !visibleQueue.isEmpty { next = visibleQueue.removeFirst() }
+            else if !prefetchQueue.isEmpty { next = prefetchQueue.removeFirst() }
+            else { return }
+            // Already decoded since it was asked for (a synchronous caller, or
+            // a twin request): hand it over without decoding again.
+            if let cached = cache.object(forKey: NSString(string: next)) {
+                finish(next, cached)
+                continue
+            }
+            guard let url = bundleURL(for: next) else { finish(next, nil); continue }
+            decoding = next
+            decodesInFlight += 1
+            peakDecodesInFlight = max(peakDecodesInFlight, decodesInFlight)
+            decodeQueue.async {
+                let image = PerfSignposts.interval("tileDecode") {
+                    (try? Data(contentsOf: url)).flatMap(Self.decodedImage(from:))
+                }
+                Task { @MainActor in self.decoded(next, image) }
+            }
+        }
+    }
+
+    private func decoded(_ name: String, _ image: UIImage?) {
+        decodesInFlight -= 1
+        decodeCount += 1
+        decoding = nil
+        if let image { cache.setObject(image, forKey: NSString(string: name)) }
+        finish(name, image)
+        pump()
+    }
+
+    private func finish(_ name: String, _ image: UIImage?) {
+        for waiter in waiters.removeValue(forKey: name) ?? [] { waiter.resume(returning: image) }
+    }
+
+    /// Where bundled art named `name` lives, if it ships. Remembered, so a
+    /// peek on every render does not search the bundle every time.
+    private func bundleURL(for name: String) -> URL? {
+        if let known = bundleURLs[name] { return known }
+        let url = Self.bundledExtensions.lazy
+            .compactMap { Bundle.main.url(forResource: name, withExtension: $0) }.first
+        bundleURLs[name] = .some(url)
+        return url
+    }
+
+    @ObservationIgnored private var bundleURLs: [String: URL?] = [:]
+
+    private static func resourceName(_ key: String, _ set: ImageSetID) -> String {
+        "\(ImageSetCatalog.bundlePrefix(for: set))_\(key)"
+    }
 
     /// Resolve a tile's real art in a specific image set — no placeholder, no
     /// master-set backfill. Returns nil when that set genuinely lacks the tile.
@@ -533,15 +714,19 @@ final class TileImageResolver {
     /// **exactly one decode is ever in flight** and the pool cannot be
     /// exhausted. SwiftUI then receives a bitmap and its prepare pass is a copy.
     ///
-    /// Serial main-actor decoding is affordable because every result is cached:
-    /// a tile is decoded once per session, not once per render. If that ever
-    /// stops being true, the fix is a bounded queue here — the choke point is
-    /// what matters, not which thread it runs on.
+    /// Serial main-actor decoding was affordable while a screen held a few
+    /// dozen cached tiles. It stopped being so for the page editor, which
+    /// decoded a whole page at once (~400 ms frozen). Tiles on screen now go
+    /// through the decoder above (`peekImage` / `loadImage`), which keeps the
+    /// one-in-flight rule on a background queue — the choke point is what
+    /// matters, not which thread it runs on. Synchronous callers (print,
+    /// export, the style strip) still decode here, on the main actor, which is
+    /// also one at a time.
     ///
     /// PNG art does not deadlock (no codec session pool), but it goes through
     /// the same path deliberately: the concurrency decision should be ours for
     /// every format, not only the one where losing it is fatal.
-    private static func decodedImage(from data: Data) -> UIImage? {
+    nonisolated private static func decodedImage(from data: Data) -> UIImage? {
         guard let image = UIImage(data: data) else { return nil }
         // Nil means "could not prepare" (unsupported/corrupt); the undecoded
         // image is still better than no tile at all.
@@ -572,16 +757,11 @@ final class TileImageResolver {
             return cached
         }
 
-        for ext in Self.bundledExtensions {
-            if let url = Bundle.main.url(forResource: resourceName, withExtension: ext),
-               let data = try? Data(contentsOf: url),
-               let img = Self.decodedImage(from: data) {
-                cache.setObject(img, forKey: cacheKey)
-                return img
-            }
-        }
-
-        return nil
+        guard let url = bundleURL(for: resourceName),
+              let data = try? Data(contentsOf: url),
+              let img = Self.decodedImage(from: data) else { return nil }
+        cache.setObject(img, forKey: cacheKey)
+        return img
     }
 
     /// Per-prefix missing-image placeholder name (without `.png`).

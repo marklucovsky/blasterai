@@ -86,6 +86,19 @@ enum SystemLinks {
     /// A short, readable name for where a link goes — "BlasterAI › Actions"
     /// for a system page, "Brandi Board › Random" for a template's — for the
     /// editor and for print.
+    /// The name of the page a link opens, and nothing else — no "BlasterAI ›"
+    /// or "Template ›" before it.
+    ///
+    /// For print. A PDF holds every page the board reaches, whichever board it
+    /// comes from, so where a page lives says nothing a reader can use — and
+    /// on a printed strip a few words wide the prefix crowded out the name
+    /// itself ("→ Template › P…", Mark 2026-11-11).
+    static func pageName(of link: String) -> String {
+        if let systemKey = TileToken.systemPageKey(link) { return PageNaming.displayName(systemKey) }
+        if let mounted = TileToken.scenePageKey(link) { return PageNaming.displayName(mounted.page) }
+        return PageNaming.displayName(link)
+    }
+
     static func displayName(of link: String, chain: TemplateChain? = nil) -> String {
         if let systemKey = TileToken.systemPageKey(link) {
             let board = TileToken.isTemplateKey(systemKey)

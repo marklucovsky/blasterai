@@ -71,5 +71,79 @@ struct TileImageDecodeTests {
         #expect(decoded > 0)
         #expect(ms < 2_000, "64 tile resolutions took \(Int(ms))ms")
     }
+
+    // MARK: - Off the main thread (the page-editor freeze)
+
+    private var thirtyKeys: [String] {
+        ["apple", "ball", "bath", "bed", "big", "book", "car", "cat", "close", "cold",
+         "cookie", "dad", "dog", "drink", "eat", "go", "happy", "help", "hot", "juice",
+         "jump", "like", "little", "look", "mad", "milk", "mom", "more", "open", "play"]
+    }
+
+    /// Undecoded bundled art peeks as loading — never as the backfill or the
+    /// placeholder standing in for it — and once loaded peeks as the very
+    /// image the synchronous path hands out.
+    @Test func peekWaitsForBundledArtInsteadOfDecoding() async throws {
+        let resolver = TileImageResolver()
+        guard case .loading = resolver.peekImage(for: "eat") else {
+            Issue.record("uncached bundled art should peek as loading"); return
+        }
+        #expect(resolver.decodeCount == 0)
+        let loaded = try #require(await resolver.loadImage(for: "eat"))
+        guard case .ready(let peeked) = resolver.peekImage(for: "eat") else {
+            Issue.record("loaded art should peek as ready"); return
+        }
+        #expect(peeked === loaded)
+        #expect(resolver.image(for: "eat") === loaded)
+        #expect(resolver.decodeCount == 1)
+    }
+
+    /// Thirty tiles asking at once, some twice: each decodes once, and never
+    /// more than one decode runs at a time — the rule that keeps HEIC's codec
+    /// session pool from deadlocking (see `decodedImage`).
+    @Test func concurrentLoadsDecodeOnceEachOneAtATime() async {
+        let resolver = TileImageResolver()
+        let keys = thirtyKeys + thirtyKeys.prefix(10)
+        let results = await withTaskGroup(of: Bool.self) { group in
+            for key in keys { group.addTask { await resolver.loadImage(for: key) != nil } }
+            return await group.reduce(into: 0) { $0 += $1 ? 1 : 0 }
+        }
+        #expect(results == keys.count)
+        #expect(resolver.decodeCount == thirtyKeys.count)
+        #expect(resolver.peakDecodesInFlight == 1)
+    }
+
+    /// Asking whether a tile is cut out must not decode it on the main thread:
+    /// that was half of the editor's freeze.
+    @Test func drawsCutOutDoesNotDecode() {
+        let resolver = TileImageResolver()
+        #expect(resolver.drawsCutOut("eat"))
+        guard case .loading = resolver.peekImage(for: "eat") else {
+            Issue.record("drawsCutOut decoded the art"); return
+        }
+    }
+
+    /// Glyphs are drawn, not decoded: they peek ready straight away.
+    @Test func glyphsPeekReady() {
+        let resolver = TileImageResolver()
+        guard case .ready = resolver.peekImage(for: "letter_a") else {
+            Issue.record("a glyph should be ready without a decode"); return
+        }
+    }
+
+    /// Prefetching decodes in the background and fills the cache.
+    @Test func prefetchFillsTheCache() async {
+        let resolver = TileImageResolver()
+        resolver.prefetch(["dog", "cat"])
+        // A visible request queues behind nothing visible, so it returns once
+        // its own decode is done; the prefetches finish around it.
+        _ = await resolver.loadImage(for: "ball")
+        for _ in 0..<200 where resolver.decodeCount < 3 { try? await Task.sleep(for: .milliseconds(10)) }
+        for key in ["dog", "cat", "ball"] {
+            guard case .ready = resolver.peekImage(for: key) else {
+                Issue.record("\(key) not decoded by prefetch"); continue
+            }
+        }
+    }
 }
 }

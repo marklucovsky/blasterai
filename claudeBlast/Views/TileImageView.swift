@@ -22,21 +22,54 @@ struct TileImageView: View {
 
     @Environment(TileImageResolver.self) private var resolver
 
+    /// The picture `loadImage` brought, and which request it answered — kept
+    /// in case the cache lets it go before the next render.
+    @State private var loaded: UIImage?
+    @State private var loadedFor = ""
+
+    /// A new key, set or photo starts a new load.
+    private var loadID: String { "\(resolver.activeSet.rawValue):\(key):\(resolver.revision)" }
+
     var body: some View {
         // Touch `revision` so adding/removing a photo override re-renders this
         // tile — NSCache mutations alone are not observable.
         let _ = resolver.revision
-        if let uiImage = resolver.image(for: key) {
-            Image(uiImage: uiImage)
-                .resizable()
-                .scaledToFit()
-                .background(drawsOnTint ? Color.clear : Color.white)
-        } else {
-            // Composed placeholder for missing tiles in sparse sets.
-            // Shows the word-class color with the first letter of the key,
-            // plus a subtle indicator that this tile needs artwork.
-            missingTilePlaceholder
+        // Never decode on the main thread to draw: bundled art not decoded yet
+        // is drawn when it arrives (`TileImageResolver.peekImage`).
+        Group {
+            switch resolver.peekImage(for: key) {
+            case .ready(let uiImage):
+                picture(uiImage)
+            case .loading:
+                if let loaded, loadedFor == loadID {
+                    picture(loaded)
+                } else {
+                    // An empty square where the picture will be — not the
+                    // letter placeholder, which says "no art" for a moment.
+                    (drawsOnTint ? Color.clear : Color.white)
+                        .aspectRatio(1, contentMode: .fit)
+                }
+            case .none:
+                // Composed placeholder for missing tiles in sparse sets.
+                // Shows the word-class color with the first letter of the key,
+                // plus a subtle indicator that this tile needs artwork.
+                missingTilePlaceholder
+            }
         }
+        .task(id: loadID) {
+            guard case .loading = resolver.peekImage(for: key) else { return }
+            let id = loadID
+            let image = await resolver.loadImage(for: key)
+            loaded = image
+            loadedFor = id
+        }
+    }
+
+    private func picture(_ uiImage: UIImage) -> some View {
+        Image(uiImage: uiImage)
+            .resizable()
+            .scaledToFit()
+            .background(drawsOnTint ? Color.clear : Color.white)
     }
 
     @ViewBuilder
