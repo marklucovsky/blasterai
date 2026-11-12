@@ -1,12 +1,17 @@
 # Writing a BlasterAI board in a spreadsheet
 
 A scene can be drawn in Google Sheets, Numbers or Excel, then imported in the
-app: **Settings › Scenes › Import from a Spreadsheet**, or **Import or Update from a
+app: **Settings › Scenes › Import Scene**, or **Import or Update from a
 Spreadsheet** inside a scene, which replaces the scene's pages the sheet draws. Bring it in as a Google Sheets link shared
 "Anyone with the link", an `.xlsx` file, or a CSV of one page.
 
 Any scene exported from the app's Share sheet as **Spreadsheet (.xlsx)** is a
-working example.
+working example. Its Home tab starts with the scene's details lines (`Name:`,
+`Description:`, `Is Template:`, `Built On:`) and `#board`, so it imports
+back as the same kind of scene.
+
+The caregiver guide to all of this is
+[Building a board in a spreadsheet](../guides/spreadsheet-boards.md).
 
 ## Layout
 

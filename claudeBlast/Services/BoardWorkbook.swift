@@ -542,6 +542,19 @@ enum BoardWorkbook {
     /// Navigation Bar tab.
     static let barPlacementLabel = "Bar Placement"
 
+    /// The details lines a scene's sheet carries over Home, so a sheet that
+    /// goes out and comes back in is the same scene: its name, description,
+    /// whether it is a template, and the template it is built on.
+    static func details(name: String, description: String, isTemplate: Bool,
+                        builtOn: String?) -> [(String, String)] {
+        var lines = [("Name", name)]
+        let about = description.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !about.isEmpty { lines.append(("Description", about)) }
+        if isTemplate { lines.append(("Is Template", "yes")) }
+        if let builtOn, !builtOn.isEmpty { lines.append(("Built On", builtOn)) }
+        return lines
+    }
+
     @MainActor
     private static func currentLookup(_ context: ModelContext) -> [String: TileModel] {
         let tiles = (try? context.fetch(FetchDescriptor<TileModel>())) ?? []
@@ -557,9 +570,12 @@ enum BoardWorkbook {
     /// not carry them.
     ///
     /// `row`: the scene's own row 1, written as a SystemRow tab after the pages.
+    ///
+    /// `details`: label and value lines (`Name:`, `Is Template:`, …) written
+    /// over Home, with `#board` under them so the board's start is exact.
     static func tabs(for pages: [PageSpec], homeKey: String, cols: Int,
                      systemPages: [PageSpec] = [], isSystemScene: Bool = false,
-                     row: PageSpec? = nil) -> [SpreadsheetTab] {
+                     row: PageSpec? = nil, details: [(String, String)] = []) -> [SpreadsheetTab] {
         let ordered = pages.filter { $0.key == homeKey } + pages.filter { $0.key != homeKey }
         let geometry = PageCells(grid: (cols, 1), inheritsChrome: false)
         let cover = BoardCell.covers(scenePages: pages, systemPages: systemPages, isSystemScene: isSystemScene)
@@ -582,6 +598,10 @@ enum BoardWorkbook {
             }
             let name = page.hasCustomName && BoardCell.pageKey(page.displayName) == page.key
                 ? page.displayName : page.key
+            if page.key == homeKey, !details.isEmpty {
+                let lines = details.map { ["\($0.0):", $0.1] }
+                return SpreadsheetTab(name: name, rows: lines + [[], [boardMarker]] + rows)
+            }
             return SpreadsheetTab(name: name, rows: rows)
         } + [SpreadsheetTab(name: coversTab, rows: covers)]
     }

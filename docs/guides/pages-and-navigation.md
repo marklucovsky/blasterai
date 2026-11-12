@@ -37,9 +37,9 @@ returns them.
 3. **The system row** — ten blue folders across the top. In BlasterAI 60 they
    are the same ten, in the same cells, on every page, so *Places* is always
    top row, eighth from the left, wherever the child is. No page stores them:
-   the board draws them. (This is BlasterAI 60's layout; a board built on
-   another template could put its system row somewhere else — down the left
-   side, or along the bottom.)
+   the board draws them. (This is BlasterAI 60's layout; a scene with its
+   own navigation bar, or built on another board, can put it along the bottom
+   — see [Editing a scene](editing-a-scene.md#the-navigation-bar).)
 4. **Doorways.** *I*, *me*, *my* open the I page; *come* and *go* open Places;
    *eat* and *drink* open Food and Drinks; *play* and *feel* open Play and
    Feelings. Each says its word as it opens the page.

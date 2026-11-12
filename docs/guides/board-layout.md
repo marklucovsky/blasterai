@@ -72,11 +72,12 @@ Things sit along row 1 of every page. No page stores them: the board draws
 them, so a 10 × 6 page holds 50 words and folders under the row. On a grid
 narrower than ten (Large, Largest, an iPhone) the row scrolls sideways.
 
-Across the top is a choice, not a law. A board for a different setting might
-want its system row down the two left-hand columns, or along the bottom, and
-the template is where that will be said. Today every board uses BlasterAI 60's
-template; the guides say "the top row" because that is what you will see, not
-because it is the only shape a board can take.
+Across the top is a choice, not a law. A scene can have **its own navigation
+bar**, and put it across the **top** or along the **bottom**; a scene built on
+another board's template takes that board's bar, where that board puts it.
+Nothing on the pages moves either way — the bar is drawn above or below them.
+See [Editing a scene](editing-a-scene.md#the-navigation-bar). (Down the side is
+not built; nobody has needed it yet.)
 
 **The controls are on a rail, outside the grid.** Home is always the first
 slot and the keyboard the last. Beside the grid in iPad landscape, under it in

@@ -578,5 +578,29 @@ struct TemplateChainTests {
         #expect(bar?.rows.first == ["Bar Placement:", "bottom"])
         #expect(BoardWorkbook.barPlacement(BoardWorkbook.details(of: bar!)) == .bottom)
     }
+
+    /// An exported scene says what it is over Home — a template stays a
+    /// template, a scene keeps its template — and `#board` marks exactly
+    /// where the board starts, even when its first cell is a gap.
+    @Test func anExportedSheetSaysWhatTheSceneIs() {
+        let details = BoardWorkbook.details(name: "Brandi Board", description: "Core board",
+                                            isTemplate: true, builtOn: "School Core")
+        let home = PageSpec(key: "home", tiles: [TileEntry(key: "<spacer>#a"), TileEntry(key: "yes")])
+        let tabs = BoardWorkbook.tabs(for: [home], homeKey: "home", cols: 10, details: details)
+        let homeTab = tabs.first { $0.name == "home" }!
+        let read = BoardWorkbook.details(of: homeTab)
+        #expect(read["name"] == "Brandi Board")
+        #expect(read["description"] == "Core board")
+        #expect(read["is template"] == "yes")
+        #expect(BoardWorkbook.builtOn(read) == "School Core")
+        let origin = BoardWorkbook.detectOrigin(homeTab, cols: 10) { !$0.isEmpty }
+        let boardRow = homeTab.rows[origin.row]
+        #expect(boardRow.count >= 2)
+        #expect(boardRow.first == "")
+        #expect(boardRow.dropFirst().first == "yes")
+
+        let plain = BoardWorkbook.details(name: "Zoo", description: " ", isTemplate: false, builtOn: nil)
+        #expect(plain.map(\.0) == ["Name"])
+    }
 }
 }

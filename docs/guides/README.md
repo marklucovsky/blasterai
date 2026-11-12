@@ -10,6 +10,8 @@ Start with the first one; the vocabulary in it is assumed by all the others.
 | **[Scenes, pages, and packs](scenes-pages-and-packs.md)** | What the four words mean and where everything lives. Read this first. |
 | **[Pages and navigation](pages-and-navigation.md)** | Adding pages, linking them so a child can reach them, choosing home. |
 | **[Board layout](board-layout.md)** | The three fixed grids, why a word stays put, scenes that declare their grid, and printing from it. |
+| **[Editing a scene](editing-a-scene.md)** | The scene and page editors, typing words and links into cells, copies of BlasterAI 60, the navigation bar, templates. |
+| **[Building a board in a spreadsheet](spreadsheet-boards.md)** | Writing a whole board in Google Sheets, Excel or Numbers, and bringing it in. |
 | **[Adding vocabulary](adding-vocabulary.md)** | New words, pasted lists, what word class does, and what the moderation flags mean. |
 | **[AI sentences and single words](ai-sentences-and-single-words.md)** | The two modes, what the AI does and doesn't do, and how to correct it. |
 | **[Sharing a scene](sharing-scenes.md)** | Sending scenes to families and colleagues; what happens on re-import. |
