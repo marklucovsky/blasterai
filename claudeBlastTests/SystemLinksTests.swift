@@ -79,6 +79,15 @@ struct SystemLinksTests {
         #expect(SystemLinks.displayName(of: "animals") == "Animals")
     }
 
+    /// Print names the page alone: a PDF holds every page the board reaches,
+    /// so which board a page lives on is noise on a strip a few words wide.
+    @Test func printNamesThePageAlone() {
+        #expect(SystemLinks.pageName(of: "<system>:time_when") == "Time When")
+        #expect(SystemLinks.pageName(of: "<template>:people") == "People")
+        #expect(SystemLinks.pageName(of: TileToken.systemLink(to: "template:bible")) == "Bible")
+        #expect(SystemLinks.pageName(of: "animals") == "Animals")
+    }
+
     // MARK: - One dial for both boards
 
     /// A zoo scene with `levels` levels whose home links to the core board's

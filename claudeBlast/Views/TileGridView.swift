@@ -182,6 +182,28 @@ struct TileGridView: View {
         return result
     }
 
+    /// Warm the art of the pages this one opens, so the child's next tap
+    /// lands on a drawn board rather than one filling in. Runs behind what is
+    /// on screen (`TileImageResolver.prefetch`), and is capped well under the
+    /// art cache, so it can never push out the page being looked at.
+    private func prefetchLinkedArt() {
+        guard let scene = activeScene, let page = currentPage else { return }
+        let systemPages = levels(scene).systemPages
+        var keys: [String] = []
+        var seen = Set<String>()
+        for link in page.tiles.map(\.link) where !link.isEmpty && seen.insert(link).inserted {
+            guard let target = SystemLinks.page(forKey: link, scenePages: scene.visiblePages,
+                                                systemPages: systemPages,
+                                                mountedPages: { mountedScene($0)?.visiblePages })
+            else { continue }
+            keys += target.tiles.lazy.filter { !$0.isSpacer && !$0.isConcealed }.map(\.key).prefix(60)
+            if keys.count >= Self.prefetchLimit { break }
+        }
+        imageResolver.prefetch(keys.prefix(Self.prefetchLimit))
+    }
+
+    private static let prefetchLimit = 180
+
     private var currentPage: PageSpec? {
         guard let scene = activeScene else { return nil }
         let key = coordinator.currentPageKey ?? scene.homePageKey
@@ -523,6 +545,7 @@ struct TileGridView: View {
             // engine needs out of it.
             engine.currentPageKey = key
             wayTrail = computeWayTrail()
+            prefetchLinkedArt()
         }
         .alert("Add Note", isPresented: $showNoteAlert) {
             TextField("Note", text: $pendingNote)
