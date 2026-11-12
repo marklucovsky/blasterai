@@ -135,38 +135,44 @@ New in This Version" will need.
 > **Enable AI Features**. Most of this needs no key, and that is the
 > configuration most families will run.
 >
-> ### What's new in build 9 — 1.0.0
+> ### What's new in build 10
 >
-> - **A bigger board with a shape you can see.** BlasterAI 60 grew by about
->   430 words, sorted into folders: Places › House, Food › Snacks & treats,
->   Actions › Moving, People › Family and more. The top row is the same ten
->   folders on every page, so you can always jump across.
-> - **Doorway words** speak and open a page: *go* opens Places, *eat* opens
->   Food, *I* opens the I page, wherever the word sits.
-> - **You are here.** The path shows over the board (Home › Places › House),
->   and the folder you came through is underlined.
-> - **Home, Back and Keyboard live on a rail** beside the board (below it on
->   iPad portrait and iPhone), with Search, Level and Edit for caregivers.
->   **Child mode** keeps only what a child needs.
-> - **Square tiles:** the picture on a light tint of its word colour, the word
->   across the bottom.
-> - **Phrases:** Small words › Phrases holds 30 starter phrases from an SLP who
->   works with gestalt language learners ("Oh no, it's stuck!", "What's next?").
-> - **iPhone, rebuilt:** the top row scrolls sideways and a page scrolls in
->   bands of four columns. Turn it sideways for the whole iPad board.
-> - **Printing** follows the board, each page titled by its path.
-> - **Sentences** come from OpenAI's GPT-6 Luna.
+> **If you made your own board in an earlier build, start a fresh one.**
+> Boards made before build 10 are full copies and won't pick up what's new
+> here. Make a new one, or write to support@blasterai.app and we'll help.
 >
-> ### What to test in build 9
+> - **A new board editor.** A page is a grid, cell for cell the board the child
+>   sees. Tap a cell and type: “cat”, or “cat, animal” for a new word,
+>   “go > places” for a word that opens a page, “> animals” for a folder. On a
+>   phone it scrolls in bands; on an iPad with a keyboard it works like a
+>   spreadsheet.
+> - **Boards from spreadsheets.** Write a whole board in Google Sheets, Excel or
+>   Numbers, one tab per page, and import it. Any board exports back the same
+>   way.
+> - **Edit BlasterAI 60 by copying it.** Your copy follows BlasterAI 60 except
+>   for the pages you change.
+> - **Your own navigation bar**, across the top or the bottom.
+> - **Templates.** Build a board on another board, the way every board builds
+>   on BlasterAI 60. A board shared from one device brings its template with it.
+> - **Me** on the rail: the child's own page, with My Topics and words that
+>   change with the page they're on.
+> - **New words don't need a class.** They show white with a **?** until you
+>   give them one, and the app suggests one.
+> - **Faster:** the page editor opens without a pause.
 >
-> - **Find five words your child needs.** How many taps? Was the folder you
->   tried first the right one? What is still missing?
-> - **Try a doorway:** tap *go* on Home. Expected, or a surprise?
-> - **Turn on Child mode and hand it over.** Is the rail clear to a child?
-> - **Phrases:** the right starters? Should a phrase speak the moment it is
->   tapped, instead of joining a sentence?
-> - **iPhone:** upright and sideways. Which would you actually use?
-> - **Print the board** (Share → Printable PDF). Would you use the book?
+> ### What to test in build 10
+>
+> - **Make a board in the editor.** Copy BlasterAI 60 (tap it in Scenes), open
+>   a page, and type a row of words and a folder. Was it obvious what to type?
+> - **Try a spreadsheet.** Start from our sample: Scenes → Import Scene, paste
+>   https://docs.google.com/spreadsheets/d/1EuMTqNVZIwCpm-exIO9BM_Im6QJ4pLSQkJGjYvfUVTw
+>   (in Sheets, File → Make a copy to change it). Or export a board (Share →
+>   Spreadsheet), change it, and import it back. From Google Sheets, share it as
+>   "Anyone with the link" first. The guide: blasterai.app/guides/spreadsheet-boards
+> - **Bar along the bottom:** your board → Navigation Bar → make it the
+>   board's own → Placement: Bottom. Better or worse for your child?
+> - **On a phone:** edit a page. Usable, or iPad-only?
+> - **Share a board** to a second device. Does it arrive looking the same?
 >
 <!-- pdf-only -->
 > ---
@@ -194,12 +200,13 @@ New in This Version" will need.
 >    - a ready-made example, or
 >    - **Build from Collections** — tick vocabulary packs and word classes and
 >      let it assemble a board.
-> 5. Open your new board, open a page, and tap **Select Tiles**. With several
->    ticked, try **Conceal** and **Delete**. Conceal keeps a word on the board for
->    you and hides it from the child; delete removes it. We would like to know
->    whether that distinction is clear without being told.
+> 5. Open your new board and open a page. Tap a word, then **Visibility** →
+>    **Concealed**; tap another, then **Clear**. Conceal keeps a word on the
+>    board for you and hides it from the child; Clear removes it. We would like
+>    to know whether that distinction is clear without being told.
 
-> 6. Rename a page, and move tiles between pages.
+> 6. Rename a page (tap its name on the card above the grid), and drag a
+>    tile to a new cell.
 >
 > Nothing above needs the guides, but they exist if you want them — and we would
 > like to know whether you needed them:
@@ -207,6 +214,8 @@ New in This Version" will need.
 > - **blasterai.app/guides/scenes-pages-and-packs**
 > - **blasterai.app/guides/pages-and-navigation**
 > - **blasterai.app/guides/adding-vocabulary**
+> - **blasterai.app/guides/editing-a-scene**
+> - **blasterai.app/guides/spreadsheet-boards**
 >
 > ### Taking a board off the device
 >
@@ -251,6 +260,39 @@ New in This Version" will need.
 > 15. **Go back to Activity.** It should now show the sentences, and what they
 >     cost.
 > ### Earlier builds
+>
+> ### What's new in build 9 — 1.0.0
+>
+> - **A bigger board with a shape you can see.** BlasterAI 60 grew by about
+>   430 words, sorted into folders: Places › House, Food › Snacks & treats,
+>   Actions › Moving, People › Family and more. The top row is the same ten
+>   folders on every page, so you can always jump across.
+> - **Doorway words** speak and open a page: *go* opens Places, *eat* opens
+>   Food, *I* opens the I page, wherever the word sits.
+> - **You are here.** The path shows over the board (Home › Places › House),
+>   and the folder you came through is underlined.
+> - **Home, Back and Keyboard live on a rail** beside the board (below it on
+>   iPad portrait and iPhone), with Search, Level and Edit for caregivers.
+>   **Child mode** keeps only what a child needs.
+> - **Square tiles:** the picture on a light tint of its word colour, the word
+>   across the bottom.
+> - **Phrases:** Small words › Phrases holds 30 starter phrases from an SLP who
+>   works with gestalt language learners ("Oh no, it's stuck!", "What's next?").
+> - **iPhone, rebuilt:** the top row scrolls sideways and a page scrolls in
+>   bands of four columns. Turn it sideways for the whole iPad board.
+> - **Printing** follows the board, each page titled by its path.
+> - **Sentences** come from OpenAI's GPT-6 Luna.
+>
+> ### What to test in build 9
+>
+> - **Find five words your child needs.** How many taps? Was the folder you
+>   tried first the right one? What is still missing?
+> - **Try a doorway:** tap *go* on Home. Expected, or a surprise?
+> - **Turn on Child mode and hand it over.** Is the rail clear to a child?
+> - **Phrases:** the right starters? Should a phrase speak the moment it is
+>   tapped, instead of joining a sentence?
+> - **iPhone:** upright and sideways. Which would you actually use?
+> - **Print the board** (Share → Printable PDF). Would you use the book?
 >
 > ### What's new in build 8
 >
