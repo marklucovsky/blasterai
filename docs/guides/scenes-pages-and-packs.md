@@ -133,6 +133,7 @@ shorter rail until someone gets back through the Settings lock.
 | Add a new word to your vocabulary | Open any page → **+** → type the word |
 | Hide a word from the child | Settings → Scenes → **Manage Vocabulary** |
 | Send a scene to someone | Settings → Scenes → swipe left on it → **Share** |
+| Write a whole board at once | A spreadsheet → Settings → Scenes → **Import Scene** ([guide](spreadsheet-boards.md)) |
 | Copy a scene before changing it | Settings → Scenes → swipe left → **Duplicate** |
 
 Duplicate and Share are swipe actions, which makes them easy to miss. If you're

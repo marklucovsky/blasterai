@@ -69,6 +69,20 @@ that ship with the app, scenes you made, and scenes someone sent you are
 visually distinct — worth knowing when a family has five scenes and can't
 remember which came from you.
 
+### A scene built on a template
+
+A scene built on someone's template — a school's core board, say — needs that
+template to look right. So the template goes in the same file. On the other
+device it isn't added to the Scenes list; it sits under **Templates in Use**,
+read-only, and goes away when the last scene using it is deleted. Send an
+updated scene later and its template is refreshed with it. Tap a template there
+and **Make My Copy** to build your own on it.
+
+**Sending a spreadsheet instead?** **Share → Spreadsheet (.xlsx)** gives a sheet
+that says what the scene is — its name, whether it's a template, what it's
+built on — so it comes back in as the same kind of scene. See
+[Building a board in a spreadsheet](spreadsheet-boards.md).
+
 ---
 
 ## Sharing across your own devices

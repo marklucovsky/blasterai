@@ -929,7 +929,12 @@ struct SceneEditorView: View {
             }
         } label: {
             if page.isShadow {
-                Label("Use BlasterAI 60\u{2019}s", systemImage: "arrow.uturn.backward")
+                // Back to the page this one copied: BlasterAI 60's, or the
+                // template's — named, as the row's "Replaces …" names it.
+                let owner = TileToken.isTemplateKey(page.shadows)
+                    ? (chain?.owner(ofSystemPage: page.shadows).map { BlasterScene.copyRoot(of: $0.name) } ?? "the Template")
+                    : "BlasterAI 60"
+                Label("Use \(owner)\u{2019}s", systemImage: "arrow.uturn.backward")
             } else {
                 Label("Delete", systemImage: "trash")
             }

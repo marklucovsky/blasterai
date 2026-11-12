@@ -604,7 +604,15 @@ struct ShareBoardSheet: View {
         }
         // A whole scene takes its own row 1 along, as a SystemRow tab.
         let row: PageSpec? = if case .scene(let scene) = subject { BoardChrome.ownRow(of: scene) } else { nil }
-        let tabs = BoardWorkbook.tabs(for: pages, homeKey: scene.homePageKey, cols: cols, row: row)
+        // A whole scene says what it is over Home, so the sheet re-imports as
+        // the same kind of scene (a template stays a template).
+        let details: [(String, String)] = if case .scene(let scene) = subject {
+            BoardWorkbook.details(name: scene.name, description: scene.descriptionText,
+                                  isTemplate: scene.isTemplate,
+                                  builtOn: chain?.templates.first.map { BlasterScene.copyRoot(of: $0.name) })
+        } else { [] }
+        let tabs = BoardWorkbook.tabs(for: pages, homeKey: scene.homePageKey, cols: cols, row: row,
+                                      details: details)
         return try ExportedFile.write(XLSX.write(tabs), named: "\(subject.basename).xlsx")
     }
 
