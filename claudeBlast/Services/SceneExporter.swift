@@ -94,7 +94,8 @@ enum SceneExporter {
             return ExportablePage(key: page.key, tiles: pageTiles,
                                   displayName: page.hasCustomName ? page.displayName : nil,
                                   cover: page.cover.isEmpty ? nil : page.cover,
-                                  shadows: page.shadows.isEmpty ? nil : page.shadows)
+                                  shadows: page.shadows.isEmpty ? nil : page.shadows,
+                                  barPlacement: page.barPlacement)
         }
 
         return ExportableScene(

@@ -65,13 +65,21 @@ struct PageSpec: Codable, Hashable, Identifiable {
     /// scene that happens to have its own `actions` page shadows nothing.
     var shadows: String = ""
 
+    /// Where a navigation bar sits on the board (`NavBarPlacement`). Read only
+    /// on the reserved `<row>` page: the bar's owner decides, so a scene built
+    /// on a template draws the template's bar where the template puts it.
+    /// Nil is the top. Optional so the synthesized encoder leaves it out and
+    /// no stored page's bytes, or content hash, change.
+    var barPlacement: String? = nil
+
     init(key: String, displayName: String = "", tiles: [TileEntry], cover: String = "",
-         shadows: String = "") {
+         shadows: String = "", barPlacement: String? = nil) {
         self.key = key
         self.displayName = displayName
         self.tiles = tiles
         self.cover = cover
         self.shadows = shadows
+        self.barPlacement = barPlacement
     }
 
     /// True when this page stands in for a BlasterAI 60 page.
@@ -97,6 +105,7 @@ struct PageSpec: Codable, Hashable, Identifiable {
         tiles = try container.decodeIfPresent([TileEntry].self, forKey: .tiles) ?? []
         cover = try container.decodeIfPresent(String.self, forKey: .cover) ?? ""
         shadows = try container.decodeIfPresent(String.self, forKey: .shadows) ?? ""
+        barPlacement = try container.decodeIfPresent(String.self, forKey: .barPlacement)
     }
 }
 

@@ -315,6 +315,7 @@ struct PageEditorView: View {
                         chrome: BoardChrome.inherits(scene) && !isRow
                             ? BoardChrome.row(for: scene, level: scene.effectiveRevealLevel,
                                               inherited: chain?.navBar) : [],
+                        barPlacement: BoardChrome.placement(for: scene, inherited: chain?.navBarPlacement),
                         previewLevel: previewLevel,
                         onProperties: { editingTileKey = $0 },
                         onAddWords: { openPicker(from: $0) },

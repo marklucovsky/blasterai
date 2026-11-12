@@ -148,6 +148,9 @@ struct BoardLevels {
     /// its own (`TemplateChain.navBar`).
     var inheritedNavBar: [TileEntry]? { chain?.navBar }
 
+    /// Where the scene draws its bar (`BoardChrome.placement`).
+    var navBarPlacement: NavBarPlacement { BoardChrome.placement(for: scene, inherited: chain?.navBarPlacement) }
+
     /// Where the dial is, or nil when there are no levels.
     var level: Int? {
         guard count > 0 else { return nil }

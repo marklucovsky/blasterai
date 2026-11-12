@@ -149,6 +149,12 @@ struct TemplateChain {
         return nil
     }
 
+    /// Where `navBar` sits: the placement of the bar it comes from; nil when
+    /// no template has a bar.
+    var navBarPlacement: NavBarPlacement? {
+        templates.first { $0.ownRow != nil }.map { NavBarPlacement($0.ownRow?.barPlacement) }
+    }
+
     /// The template whose page `systemKey` is, nearest first; nil for a
     /// BlasterAI 60 page.
     func owner(ofSystemPage systemKey: String) -> BlasterScene? {
@@ -166,7 +172,7 @@ struct TemplateChain {
         return (owner, page.key)
     }
 
-    /// The template a spreadsheet's `Template:` line names: by name (the
+    /// The template a spreadsheet's `Built On:` line names: by name (the
     /// name without a copy number, any case), slug or `sceneID`.
     static func named(_ text: String, in templates: [BlasterScene]) -> BlasterScene? {
         let wanted = text.trimmingCharacters(in: .whitespaces).lowercased()
@@ -236,7 +242,8 @@ enum TemplateRemoval {
         if scene.ownRow == nil,
            chain.templates.first(where: { $0.ownRow != nil })?.persistentModelID == template.persistentModelID,
            let bar = chain.navBar {
-            scene.ownRow = PageSpec(key: BlasterScene.rowPageKey, displayName: "Navigation Bar", tiles: bar)
+            scene.ownRow = PageSpec(key: BlasterScene.rowPageKey, displayName: "Navigation Bar", tiles: bar,
+                                    barPlacement: chain.navBarPlacement?.stored)
         }
         let pages = chain.pages(atLevel: nil)
         let from = scene.pages + (scene.ownRow.map { [$0] } ?? [])

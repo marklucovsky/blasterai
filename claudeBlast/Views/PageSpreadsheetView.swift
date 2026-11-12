@@ -83,6 +83,8 @@ struct PageSpreadsheetView: View {
     let cells: PageCells
     /// The system row drawn over each screen; empty when not inherited.
     let chrome: [TileEntry]
+    /// Where the bar sits: over each screen or under it.
+    var barPlacement: NavBarPlacement = .top
     var previewLevel: Int = 0
     var onProperties: (String) -> Void = { _ in }
     /// Opens the word picker; its words go into empty cells from this index.
@@ -842,17 +844,7 @@ struct PageSpreadsheetView: View {
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.secondary)
                     }
-                    if !typingRow, !chrome.isEmpty {
-                        HStack(spacing: spacing) {
-                            ForEach(band, id: \.self) { col in
-                                let entry = col < chrome.count ? chrome[col] : TileEntry.spacer()
-                                entryView(entry)
-                                    .frame(width: side, height: side)
-                                    .opacity(entry.isEmptyCell ? 0 : 0.4)
-                                    .allowsHitTesting(false)
-                            }
-                        }
-                    }
+                    if !typingRow, barPlacement == .top { bandBar(band, side: side) }
                     ForEach(typingRow ? [selected.row] : Array(0..<cells.rows), id: \.self) { row in
                         HStack(spacing: spacing) {
                             ForEach(band, id: \.self) { col in
@@ -861,6 +853,23 @@ struct PageSpreadsheetView: View {
                             }
                         }
                     }
+                    if !typingRow, barPlacement == .bottom { bandBar(band, side: side) }
+                }
+            }
+        }
+    }
+
+    /// The band's slice of the navigation bar, dimmed and not editable here.
+    @ViewBuilder
+    private func bandBar(_ band: Range<Int>, side: CGFloat) -> some View {
+        if !chrome.isEmpty {
+            HStack(spacing: spacing) {
+                ForEach(band, id: \.self) { col in
+                    let entry = col < chrome.count ? chrome[col] : TileEntry.spacer()
+                    entryView(entry)
+                        .frame(width: side, height: side)
+                        .opacity(entry.isEmptyCell ? 0 : 0.4)
+                        .allowsHitTesting(false)
                 }
             }
         }
@@ -903,15 +912,12 @@ struct PageSpreadsheetView: View {
                             .foregroundStyle(.secondary)
                     }
                     LazyVGrid(columns: columns, spacing: spacing) {
-                        ForEach(Array(chrome.prefix(cells.cols).enumerated()), id: \.offset) { _, entry in
-                            entryView(entry)
-                                .opacity(entry.isEmptyCell ? 0 : 0.4)
-                                .allowsHitTesting(false)
-                        }
+                        if barPlacement == .top { gridBar }
                         ForEach(0..<cells.perScreen, id: \.self) { i in
                             let cell = cells.cell(at: screen * cells.perScreen + i)
                             cellView(cell, side: side).id(cell)
                         }
+                        if barPlacement == .bottom { gridBar }
                     }
                 }
             }
@@ -924,6 +930,15 @@ struct PageSpreadsheetView: View {
             }
             .buttonStyle(.bordered)
         })
+    }
+
+    /// The navigation bar as one grid row, dimmed and not editable here.
+    private var gridBar: some View {
+        ForEach(Array(chrome.prefix(cells.cols).enumerated()), id: \.offset) { _, entry in
+            entryView(entry)
+                .opacity(entry.isEmptyCell ? 0 : 0.4)
+                .allowsHitTesting(false)
+        }
     }
 
     @ViewBuilder
@@ -1073,9 +1088,9 @@ struct PageSpreadsheetView: View {
                                                         isSystemScene: scene.isDefault))
     }
 
-    /// "R2 C3": rows counted as the board counts them, the system row as row 1.
+    /// "R2 C3": rows counted as the board counts them, a bar on top as row 1.
     private func address(_ cell: PageCells.Cell) -> String {
-        let row = cell.row + 1 + (chrome.isEmpty ? 0 : 1)
+        let row = cell.row + 1 + (chrome.isEmpty || barPlacement == .bottom ? 0 : 1)
         let base = "R\(row) C\(cell.col + 1)"
         return screens > 1 ? "\(cell.screen + 1)·\(base)" : base
     }

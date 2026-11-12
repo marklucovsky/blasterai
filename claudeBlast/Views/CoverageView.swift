@@ -78,7 +78,9 @@ struct CoverageView: View {
     /// preview, so the drill-down cannot disagree with the board.
     private func board(_ row: CoverageReport.PageCoverage,
                        in scene: BlasterScene) -> CoverageGridView.Board {
-        CoverageGridView.Board(
+        let levels = BoardLevels(scene: scene, system: scenes.first(where: \.isDefault),
+                                 templates: scenes.filter(\.isTemplate))
+        return CoverageGridView.Board(
             entries: row.entries,
             grid: GridLayoutCalculator.authoringGrid(
                 designed: scene.designedLayout,
@@ -86,8 +88,8 @@ struct CoverageView: View {
                 deviceLayout: BoardLayout(rawValue: boardLayoutRaw) ?? .standard),
             chrome: BoardChrome.inherits(scene)
                 ? BoardChrome.row(for: scene, level: scene.effectiveRevealLevel,
-                                  inherited: BoardLevels(scene: scene, system: scenes.first(where: \.isDefault),
-                                                         templates: scenes.filter(\.isTemplate)).inheritedNavBar) : [],
+                                  inherited: levels.inheritedNavBar) : [],
+            placement: levels.navBarPlacement,
             linksTaken: row.linksTaken)
     }
 

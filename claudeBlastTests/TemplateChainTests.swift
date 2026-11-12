@@ -465,9 +465,118 @@ struct TemplateChainTests {
         #expect(preview.details["is template"] == "yes")
     }
 
+    /// `Built On:` names the template a sheet's scene uses; `Uses
+    /// Template:` and the old `Template:` mean the same.
+    @Test func builtOnNamesTheTemplate() {
+        func builtOn(_ cell: String) -> String? {
+            let tabs = [SpreadsheetTab(name: "home", rows: [[cell], [], ["yes", "more"]])]
+            return BoardWorkbook.builtOn(
+                BoardWorkbook.preview(tabs, cols: 10, scenePages: [], lookup: [:], systemPages: []).details)
+        }
+        #expect(builtOn("Built On: Brandi Board") == "Brandi Board")
+        #expect(builtOn("Uses Template: Brandi Board") == "Brandi Board")
+        #expect(builtOn("Template: Brandi Board") == "Brandi Board")
+        #expect(builtOn("Is Template: yes") == nil)
+        #expect(BoardWorkbook.sameName("brandi board", "Brandi Board (2)"))
+        #expect(!BoardWorkbook.sameName("Brandi Board", "Bible Board"))
+        #expect(!BoardWorkbook.sameName("", ""))
+    }
+
     @Test func aMissingTemplateHasAReadableName() {
         #expect(TemplateChain.missingName("599ea158-44e6/brandi-board") == "brandi-board")
         #expect(TemplateChain.missingName("solo") == "solo")
+    }
+
+    // MARK: - Placement
+
+    /// A bar at the top stores nothing, so no page stored before placement
+    /// existed changes its bytes (or its scene's content hash).
+    @Test func aTopBarStoresNothing() throws {
+        let top = PageSpec(key: BlasterScene.rowPageKey, tiles: [TileEntry(key: "bible")])
+        let json = String(decoding: try JSONEncoder().encode(top), as: UTF8.self)
+        #expect(!json.contains("barPlacement"))
+        var bottom = top
+        bottom.barPlacement = NavBarPlacement.bottom.stored
+        let back = try JSONDecoder().decode(PageSpec.self, from: JSONEncoder().encode(bottom))
+        #expect(back.barPlacement == "bottom")
+        #expect(NavBarPlacement("sideways") == .top)
+    }
+
+    /// The bar's owner decides: the scene's own bar, else its template's,
+    /// else BlasterAI 60's top.
+    @Test func aBarSitsWhereItsOwnerPutsIt() {
+        let system = makeSystem(), template = makeTemplate()
+        template.updatePage(BlasterScene.rowPageKey) { $0.barPlacement = "bottom" }
+        let scene = makeScene(on: template.sceneID)
+        let chain = TemplateChain(scene: scene, templates: [template], system: system)
+        #expect(chain.navBarPlacement == .bottom)
+        #expect(BoardChrome.placement(for: scene, inherited: chain.navBarPlacement) == .bottom)
+        #expect(BoardChrome.placement(for: template) == .bottom)
+
+        // Made its own, the bar keeps the template's place until changed.
+        scene.ownRow = BoardChrome.ownRowStart(from: chain.navBar, placement: .bottom)
+        #expect(BoardChrome.placement(for: scene, inherited: nil) == .bottom)
+        scene.updatePage(BlasterScene.rowPageKey) { $0.barPlacement = nil }
+        #expect(BoardChrome.placement(for: scene, inherited: chain.navBarPlacement) == .top)
+
+        let plain = makeScene(on: "")
+        #expect(BoardChrome.placement(for: plain, inherited: nil) == .top)
+        #expect(BoardChrome.placement(for: system, inherited: .bottom) == .top)
+    }
+
+    /// A bar at the bottom closes a screen padded out to its capacity; at the
+    /// top it opens the screen, and the content is left as it is.
+    @Test func arrangePutsTheBarFirstOrLast() {
+        let bar = [TileEntry(key: "a"), TileEntry(key: "b")]
+        let words = [TileEntry(key: "x"), TileEntry(key: "y"), TileEntry(key: "z")]
+        let top = BoardChrome.arrange(content: words, chrome: bar, placement: .top, perScreen: 6)
+        let topKeys = top.map { $0.key }
+        #expect(topKeys == ["a", "b", "x", "y", "z"])
+        let bottom = BoardChrome.arrange(content: words, chrome: bar, placement: .bottom, perScreen: 6)
+        let keys = bottom.map { $0.key }
+        let gaps = bottom[3..<6].allSatisfy { $0.isSpacer }
+        #expect(bottom.count == 8)
+        #expect(Array(keys.prefix(3)) == ["x", "y", "z"])
+        #expect(gaps)
+        #expect(Array(keys.suffix(2)) == ["a", "b"])
+        #expect(Set(keys).count == keys.count)
+        #expect(BoardChrome.arrange(content: words, chrome: [], placement: .bottom, perScreen: 6).count == 3)
+    }
+
+    /// A template's placement travels with it inside a scene's file.
+    @Test func aSceneFileCarriesItsBarPlacement() throws {
+        let ctx = TestStore.freshContext()
+        let lookup = lookup(in: ctx)
+        let template = makeTemplate(), scene = makeScene(on: "brandi/core")
+        template.updatePage(BlasterScene.rowPageKey) { $0.barPlacement = "bottom" }
+        ctx.insert(template); ctx.insert(scene)
+        let file = SceneExporter.export(scene, tileLookup: lookup, templates: [template])
+        ctx.delete(scene); ctx.delete(template)
+        try ctx.save()
+        _ = try SceneImporter.importJSON(JSONEncoder().encode(file), context: ctx)
+
+        let arrived = try #require(try ctx.fetch(FetchDescriptor<BlasterScene>()).first { $0.sceneID == "brandi/core" })
+        #expect(arrived.ownRow?.barPlacement == "bottom")
+    }
+
+    /// `Bar Placement: bottom`, in one cell or two, on any tab; and a
+    /// bottom bar is written back over the Navigation Bar tab.
+    @Test func aSheetSaysWhereTheBarGoes() {
+        func placement(_ rows: [[String]]) -> NavBarPlacement? {
+            let tabs = [SpreadsheetTab(name: "home", rows: rows + [[], ["yes", "more"]])]
+            return BoardWorkbook.barPlacement(
+                BoardWorkbook.preview(tabs, cols: 10, scenePages: [], lookup: [:], systemPages: []).details)
+        }
+        #expect(placement([["Bar Placement: bottom"]]) == .bottom)
+        #expect(placement([["Bar Placement:", "Bottom"]]) == .bottom)
+        #expect(placement([["Bar Placement:", "top"]]) == .top)
+        #expect(placement([["Name: Tide Pools"]]) == nil)
+
+        let row = PageSpec(key: BlasterScene.rowPageKey, tiles: [TileEntry(key: "yes")], barPlacement: "bottom")
+        let tabs = BoardWorkbook.tabs(for: [PageSpec(key: "home", tiles: [])], homeKey: "home", cols: 10, row: row)
+        let bar = tabs.first { $0.name == BoardWorkbook.rowTab }
+        #expect(bar?.rows.first == ["Bar Placement:", "bottom"])
+        #expect(BoardWorkbook.barPlacement(BoardWorkbook.details(of: bar!)) == .bottom)
     }
 }
 }

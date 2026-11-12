@@ -342,7 +342,8 @@ enum SceneImporter {
             return PageSpec(key: exportPage.key,
                             displayName: exportPage.displayName ?? "",
                             tiles: tiles, cover: cover,
-                            shadows: exportPage.shadows ?? "")
+                            shadows: exportPage.shadows ?? "",
+                            barPlacement: exportPage.barPlacement)
         }
         // The scene's own row 1 travels as a page with the reserved key; the
         // `pages` setter leaves it out, so it is put back as the row.

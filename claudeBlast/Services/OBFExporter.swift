@@ -116,6 +116,8 @@ enum OBFExporter {
             // are drawn. Another scene's row opens BlasterAI 60's pages, which
             // travel with it (`ExportPages`), so its folders go out too.
             let rowPages = Set(BoardChrome.rowPages(of: scene))
+            // Always first, whatever the bar's placement on the board: an OBF
+            // board has no bar, only a grid, and its readers lay it out themselves.
             let row = BoardChrome.row(for: scene, level: scene.effectiveRevealLevel, inherited: inheritedNavBar)
                 .map { entry -> TileEntry in
                     var entry = entry

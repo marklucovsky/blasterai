@@ -416,14 +416,17 @@ enum BoardPagination {
     /// mirror the board's structure, and silently dropping a page the caregiver
     /// can see in the editor would make the two disagree.
     ///
-    /// - Parameter chrome: the system row, printed at the top of every sheet
-    ///   the way the app draws it over every page.
+    /// - Parameter chrome: the navigation bar, printed on every sheet where
+    ///   the app draws it on every page: the top row, or the bottom one.
     ///
-    ///   **On screen, row 1 of every page is the system row** — the same
-    ///   folders in the same cells, which is motor planning. A sheet without it
-    ///   would print every word one row higher than the child knows it.
+    ///   **On screen, every page carries the bar** — the same folders in the
+    ///   same cells, which is motor planning. A sheet without it would print
+    ///   every word a row away from where the child knows it.
+    /// - Parameter placement: where the bar goes. At the bottom a short sheet
+    ///   is filled out with gaps, so the bar lands on the last row.
     static func paginate(_ pages: [PageSpec], perSheet: Int,
-                         chrome: [TileEntry] = []) -> [BoardSheet] {
+                         chrome: [TileEntry] = [],
+                         placement: NavBarPlacement = .top) -> [BoardSheet] {
         let capacity = perSheet - chrome.count
         guard capacity > 0 else { return [] }
         var sheets: [BoardSheet] = []
@@ -438,7 +441,8 @@ enum BoardPagination {
                 sheets.append(BoardSheet(pageKey: page.key,
                                          sheetIndex: offset + 1,
                                          sheetCount: chunks.count,
-                                         tiles: chrome + chunk,
+                                         tiles: BoardChrome.arrange(content: chunk, chrome: chrome,
+                                                                    placement: placement, perScreen: capacity),
                                          pageTitle: page.title))
             }
         }
@@ -635,6 +639,7 @@ enum BoardPDFRenderer {
     static func render(pages: [PageSpec],
                        scene: BlasterScene,
                        inheritedNavBar: [TileEntry]? = nil,
+                       inheritedPlacement: NavBarPlacement? = nil,
                        tileLookup: [String: TileModel],
                        options: BoardPrintOptions,
                        imageSet: ImageSetID,
@@ -666,7 +671,8 @@ enum BoardPDFRenderer {
             ? Array(BoardChrome.row(for: scene, level: scene.effectiveRevealLevel, inherited: inheritedNavBar)
                 .prefix(options.resolvedColumns))
             : []
-        let sheets = BoardPagination.paginate(visible, perSheet: layout.perSheet, chrome: chrome)
+        let sheets = BoardPagination.paginate(visible, perSheet: layout.perSheet, chrome: chrome,
+                                              placement: BoardChrome.placement(for: scene, inherited: inheritedPlacement))
 
         try await images.warm(keys: sheets.flatMap { sheet in
                                   sheet.tiles.map { entry in

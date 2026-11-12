@@ -47,6 +47,8 @@ struct CoverageGridView: View {
         let grid: (cols: Int, rows: Int)
         /// The system row over every screen; empty when the scene has none.
         var chrome: [TileEntry] = []
+        /// Where the bar sits (`NavBarPlacement`).
+        var placement: NavBarPlacement = .top
         /// Links pressed on this page — see `PageCoverage.linksTaken`.
         var linksTaken: Set<String> = []
 
@@ -160,7 +162,8 @@ struct CoverageGridView: View {
         TileEntry.holdingHiddenCells(board.entries) { lookup[$0]?.isHiddenFromChild == true }
     }
 
-    /// Row 1 of every screen is the system row, as on the board.
+    /// Every screen gives one row to the navigation bar, top or bottom, as
+    /// on the board.
     private func perScreen(_ board: Board) -> Int {
         max(1, board.grid.cols * board.grid.rows - (board.chrome.isEmpty ? 0 : board.grid.cols))
     }
@@ -188,16 +191,30 @@ struct CoverageGridView: View {
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                 }
+                let bar = Array(board.chrome.prefix(board.grid.cols))
+                let barAtBottom = board.placement == .bottom && !bar.isEmpty
+                // Under a bottom bar the screen is filled out, so the bar sits
+                // on the last row rather than straight after the last word.
+                let shown = barAtBottom
+                    ? cells + Array(repeating: TileEntry.spacer(), count: max(0, perScreen(board) - cells.count))
+                    : cells
                 LazyVGrid(columns: gridColumns, alignment: .leading, spacing: gap) {
-                    ForEach(Array(board.chrome.prefix(board.grid.cols).enumerated()), id: \.offset) { _, entry in
-                        boardCell(entry, isUsed: board.chromeUsed(entry))
-                            .allowsHitTesting(false)
-                    }
-                    ForEach(Array(cells.enumerated()), id: \.offset) { _, entry in
+                    if !barAtBottom { barCells(bar, board: board) }
+                    ForEach(Array(shown.enumerated()), id: \.offset) { _, entry in
                         boardCell(entry)
                     }
+                    if barAtBottom { barCells(bar, board: board) }
                 }
             }
+        }
+    }
+
+    /// The navigation bar's cells: shown pressed or not, never tappable.
+    @ViewBuilder
+    private func barCells(_ bar: [TileEntry], board: Board) -> some View {
+        ForEach(Array(bar.enumerated()), id: \.offset) { _, entry in
+            boardCell(entry, isUsed: board.chromeUsed(entry))
+                .allowsHitTesting(false)
         }
     }
 
