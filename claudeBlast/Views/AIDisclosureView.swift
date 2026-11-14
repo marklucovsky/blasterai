@@ -37,7 +37,7 @@ struct AIDisclosureContent: View {
             } icon: {
                 Image(systemName: "lock.shield.fill").foregroundStyle(.green)
             }
-            Text("Without AI features, BlasterAI is a complete word board: each tile speaks its word. You can change this any time in Settings → Device.")
+            Text("Without AI features, BlasterAI is a complete word board: each tile speaks its word. You can change this any time in Settings → AI.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

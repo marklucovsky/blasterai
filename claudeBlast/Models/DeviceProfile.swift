@@ -176,6 +176,6 @@ enum DeviceRole: String, CaseIterable, Codable {
     /// Used as the onboarding step-2 footer so the user knows nothing they
     /// pick here is permanent. Reinforces that the modes are reversible.
     static var reversibilityNote: String {
-        "You can switch a device between Patient and Caregiver mode anytime from Settings → Device. None of these choices are permanent."
+        "You can switch a device between Patient and Caregiver mode anytime from Settings → Advanced → Lock and Role. None of these choices are permanent."
     }
 }

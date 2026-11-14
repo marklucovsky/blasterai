@@ -153,15 +153,23 @@ struct AdminView: View {
     @State var displayedRole: DeviceRole = .caregiver
     @Environment(AdminRouteCoordinator.self) var adminRoute
 
-    /// Pushed sub-screens, driven by a TileScript `screen:` route. `Identifiable`
-    /// via the enum itself so `navigationDestination(item:)` can bind to them.
-    @State var vocabDetail: AdminRoute.Detail?
-    @State var deviceDetail: AdminRoute.Detail?
+    /// Pages pushed on Settings' one stack. Set by hand, and by a TileScript
+    /// `screen:` route through `AdminRouteCoordinator`.
+    @State var path: [AdminPage] = []
+
+    /// Which collapsible groups are open, on the first screen and on Advanced,
+    /// as comma-separated keys. Several can be open at once, and the choice
+    /// survives closing Settings. See `expandedBinding(_:)`.
+    /// The first-screen row whose page is showing. Nil on iPad shows the
+    /// overview: current profile and quick settings.
+    @State var selection: AdminPage?
     /// Confirmation before the API key is deleted from the Keychain.
     @State var isRemovingAPIKey = false
     /// AI permission: the disclosure sheet, the turn-off confirmation, and
     /// removing a key that is installed but unused. See `aiFeaturesSection`.
     @State var isShowingAIDisclosure = false
+    /// Provider Settings on the AI page starts folded.
+    @State var isProviderExpanded = false
     @State var isConfirmingAIRevoke = false
     @State var isRemovingDormantKey = false
     /// Admin → Device → "Install key from file…".
@@ -189,42 +197,23 @@ struct AdminView: View {
 
 
     var body: some View {
-        // Tab segmentation:
-        //   Now — parent-style quick tweaks (default landing)
-        //   Profiles — child roster management
-        //   Scenes — scene library + editor
-        //   Device — device config (provider, API key, role, PIN, engine)
-        //   Activity — what happened (utterances, AI usage + cost, cache,
-        //     promoted tiles). Renamed from "Logs": it leads with what the child
-        //     said, not with diagnostics, and it's where AI usage now reports.
-        // Defaulting to Now means a parent landing in Admin to adjust
-        // voice/volume/scene never has to scroll past therapist UI.
-        // Selection is bound to `AdminRouteCoordinator` rather than held in
-        // SwiftUI's own state, so something outside this view — a TileScript
-        // `screen:` command — can put Admin on a named tab. See `ScriptScreen`.
-        TabView(selection: Binding(
-            get: { adminRoute.tab },
-            set: { adminRoute.tab = $0 }
-        )) {
-            nowTab.tag(AdminRoute.now)
-            profilesTab.tag(AdminRoute.profiles)
-            scenesTab.tag(AdminRoute.scenes)
-            deviceTab.tag(AdminRoute.device)
-            activityTab.tag(AdminRoute.activity)
-        }
-        // On the TabView, not inside a tab: activation is triggered from both
-        // the Now tab and the Scenes tab, and an alert attached to whichever
-        // tab happened to be showing would be torn down the moment activation
-        // switched tabs.
-        .alert(item: $activationNotice) { notice in
-            Alert(title: Text(notice.title),
-                  message: Text(notice.message),
-                  dismissButton: .default(Text("OK")))
-        }
-        // Where a Patient device's caregiver meets the one-time ask — the
-        // child's board never shows it. Not while a demo is being captured.
-        .modifier(AIConsentPrompt(
-            isEnabled: !UserDefaults.standard.bool(forKey: AppSettingsKey.demoMode)))
+        // One list with pages pushed from it, in place of five tabs. See
+        // `AdminView+Root.swift` for the layout and why.
+        let stack = settingsSplit
+        settingsLifecycle(deviceModals(scenesModals(profilesModals(stack))))
+            .sheet(isPresented: $showUsageReport) { UsageReportSheet() }
+            // Activation happens on the first screen, on Board and on My
+            // Boards; the alert sits above all of them so a page popping
+            // cannot tear it down.
+            .alert(item: $activationNotice) { notice in
+                Alert(title: Text(notice.title),
+                      message: Text(notice.message),
+                      dismissButton: .default(Text("OK")))
+            }
+            // Where a Patient device's caregiver meets the one-time ask — the
+            // child's board never shows it. Not while a demo is being captured.
+            .modifier(AIConsentPrompt(
+                isEnabled: !UserDefaults.standard.bool(forKey: AppSettingsKey.demoMode)))
     }
 
     // MARK: - Tile Lookup

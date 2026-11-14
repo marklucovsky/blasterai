@@ -142,7 +142,6 @@ Lives in `Engine/SentenceEngine.swift`. Injected as environment object.
 - Conversational context: last 5 generated sentences fed back to AI as history
 - Repetition escalation: same tile combination tapped repeatedly → escalating urgency in prompt
 - Idle timeout: 30s after generation → `clearSelection()`
-- `sessionNotes: String` — free-text notes, long-press any tile to append
 
 Provider abstraction: `SentenceProvider` protocol. Implementations:
 - `OpenAISentenceProvider` — `ModelID.sentence` (gpt-6-luna from build 9), returns text only
@@ -154,11 +153,11 @@ API key stored in `@AppStorage("openai_api_key")` (UserDefaults). Dev-only accep
 Override: set `OPENAI_API_KEY` env var in scheme → takes precedence, skips UI entry. **DEBUG builds only** — Release compiles it out (`OpenAIKeyVault.environmentOverride`), and `preflight_release.py` checks the Release binary.
 
 ### Views
-- `ContentView` — root TabView with two tabs: child grid (TileGridView) and admin (AdminView)
+- `ContentView` — root: the board (TileGridView), with Settings (AdminView) as a full-screen cover
 - `TileGridView` — paginated grid on a fixed layout (`BoardLayout`: iPad 10×6). Row 1 is the system row, inherited and never stored (`BoardChrome`, from `page_templates.json`); a path line sits under the tray; Home/Back/keyboard and the caregiver tools are on `ControlRail` outside the grid (beside it in iPad landscape, below otherwise; child vs caregiver rail by `RailProfile`). Portrait uses `VStack` (not LazyVStack) for correct snap offsets.
-- `TileView` — single tile: image + label. Color-coded by wordClass (see `wordClassColor()` in `SentenceTrayView.swift`). Long-press → note capture sheet.
+- `TileView` — single tile: image + label. Color-coded by wordClass (see `wordClassColor()` in `SentenceTrayView.swift`).
 - `SentenceTrayView` — top tray: mini color-tinted tile chips + generated sentence text + replay/clear buttons. History sheet accessible via clock icon.
-- `AdminView` — admin panel: scenes list (activate/delete), cache viewer, session notes, provider/key picker, "Create Sample Scene" button.
+- `AdminView` — Settings: a split view. Eight plain rows (Profile, Current Board, Message Box, Look Sound Feel, Boards and Vocabulary, Activity, AI, Advanced) under a version/stats header; on iPad the page sits beside the list and starts on the current profile + Quick Settings. Layout in `Views/Admin/AdminView+Root.swift`.
 
 ### wordClass color mapping (file-private in SentenceTrayView.swift)
 actions=orange, describe=green, people=purple, food/meals/fruit/veggie/snacks=red, places=blue, social/feeling/question=pink, navigation=indigo, drinks=cyan, weather=blue-gray, colors=mint, shape=teal, body/health=salmon, toy/games/sports=yellow, art=purple-light, play=yellow, default=gray

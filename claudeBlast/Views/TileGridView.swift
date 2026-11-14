@@ -64,8 +64,6 @@ struct TileGridView: View {
     /// pager's settle haptic only answers a swipe. See `showScreen(_:)`.
     @State private var quietSettle = false
     @AppStorage("tile_speech_enabled") private var tileSpeechEnabled: Bool = true
-    @State private var pendingNote: String = ""
-    @State private var showNoteAlert: Bool = false
     /// The tile that most recently fired a press pulse — lifted above its grid
     /// neighbors (via cell zIndex) so the grow animation isn't clipped by the
     /// adjacent cell. LazyVGrid ignores zIndex set inside the cell's subtree, so
@@ -546,11 +544,6 @@ struct TileGridView: View {
             engine.currentPageKey = key
             wayTrail = computeWayTrail()
             prefetchLinkedArt()
-        }
-        .alert("Add Note", isPresented: $showNoteAlert) {
-            TextField("Note", text: $pendingNote)
-            Button("Add") { engine.appendNote(pendingNote) }
-            Button("Cancel", role: .cancel) {}
         }
     }
 
@@ -1154,13 +1147,6 @@ struct TileGridView: View {
                 lastTappedKey = entry.key
                 handleTileTap(entry)
             }
-            .simultaneousGesture(
-                LongPressGesture(minimumDuration: 0.5)
-                    .onEnded { _ in
-                        pendingNote = "\(tile.key) [\(tile.wordClass)]"
-                        showNoteAlert = true
-                    }
-            )
             // Lift the tile that just pulsed (live tap or scripted) above its
             // neighbors so the grow animation draws on top — not half-under the
             // cell to its right.
@@ -1195,16 +1181,10 @@ struct TileGridView: View {
     ///
     /// ## What appears depends on who is holding the device
     ///
-    /// On a **patient** device this shows **Admin only**. "Switch modes" is an
-    /// unguarded action sitting one long-press away from the child whose device
-    /// it is — it changes how their board behaves — and it is not urgent enough
-    /// for a caregiver to need outside the gate, since Admin reaches it anyway.
-    ///
-    /// On a **caregiver** device the quick actions stay: mode, level, Find
-    /// Word, scene and tile style. That device is for authoring, demoing and testing, its Admin
-    /// is ungated by default, and changing these quickly is the point of having
-    /// the shortcut at all. One device setting, Admin › Device › "Caregiver
-    /// Menu Quick Actions", turns them all off together (on by default).
+    /// Two entries at most: the way back from Child mode (caregiver device
+    /// only) and Settings. The quick actions that used to live here — mode,
+    /// level, Find Word, scene and tile style — moved to the rail's Search and
+    /// Edit/Tools, so nothing a caregiver uses daily hides behind a long press.
     ///
     /// TileScript used to be a third entry and is not any more — see the note at
     /// its former call site below.
@@ -1220,8 +1200,8 @@ struct TileGridView: View {
             // (Mark 2026-10-29). Mode, level, Find Word, scenes and tile style
             // all moved to the rail — Search, and Tools or Edit — so a long
             // press is never the only way to anything a caregiver uses daily.
-            // TileScript is deliberately NOT here. It lives in Admin ->
-            // Device -> TileScript, which is one door instead of two and is the
+            // TileScript is deliberately NOT here. It lives in Settings ->
+            // Advanced -> TileScript, which is one door instead of two and is the
             // path that actually works: reached from this menu the runner is
             // presented outside the hierarchy that owns `TileScriptRunner`, so
             // it trapped on a missing environment object every time.

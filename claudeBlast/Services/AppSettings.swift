@@ -107,11 +107,6 @@ nonisolated enum AppSettingsKey {
     /// `TrayPictures.rawValue`: whether tray chips carry their pictures.
     /// Device-local; `auto` follows the child's stage.
     static let trayPictures          = "tray_pictures"
-    /// Whether the Caregiver Menu (long-press Home) offers quick actions —
-    /// mode, level, scene, tile style — or Admin alone. Device-local, and on
-    /// unless a caregiver turns it off. Patient devices show Admin only
-    /// whatever this says.
-    static let quickActionsEnabled   = "quick_actions_enabled"
     /// PDF export: break sheets where the screen breaks pages. See
     /// `BoardPrintOptions.matchPageBreaks`. Kept between exports — it is a
     /// therapist's standing preference, not a per-board choice.

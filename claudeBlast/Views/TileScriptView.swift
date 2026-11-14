@@ -40,8 +40,30 @@ struct TileScriptView: View {
 
     private var activeScene: BlasterScene? { activeScenes.first }
 
+    /// Its own stack and Done button when presented as a sheet; neither when
+    /// pushed inside Settings. See `embedded`.
+    @ViewBuilder
+    private func stacked<Content: View>(_ content: Content) -> some View {
+        if embedded {
+            content
+        } else {
+            NavigationStack {
+                content.toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Done") { dismiss() }
+                    }
+                }
+            }
+        }
+    }
+
+    /// True when pushed inside Settings, which already owns the navigation
+    /// stack. A second `NavigationStack` nested in a pushed page crashes, so
+    /// the embedded form brings neither its own stack nor its Done button.
+    var embedded = false
+
     var body: some View {
-        NavigationStack {
+        stacked(
             List {
                 demoModeSection
                 if demoMode || !runLogs.isEmpty {
@@ -72,12 +94,7 @@ struct TileScriptView: View {
                 loadAndRun(resourceName: name)
             }
             .navigationTitle("TileScript")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
-        }
+        )
         .alert("This demo can't run yet",
                isPresented: Binding(get: { runner.validationError != nil },
                                     set: { if !$0 { runner.clearValidationError() } })) {
