@@ -398,21 +398,11 @@ struct OnboardingView: View {
                 Text("You can change this at any time in Settings. It is not a test — pick where they are today.")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
-                if childStage.allowsTileCapChoice {
-                    HStack {
-                        Text("Tiles per sentence").font(.subheadline)
-                        Spacer()
-                        Text("\(childMaxTiles)").foregroundStyle(.secondary)
-                    }
-                    Stepper(value: $childMaxTiles,
-                            in: childStage.tileCapRange) { EmptyView() }
-                        .labelsHidden()
-                }
             }
             .onChange(of: childStage) { _, newStage in
-                // Keep the cap coherent when the stage changes under it.
-                childMaxTiles = min(newStage.tileCapRange.upperBound,
-                                    max(newStage.tileCapRange.lowerBound, childMaxTiles))
+                // Words per message start from the stage; the profile's AI
+                // page changes them later.
+                childMaxTiles = newStage.defaultWordsPerMessage
             }
 
             VStack(alignment: .leading, spacing: 6) {

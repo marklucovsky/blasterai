@@ -129,23 +129,8 @@ struct AdminView: View {
     /// which replaced this tab's hand-rolled export + raw ActivityView.
     @State var sceneToShare: BlasterScene?
 
-    @State var profileSheet: ProfileSheet?
-
-    /// Drives both create and edit flows through a single `.sheet(item:)`.
-    /// Two separate `.sheet` modifiers on the same view would race — the
-    /// second one wins and dismisses the first on the next render — which
-    /// is exactly the "sheet self-dismisses" bug we hit in therapist mode.
-    enum ProfileSheet: Identifiable {
-        case create
-        case edit(ChildProfile)
-
-        var id: String {
-            switch self {
-            case .create:        return "create"
-            case .edit(let p):   return "edit:\(p.id)"
-            }
-        }
-    }
+    @State var isAddingProfile = false
+    @State var profileToDelete: ChildProfile?
 
     /// Mirrors `device.role` for the picker. Lets us intercept a switch to
     /// `.patient` without committing it until the confirmation sheet wraps

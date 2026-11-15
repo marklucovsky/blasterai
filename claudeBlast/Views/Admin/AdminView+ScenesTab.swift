@@ -194,7 +194,7 @@ extension AdminView {
                     try? modelContext.save()
                 } label: {
                     Label(profile.isSystem || profile.displayName.isEmpty
-                          ? "Add to My Topics" : "Add to \(profile.displayName)'s Topics",
+                          ? "Add to My Topics" : "Add to \(profile.visibleName)'s Topics",
                           systemImage: "heart")
                 }
                 .tint(.pink)

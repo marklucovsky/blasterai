@@ -404,10 +404,26 @@ enum TilePhotoCommit {
     }
 }
 
-/// Every word's picture, searchable: the one tapped becomes `tile`'s.
+/// Every word's picture, searchable: the one tapped is handed to `onPick`.
+/// The tile editor uses it to borrow art; a profile uses it for its picture.
 struct ExistingArtPicker: View {
-    let tile: TileModel
+    /// A word left out of the grid: the tile being given art, never its own.
+    var excludingKey: String? = nil
+    var title = "Use Existing Art"
+    /// When set, a toolbar button that takes the picture away.
+    var onClear: (() -> Void)? = nil
     let onPick: (TileModel) -> Void
+
+    init(tile: TileModel, onPick: @escaping (TileModel) -> Void) {
+        self.excludingKey = tile.key
+        self.onPick = onPick
+    }
+
+    init(title: String, onClear: (() -> Void)? = nil, onPick: @escaping (TileModel) -> Void) {
+        self.title = title
+        self.onClear = onClear
+        self.onPick = onPick
+    }
 
     @Query(sort: \TileModel.key) private var allTiles: [TileModel]
     @Environment(\.dismiss) private var dismiss
@@ -415,7 +431,7 @@ struct ExistingArtPicker: View {
 
     private var matches: [TileModel] {
         let candidates = allTiles.filter {
-            $0.key != tile.key && !$0.isHiddenFromChild && PageLink.targetPage(forKey: $0.key) == nil
+            $0.key != excludingKey && !$0.isHiddenFromChild && PageLink.targetPage(forKey: $0.key) == nil
         }
         let query = WordFinder.normalize(search)
         guard !query.isEmpty else { return candidates.sorted { $0.displayName < $1.displayName } }
@@ -448,11 +464,16 @@ struct ExistingArtPicker: View {
             }
             .searchable(text: $search, placement: .navigationBarDrawer(displayMode: .always),
                         prompt: "Search all words")
-            .navigationTitle("Use Existing Art")
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                }
+                if let onClear {
+                    ToolbarItem(placement: .destructiveAction) {
+                        Button("No Picture", role: .destructive, action: onClear)
+                    }
                 }
             }
         }

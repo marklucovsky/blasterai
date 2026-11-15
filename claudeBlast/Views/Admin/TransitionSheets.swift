@@ -247,7 +247,7 @@ struct PatientTransitionSheet: View {
                 } else {
                     Picker("Patient", selection: $selectedPatientID) {
                         ForEach(realPatients) { p in
-                            Text("\(p.displayName) · \(p.brownsStage.label)").tag(p.id)
+                            Text("\(p.visibleName) · \(p.brownsStage.label)").tag(p.id)
                         }
                     }
                     .pickerStyle(.inline)

@@ -141,13 +141,12 @@ final class SentenceEngine {
         }
     }
 
-    /// The tray's pictures as a setting a caregiver can change, rather than
-    /// only a consequence of the stage. Which stage should drop the pictures is
-    /// our reading of the development, not a therapist's yet (Mark
-    /// 2026-10-27): until it is, the knob stays exposed so the guess can be
-    /// tested. `auto` is the stage's answer.
-    var trayPictures: TrayPictures = TrayPictures.current() {
-        didSet { UserDefaults.standard.set(trayPictures.rawValue, forKey: AppSettingsKey.trayPictures) }
+    /// The message box's pictures for whoever is talking: the active
+    /// profile's setting, read and written through it. `auto` is the stage's
+    /// answer. With no profile it is `auto` and a write goes nowhere.
+    var trayPictures: TrayPictures {
+        get { profileResolver?.active?.trayPictures ?? .auto }
+        set { profileResolver?.active?.trayPictures = newValue }
     }
 
     /// Set when OpenAI rejects the key outright — revoked, expired, or out of

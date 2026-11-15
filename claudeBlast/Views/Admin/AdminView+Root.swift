@@ -16,12 +16,24 @@
 import SwiftUI
 import SwiftData
 
-/// A page in Settings. The first eight are the rows of the first screen; the
+/// A page in Settings. The first nine are the rows of the first screen; the
 /// rest are reached from one of them.
 enum AdminPage: Hashable {
     case profile, currentBoard, messageBox, lookSoundFeel
-    case boardsAndVocabulary, activity, ai, advanced
-    case profiles, voice, vocabulary, lockRole, about, tileScript
+    case boardsAndVocabulary, activity, ai, advanced, about
+    case profiles, vocabulary, lockRole, aboutDetails, tileScript
+    /// A profile's page, and the pages under it, by profile id: the current
+    /// profile is `.profile`, any other is reached from All Profiles.
+    case profileDetail(String), stage(String), profileAI(String), voice(String), colors(String), meTopics(String)
+
+    /// The profile a page is about, if it is about one.
+    var profileID: String? {
+        switch self {
+        case .profileDetail(let id), .stage(let id), .profileAI(let id), .voice(let id),
+             .colors(let id), .meTopics(let id): return id
+        default: return nil
+        }
+    }
 }
 
 extension AdminView {
@@ -81,6 +93,7 @@ extension AdminView {
                 rootRow(.activity, "Activity")
                 rootRow(.ai, "AI", value: sentenceEngine.hasAIConsent ? "On" : "Off")
                 rootRow(.advanced, "Advanced")
+                rootRow(.about, "About")
             }
         }
         .listStyle(.insetGrouped)
@@ -181,7 +194,7 @@ extension AdminView {
                 Section {
                     Button { selectionBinding.wrappedValue = .profile } label: {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(active.displayName).font(.title2.weight(.semibold))
+                            ProfileNameLabel(profile: active, size: 44, font: .title2.weight(.semibold))
                             Text("\(active.brownsStage.label) · \(voiceDisplayName(for: active.voiceIdentifier))")
                                 .foregroundStyle(.secondary)
                         }
@@ -235,7 +248,20 @@ extension AdminView {
     @ViewBuilder
     func page(_ page: AdminPage) -> some View {
         switch page {
-        case .profile:             profilePage
+        case .profile:
+            if let active = currentProfile { profilePage(active, showsRoster: true) }
+        case .profileDetail(let id):
+            if let p = profile(id) { profilePage(p, showsRoster: false) }
+        case .stage(let id):
+            if let p = profile(id) { ProfileStagePage(profile: p) }
+        case .profileAI(let id):
+            if let p = profile(id) { ProfileAIPage(profile: p) { show([.ai]) } }
+        case .voice(let id):
+            if let p = profile(id) { ProfileVoicePage(profile: p) }
+        case .colors(let id):
+            if let p = profile(id) { ProfileColorsPage(profile: p) }
+        case .meTopics(let id):
+            if let p = profile(id) { ProfileMePage(profile: p) }
         case .currentBoard:        currentBoardPage
         case .messageBox:          messageBoxPage
         case .lookSoundFeel:       lookSoundFeelPage
@@ -244,10 +270,10 @@ extension AdminView {
         case .ai:                  aiKeyPage
         case .advanced:            advancedPage
         case .profiles:            talkersPage
-        case .voice:               voicePage
         case .vocabulary:          VocabManagerView()
         case .lockRole:            lockRolePage
-        case .about:               AboutStatsView()
+        case .about:               aboutPage
+        case .aboutDetails:        AboutStatsView()
         case .tileScript:          TileScriptView(embedded: true)
         }
     }
@@ -260,9 +286,9 @@ extension AdminView {
                 messageModeRow
                 picturesRow
                 Toggle("Speak Each Word", isOn: $tileSpeechEnabled)
-                if let active = currentProfile, active.brownsStage != .one {
-                    NavigationLink(value: AdminPage.profile) {
-                        LabeledContent("Words per Message", value: "\(active.effectiveTileCap)")
+                if let active = currentProfile, active.aiMode == .sentences {
+                    NavigationLink(value: AdminPage.profileAI(active.id)) {
+                        LabeledContent("Words per Message", value: "\(active.wordsPerMessage)")
                     }
                 }
             }
@@ -316,7 +342,7 @@ extension AdminView {
         Picker("Pictures", selection: Binding(
             get: { sentenceEngine.trayPictures },
             set: { sentenceEngine.trayPictures = $0 })) {
-            Text("Auto").tag(TrayPictures.auto)
+            Text("Stage").tag(TrayPictures.auto)
             Text("On").tag(TrayPictures.pictures)
             Text("Off").tag(TrayPictures.words)
         }
@@ -383,7 +409,6 @@ extension AdminView {
         List {
             Section {
                 NavigationLink("Lock and Role", value: AdminPage.lockRole)
-                NavigationLink("About and Stats", value: AdminPage.about)
                 NavigationLink("TileScript", value: AdminPage.tileScript)
                 NavigationLink("Authoring") { authoringPage }
                 #if DEBUG
@@ -426,7 +451,7 @@ extension AdminView {
         if let detail = request.detail {
             switch detail {
             case .vocabulary: return [.boardsAndVocabulary, .vocabulary]
-            case .about:      return [.advanced, .about]
+            case .about:      return [.about]
             case .tileScript: return [.advanced, .tileScript]
             }
         }

@@ -57,7 +57,7 @@ struct AboutStatsView: View {
             storageSection
             syncHealthSection
         }
-        .navigationTitle("About & Stats")
+        .navigationTitle("Details and Stats")
         .navigationBarTitleDisplayMode(.inline)
         .task {
             // Measured on appear, not per render: it stats a directory tree.

@@ -33,7 +33,8 @@ import AVFoundation
 /// a four-tile cap; Stage IV+ is where you already are once a caregiver widens
 /// past four. None of the three meant anything to a speech-language pathologist.
 /// One stage does.
-/// Whether the tray shows a chip's picture, on this device.
+/// Whether the message box shows a chip's picture. A profile setting
+/// (`ChildProfile.trayPictures`), so it follows whoever is talking.
 enum TrayPictures: String, CaseIterable, Identifiable {
     /// The child's stage decides: pictures through Stage II-III, words at IV+.
     case auto
@@ -51,9 +52,28 @@ enum TrayPictures: String, CaseIterable, Identifiable {
         }
     }
 
-    static func current(_ defaults: UserDefaults = .standard) -> TrayPictures {
+    /// The device-wide value earlier builds stored, read once as the
+    /// starting point for a profile that has never chosen.
+    static func legacyDeviceValue(_ defaults: UserDefaults = .standard) -> TrayPictures {
         defaults.string(forKey: AppSettingsKey.trayPictures).flatMap(TrayPictures.init(rawValue:)) ?? .auto
     }
+}
+
+/// What a profile does with AI on the board. The device's AI switch
+/// (`AIConsent`) is the master gate; this is the profile's own choice under it.
+///
+/// One string-backed field rather than two Bools: the schema is promoted, so a
+/// field is permanent from the day it ships, and an enum can grow a state a
+/// Bool never could. Same rule as `brownsStageRaw`.
+enum ProfileAIMode: String, CaseIterable, Identifiable {
+    /// No AI for this profile, whatever the device allows.
+    case off
+    /// AI allowed, the message box speaks each word as it is tapped.
+    case on
+    /// AI allowed, and the words in the message box become a sentence.
+    case sentences
+
+    var id: String { rawValue }
 }
 
 enum BrownsStage: String, CaseIterable, Identifiable {
@@ -106,9 +126,9 @@ enum BrownsStage: String, CaseIterable, Identifiable {
         case .one:
             return "Uses one word at a time. Each tile speaks its own word."
         case .twoThree:
-            return "Putting two and three words together. Up to 4 tiles per sentence."
+            return "Putting two and three words together."
         case .fourPlus:
-            return "Building longer sentences. You choose how many tiles."
+            return "Building longer sentences."
         }
     }
 
@@ -121,11 +141,11 @@ enum BrownsStage: String, CaseIterable, Identifiable {
     var appBehavior: String {
         switch self {
         case .one:
-            return "Classic AAC: each tap speaks its own word. No AI, and no key needed."
+            return "Starts with each tap speaking its own word, pictures in the message box."
         case .twoThree:
-            return "AI turns up to 4 tiles into a spoken sentence. Needs an OpenAI key."
+            return "Starts with pictures in the message box and 4 words per message if you turn on AI sentences."
         case .fourPlus:
-            return "AI builds longer sentences from the tiles you allow. Needs an OpenAI key."
+            return "Starts with words only in the message box and 5 words per message if you turn on AI sentences."
         }
     }
 
@@ -135,7 +155,10 @@ enum BrownsStage: String, CaseIterable, Identifiable {
     /// placeholder text rather than failing — usable for a demo, useless for a
     /// child. Worth saying out loud before someone picks a stage they cannot
     /// yet run.
-    var requiresAPIKey: Bool { self != .one }
+    ///
+    /// No stage turns AI sentences on by itself any more (Mark 2026-11-15), so
+    /// no stage needs a key to be picked.
+    var requiresAPIKey: Bool { false }
 
     /// How tile taps turn into communication at this stage. Stage I is single
     /// words by definition; every later stage is building sentences.
@@ -143,29 +166,12 @@ enum BrownsStage: String, CaseIterable, Identifiable {
         self == .one ? .singleWord : .sentence
     }
 
-    /// Tile counts this stage permits. Fixed for I and II-III, because the
-    /// count *is* part of what the stage means. Only IV+ is a real choice,
-    /// which is why it is the only stage that shows the caregiver a stepper.
-    var tileCapRange: ClosedRange<Int> {
-        switch self {
-        case .one:      return 1...1
-        case .twoThree: return 4...4
-        case .fourPlus: return 5...8
-        }
-    }
-
-    /// True when the caregiver has a number to pick. See `tileCapRange`.
-    var allowsTileCapChoice: Bool { self == .fourPlus }
-
-    /// The stage that a given tile cap implies. This is the "caregiver strays"
-    /// rule: widening past four tiles *is* moving to Stage IV+, so the setting
-    /// can never end up describing something the child isn't doing.
-    static func implied(byTileCap cap: Int) -> BrownsStage {
-        switch cap {
-        case ...1:  return .one
-        case 2...4: return .twoThree
-        default:    return .fourPlus
-        }
+    /// The words per message a profile starts with at this stage. A starting
+    /// point, not a rule (Mark 2026-11-15): every stage can choose anything in
+    /// `ChildProfile.wordsPerMessageRange`, and Reset to Stage Defaults puts
+    /// this back.
+    var defaultWordsPerMessage: Int {
+        self == .fourPlus ? 5 : 4
     }
 
     /// The developmental target handed to the sentence prompt in place of the
@@ -393,6 +399,15 @@ final class ChildProfile {
         set { linkColorModeRaw = newValue.rawValue }
     }
 
+    /// `ProfileAIMode` raw value. Empty on a profile written before build 11,
+    /// which keeps doing what its stage did then: sentences from Stage II-III
+    /// up, single words at Stage I. Read `aiMode`.
+    var aiModeRaw: String = ""
+
+    /// `TrayPictures` raw value; empty means `.auto`, the stage's answer.
+    /// Read `trayPictures`.
+    var trayPicturesRaw: String = ""
+
     /// Therapist-only notes. Never fed to the prompt.
     var notes: String = ""
     /// Hint only — `ChildProfileResolver` resolves the true active profile
@@ -415,12 +430,10 @@ final class ChildProfile {
         self.displayName = displayName
         self.brownsStageRaw = brownsStage.rawValue
         self.voiceIdentifier = voiceIdentifier
-        // Default the cap from the stage rather than hardcoding 4, so a
-        // caller that names only a stage gets a coherent pair. An explicit
-        // value is clamped into the stage's range.
-        self.maxSelectedTiles = min(brownsStage.tileCapRange.upperBound,
-                                    max(brownsStage.tileCapRange.lowerBound,
-                                        maxSelectedTiles ?? brownsStage.tileCapRange.lowerBound))
+        self.maxSelectedTiles = Self.clampWords(maxSelectedTiles ?? brownsStage.defaultWordsPerMessage)
+        // A new profile starts with AI allowed and sentences off, at every
+        // stage (Mark 2026-11-15). Turning sentences on is a deliberate step.
+        self.aiModeRaw = ProfileAIMode.on.rawValue
         self.defaultSceneKey = defaultSceneKey
         self.notes = notes
         self.isActive = isActive
@@ -434,52 +447,80 @@ final class ChildProfile {
     /// word at a time is under-served, whereas one handed Stage IV+ sentences
     /// they cannot parse is being spoken *for* rather than *with*.
     ///
-    /// Writing also reconciles `maxSelectedTiles`, so the stored count can
-    /// never contradict the stage.
+    /// Writing it changes nothing else: the stage is an input to the
+    /// defaults (`applyStageDefaults`), not a rule over the other settings.
     var brownsStage: BrownsStage {
         get { BrownsStage(rawValue: brownsStageRaw) ?? .one }
         set {
             brownsStageRaw = newValue.rawValue
-            maxSelectedTiles = clampTileCap(maxSelectedTiles, to: newValue)
             modifiedAt = .now
         }
     }
 
-    /// How this child's taps become communication. Derived from the stage —
-    /// there is no stored interaction mode. A *device* may temporarily override
-    /// this to single words (`DeviceProfile.singleWordOverride`); that override
-    /// is applied by `ChildProfileResolver`, not here, because it is a fact
-    /// about the device rather than about the child.
-    var interactionMode: InteractionMode { brownsStage.interactionMode }
+    // MARK: - AI and the message box
 
-    /// The tile cap actually in force: the stage's fixed count at Stage I and
-    /// II-III, and the caregiver's stored choice (clamped) at Stage IV+.
-    /// Read this rather than `maxSelectedTiles`.
-    var effectiveTileCap: Int {
-        clampTileCap(maxSelectedTiles, to: brownsStage)
+    /// What this profile does with AI. See `aiModeRaw` for the empty case.
+    var aiMode: ProfileAIMode {
+        get {
+            ProfileAIMode(rawValue: aiModeRaw)
+                ?? (brownsStage.interactionMode == .sentence ? .sentences : .on)
+        }
+        set {
+            aiModeRaw = newValue.rawValue
+            modifiedAt = .now
+        }
     }
 
-    // MARK: - Stage / tile-cap reconciliation
+    /// How this profile's taps become a message: a sentence when it has AI
+    /// sentences on, otherwise each word on its own. Whether the device can
+    /// make sentences at all is the engine's question, not this one.
+    var interactionMode: InteractionMode { aiMode == .sentences ? .sentence : .singleWord }
 
-    /// Set the tile cap, promoting the stage when the caregiver widens past
-    /// what the current stage allows.
-    ///
-    /// This is the "let the caregiver stray" rule. Someone who moves a Stage
-    /// II-III child to six tiles is telling us something clinical — that the
-    /// child is combining more than three words — so the stage follows the
-    /// number rather than fighting it. The reverse holds too: narrowing to one
-    /// tile is Stage I.
-    func setTileCap(_ cap: Int) {
-        let implied = BrownsStage.implied(byTileCap: cap)
-        if implied != brownsStage {
-            brownsStageRaw = implied.rawValue
+    /// How many words a sentence is built from, when sentences are on.
+    static let wordsPerMessageRange = 4...8
+
+    static func clampWords(_ n: Int) -> Int {
+        min(wordsPerMessageRange.upperBound, max(wordsPerMessageRange.lowerBound, n))
+    }
+
+    /// Words per message in force. Read this rather than `maxSelectedTiles`,
+    /// which may hold a count an earlier build allowed (Stage I stored 1).
+    var wordsPerMessage: Int {
+        get { Self.clampWords(maxSelectedTiles) }
+        set {
+            maxSelectedTiles = Self.clampWords(newValue)
+            modifiedAt = .now
         }
-        maxSelectedTiles = clampTileCap(cap, to: implied)
+    }
+
+    /// Pictures in the message box. Empty `trayPicturesRaw` is `.auto`.
+    var trayPictures: TrayPictures {
+        get { TrayPictures(rawValue: trayPicturesRaw) ?? .auto }
+        set {
+            trayPicturesRaw = newValue == .auto ? "" : newValue.rawValue
+            modifiedAt = .now
+        }
+    }
+
+    /// Whether the settings the stage starts are what this profile has.
+    var matchesStageDefaults: Bool {
+        aiMode == .on && wordsPerMessage == brownsStage.defaultWordsPerMessage
+            && trayPictures == .auto
+    }
+
+    /// The stage's starting point for the settings the stage decides: words
+    /// per message and pictures. AI is left alone.
+    func applyStageDefaults() {
+        maxSelectedTiles = brownsStage.defaultWordsPerMessage
+        trayPicturesRaw = ""
         modifiedAt = .now
     }
 
-    private func clampTileCap(_ cap: Int, to stage: BrownsStage) -> Int {
-        min(stage.tileCapRange.upperBound, max(stage.tileCapRange.lowerBound, cap))
+    /// Everything back to how a new profile at this stage starts: AI on,
+    /// sentences off, and the stage's words and pictures.
+    func resetToStageDefaults() {
+        aiModeRaw = ProfileAIMode.on.rawValue
+        applyStageDefaults()
     }
 
     // MARK: - Active resolution
