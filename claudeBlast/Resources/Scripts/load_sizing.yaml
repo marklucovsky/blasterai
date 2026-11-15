@@ -12,7 +12,7 @@ sentenceWait: .instant
 # real figure is off by more than about 2x, the budget wants revisiting.
 #
 # HOW TO READ THE RESULT
-#   1. Note "Usage history" in Device -> About & Stats before running.
+#   1. Note "Usage history" in About -> Details and Stats before running.
 #   2. Run this script.
 #   3. Note it again, and export the storage report (Compaction section).
 #      The export carries `history.rows`; divide the byte delta by it.
@@ -53,4 +53,4 @@ script:
       days: 180
       metricsOnly: true
       seed: 20260821
-  - comment: Sizing run complete — read Usage history in About & Stats
+  - comment: Sizing run complete — read Usage history in About -> Details and Stats

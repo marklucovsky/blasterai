@@ -22,7 +22,7 @@ enum AdminRoute: String, CaseIterable, Equatable, Sendable {
 
         /// Scenes → Manage Vocabulary.
         case vocabulary
-        /// Device → About & Stats.
+        /// Settings › About.
         case about
         /// Device → TileScript.
         case tileScript = "tilescript"

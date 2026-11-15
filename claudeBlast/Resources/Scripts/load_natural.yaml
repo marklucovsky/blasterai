@@ -63,4 +63,4 @@ script:
       days: 400
       metricsOnly: true
       seed: 20260822
-  - comment: Load complete — relaunch twice, then read Device -> About & Stats -> Compaction
+  - comment: Load complete — relaunch twice, then read About -> Details and Stats -> Compaction

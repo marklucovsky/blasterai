@@ -97,6 +97,10 @@ by name are the ones nothing writes in ordinary use:
 - [x] `CD_ChildProfile.CD_linkColorModeRaw` — added after promotion
       (2026-09-27). **Shipped in build 4 before it was deployed**, so child
       profile sync failed in Production until 2026-10-06, when it was deployed.
+- [ ] `CD_ChildProfile.CD_aiModeRaw`, `CD_trayPicturesRaw` — added after
+      promotion (2026-11-15, session 19): a profile's AI / sentences choice and
+      its message-box pictures. **Deploy to Production before build 11 is
+      uploaded**, or profile sync fails the way `linkColorModeRaw` did.
 - [x] `CD_LoggedNavigation` — a whole **record type** added after promotion
       (2026-10-11): one row per link, Home or Back press, for coverage and the
       activity log. Written by any folder tap, and by the schema exerciser.

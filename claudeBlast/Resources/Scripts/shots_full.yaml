@@ -59,7 +59,7 @@ script:
   - screen: admin/device
   - screenshot: 09-admin-device
 
-  - comment: About & Stats
+  - comment: About
   - screen: admin/device/about
   - screenshot: 10-admin-about
 

@@ -12,9 +12,15 @@ import Foundation
 /// Admin → Profiles; the row is always identified by `isSystem`, never by name.
 ///
 /// It was called "Sandbox", which described its job to us and nothing at all to
-/// a caregiver. The name matters more than it used to: it heads the usage report
-/// a therapist reads, and it sits in a list beside real children's names.
-let kCaregiverProfileDefaultName = "My Profile"
+/// a caregiver. Then it was "My Profile", which read like a form field (Mark
+/// 2026-11-15). Now it is the *me* tile in the current style beside the word
+/// "me", written out in full like every picture name (`ProfileName`). The
+/// usage report never prints it (`isSystem`).
+let kCaregiverProfileDefaultName = "sys:me,me"
+
+/// Names this build replaces with `kCaregiverProfileDefaultName` when the
+/// caregiver never renamed the profile. A name anyone typed is left alone.
+let kRetiredCaregiverProfileNames: Set<String> = ["My Profile"]
 
 /// Stable, SHARED id for the caregiver profile — fixed, not a random UUID. It is
 /// auto-seeded independently on every device, so a random id would give each
@@ -60,6 +66,22 @@ enum ProfileMigration {
         let device = DeviceProfileStore.ensure(context: context)
         normalizeLegacyRole(device)
         ensureCaregiverProfile(context: context, now: now)
+        moveTrayPicturesToProfiles(context: context, defaults: defaults)
+    }
+
+    /// Pictures in the message box was one device-wide setting before build
+    /// 11; it is a profile setting now. A device that had chosen hands its
+    /// choice to every profile that has not, then forgets it.
+    private static func moveTrayPicturesToProfiles(context: ModelContext, defaults: UserDefaults) {
+        guard defaults.object(forKey: AppSettingsKey.trayPictures) != nil else { return }
+        let legacy = TrayPictures.legacyDeviceValue(defaults)
+        if legacy != .auto {
+            let profiles = (try? context.fetch(FetchDescriptor<ChildProfile>())) ?? []
+            for profile in profiles where profile.trayPicturesRaw.isEmpty {
+                profile.trayPictures = legacy
+            }
+        }
+        defaults.removeObject(forKey: AppSettingsKey.trayPictures)
     }
 
     // MARK: - Caregiver profile
@@ -68,7 +90,13 @@ enum ProfileMigration {
         let existing = (try? context.fetch(
             FetchDescriptor<ChildProfile>(predicate: #Predicate { $0.isSystem })
         )) ?? []
-        guard existing.isEmpty else { return }
+        guard existing.isEmpty else {
+            for profile in existing where kRetiredCaregiverProfileNames.contains(profile.displayName) {
+                profile.displayName = kCaregiverProfileDefaultName
+                profile.modifiedAt = now
+            }
+            return
+        }
 
         let realProfiles = (try? context.fetch(
             FetchDescriptor<ChildProfile>(predicate: #Predicate { !$0.isSystem })

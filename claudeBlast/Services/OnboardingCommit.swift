@@ -103,10 +103,7 @@ enum OnboardingCommit {
                 kid.displayName = inputs.childName.trimmingCharacters(in: .whitespaces)
                 kid.brownsStage = inputs.childStage
                 kid.voiceIdentifier = inputs.childVoiceID
-                // setTileCap after the stage so the two reconcile — and so a
-                // caregiver who picked a wider cap promotes the stage rather
-                // than silently having the number clamped back.
-                kid.setTileCap(inputs.childMaxTiles)
+                kid.wordsPerMessage = inputs.childMaxTiles
                 kid.isActive = true
                 kid.modifiedAt = .now
             } else {

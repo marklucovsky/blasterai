@@ -145,6 +145,82 @@ struct ProfileMigrationTests {
         #expect(seeded[0].displayName == kCaregiverProfileDefaultName)
     }
 
+    /// An untouched old default takes the new one; a name someone typed stays.
+    @Test func caregiverProfile_retiredDefaultNameIsRenamed() throws {
+        let container = try makeContainer()
+        let ctx = container.mainContext
+        let defaults = isolatedDefaults()
+        ProfileMigration.ensureProfilesAfterBootstrap(context: ctx, defaults: defaults)
+        let caregiver = try #require(try ctx.fetch(FetchDescriptor<ChildProfile>(
+            predicate: #Predicate { $0.isSystem })).first)
+
+        caregiver.displayName = "My Profile"
+        ProfileMigration.ensureProfilesAfterBootstrap(context: ctx, defaults: defaults)
+        #expect(caregiver.displayName == kCaregiverProfileDefaultName)
+
+        caregiver.displayName = "Grandma"
+        ProfileMigration.ensureProfilesAfterBootstrap(context: ctx, defaults: defaults)
+        #expect(caregiver.displayName == "Grandma")
+    }
+
+    /// Pictures in the message box moved from the device to the profile in
+    /// build 11. A device that had chosen hands the choice to every profile
+    /// that has not, then forgets it.
+    @Test func devicePicturesSettingMovesToProfiles() throws {
+        let container = try makeContainer()
+        let ctx = container.mainContext
+        let defaults = isolatedDefaults()
+        let chose = ChildProfile(displayName: "Chose")
+        chose.trayPictures = .pictures
+        let left = ChildProfile(displayName: "Left")
+        ctx.insert(chose); ctx.insert(left)
+        defaults.set(TrayPictures.words.rawValue, forKey: AppSettingsKey.trayPictures)
+
+        ProfileMigration.ensureProfilesAfterBootstrap(context: ctx, defaults: defaults)
+        #expect(left.trayPictures == .words)
+        #expect(chose.trayPictures == .pictures)
+        #expect(defaults.object(forKey: AppSettingsKey.trayPictures) == nil)
+    }
+
+    @Test func voicePreviewDropsEmoji() {
+        #expect(ProfileVoicePage.greeting(for: "😎") == "Hi, I'll be your voice.")
+        #expect(ProfileVoicePage.greeting(for: "Sam 🦖") == "Hi Sam, I'll be your voice.")
+        #expect(ProfileVoicePage.greeting(for: "Zoë 2") == "Hi Zoë 2, I'll be your voice.")
+        #expect(ProfileVoicePage.greeting(for: "👍🏽 Ana") == "Hi Ana, I'll be your voice.")
+        #expect(ProfileVoicePage.greeting(for: "sys:me") == "Hi, I'll be your voice.")
+        #expect(ProfileVoicePage.greeting(for: "sys:me,me") == "Hi, I'll be your voice.")
+        #expect(ProfileVoicePage.greeting(for: "sys:unicorn,Aubrey") == "Hi Aubrey, I'll be your voice.")
+    }
+
+    /// `sys:<key>` is a picture name; the text form drops the prefix so a
+    /// screen reader says the word the picture shows.
+    @Test func sysNameIsAnAvatar() {
+        let me = ChildProfile(displayName: kCaregiverProfileDefaultName)
+        #expect(me.avatarTileKey == "me")
+        #expect(me.visibleName == "me")
+        let kid = ChildProfile(displayName: "Sam")
+        #expect(kid.avatarTileKey == nil)
+        #expect(kid.visibleName == "Sam")
+        #expect(ChildProfile(displayName: "SYS:Ice_Cream").visibleName == "ice cream")
+        #expect(ChildProfile(displayName: "sys:").avatarTileKey == nil)
+
+        // [sys:<key>,]<name>
+        let aubrey = ChildProfile(displayName: "sys:unicorn,Aubrey")
+        #expect(aubrey.avatarTileKey == "unicorn")
+        #expect(aubrey.visibleName == "Aubrey")
+        #expect(ProfileName("SYS: Unicorn , Aubrey Lee") == ProfileName("sys:unicorn,Aubrey Lee"))
+        #expect(ProfileName("sys:unicorn,Aubrey, Jr.").text == "Aubrey, Jr.")
+        #expect(ProfileName("sys:,Aubrey").avatarKey == nil)
+        #expect(ProfileName("sys:,Aubrey").text == "Aubrey")
+        #expect(ProfileName("Smith, Jo").avatarKey == nil)
+        #expect(ProfileName("sys:me,me").text == "me")
+        #expect(ProfileName("sys:me, me").avatarKey == "me")
+        #expect(ProfileName.stored(avatarKey: "puppy", name: "Aubrey") == "sys:puppy,Aubrey")
+        #expect(ProfileName.stored(avatarKey: "me", name: "") == "sys:me,me")
+        #expect(ProfileName.stored(avatarKey: nil, name: " Sam ") == "Sam")
+        #expect(ProfileName("Sys:puppy,Aubrey").avatarKey == "puppy")
+    }
+
     /// The invariant, stated without reference to any particular retired value:
     /// a role string this build doesn't recognize resolves to `.caregiver` and is
     /// rewritten to canonical form on launch. `.caregiver` is the safe landing

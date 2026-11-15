@@ -17,118 +17,53 @@ extension AdminView {
     /// bootstrap and cannot be deleted, so Settings has no empty state for it.
     var currentProfile: ChildProfile? { profileResolver.active ?? caregiverProfile }
 
-    /// Settings › Profile: whose settings these are, in short rows. The
-    /// longer form (name, colours, Me page) is one row down.
-    @ViewBuilder
-    var profilePage: some View {
-        if let active = currentProfile {
-            List {
-                Section {
-                    Picker("Stage", selection: Binding(
-                        get: { active.brownsStage },
-                        set: { newStage in
-                            active.brownsStage = newStage // reconciles cap, bumps modifiedAt
-                            // Start the new stage with a clean tray/strip.
-                            sentenceEngine.clearSelection()
-                            sentenceEngine.clearStrip()
-                            profileResolver.refresh()
-                        }
-                    )) {
-                        ForEach(BrownsStage.allCases) { stage in
-                            Text(stage.label).tag(stage)
-                        }
-                    }
-                    .pickerStyle(.navigationLink)
-                    modeOverrideNotice
+    func profile(_ id: String) -> ChildProfile? { childProfiles.first { $0.id == id } }
 
-                    // Only Stage IV+ leaves a number to choose. Stages I and
-                    // II-III pin the count because the count is part of what
-                    // the stage means — and at Stage I there is no message to
-                    // count, since each tile speaks the moment it is tapped.
-                    if active.brownsStage.allowsTileCapChoice {
-                        Stepper(value: Binding(
-                            get: { active.effectiveTileCap },
-                            set: { active.setTileCap($0); profileResolver.refresh() }
-                        ), in: active.brownsStage.tileCapRange) {
-                            LabeledContent("Words per Message", value: "\(active.effectiveTileCap)")
-                        }
-                    } else if active.brownsStage != .one {
-                        LabeledContent("Words per Message", value: "\(active.effectiveTileCap)")
-                    }
-                    NavigationLink(value: AdminPage.voice) {
-                        LabeledContent("Voice", value: voiceDisplayName(for: active.voiceIdentifier))
-                    }
-                    Button("Name, Colours and Me Page") { profileSheet = .edit(active) }
-                        .foregroundStyle(.primary)
+    /// A profile's page: the name, who is talking, then one short row per
+    /// thing a caregiver sets. Changes apply as they are made.
+    func profilePage(_ p: ChildProfile, showsRoster: Bool) -> some View {
+        let isTalking = p.id == currentProfile?.id
+        return List {
+            Section {
+                ProfileNameField(profile: p)
+                if isTalking {
+                    Label("Talking now", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                } else {
+                    Button("Switch to \(p.visibleName)") { profileResolver.setActive(id: p.id) }
                 }
+            }
+            Section {
+                NavigationLink(value: AdminPage.stage(p.id)) {
+                    LabeledContent("Stage", value: p.brownsStage.label)
+                }
+                NavigationLink(value: AdminPage.profileAI(p.id)) {
+                    LabeledContent("AI", value: ProfileAIPage.summary(of: p))
+                }
+                NavigationLink(value: AdminPage.voice(p.id)) {
+                    LabeledContent("Voice", value: voiceDisplayName(for: p.voiceIdentifier))
+                }
+                NavigationLink(value: AdminPage.colors(p.id)) {
+                    LabeledContent("Colors", value: TileColorMap.decode(p.colorMapData).isEmpty
+                                   && p.linkColorMode == .standard ? "Standard" : "Custom")
+                }
+                NavigationLink("Me Page", value: AdminPage.meTopics(p.id))
+            }
+            if showsRoster {
                 Section {
                     NavigationLink(value: AdminPage.profiles) {
                         LabeledContent("All Profiles", value: "\(childProfiles.count)")
                     }
                 }
             }
-            .navigationTitle(active.displayName)
-        }
-    }
-
-    /// The device-wide tray override, said where the stage is set, since it
-    /// is the one thing that can make the stage not apply.
-    @ViewBuilder
-    var modeOverrideNotice: some View {
-        if let override = profileResolver.modeOverride {
-            Label("This device is temporarily set to \(override.label), overriding the stage.",
-                  systemImage: "exclamationmark.triangle.fill")
-                .font(.caption)
-                .foregroundStyle(.orange)
-            Button("Follow the stage again") {
-                profileResolver.setModeOverride(nil)
-                sentenceEngine.clearSelection()
-                sentenceEngine.clearStrip()
-            }
-            .font(.caption)
-        }
-    }
-
-    /// Settings › Profile › Voice, for the current profile.
-    @ViewBuilder
-    var voicePage: some View {
-        if let active = currentProfile {
-            List {
+            if !p.isSystem {
                 Section {
-                    NavigationLink {
-                        activeProfileVoicePicker(for: active)
-                            .navigationTitle("Voice")
-                            .navigationBarTitleDisplayMode(.inline)
-                    } label: {
-                        LabeledContent("Voice", value: voiceDisplayName(for: active.voiceIdentifier))
-                    }
-                    LabeledContent("Rate") {
-                        Slider(value: Binding(
-                            get: { active.ttsRate },
-                            set: { active.ttsRate = $0; active.modifiedAt = .now }
-                        ), in: 0.3...0.7)
-                        .frame(maxWidth: 220)
-                    }
-                    LabeledContent("Volume") {
-                        Slider(value: Binding(
-                            get: { active.ttsVolume },
-                            set: { active.ttsVolume = $0; active.modifiedAt = .now }
-                        ), in: 0.0...1.0)
-                        .frame(maxWidth: 220)
-                    }
+                    Button("Delete Profile", role: .destructive) { profileToDelete = p }
                 }
             }
-            .navigationTitle("Voice")
         }
-    }
-
-    func activeProfileVoicePicker(for profile: ChildProfile) -> some View {
-        Form {
-            VoicePickerSection(voiceIdentifier: Binding(
-                get: { profile.voiceIdentifier },
-                set: { profile.voiceIdentifier = $0; profile.modifiedAt = .now }
-            ))
-        }
+        .navigationTitle("Profile")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     func voiceDisplayName(for identifier: String) -> String {

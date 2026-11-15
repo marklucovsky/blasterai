@@ -185,7 +185,7 @@ struct ScreenshotCommandTests {
         #expect(AdminView.path(for: R(route: .device, detail: nil)) == [.ai])
         #expect(AdminView.path(for: R(route: .activity, detail: nil)) == [.activity])
         #expect(AdminView.path(for: R(route: .scenes, detail: .vocabulary)) == [.boardsAndVocabulary, .vocabulary])
-        #expect(AdminView.path(for: R(route: .device, detail: .about)) == [.advanced, .about])
+        #expect(AdminView.path(for: R(route: .device, detail: .about)) == [.about])
         #expect(AdminView.path(for: R(route: .device, detail: .tileScript)) == [.advanced, .tileScript])
     }
 

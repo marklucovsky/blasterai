@@ -30,6 +30,9 @@ struct KeyRejectionTests {
         let child = ChildProfile(displayName: "Aubrey",
                                  brownsStage: .fourPlus,
                                  isActive: true)
+        // A profile with AI sentences on: what these tests take away is the
+        // device's ability to make them, not the profile's wish for them.
+        child.aiMode = .sentences
         context.insert(child)
         let resolver = ChildProfileResolver()
         resolver.configure(modelContext: context)
@@ -306,7 +309,7 @@ struct KeyRejectionTests {
     }
 
     /// The other half, so the fix cannot be "always single-word".
-    @Test("With a key, Stage IV+ generates sentences")
+    @Test("With a key, a sentences profile generates sentences")
     func stageFourPlusWithKeyGeneratesSentences() {
         let e = engine()
         e.isMissingKey = false

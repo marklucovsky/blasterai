@@ -14,7 +14,7 @@ sentenceWait: .instant
 #
 #   xcrun simctl spawn booted defaults write <bundle-id> compaction_budget_mb -int 8
 #
-# The budget is a real setting now — Device -> About & Stats -> Usage history
+# The budget is a real setting now — About -> Details and Stats -> Usage history
 # budget — but the picker only offers 128 / 256 / 512, which are the values that
 # make sense for a caregiver. `resolved()` honours any value at or above 8 MB,
 # so a soak run writes the key directly.
@@ -60,4 +60,4 @@ script:
       days: 400
       metricsOnly: true
       seed: 20260821
-  - comment: Load complete — relaunch twice, then read Device -> About & Stats -> Compaction
+  - comment: Load complete — relaunch twice, then read About -> Details and Stats -> Compaction

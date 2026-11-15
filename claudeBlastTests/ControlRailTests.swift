@@ -70,11 +70,11 @@ struct ControlRailTests {
         let suite = "ControlRailTests-\(UUID().uuidString)"
         let d = UserDefaults(suiteName: suite)!
         d.removePersistentDomain(forName: suite)
-        #expect(TrayPictures.current(d) == .auto)
+        #expect(TrayPictures.legacyDeviceValue(d) == .auto)
         d.set(TrayPictures.words.rawValue, forKey: AppSettingsKey.trayPictures)
-        #expect(TrayPictures.current(d) == .words)
+        #expect(TrayPictures.legacyDeviceValue(d) == .words)
         d.set("nonsense", forKey: AppSettingsKey.trayPictures)
-        #expect(TrayPictures.current(d) == .auto)
+        #expect(TrayPictures.legacyDeviceValue(d) == .auto)
     }
 }
 }
