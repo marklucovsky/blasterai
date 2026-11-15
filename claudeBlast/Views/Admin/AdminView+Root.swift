@@ -16,11 +16,11 @@
 import SwiftUI
 import SwiftData
 
-/// A page in Settings. The first nine are the rows of the first screen; the
+/// A page in Settings. The first ten are the rows of the first screen; the
 /// rest are reached from one of them.
 enum AdminPage: Hashable {
     case profile, currentBoard, messageBox, lookSoundFeel
-    case boardsAndVocabulary, activity, ai, advanced, about
+    case boardsAndVocabulary, activity, ai, advanced, help, about
     case profiles, vocabulary, lockRole, aboutDetails, tileScript
     /// A profile's page, and the pages under it, by profile id: the current
     /// profile is `.profile`, any other is reached from All Profiles.
@@ -92,8 +92,9 @@ extension AdminView {
                 rootRow(.boardsAndVocabulary, "Boards and Vocabulary")
                 rootRow(.activity, "Activity")
                 rootRow(.ai, "AI", value: sentenceEngine.hasAIConsent ? "On" : "Off")
-                rootRow(.advanced, "Advanced")
+                rootRow(.help, "Help")
                 rootRow(.about, "About")
+                rootRow(.advanced, "Advanced")
             }
         }
         .listStyle(.insetGrouped)
@@ -272,6 +273,7 @@ extension AdminView {
         case .profiles:            talkersPage
         case .vocabulary:          VocabManagerView()
         case .lockRole:            lockRolePage
+        case .help:                HelpView()
         case .about:               aboutPage
         case .aboutDetails:        AboutStatsView()
         case .tileScript:          TileScriptView(embedded: true)
