@@ -204,7 +204,7 @@ struct ChildProfileFormSheet: View {
                     // `BrownsStage.appBehavior` says, differently, and omitted
                     // the key requirement entirely.
                     StageIntro(stage: stage,
-                               keyHint: "Add one in Settings → Device.",
+                               keyHint: "Add one in Settings → AI.",
                                namesTheScale: false)
                     StageGuide()
                 }

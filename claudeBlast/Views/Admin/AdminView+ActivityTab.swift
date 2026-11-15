@@ -9,32 +9,33 @@ import SwiftUI
 import SwiftData
 
 extension AdminView {
-    var activityTab: some View {
-        NavigationStack {
-            List {
-                // Activity-first: what the child actually said leads; AI usage,
-                // and cache diagnostics are secondary, below it.
-                activitySummarySection
-                authoringSection
-                recentActivitySection
-                activityLinksSection
-                aiUsageSection
-                cachePerformanceSection
-                sentenceCacheSection
-                #if DEBUG
-                developerSection
-                #endif
+    /// Settings › Activity: what was said. AI usage, the cache and
+    /// authoring history are diagnostics, and live under Advanced.
+    /// Settings › Activity: the week in three numbers, then the screens that
+    /// say more. What was said, and how often, is the log one row down — the
+    /// page used to show a page of it before you could see what else was here.
+    var activityPage: some View {
+        List {
+            Section("This Week") {
+                LabeledContent("Messages Today", value: "\(utterancesTodayCount)")
+                LabeledContent("Messages This Week", value: "\(utterancesThisWeek)")
+                LabeledContent("Repeated to Insist", value: "\(escalatedThisWeekCount)")
             }
-            // Every string on this tab is selectable. A caregiver reading it is
-            // usually about to reuse something — a prompt worth running again, a
-            // sentence going into session notes — and text you can read but not
-            // copy just makes them retype it.
-            .textSelection(.enabled)
-            .navigationTitle("Activity")
-            .toolbar { adminDoneToolbar }
-            .sheet(isPresented: $showUsageReport) { UsageReportSheet() }
+            Section {
+                NavigationLink("Activity Log") { ActivityLogView() }
+                NavigationLink("Coverage") { CoverageView() }
+                NavigationLink("Patterns") { PatternsView() }
+                NavigationLink("How Boards Were Made") {
+                    List { authoringSection }
+                        .textSelection(.enabled)
+                        .navigationTitle("How Boards Were Made")
+                }
+            }
+            Section {
+                Button("Share Report") { showUsageReport = true }
+            }
         }
-        .tabItem { Label("Activity", systemImage: "list.bullet.rectangle.fill") }
+        .navigationTitle("Activity")
     }
 
     // MARK: - Authoring history
@@ -132,205 +133,23 @@ extension AdminView {
         return PageNaming.displayName(event.subjectKey)
     }
 
-    // MARK: - Activity summary (this week)
+    // MARK: - Activity (this week)
 
-    private var startOfToday: Date { Calendar.current.startOfDay(for: .now) }
     private var oneWeekAgo: Date {
         Calendar.current.date(byAdding: .day, value: -7, to: .now) ?? .now
     }
 
-    var utterancesThisWeek: [LoggedUtterance] {
-        loggedUtterances.filter { $0.createdAt >= oneWeekAgo }
+    var utterancesThisWeek: Int {
+        loggedUtterances.count { $0.createdAt >= oneWeekAgo }
     }
     var utterancesTodayCount: Int {
-        loggedUtterances.count { $0.createdAt >= startOfToday }
+        let start = Calendar.current.startOfDay(for: .now)
+        return loggedUtterances.count { $0.createdAt >= start }
     }
-    /// Utterances this week where the child repeated the same combo to insist
-    /// harder — the volume-knob signal, now that escalation works.
+    /// Utterances this week where the child repeated the same words to insist
+    /// harder.
     var escalatedThisWeekCount: Int {
-        utterancesThisWeek.count { $0.repetitionCount > 0 }
-    }
-    var recentUtterances: [LoggedUtterance] { Array(loggedUtterances.prefix(5)) }
-
-    func tileSelections(forKeys keys: [String]) -> [TileSelection] {
-        keys.compactMap { tileLookup[$0].map { TileSelection(from: $0) } }
-    }
-
-    @ViewBuilder
-    var activitySummarySection: some View {
-        let week = utterancesThisWeek
-        Section {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("UTTERANCES — WHAT THE CHILD SAID")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                HStack {
-                    StatBox(label: "Today", value: "\(utterancesTodayCount)", color: .primary)
-                    StatBox(label: "This Week", value: "\(week.count)", color: .blue)
-                    StatBox(label: "Escalated", value: "\(escalatedThisWeekCount)", color: .orange)
-                }
-            }
-            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-
-            if topClusters.isEmpty {
-                Text("No activity logged this week yet.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            } else {
-                // A vertical list, not a sideways-scrolling strip of chips.
-                //
-                // The strip put the most-used words in the one direction a List
-                // does not scroll, so reading past the third took a gesture that
-                // fights the page — and on a phone only three fitted, which made
-                // a ranked list look like a top three. Rows cost nothing here:
-                // this section is already a list.
-                //
-                // It also showed the wrong unit. The chips ranked individual
-                // *words* while the rows below ranked repeated *utterances*, and
-                // the two sat inches apart looking like the same thing with
-                // different numbers. Per-word ranking still exists, on Coverage,
-                // where it is the whole point of the screen.
-                Text("MOST USED")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 2, trailing: 16))
-                ForEach(topClusters) { cluster in
-                    clusterSnippetRow(cluster)
-                }
-            }
-        } header: {
-            Text("Activity — This Week")
-        } footer: {
-            Text("Counts of finalized utterances. Escalated = the child repeated the same words to insist harder.")
-        }
-    }
-
-    /// How many repeated combinations the summary lists. Five rather than the
-    /// three it showed when a ten-chip strip sat above it: this list is now the
-    /// whole of "most used", and three reads as a podium rather than a ranking.
-    private var topClusterCount: Int { 5 }
-
-    /// The week's repeated combinations, from the same function the full log
-    /// uses.
-    ///
-    /// A snippet that computes its own answer is a second implementation that
-    /// can disagree with the screen it links to — and a caregiver who notices
-    /// the two disagreeing is right to distrust both. This is literally the top
-    /// of the list `ActivityLogView` renders.
-    var topClusters: [ActivityCluster] {
-        let cal = Calendar.current
-        guard let cutoff = cal.date(byAdding: .day, value: -7, to: cal.startOfDay(for: .now)) else {
-            return Array(ActivityGrouping.clusters(loggedUtterances).clusters.prefix(topClusterCount))
-        }
-        let recent = loggedUtterances.filter { $0.createdAt >= cutoff }
-        return Array(ActivityGrouping.clusters(recent).clusters.prefix(topClusterCount))
-    }
-
-    /// Recent now means recent.
-    ///
-    /// This section was titled "Recent" and led with the week's most-repeated
-    /// combinations — its own footer had to explain that it was "what was
-    /// repeated this week, then the latest utterances." A header that needs a
-    /// footnote to correct it is the wrong header. Repetition moved up into the
-    /// summary, where it belongs beside the counts, and this shows the latest
-    /// utterances and nothing else.
-    @ViewBuilder
-    var recentActivitySection: some View {
-        Section {
-            if loggedUtterances.isEmpty {
-                Text("No utterances logged yet.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            } else {
-                ForEach(recentUtterances.prefix(5)) { utterance in
-                    recentUtteranceRow(utterance)
-                }
-            }
-        } header: {
-            Text("Recent")
-        } footer: {
-            Text("The latest utterances, newest first. Read-only review for therapists and partners.")
-        }
-    }
-
-    /// Where the deeper screens live, in their own section.
-    ///
-    /// They were the tail of a list of utterances, which read as more log rows
-    /// until you noticed the chevrons.
-    @ViewBuilder
-    var activityLinksSection: some View {
-        Section {
-            NavigationLink {
-                ActivityLogView()
-            } label: {
-                Label("View full activity log", systemImage: "list.bullet.rectangle")
-            }
-            NavigationLink {
-                CoverageView()
-            } label: {
-                Label("Coverage", systemImage: "chart.bar.xaxis")
-            }
-            NavigationLink {
-                PatternsView()
-            } label: {
-                Label("Patterns", systemImage: "calendar.badge.clock")
-            }
-            Button {
-                showUsageReport = true
-            } label: {
-                Label("Share report", systemImage: "square.and.arrow.up")
-            }
-        } footer: {
-            Text("Coverage asks how much of a scene is actually being used and which kinds of words go untouched; Patterns asks when the board gets reached for, and whether the range is widening.")
-        }
-    }
-
-    /// Collapsed cluster row. Deliberately the same shape as the full log's, so
-    /// the two screens read as one report rather than two.
-    func clusterSnippetRow(_ cluster: ActivityCluster) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            HStack(spacing: 8) {
-                LogTileStrip(tiles: tileSelections(forKeys: cluster.tileKeys))
-                Spacer(minLength: 8)
-                if cluster.escalatedCount > 0 {
-                    Label("\(cluster.escalatedCount)", systemImage: "flame.fill")
-                        .font(.caption2)
-                        .foregroundStyle(.orange)
-                }
-                Text("\(cluster.count)×")
-                    .font(.caption2.monospacedDigit().bold())
-                    .foregroundStyle(.blue)
-            }
-            Text(cluster.latestSentence.isEmpty ? "—" : cluster.latestSentence)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-        }
-    }
-
-    /// Dense two-row record: row 1 the tapped tiles (horizontal chips) + time,
-    /// row 2 the generated sentence (single line).
-    func recentUtteranceRow(_ utterance: LoggedUtterance) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            HStack(spacing: 8) {
-                LogTileStrip(tiles: tileSelections(forKeys: utterance.tileKeys))
-                Spacer(minLength: 8)
-                if utterance.repetitionCount > 0 {
-                    Label("\(utterance.repetitionCount)", systemImage: "flame.fill")
-                        .font(.caption2)
-                        .foregroundStyle(.orange)
-                }
-                Text(utterance.createdAt, format: .dateTime.weekday(.abbreviated).hour().minute())
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-            Text(utterance.sentence)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .textSelection(.enabled)
-        }
-        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+        loggedUtterances.count { $0.createdAt >= oneWeekAgo && $0.repetitionCount > 0 }
     }
 
     // MARK: - Cache Stats

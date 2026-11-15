@@ -23,27 +23,32 @@ extension AdminView {
         return device.requireFaceIDForAdmin && !biometry.hasHardware
     }
 
-    /// Pull a pending `admin/device/...` request off the coordinator.
-    func consumePendingDeviceDetail() {
-        guard let detail = adminRoute.consumeDetail(for: .device) else { return }
-        deviceDetail = detail
+    /// Settings › AI: on or off, the key, and what it has cost.
+    var aiKeyPage: some View {
+        List {
+            aiFeaturesSection
+            providerSettingsSection
+            aiUsageSection
+            cachePerformanceSection
+            sentenceCacheSection
+        }
+        .navigationTitle("AI")
     }
 
-    var deviceTab: some View {
-        NavigationStack {
-            List {
-                deviceSection
-                aiFeaturesSection
-                sentenceProviderSection
-                sentenceTraySection
-                aboutSection
-                #if DEBUG
-                storageSection
-                #endif
-            }
-            .navigationTitle("Device")
+    /// Settings › Advanced › Lock and Role.
+    var lockRolePage: some View {
+        List {
+            deviceSection
+        }
+        .navigationTitle("Lock and Role")
+    }
+
+    /// The Device pages' sheets and dialogs, hosted on Settings' one
+    /// NavigationStack so a pushed page redrawing cannot tear them down.
+    func deviceModals(_ content: some View) -> some View {
+        content
             // The AI disclosure and the turn-off confirmation live here, on the
-            // List, not on `aiFeaturesSection`. A sheet hosted by a Section is
+            // stack, not on `aiFeaturesSection`. A sheet hosted by a Section is
             // torn down when the Section redraws — and the toggle springs back
             // to off the moment it presents (it only turns on after Enable), so
             // the disclosure closed itself as soon as it opened.
@@ -87,18 +92,6 @@ extension AdminView {
             } message: {
                 Text("Nothing will be sent to OpenAI and the board will speak single words. Your key stays on this device, unused, until you turn AI features back on.")
             }
-            .navigationDestination(item: $deviceDetail) { detail in
-                switch detail {
-                case .about:      AboutStatsView()
-                case .tileScript: TileScriptView()
-                case .vocabulary: EmptyView()   // not a Device destination
-                }
-            }
-            .onAppear { consumePendingDeviceDetail() }
-            .onChange(of: adminRoute.pendingDetail) { _, _ in consumePendingDeviceDetail() }
-            .toolbar { adminDoneToolbar }
-        }
-        .tabItem { Label("Device", systemImage: "gear") }
         .sheet(isPresented: $pendingPatientTransition) {
             if let device = deviceProfiles.first {
                 PatientTransitionSheet(
@@ -253,40 +246,81 @@ extension AdminView {
         }
     }
 
-    /// Permission to use OpenAI, on or off. See `AIConsent`.
+    /// Permission to use OpenAI, on or off, with the disclosure one tap away.
+    /// See `AIConsent`.
     ///
     /// Turning it on goes through the disclosure, and only an Enable there turns
     /// it on — the toggle never flips by itself. Turning it off leaves the key
     /// installed and unused, so turning it back on is one tap.
-    @ViewBuilder
     var aiFeaturesSection: some View {
         Section {
-            Toggle("AI Features", isOn: Binding(
-                get: { sentenceEngine.hasAIConsent },
-                set: { on in
-                    if on { isShowingAIDisclosure = true } else { isConfirmingAIRevoke = true }
-                }))
-            Button("What is sent to OpenAI") { isShowingAIDisclosure = true }
-                .font(.callout)
+            HStack(spacing: 12) {
+                Toggle("AI", isOn: Binding(
+                    get: { sentenceEngine.hasAIConsent },
+                    set: { on in
+                        if on { isShowingAIDisclosure = true } else { isConfirmingAIRevoke = true }
+                    }))
+                Button { isShowingAIDisclosure = true } label: {
+                    Image(systemName: "questionmark.circle")
+                        .imageScale(.large)
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel("What is sent to OpenAI")
+            }
+        }
+    }
+
+    /// Whether the provider is set up, as a traffic light: green when it can
+    /// make sentences, yellow when it has nothing to work with yet, red when
+    /// OpenAI refused the key. Grey while AI is off.
+    var providerStatus: (color: Color, text: String) {
+        if !sentenceEngine.hasAIConsent { return (.gray, "AI off") }
+        if envKeyOverride { return (.green, "Environment key") }
+        if providerChoice == "mock" { return (.green, "Mock") }
+        if sentenceEngine.isQuotaExhausted { return (.red, "Out of credit") }
+        if sentenceEngine.isKeyUnusable { return (.red, "Key refused") }
+        if apiKey.isEmpty { return (.yellow, "No key") }
+        return (.green, "Ready")
+    }
+
+    /// Provider Settings, folded to one line with its status. Open, it is
+    /// where keys are added, changed and removed.
+    @ViewBuilder
+    var providerSettingsSection: some View {
+        Section {
+            Button {
+                withAnimation { isProviderExpanded.toggle() }
+            } label: {
+                HStack {
+                    Text("Provider Settings").foregroundStyle(.primary)
+                    Spacer()
+                    Circle().fill(providerStatus.color).frame(width: 10, height: 10)
+                    Text(providerStatus.text).foregroundStyle(.secondary)
+                    Image(systemName: "chevron.right")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                        .rotationEffect(.degrees(isProviderExpanded ? 90 : 0))
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
+        if isProviderExpanded {
+            sentenceProviderSection
             #if DEBUG
-            Button("Reset AI permission (DEBUG)", role: .destructive) {
-                AIConsent.resetForTesting()
-                sentenceEngine.revokeAIConsent()
+            Section {
+                Button("Reset AI permission (DEBUG)", role: .destructive) {
+                    AIConsent.resetForTesting()
+                    sentenceEngine.revokeAIConsent()
+                }
             }
-            .font(.callout)
             #endif
-        } footer: {
-            if sentenceEngine.hasAIConsent, let at = AIConsent.acceptedAt() {
-                Text("On since \(at.formatted(date: .abbreviated, time: .omitted)). Selected words, word descriptions and scene descriptions are sent to OpenAI when you use those features — never your name or anything that identifies you.")
-            } else {
-                Text("Off. Nothing is sent to OpenAI, and each tile speaks its word.")
-            }
         }
     }
 
     @ViewBuilder
     var sentenceProviderSection: some View {
-        Section("Sentence Provider") {
+        Section {
             if !sentenceEngine.hasAIConsent && !envKeyOverride {
                 // No key entry without permission to use one. A key already here
                 // is dormant, and says so — and can still be removed without
@@ -500,56 +534,8 @@ extension AdminView {
                 }
             }
             LabeledContent("Active Provider", value: sentenceEngine.provider.displayName)
-            Toggle("Audio", isOn: $audioEnabled)
-            Toggle("Tile Speech Preview", isOn: $tileSpeechEnabled)
-            // Only a phone has a haptic engine; on an iPad the switch would do
-            // nothing. See `BoardHaptics`.
-            if UIDevice.current.userInterfaceIdiom == .phone {
-                Toggle("Haptics", isOn: $hapticsEnabled)
-            }
-            // A layout is a grid, the same on every device of a kind — so the
-            // choice shows the grids, not a size. See `BoardLayout`.
-            Picker("Board Layout", selection: $boardLayoutRaw) {
-                ForEach(BoardLayout.allCases) { layout in
-                    VStack(alignment: .leading) {
-                        Text(layout.title)
-                        Text(layout.gridsDescription)
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(.secondary)
-                    }
-                    .tag(layout.rawValue)
-                }
-            }
-            .pickerStyle(.navigationLink)
-            Toggle(isOn: $honorSceneLayouts) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Use Each Scene's Designed Layout")
-                    if let note = sceneLayoutNote {
-                        Text(note)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-            Picker("Image Set", selection: $imageSetRaw) {
-                ForEach(ImageSetCatalog.selectable) { set in
-                    Text(set.isShippable ? set.displayName : "\(set.displayName) (incomplete)")
-                        .tag(set.id.rawValue)
-                }
-            }
-        }
-        .onChange(of: imageSetRaw) {
-            // Resolved, not raw: a stored id this build cannot resolve must fall
-            // back rather than leave the resolver pointing at a set with no art.
-            imageResolver.activeSet = ImageSetID.resolved(imageSetRaw)
         }
         .onAppear {
-            // Self-heal a stored id that no longer resolves — including the empty
-            // string an earlier build could persist. Without this the Picker has
-            // no matching tag and simply shows nothing selected.
-            let resolved = ImageSetID.resolved(imageSetRaw)
-            if resolved.rawValue != imageSetRaw { imageSetRaw = resolved.rawValue }
-
             // Re-read both, because a key can arrive while Admin is closed — the
             // install happens in its own sheet, launched from a file tap, and
             // the `@State` seeded when this view was built knows nothing of it.
@@ -568,95 +554,6 @@ extension AdminView {
             #if !DEBUG
             if providerChoice != "openai" { providerChoice = "openai" }
             #endif
-        }
-        .onChange(of: providerChoice) { applyProvider() }
-        .onChange(of: apiKey) {
-            OpenAIKeyVault.setKey(apiKey)
-            // A record outliving its key would label somebody else's key with
-            // the evaluator's name, which is worse than showing nothing. The
-            // install path writes the record *after* the key, so it survives
-            // this; every other route through here is a caregiver typing, and
-            // that is exactly when the gift is over.
-            if let gift = giftedKey,
-               GiftedKeyObfuscation.lastFour(of: apiKey) != gift.lastFour {
-                GiftedKeyRecord.clear()
-                giftedKey = nil
-            }
-            // A different key has not been rejected — it has not been tried. The
-            // flag is about one credential, so it must not outlive it, or a
-            // caregiver who fixes the problem stays in single-word mode with no
-            // way to tell why.
-            sentenceEngine.clearKeyRejection()
-            applyProvider()
-        }
-        .onChange(of: audioEnabled) { sentenceEngine.audioEnabled = audioEnabled }
-        .onAppear {
-            sentenceEngine.audioEnabled = audioEnabled
-            // Voice is per-child now — set in the Now tab's Active Profile
-            // section. Leaving engine.voiceIdentifier empty lets the
-            // resolver pick the active child's voice.
-        }
-    }
-
-    @ViewBuilder
-    var sentenceTraySection: some View {
-        Section {
-            // Tiles per group is per-profile (active ChildProfile.maxSelectedTiles)
-            // and lives on the Now tab. Don't expose a device-wide stepper
-            // here — it'd shadow the per-profile value and confuse users
-            // wondering which one wins.
-            Stepper(
-                "Pulse after: \(idleDebounceMs) ms",
-                value: $idleDebounceMs,
-                in: 500...5000,
-                step: 250
-            )
-            Stepper(
-                autoDoneMs == 0
-                    ? "Auto-Done: off"
-                    : "Auto-Done: \(autoDoneMs / 1000) s",
-                value: $autoDoneMs,
-                in: 0...120000,
-                step: 5000
-            )
-            Stepper(
-                "Tray buffer: \(trayBufferSize) groups",
-                value: $trayBufferSize,
-                in: 50...500,
-                step: 50
-            )
-            Button(role: .destructive) {
-                sentenceEngine.resetSession()
-            } label: {
-                Label("Reset Session", systemImage: "arrow.counterclockwise")
-            }
-        } header: {
-            Text("Sentence Tray")
-        } footer: {
-            Text("Engine timings shared across profiles. Tiles-per-group is per-child — set it on the Now tab.")
-                .font(.caption)
-        }
-    }
-
-    @ViewBuilder
-    var aboutSection: some View {
-        Section {
-            NavigationLink {
-                AboutStatsView()
-            } label: {
-                Label("About & Stats", systemImage: "chart.bar.doc.horizontal")
-            }
-            // TileScript's only other entry point is the caregiver menu, which a
-            // patient device deliberately trims to Admin alone — leaving scripts
-            // unreachable on the very device you would demo on. Admin is the
-            // gated door both paths should lead through anyway.
-            NavigationLink {
-                TileScriptView()
-            } label: {
-                Label("TileScript", systemImage: "play.rectangle.fill")
-            }
-        } footer: {
-            Text("Vocabulary, board, and activity counts — plus CloudKit sync health. TileScript records and replays board sessions.")
         }
     }
 

@@ -717,7 +717,7 @@ enum ImportSource {
     enum RouteError: LocalizedError {
         case notASpreadsheet
         var errorDescription: String? {
-            "Pages come in from a spreadsheet. To bring in a BlasterAI scene, use Import Scene in Settings › Scenes."
+            "Pages come in from a spreadsheet. To bring in a BlasterAI scene, use Import Scene in Settings › Boards and Vocabulary."
         }
     }
 

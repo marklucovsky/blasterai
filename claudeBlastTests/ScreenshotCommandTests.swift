@@ -174,6 +174,32 @@ struct ScreenshotCommandTests {
         }
     }
 
+    /// Settings is one list now, not tabs, but every route a recorded script
+    /// can name must still land somewhere — and the sub-screens on the page
+    /// that holds them.
+    @Test func adminRoutesMapToSettingsPages() {
+        typealias R = AdminRouteCoordinator.Request
+        #expect(AdminView.path(for: R(route: .now, detail: nil)) == [])
+        #expect(AdminView.path(for: R(route: .profiles, detail: nil)) == [.profile, .profiles])
+        #expect(AdminView.path(for: R(route: .scenes, detail: nil)) == [.boardsAndVocabulary])
+        #expect(AdminView.path(for: R(route: .device, detail: nil)) == [.ai])
+        #expect(AdminView.path(for: R(route: .activity, detail: nil)) == [.activity])
+        #expect(AdminView.path(for: R(route: .scenes, detail: .vocabulary)) == [.boardsAndVocabulary, .vocabulary])
+        #expect(AdminView.path(for: R(route: .device, detail: .about)) == [.advanced, .about])
+        #expect(AdminView.path(for: R(route: .device, detail: .tileScript)) == [.advanced, .tileScript])
+    }
+
+    /// Two requests for the same place are still two requests, so a script
+    /// can bring Settings back after a caregiver has navigated away.
+    @Test func repeatedAdminRequestsAreDistinct() {
+        let coordinator = AdminRouteCoordinator()
+        coordinator.show(.scenes)
+        let first = coordinator.consume()
+        #expect(coordinator.pending == nil)
+        coordinator.show(.scenes)
+        #expect(coordinator.pending != first)
+    }
+
     @Test func parsesBoardAndBareAdmin() throws {
         let board = try parse(header + "\n  - screen: board\n")
         #expect(board.commands[0].isScreen(.board))

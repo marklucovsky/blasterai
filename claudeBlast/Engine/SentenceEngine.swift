@@ -43,7 +43,6 @@ final class SentenceEngine {
     /// in border / weight / shadow) internally once this flips true.
     private(set) var isDoneNudge: Bool = false
     private(set) var comparisonSentence: String?
-    var sessionNotes: String = ""
 
     /// Single-word (classic AAC) mode only: the running FIFO strip of spoken
     /// words, oldest first. New words append on the right; once it exceeds
@@ -72,13 +71,6 @@ final class SentenceEngine {
     var onSentenceReady: ((String) -> Void)?
 
     var isSpeaking: Bool { speechSynthesizer.isSpeaking }
-
-    func appendNote(_ note: String) {
-        let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        if !sessionNotes.isEmpty { sessionNotes += "\n" }
-        sessionNotes += trimmed
-    }
 
     // MARK: - Configuration
 

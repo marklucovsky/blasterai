@@ -9,23 +9,24 @@ import SwiftUI
 import SwiftData
 
 extension AdminView {
-    var profilesTab: some View {
-        NavigationStack {
-            List {
-                profilesSection
+    /// Settings › Profile › All Profiles.
+    var talkersPage: some View {
+        List { profilesSection }
+            .navigationTitle("All Profiles")
+    }
+
+    /// Create and edit share one `.sheet(item:)`, hosted on Settings' stack so
+    /// both the profile card and the Profiles page can raise it.
+    func profilesModals(_ content: some View) -> some View {
+        content
+            .sheet(item: $profileSheet) { sheet in
+                switch sheet {
+                case .create:
+                    ChildProfileFormSheet(mode: .create) { profileSheet = nil }
+                case .edit(let profile):
+                    ChildProfileFormSheet(mode: .edit(profile)) { profileSheet = nil }
+                }
             }
-            .navigationTitle("Profiles")
-            .toolbar { adminDoneToolbar }
-        }
-        .tabItem { Label("Profiles", systemImage: "person.2.fill") }
-        .sheet(item: $profileSheet) { sheet in
-            switch sheet {
-            case .create:
-                ChildProfileFormSheet(mode: .create) { profileSheet = nil }
-            case .edit(let profile):
-                ChildProfileFormSheet(mode: .edit(profile)) { profileSheet = nil }
-            }
-        }
     }
 
     // MARK: - Profiles section (caregiver + child roster)

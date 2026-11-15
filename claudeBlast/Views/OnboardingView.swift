@@ -355,7 +355,7 @@ struct OnboardingView: View {
                 .textFieldStyle(.roundedBorder)
                 .textInputAutocapitalization(.words)
                 .autocorrectionDisabled()
-            Text("Optional — skip for now and set it anytime in Settings → Scenes, before you first share.")
+            Text("Optional — skip for now and set it anytime in Settings → Advanced, before you first share.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -483,7 +483,7 @@ struct OnboardingView: View {
                 Label("Someone sent me a key file", systemImage: "gift")
             }
             .font(.callout)
-            Text("Skip to start without a key — each tile speaks its word. You can add one later in Settings → Device.")
+            Text("Skip to start without a key — each tile speaks its word. You can add one later in Settings → AI.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

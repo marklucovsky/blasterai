@@ -141,15 +141,13 @@ struct ContentView: View {
                     case .board:
                         activeDestination = nil
                     case .admin(let route):
-                        adminRoute.pendingDetail = nil
-                        adminRoute.tab = route
+                        adminRoute.show(route)
                         activeDestination = .adminUngated
                     case .adminDetail(let route, let detail):
-                        // The tab consumes this on arrival and pushes the
-                        // sub-screen — the detail is a request, not a location,
-                        // so it cannot get stuck set.
-                        adminRoute.pendingDetail = detail
-                        adminRoute.tab = route
+                        // Settings consumes this on arrival and pushes the
+                        // page — a request, not a location, so it cannot get
+                        // stuck set.
+                        adminRoute.show(route, detail: detail)
                         activeDestination = .adminUngated
                     }
                 }

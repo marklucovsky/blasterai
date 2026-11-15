@@ -114,34 +114,42 @@ enum ScriptScreen: Equatable, Sendable {
     }
 }
 
-/// Which Admin tab is showing.
+/// Where a script has asked Settings to be.
 ///
-/// Admin's `TabView` had no selection binding — the tab lived entirely in
-/// SwiftUI's own state, so nothing outside the view could put Admin anywhere.
-/// Hoisting it here is what makes `screen:` possible, and it is the same shape
-/// `NavigationCoordinator` already uses for the board.
+/// Settings was a `TabView` and this held the selected tab. It is now one list
+/// with pages pushed from it, so a route is a *request* that `AdminView` turns
+/// into a navigation path and then clears. The route names a script writes
+/// (`admin/scenes`, `admin/device/about`) are unchanged — they are a contract
+/// with every recorded script, and the pages they land on are mapped in
+/// `AdminView.path(for:)`.
 @Observable
 @MainActor
 final class AdminRouteCoordinator {
-    /// The selected tab. Bound by `AdminView`, set by the script runner.
-    var tab: AdminRoute = .now
+    struct Request: Equatable {
+        let route: AdminRoute
+        let detail: AdminRoute.Detail?
+        /// Distinct per request, so asking for the same place twice still
+        /// moves Settings there after a caregiver has wandered off.
+        let id = UUID()
+    }
 
-    /// A sub-screen to push once the tab is showing, consumed by the tab that
-    /// owns it. Cleared on arrival so re-selecting the tab by hand doesn't
-    /// silently push again.
-    var pendingDetail: AdminRoute.Detail?
+    /// The request waiting to be shown. Set by the script runner.
+    var pending: Request?
 
-    /// Take the pending detail if it belongs to `route`.
-    func consumeDetail(for route: AdminRoute) -> AdminRoute.Detail? {
-        guard let detail = pendingDetail, detail.parent == route else { return nil }
-        pendingDetail = nil
-        return detail
+    func show(_ route: AdminRoute, detail: AdminRoute.Detail? = nil) {
+        pending = Request(route: route, detail: detail)
+    }
+
+    /// Take the waiting request, if any.
+    func consume() -> Request? {
+        defer { pending = nil }
+        return pending
     }
 }
 
 extension AdminRoute.Detail {
-    /// The tab this sub-screen lives under. Encoded here so a route string can
-    /// be validated against reality rather than trusted.
+    /// The route this sub-screen is named under. Encoded here so a route
+    /// string can be validated against reality rather than trusted.
     var parent: AdminRoute {
         switch self {
         case .vocabulary:  return .scenes

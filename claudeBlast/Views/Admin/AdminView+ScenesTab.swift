@@ -11,49 +11,23 @@ import UniformTypeIdentifiers
 
 extension AdminView {
 
-    /// Pull a pending `admin/scenes/...` request off the coordinator and turn it
-    /// into an actual push.
-    func consumePendingSceneDetail() {
-        guard let detail = adminRoute.consumeDetail(for: .scenes) else { return }
-        switch detail {
-        case .vocabulary: vocabDetail = .vocabulary
-        default:          break
+    /// Settings › Boards and Vocabulary.
+    var boardsPage: some View {
+        List {
+            Section {
+                NavigationLink("Vocabulary", value: AdminPage.vocabulary)
+            }
+            scenesSection
+            newSceneSection
         }
+        .navigationTitle("Boards and Vocabulary")
     }
 
-    var scenesTab: some View {
-        NavigationStack {
-            List {
-                AuthorNameField()
-                scenesSection
-                carriedTemplatesSection
-                newSceneSection
-                Section {
-                    NavigationLink {
-                        VocabManagerView()
-                    } label: {
-                        Label("Manage Vocabulary", systemImage: "textformat.abc")
-                    }
-                } footer: {
-                    Text("Hide or restore words, and review anything the moderation gate flagged.")
-                }
-            }
-            .navigationTitle("Scenes")
-            .navigationDestination(item: $navigateToNewScene) { scene in
-                SceneEditorView(scene: scene)
-            }
-            // A script asking for `admin/scenes/vocabulary` sets a pending
-            // detail; the tab that owns the destination is the only thing that
-            // can push it, and it clears the request on arrival so a later
-            // hand-selection of this tab doesn't silently push again.
-            .navigationDestination(item: $vocabDetail) { _ in
-                VocabManagerView()
-            }
-            .onAppear { consumePendingSceneDetail() }
-            .onChange(of: adminRoute.pendingDetail) { _, _ in consumePendingSceneDetail() }
-            .toolbar { adminDoneToolbar }
-        }
-        .tabItem { Label("Scenes", systemImage: "square.grid.2x2.fill") }
+    /// The board pages' sheets and dialogs, hosted on Settings' one
+    /// NavigationStack: "Edit this board" on the first screen raises the same
+    /// clone-on-write question as a row on Boards and Vocabulary.
+    func scenesModals(_ content: some View) -> some View {
+        content
         .sheet(isPresented: $isCreatingScene) {
             SceneGeneratorSheet(allTiles: allTiles, apiKey: resolvedAPIKey) { scene in
                 navigateToNewScene = scene

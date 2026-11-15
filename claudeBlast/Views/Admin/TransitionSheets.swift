@@ -237,7 +237,7 @@ struct PatientTransitionSheet: View {
             Section {
                 if realPatients.isEmpty {
                     Label {
-                        Text("No child profiles yet. Open the Profiles tab and add one before switching modes.")
+                        Text("No child profiles yet. Open Settings › Profile › All Profiles and add one before switching modes.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } icon: {
@@ -334,7 +334,7 @@ struct PatientTransitionSheet: View {
         case .keep:
             return "The patient (or their family) will use the API key already on this device. Token usage bills to whoever owns that key."
         case .clear:
-            return "Generation falls back to Mock. The patient can add a key later from Settings → Device."
+            return "Generation falls back to Mock. The patient can add a key later from Settings → AI."
         case .replace:
             return "Stored in this device's Keychain. Never synced via iCloud."
         }

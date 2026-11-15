@@ -30,7 +30,26 @@ struct RevealLevelControl: View {
 
     var body: some View {
         let levels = levels
-        if let level = levels.level {
+        if let level = levels.level, compact {
+            // One settings row: "4 of 4" between small steppers, the label
+            // supplied by the row it sits in.
+            HStack(spacing: 10) {
+                stepButton("minus", enabled: level > 1) { set(level - 1) }
+                Text("\(level) of \(levels.count)")
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                stepButton("plus", enabled: level < levels.count) { set(level + 1) }
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Board level \(level) of \(levels.count)")
+            .accessibilityAdjustableAction { direction in
+                switch direction {
+                case .increment where level < levels.count: set(level + 1)
+                case .decrement where level > 1: set(level - 1)
+                default: break
+                }
+            }
+        } else if let level = levels.level {
             HStack(spacing: 12) {
                 stepButton("minus", enabled: level > 1) { set(level - 1) }
                 VStack(spacing: 1) {
@@ -62,10 +81,11 @@ struct RevealLevelControl: View {
                             action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.body.weight(.semibold))
-                .frame(width: 36, height: 36)
+                .font(compact ? .footnote.weight(.semibold) : .body.weight(.semibold))
+                .frame(width: compact ? 22 : 36, height: compact ? 22 : 36)
         }
         .buttonStyle(.bordered)
+        .buttonBorderShape(compact ? .circle : .automatic)
         .disabled(!enabled)
     }
 
