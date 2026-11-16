@@ -205,6 +205,14 @@ struct ExportableScene: Codable {
     /// The templates a scene is built on, nearest first, so one file brings
     /// everything it draws. Each is installed (or updated) before the scene.
     var templates: [ExportableScene]? = nil
+    /// For a Me page: the Me pages it includes, so one file brings the whole
+    /// stack ("Aubrey" carrying "Room 4"). Each is installed, or updated when
+    /// newer, before this one. See `MeScene.layers`.
+    var includes: [ExportableScene]? = nil
+    /// For a Me page: the boards on its My Topics and on those of the pages it
+    /// includes, each with the templates it is built on, so the topics open
+    /// on the receiving device.
+    var topics: [ExportableScene]? = nil
     var tiles: [ExportableTile]?
     let pages: [ExportablePage]
 
@@ -218,7 +226,7 @@ struct ExportableScene: Codable {
         case id, slug, sceneVersion, authorName
         case designedFor
         case revealLevels, revealLevel
-        case isTemplate, templateID, modified, templates
+        case isTemplate, templateID, modified, templates, includes, topics
         case tiles, pages
     }
 }

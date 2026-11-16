@@ -407,12 +407,162 @@ struct ProfileVoicePage: View {
 
 // MARK: - Me page
 
+/// A profile's Me page: the page itself, its rules (Always, Pinned, and by
+/// page in the section below), the Me pages it includes, its topics, and
+/// sharing it. See `MeScene` for how the rules are applied.
+///
+/// An SLP builds one per student, plus one for a group ("Room 4") that each
+/// student's includes; a family adds a received Me page to their child's
+/// with Includes. Nothing here replaces anyone's own page.
 struct ProfileMePage: View {
     let profile: ChildProfile
 
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \BlasterScene.name) private var scenes: [BlasterScene]
+    @Query private var profiles: [ChildProfile]
+    @Query(filter: #Predicate<BlasterScene> { $0.isDefault }) private var systemScenes: [BlasterScene]
+    @State private var editing: String?
+    @State private var isSharing = false
+
+    private var me: BlasterScene? {
+        scenes.first { $0.sceneID == MeScene.sceneID(forProfileID: profile.id) }
+    }
+    private func find(_ id: String) -> BlasterScene? { scenes.first { $0.sceneID == id } }
+
+    /// An included page's name: its profile's on this device, else its own,
+    /// with who sent it.
+    private func includeName(_ scene: BlasterScene) -> String {
+        if let owner = profiles.first(where: { MeScene.sceneID(forProfileID: $0.id) == scene.sceneID }) {
+            return owner.visibleName
+        }
+        let from = scene.authorDisplay
+        return from.isEmpty ? scene.name : "\(scene.name) \u{00B7} from \(from)"
+    }
+
     var body: some View {
-        Form { MeTopicsSection(profileID: profile.id) }
-            .navigationTitle("Me Page")
+        Form {
+            if let me, let system = systemScenes.first {
+                Section {
+                    Button("Edit \(profile.visibleName)\u{2019}s Page") { editing = MeScene.homePageKey }
+                    NavigationLink {
+                        ContextPageView(me: me, system: system, systemKey: MeScene.alwaysKey)
+                    } label: {
+                        LabeledContent("Always", value: count(MeScene.alwaysPageKey, in: me))
+                    }
+                    Button { editing = MeScene.pinnedPageKey } label: {
+                        LabeledContent("Pinned", value: count(MeScene.pinnedPageKey, in: me))
+                    }
+                    .foregroundStyle(.primary)
+                } footer: {
+                    Text("Always adds its words and folders every time the Me page opens. Pinned puts tiles in cells you choose. Neither covers anything on the page itself.")
+                }
+                includesSection(me)
+            }
+            MeTopicsSection(profileID: profile.id)
+            if me != nil {
+                Section {
+                    Button { isSharing = true } label: {
+                        Label("Share \(profile.visibleName)\u{2019}s Me Page", systemImage: "square.and.arrow.up")
+                    }
+                } footer: {
+                    Text("Sends this Me page and the pages it includes. Whoever opens it can add it to a child\u{2019}s Me page; sending it again updates it there.")
+                }
+            }
+        }
+        .navigationTitle("Me Page")
+        .onAppear(perform: prepare)
+        .fullScreenCover(item: Binding(get: { editing.map(EditTarget.init) },
+                                       set: { editing = $0?.pageKey })) { target in
+            if let me {
+                NavigationStack {
+                    PageEditorView(scene: me, pageKey: target.pageKey)
+                        .toolbar {
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button("Done") { editing = nil }
+                            }
+                        }
+                }
+            }
+        }
+        .sheet(isPresented: $isSharing) {
+            if let me { ShareBoardSheet(subject: .scene(me)) }
+        }
+    }
+
+    private struct EditTarget: Identifiable {
+        let pageKey: String
+        var id: String { pageKey }
+    }
+
+    private func count(_ pageKey: String, in me: BlasterScene) -> String {
+        let n = (me.page(withKey: pageKey)?.tiles ?? []).filter { !$0.isEmptyCell }.count
+        return n == 0 ? "None" : n == 1 ? "1 item" : "\(n) items"
+    }
+
+    private func includesSection(_ me: BlasterScene) -> some View {
+        let entries = MeScene.includeEntries(in: me)
+        let choices = MeScene.includeChoices(for: me, scenes: scenes, profiles: profiles)
+        return Section {
+            ForEach(entries, id: \.link) { entry in
+                if let id = MeScene.includedID(entry), let included = find(id) {
+                    Toggle(includeName(included), isOn: Binding(
+                        get: { !entry.isConcealed },
+                        set: { on in
+                            MeScene.setInclude(on, sceneID: id, in: me)
+                            try? modelContext.save()
+                        }))
+                } else {
+                    Label("\(entry.label ?? "A Me page") (not on this device)",
+                          systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .onDelete { offsets in
+                for entry in offsets.map({ entries[$0] }) {
+                    if let id = MeScene.includedID(entry) { MeScene.removeInclude(sceneID: id, from: me) }
+                }
+                try? modelContext.save()
+            }
+            if !choices.onDevice.isEmpty || !choices.received.isEmpty {
+                Menu {
+                    if !choices.onDevice.isEmpty {
+                        Section("On This Device") {
+                            ForEach(choices.onDevice, id: \.scene.sceneID) { choice in
+                                Button(choice.name) { include(choice.scene, in: me) }
+                            }
+                        }
+                    }
+                    if !choices.received.isEmpty {
+                        Section("Received") {
+                            ForEach(choices.received) { scene in
+                                Button(includeName(scene)) { include(scene, in: me) }
+                            }
+                        }
+                    }
+                } label: {
+                    Label("Include a Me Page", systemImage: "plus.circle")
+                }
+            }
+        } header: {
+            Text("Includes")
+        } footer: {
+            Text("An included Me page adds its words, folders and pinned tiles after this page\u{2019}s own, without covering them.")
+        }
+    }
+
+    private func include(_ other: BlasterScene, in me: BlasterScene) {
+        MeScene.addInclude(other, to: me, find: find)
+        try? modelContext.save()
+    }
+
+    /// Made here, not while the view is built: the Me scene and its Pinned
+    /// page exist before anything opens them, and the scene carries the
+    /// profile's name, so a shared copy says whose it is.
+    private func prepare() {
+        let me = MeScene.ensure(profileID: profile.id, context: modelContext)
+        MeScene.ensurePinned(in: me)
+        if me.name != profile.visibleName { me.name = profile.visibleName }
+        try? modelContext.save()
     }
 }
 

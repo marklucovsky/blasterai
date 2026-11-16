@@ -213,18 +213,26 @@ struct TileGridView: View {
         else { return nil }
         // A link into a mounted scene that is gone (deleted, perhaps on
         // another device) is an empty cell, not a dead button.
-        // The Me home shows what is attached to the page the child came from:
-        // inlined words and folders, in its free cells (`MeScene.compose`).
+        // The Me home with its rules applied: its own and every included Me
+        // page's pinned tiles, Always items, and items for the page the child
+        // came from, in its free cells (`MeScene.composeHome`).
         if let mounted = TileToken.scenePageKey(key), let me = mountedScene(mounted.sceneID),
-           MeScene.isMeScene(me), mounted.page == me.homePageKey, let from = meContextKey {
+           MeScene.isMeScene(me), mounted.page == me.homePageKey {
             let rowKeys = BoardChrome.inherits(scene)
                 ? Set(BoardChrome.row(for: scene, level: chromeLevel(scene),
                                       inherited: levels(scene).inheritedNavBar).map(\.key)) : []
-            page.tiles = MeScene.compose(
+            page.tiles = MeScene.composeHome(
                 page.tiles,
-                items: MeScene.contextEntries(forNavKey: from, systemIsActive: scene.isDefault, in: me),
+                layers: MeScene.layers(of: me, find: mountedScene),
+                contextKey: meContextKey,
+                systemIsActive: scene.isDefault,
                 rowKeys: rowKeys,
                 words: { sourceWords($0.link, board: scene) })
+        }
+        // And its My Topics lists the included pages' topics after its own.
+        if let mounted = TileToken.scenePageKey(key), let me = mountedScene(mounted.sceneID),
+           MeScene.isMeScene(me), mounted.page == MeScene.topicsPageKey {
+            page.tiles = MeScene.composeTopics(layers: MeScene.layers(of: me, find: mountedScene))
         }
         page.tiles = page.tiles.map { entry in
             guard let id = TileToken.scenePageKey(entry.link)?.sceneID,
@@ -263,8 +271,8 @@ struct TileGridView: View {
     private func isRailBadged(_ item: RailItem) -> Bool {
         guard item == .me, let me = existingMe, let key = coordinator.currentPageKey,
               TileToken.scenePageKey(key) == nil else { return false }
-        return !MeScene.contextEntries(forNavKey: key, systemIsActive: activeScene?.isDefault == true,
-                                       in: me).isEmpty
+        return MeScene.hasContextItems(forNavKey: key, systemIsActive: activeScene?.isDefault == true,
+                                       layers: MeScene.layers(of: me, find: mountedScene))
     }
 
     /// A scene a `<scene:ID>:` key names, which the board shows without

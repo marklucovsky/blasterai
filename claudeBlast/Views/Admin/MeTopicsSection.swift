@@ -20,7 +20,6 @@ struct MeTopicsSection: View {
 
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \BlasterScene.name) private var scenes: [BlasterScene]
-    @State private var isEditingMe = false
 
     /// BlasterAI 60, whose pages a topic can be shown on.
     @Query(filter: #Predicate<BlasterScene> { $0.isDefault })
@@ -141,28 +140,10 @@ struct MeTopicsSection: View {
                     Label("Add a Topic", systemImage: "plus.circle")
                 }
             }
-            if let me {
-                Button { isEditingMe = true } label: {
-                    Label("Edit Me Page", systemImage: "pencil")
-                }
-                // Full screen, not pushed inside the profile sheet: the page
-                // editor is a 10 × 6 grid, and a form sheet gave it half the
-                // screen and its tiles half their size.
-                .fullScreenCover(isPresented: $isEditingMe) {
-                    NavigationStack {
-                        SceneEditorView(scene: me)
-                            .toolbar {
-                                ToolbarItem(placement: .topBarLeading) {
-                                    Button("Done") { isEditingMe = false }
-                                }
-                            }
-                    }
-                }
-            }
         } header: {
-            Text("Me Page and Topics")
+            Text("My Topics")
         } footer: {
-            Text("The heart on the board opens this child's own page. My Topics lists the scenes added here, without replacing the main board. Tap a topic to show it on the Me page whenever the child comes from a page of the main board. Only scenes on the 10 × 6 layout can be topics. Changes apply right away.")
+            Text("Boards the child opens from the Me page without changing the main board. Tap one to show it for particular pages too.")
         }
     }
 }
@@ -186,7 +167,10 @@ struct ContextPageView: View {
         system.pages.filter { $0.key != system.homePageKey }
     }
 
-    private var title: String { MeScene.contextTitle(systemKey, system: system, scenes: scenes) }
+    private var isAlways: Bool { systemKey == MeScene.alwaysKey }
+    private var title: String {
+        isAlways ? "Always" : MeScene.contextTitle(systemKey, system: system, scenes: scenes)
+    }
     private var items: [TileEntry] { me.page(withKey: MeScene.contextPageKey(for: systemKey))?.tiles ?? [] }
     private var topics: [BlasterScene] { scenes.filter(MeScene.isEligibleTopic) }
 
@@ -222,7 +206,7 @@ struct ContextPageView: View {
                 Text("Folders go from column 8 into the free cells of columns 9 and 10. Words, yours and those taken from pages, go below your own tiles in list order, after an empty row when there is room. What does not fit is left off; turn the folder on to keep the rest one tap away.")
             }
         }
-        .navigationTitle("On " + title)
+        .navigationTitle(isAlways ? "Always" : "On " + title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) { addMenu }
