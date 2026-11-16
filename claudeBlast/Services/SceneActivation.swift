@@ -56,7 +56,7 @@ enum SceneActivation {
     /// Something true of the scene that the caregiver should know, but which
     /// does not stop it being used.
     enum Warning: Equatable {
-        /// No page holds a word the child can press.
+        /// No page holds a word the user can press.
         case noReachableWords
         /// Pages naming words this device does not have. The signature of the
         /// export bug in §9 — populated in the editor, empty on the board.
@@ -65,7 +65,7 @@ enum SceneActivation {
         var message: String {
             switch self {
             case .noReachableWords:
-                return "No page in this scene has a word the child can press. "
+                return "No page in this scene has a word the user can press. "
                      + "The board will be empty until you add some."
             case .missingWords(let keys):
                 let sample = keys.prefix(3).joined(separator: ", ")

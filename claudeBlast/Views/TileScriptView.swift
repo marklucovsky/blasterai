@@ -583,7 +583,7 @@ struct TileScriptView: View {
         // grid diagnostic badge, so App Store assets will need this list opened
         // up to a release build (S5).
         scripts += [
-            ScriptInfo(name: "Screenshots — Child Surface",
+            ScriptInfo(name: "Screenshots — Talk Mode",
                        description: "Five board states, captured to Documents/Screenshots",
                        resourceName: "shots_child_surface"),
             ScriptInfo(name: "Screenshots — Settings",
@@ -593,7 +593,7 @@ struct TileScriptView: View {
                        description: "Seeds repeats + one-offs, then captures the activity log",
                        resourceName: "shots_activity"),
             ScriptInfo(name: "Screenshots — Full Sweep",
-                       description: "Board + every caregiver surface, in demo mode",
+                       description: "Board + every Setup mode surface, in demo mode",
                        resourceName: "shots_full"),
         ]
         // Diagnostics, not demos: these write tens of thousands of backdated

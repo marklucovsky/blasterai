@@ -112,7 +112,7 @@ enum ProfileMigration {
             brownsStage: .one,
             voiceIdentifier: "",
             defaultSceneKey: "",
-            notes: "Used when no child is selected. Holds this caregiver's own settings.",
+            notes: "Used when no other profile is selected. Holds your own settings.",
             // Active iff no real profile owns the slot already.
             isActive: !anyRealActive,
             isSystem: true

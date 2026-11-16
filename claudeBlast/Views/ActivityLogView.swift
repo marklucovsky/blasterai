@@ -472,7 +472,7 @@ struct ActivityLogView: View {
                 ContentUnavailableView(
                     "No utterances yet",
                     systemImage: "text.bubble",
-                    description: Text("Finalized sentence tray groups will appear here for review.")
+                    description: Text("Finished messages will appear here for review.")
                 )
             } else {
                 ContentUnavailableView {

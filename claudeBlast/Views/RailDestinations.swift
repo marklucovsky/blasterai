@@ -109,9 +109,9 @@ struct SystemSceneCopyOffer: View {
         } description: {
             Text(scene.isLockedTemplate
                  ? BlasterScene.lockedTemplateNote(scene) + " Make a copy built on it to edit; "
-                   + "the copy becomes the board the child uses."
+                   + "the copy becomes the board the user uses."
                  : "\(BlasterScene.copyRoot(of: scene.name)) is the system's board, so it can't be changed. "
-                   + "Make a copy to edit; the copy becomes the board the child uses.")
+                   + "Make a copy to edit; the copy becomes the board the user uses.")
         } actions: {
             Button("Make a Copy and Edit") { makeCopy() }
                 .buttonStyle(.borderedProminent)

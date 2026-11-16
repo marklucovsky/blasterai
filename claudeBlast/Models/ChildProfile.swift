@@ -143,9 +143,9 @@ enum BrownsStage: String, CaseIterable, Identifiable {
         case .one:
             return "Starts with each tap speaking its own word, pictures in the message box."
         case .twoThree:
-            return "Starts with pictures in the message box and 4 words per message if you turn on AI sentences."
+            return "Starts with pictures in the message box and 4 words per message if you turn on Sentences."
         case .fourPlus:
-            return "Starts with words only in the message box and 5 words per message if you turn on AI sentences."
+            return "Starts with words only in the message box and 5 words per message if you turn on Sentences."
         }
     }
 
@@ -217,7 +217,7 @@ enum InteractionMode: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .sentence:   return "AI Sentences"
+        case .sentence:   return "Sentences"
         case .singleWord: return "Single Words"
         }
     }

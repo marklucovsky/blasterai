@@ -141,7 +141,7 @@ struct UsageReportSheet: View {
                 }
             }
         } header: {
-            Text("The child’s speech")
+            Text("What \(childName) said")
         } footer: {
             Text(options.includeUtterances
                  ? "Without this the report still shows how often, when, which words and how much of the board — everything except the sentences."
@@ -150,7 +150,7 @@ struct UsageReportSheet: View {
     }
 
     private var childName: String {
-        reportSubjectName.isEmpty ? "the child" : reportSubjectName
+        reportSubjectName.isEmpty ? "the user" : reportSubjectName
     }
 
     @ViewBuilder

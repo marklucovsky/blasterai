@@ -411,7 +411,7 @@ struct SceneImportSheet: View {
         }
         let others = candidates.filter { !reachedIDs.contains($0.id) }
         if !others.isEmpty {
-            Text("A Me page adds its words and folders to a child\u{2019}s own Me page.")
+            Text("A Me page adds its words and folders to the Me page of a profile on this device.")
                 .font(.caption).foregroundStyle(.secondary)
         }
         ForEach(others) { profile in

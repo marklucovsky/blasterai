@@ -22,7 +22,7 @@ struct OpenAIKeySetupGuide: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                Text("Blaster turns the tiles your child taps into spoken sentences using OpenAI. You bring your own key, so there’s no Blaster server in between — your data stays in your iCloud and you pay OpenAI directly, usually pennies a month.")
+                Text("Blaster turns the tiles the user taps into spoken sentences using OpenAI. You bring your own key, so there’s no Blaster server in between — your data stays in your iCloud and you pay OpenAI directly, usually pennies a month.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
 

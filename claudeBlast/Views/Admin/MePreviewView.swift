@@ -190,7 +190,7 @@ struct MePreviewView: View {
         case .included(let page, let moved):
             "on \(page)\u{2019}s page" + (moved ? ", moved here because its cell is taken" : "")
         case .always(let page): "Always, from \(page)"
-        case .page(let page): "for the page the child came from, from \(page)"
+        case .page(let page): "for the page the user came from, from \(page)"
         }
     }
 
@@ -199,7 +199,7 @@ struct MePreviewView: View {
             legendRow(Image(systemName: "pin.circle.fill").foregroundStyle(.indigo), "Pinned, or on an included page")
             legendRow(Image(systemName: "arrow.uturn.right.circle.fill").foregroundStyle(.orange), "Moved: its cell was taken")
             legendRow(dash(.blue), "Always")
-            legendRow(dash(.orange), "For the page the child came from")
+            legendRow(dash(.orange), "For the page the user came from")
             if showsZones {
                 legendRow(swatch(.green), "Words flow here, below your own tiles")
                 legendRow(swatch(.purple), "Folders flow here first")
