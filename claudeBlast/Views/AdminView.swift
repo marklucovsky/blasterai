@@ -123,6 +123,12 @@ struct AdminView: View {
     @State var navigateToNewScene: BlasterScene?
     @State var isCreatingScene = false
     @State var isImportingBoard = false
+    /// Boards and Vocabulary's list: filter, search, sort, and whether the
+    /// Templates group is open. See `AdminView+ScenesTab.swift`.
+    @State var boardFilter: BoardFilter = .all
+    @State var boardSearch = ""
+    @AppStorage("boardsSortByName") var boardsSortByName = false
+    @State var isTemplatesExpanded = false
     @State var importError: String?
     @State var pendingImportURL: ImportSheetURL?
     /// The scene the caregiver is sharing, if any. Drives `ShareBoardSheet`,
