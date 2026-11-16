@@ -1,4 +1,4 @@
-# Commissioning a tile image set
+# Commissioning a tile style
 
 BlasterAI ships a few tile art styles. None of them will be right for every
 child.
@@ -7,17 +7,17 @@ A child with cortical visual impairment may need a single high-saturation shape
 on a black field with no competing detail. A child who reads photographs but not
 symbols may need something else entirely. A child in a classroom in another
 country may need art that looks like their world rather than ours. We cannot
-guess our way to those sets from here, and shipping one compromise for everybody
+guess our way to those styles from here, and shipping one compromise for everybody
 is how AAC art usually goes wrong.
 
-So the tooling is the deliverable. Everything used to build the shipped sets is
-in this repo, and this guide walks it end to end. A set is roughly **$12–$42 of
+So the tooling is the deliverable. Everything used to build the shipped styles is
+in this repo, and this guide walks it end to end. A tile style is roughly **$12–$42 of
 compute and an afternoon** depending on the style, most of which is waiting.
 
 **Who this is for.** Someone comfortable with a terminal and a git clone,
 working with Claude Code or similar. The division of labour that works: **you
 commission and you approve; the assistant does the mechanical work.** You decide
-what the set is for and which tiles are good enough for a child to rely on. You
+what the style is for and which tiles are good enough for a child to rely on. You
 should not be hand-editing hundreds of filenames.
 
 **What you get.** A complete folder of PNGs — one per word the app ships —
@@ -29,13 +29,13 @@ measured against your own style contract and reviewed tile by tile.
 being straight with you about it.**
 
 Everything below works today, and it is the same pipeline that produced all
-five shipped sets. What does not exist yet is a way to *install* a set into
+five shipped tile styles. What does not exist yet is a way to *install* a style into
 BlasterAI from outside the app. The app is built to accept one — art styles
-resolve through a catalog with an explicit slot for sets we didn't ship, and
+resolve through a catalog with an explicit slot for styles we didn't ship, and
 every screen already reads through it — but there is no package format, no
 installer, and no UI. The slot is empty because nothing fills it yet.
 
-So today a finished set reaches a child by one of two routes: you build the app
+So today a finished style reaches a child by one of two routes: you build the app
 yourself from your own checkout, or you send it to us and we ship it. Neither
 scales, and the second one makes us a gatekeeper we don't want to be.
 
@@ -44,7 +44,7 @@ private.** The case we have in mind: a CVI specialist builds seven
 high-contrast variations tuned to different presentations, and wants to
 distribute them from their own site — perhaps sell them — without shipping an
 app or asking our permission. We think that should work. What we don't yet know
-is the shape: how a set is packaged, how a family installs one, what happens on
+is the shape: how a style is packaged, how a family installs one, what happens on
 update, what we owe a buyer if the author disappears, and where the line sits
 between "open source" and "someone's livelihood".
 
@@ -68,7 +68,7 @@ Every tool assumes the **repo root** as the working directory, not `tools/`.
 Budget, measured on gpt-image-2 (2026-10-10), for about 610 drawn tiles plus
 redraws of the ones review rejects:
 
-| Set | Approach | Cost |
+| Style | Approach | Cost |
 |---|---|---|
 | Flat pictogram style (like Classic, High Contrast) | low-quality first pass, rejects redrawn at medium | **~$12** |
 | …plus two skin-tone variants (307 tiles with people × 2) | same | **+~$12** |
@@ -80,10 +80,10 @@ tokens are most of it. Why the quality differs by style is in step 6.
 
 ---
 
-## Step 1 — Decide what the set is *for*
+## Step 1 — Decide what the style is *for*
 
 Write this down before you write a prompt. It is the thing you will measure
-against, and vague intent produces a vague set.
+against, and vague intent produces a vague style.
 
 A useful spec answers:
 
@@ -99,7 +99,7 @@ If you are building for a specific child, this step is a conversation with the
 people who know them — a clinician, a teacher, a parent. That conversation is
 worth more than anything in the rest of this guide.
 
-## Step 2 — Register the set
+## Step 2 — Register the style
 
 Five places. Do all five before generating anything.
 
@@ -117,8 +117,8 @@ Five places. Do all five before generating anything.
 > its own line puts several hundred megabytes into regular git, and getting it
 > back out means rewriting history.
 
-Generate into a **new** set folder rather than overwriting an existing one. You
-want the old set intact to compare against, and you may decide the new one is
+Generate into a **new** folder rather than overwriting an existing one. You
+want the old style intact to compare against, and you may decide the new one is
 worse.
 
 ## Step 3 — Write the style prompt
@@ -181,7 +181,7 @@ python3 tools/analyze_set.py --set your_set --out tools/tile_sets/analysis/r1.js
 
 `analyze_set.py` scores each tile against a **profile** — a machine-readable
 version of your step-1 spec, in `PROFILES` at the top of the file. Add one for
-your set: declared background and tolerance, edge uniformity, subject size,
+your style: declared background and tolerance, edge uniformity, subject size,
 contrast, component and fleck limits, centroid drift.
 
 It measures what repeats mechanically: frames and insets, background
@@ -189,14 +189,14 @@ contamination, clutter, washed-out contrast, undersized or off-center subjects.
 It does **not** know whether the picture means the right word. That needs eyes,
 and the rubric is in `docs/tile-audit-p3d.md` (clarity / match / size, 1–5).
 
-> **Calibrate before you trust it.** Run the analyzer against a set you already
-> consider good and see what it flags. If a known-good set scores badly, your
+> **Calibrate before you trust it.** Run the analyzer against a style you already
+> consider good and see what it flags. If a known-good style scores badly, your
 > profile is wrong, not the art. This is not hypothetical: judging Playful-3D
 > against a flat-background rule flagged 259 of 543 perfectly good tiles,
 > because its prompt promises "clean solid-color background" while what it
 > actually ships is a lit gradient with a cast shadow. **A style prompt and a
-> style contract are different documents.** Both shipping sets now score 92%,
-> which is what makes a 12% score on a third set meaningful.
+> style contract are different documents.** Both shipping styles now score 92%,
+> which is what makes a 12% score on a third style meaningful.
 
 Then loop: change one thing, regenerate the probe, compare.
 
@@ -212,7 +212,7 @@ diff you will not notice.
 
 **Keep a log.** One entry per round: what you changed, what it was meant to fix,
 the score, and the verdict. `docs/imageset-highcontrast-log.md` is a real one —
-four rounds, 3/16 clean to 16/17. The log is what makes the set reproducible by
+four rounds, 3/16 clean to 16/17. The log is what makes the style reproducible by
 someone else, and it is most of this guide's evidence.
 
 **Two levers, and knowing which to reach for:**
@@ -220,7 +220,7 @@ someone else, and it is most of this guide's evidence.
 - **The style prompt** fixes systemic problems — everything is framed,
   everything is too small, color is everywhere.
 - **`HC_SUBJECT_OVERRIDES` in `generate_sets.py`** fixes a small closed class of
-  keys, without disturbing the shared subjects that other sets use.
+  keys, without disturbing the shared subjects that other styles use.
 
 The distinction matters because subject text and style text compete, and
 **subject text usually wins.** The `up` tile stayed solid blue through two
@@ -230,22 +230,22 @@ Playful-3D years earlier. No amount of style wording beat it; a four-line
 per-key override did. If a rule you stated globally is being ignored by a
 handful of tiles, read their subjects before rewriting the prompt again.
 
-## Step 6 — Freeze a reference pack, then generate the full set
+## Step 6 — Freeze a reference pack, then generate the full style
 
 **gpt-image-2 holds a style by example, not by description.** The Classic
 prompt that gave bold flat pictograms on gpt-image-1 comes back thin-lined and
-shaded on gpt-image-2. Showing it four tiles from the set fixes that. So once
+shaded on gpt-image-2. Showing it four tiles from the style fixes that. So once
 the probe tiles from step 5 are ones you would ship, freeze four of them as the
-set's **reference pack**: deliberately unrelated to each other (a person, an
+style's **reference pack**: deliberately unrelated to each other (a person, an
 action, an object, an abstract), downscaled to **256px**, saved as
 `claudeBlast/Resources/ReferencePacks/refpack_your_set__<key>.png`. The app
-bundles the pack, so a word a caregiver adds later is drawn from the same
-examples as the set.
+bundles the pack, so a word someone adds later in the app is drawn from the same
+examples as the style.
 
 256px is enough. A 512px reference costs 1,024 input tokens and a 256px one
 costs 256, and on a 47-word comparison the smaller pack held the style just as
 well. One reference at full size is worse than four small ones: the model
-copies that one tile's features instead of the set's style.
+copies that one tile's features instead of the style.
 
 Then draw everything through the pack:
 
@@ -270,9 +270,9 @@ away, and they are the style. It draws at `medium`. Record the choice in
 `DEFAULT_QUALITY`. The app always draws at `medium`, because a word added there
 has no reviewer.
 
-Generate the **whole** set with the final prompt and pack, including tiles you
-made during iteration. A set generated across three prompt revisions is not one
-set.
+Generate the **whole** style with the final prompt and pack, including tiles you
+made during iteration. A style generated across three prompt revisions is not one
+style.
 
 ## Step 7 — Review and approve
 
@@ -285,13 +285,13 @@ python3 tools/build_review_page.py --set your_set_gi2
 
 A self-contained page, one card per tile, showing the shipped Playful-3D and
 Classic tiles beside your new one, with ✓ / ✗ and a comment box on each. A
-redraw of an existing set (`classic_gi2`) is shown beside only the tile it
+redraw of an existing style (`classic_gi2`) is shown beside only the tile it
 replaces. Filter by word class, by pack, or by status; approve everything
 visible in one click when a category is clean.
 
 The comparison columns are yours to choose. `--compare FOLDER:LABEL` (repeatable,
 folders under `tools/tile_sets/`) and `--label` for the column under review —
-this is how a skin-tone set is reviewed as **Light | Medium | Dark**:
+this is how a skin-tone style is reviewed as **Light | Medium | Dark**:
 
 ```bash
 python3 tools/build_review_page.py --set your_set_dark \
@@ -342,15 +342,15 @@ Without it, every tile ships regardless of verdict — which is what the review
 tool's export used to allow, since nothing read it.
 
 Then build and run the test target. `ImageSetCoverageTests` enforces that any
-set marked `isShippable` has real art for every vocabulary key, and prints a
-notice when a set that is *not* marked shippable has become complete:
+style marked `isShippable` has real art for every vocabulary key, and prints a
+notice when a style that is *not* marked shippable has become complete:
 
 ```
 [eval] your_set now has full coverage — consider marking it isShippable.
 ```
 
-That is your completion signal. Flip `isShippable` in
-`ImageSetID` (`claudeBlast/Services/TileImageResolver.swift`) and the coverage
+That is your completion signal. Flip `isShippable` on the style's entry in
+`ImageSetCatalog` (`claudeBlast/Services/ImageSetCatalog.swift`) and the coverage
 test starts enforcing it from then on.
 
 ---
@@ -363,7 +363,7 @@ The specific failures were ours. These are not:
    domain, not in the style.
 2. **Subject text beats style text.** A color named in a subject overrides a
    global rule about color, every time.
-3. **Calibrate against known-good work first.** An analyzer that flags a set you
+3. **Calibrate against known-good work first.** An analyzer that flags a style you
    already shipped is measuring the wrong contract.
 4. **A probe set should be adversarial.** Hard keys, chosen to break things.
 5. **Diff every round.** Count regressions, not just fixes.
@@ -381,7 +381,7 @@ guide — it is the same process with the details left in.
 
 ## If you build one
 
-**Tell us.** Open a PR, or just say it exists. A set tuned for a real child,
+**Tell us.** Open a PR, or just say it exists. A style tuned for a real child,
 with the spec that produced it, is more useful to the next family than anything
 we would have guessed at from here.
 

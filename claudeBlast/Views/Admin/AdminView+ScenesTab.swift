@@ -240,7 +240,7 @@ extension AdminView {
             Button {
                 activateScene(scene)
             } label: {
-                Label("Activate", systemImage: "checkmark.circle")
+                Label("Make Current Board", systemImage: "checkmark.circle")
             }
             .tint(.green)
         }

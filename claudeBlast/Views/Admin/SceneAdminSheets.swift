@@ -156,7 +156,7 @@ struct SceneRow: View {
                     .foregroundStyle(.green)
                     .font(.title3)
             } else {
-                Button("Activate") { onActivate() }
+                Button("Make Current Board") { onActivate() }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
             }
