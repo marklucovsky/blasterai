@@ -527,7 +527,7 @@ extension AdminView {
                             // weighing whether they are ready for AI deserves
                             // better than being frightened out of the decision.
                             Text("Blaster keeps working as it does now — boards, speech, packs, the editor, print and export are unchanged. "
-                                 + "The AI assist features need a key: sentence generation, scene and page generation, "
+                                 + "The AI assist features need a key: sentence generation, board and page generation, "
                                  + "word moderation, and art for new words. You can add a key back any time.")
                         }
                     }

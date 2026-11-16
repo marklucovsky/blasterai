@@ -116,7 +116,7 @@ enum SceneNavigation {
         var summary: String {
             switch self {
             case .none:
-                return "Only the words this scene is about. Add words and pages yourself."
+                return "Only the words this board is about. Add words and pages yourself."
             default:
                 return wordSet?.summary ?? ""
             }

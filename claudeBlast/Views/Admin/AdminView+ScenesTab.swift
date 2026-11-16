@@ -326,13 +326,13 @@ extension AdminView {
             let outcome = try scene.activate(context: modelContext)
             try? modelContext.save()
             if let message = outcome.message {
-                activationNotice = ActivationNotice(title: "Scene Activated", message: message)
+                activationNotice = ActivationNotice(title: "Board Activated", message: message)
             }
         } catch {
             // Nothing was mutated — `activate` validates before it touches
             // anything — so the previously active scene is still the board.
             activationNotice = ActivationNotice(
-                title: "Can't Use This Scene",
+                title: "Can't Use This Board",
                 message: error.localizedDescription)
         }
     }
@@ -434,7 +434,7 @@ extension AdminView {
                             Text(BlasterScene.copyRoot(of: template.name)).font(.headline)
                             Text(carriedUsers(template))
                                 .font(.caption).foregroundStyle(.secondary)
-                            Button("Add to My Scenes") {
+                            Button("Add to My Boards") {
                                 template.isCarriedTemplate = false
                                 try? modelContext.save()
                             }
@@ -463,7 +463,7 @@ extension AdminView {
     }
 
     func createBlankScene(name: String) {
-        let scene = BlasterScene(name: name.isEmpty ? "New Scene" : name)
+        let scene = BlasterScene(name: name.isEmpty ? "New Board" : name)
         scene.ensureIdentity(authorID: DeviceProfileStore.ensureAuthorID(context: modelContext),
                              authorName: DeviceProfileStore.authorName(context: modelContext))
         modelContext.insert(scene)

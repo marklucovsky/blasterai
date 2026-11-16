@@ -19,13 +19,13 @@ enum SceneImportError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidType(let type):
-            return "Not a Blaster scene file (type: \(type))"
+            return "Not a Blaster board file (type: \(type))"
         case .unsupportedVersion(let version):
-            return "Unsupported scene format version: \(version)"
+            return "Unsupported board format version: \(version)"
         case .decodingFailed(let detail):
-            return "Could not read scene file: \(detail)"
+            return "Could not read board file: \(detail)"
         case .noPages:
-            return "Scene has no pages"
+            return "Board has no pages"
         }
     }
 }

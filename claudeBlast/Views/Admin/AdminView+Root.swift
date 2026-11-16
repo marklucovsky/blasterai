@@ -370,7 +370,7 @@ extension AdminView {
     var lookSoundFeelPage: some View {
         List {
             Section("Look") {
-                Picker("Image Set", selection: $imageSetRaw) {
+                Picker("Tile Style", selection: $imageSetRaw) {
                     ForEach(ImageSetCatalog.selectable) { set in
                         Text(set.isShippable ? set.displayName : "\(set.displayName) (incomplete)")
                             .tag(set.id.rawValue)

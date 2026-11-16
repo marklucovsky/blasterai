@@ -286,7 +286,7 @@ struct TileScriptView: View {
             // Explicit + actionable instead of silently running against whatever
             // scene is active: the script binds by stable id, so a miss means the
             // exact scene it was recorded against isn't loaded here.
-            return "This demo needs the \u{201C}\(Self.humanizeSceneRef(scene))\u{201D} scene, which isn't loaded on this device. Import that scene (the sender can share it), then try again."
+            return "This demo needs the \u{201C}\(Self.humanizeSceneRef(scene))\u{201D} board, which isn't loaded on this device. Import that board (the sender can share it), then try again."
         }
         var parts: [String] = []
         if !result.missingTiles.isEmpty {
@@ -295,7 +295,7 @@ struct TileScriptView: View {
         if !result.missingPages.isEmpty {
             parts.append("pages \u{2014} \(result.missingPages.joined(separator: ", "))")
         }
-        return "This demo references items not in its target scene (\(parts.joined(separator: "; "))). Edit the script or pick a matching scene."
+        return "This demo references items not in its target board (\(parts.joined(separator: "; "))). Edit the script or pick a matching board."
     }
 
     // MARK: - Save Modal

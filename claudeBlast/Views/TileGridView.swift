@@ -424,13 +424,13 @@ struct TileGridView: View {
     @ViewBuilder
     private var noBoardState: some View {
         ContentUnavailableView {
-            Label(activeScene == nil ? "No Active Scene" : "This Scene Has No Home Page",
+            Label(activeScene == nil ? "No Active Board" : "This Board Has No Home Page",
                   systemImage: "questionmark.square")
         } description: {
             if let scene = activeScene {
-                Text("“\(scene.name)” is active, but its home page (“\(scene.homePageKey)”) does not match any page in it. Set a home page, or activate another scene.")
+                Text("“\(scene.name)” is active, but its home page (“\(scene.homePageKey)”) does not match any page in it. Set a home page, or activate another board.")
             } else {
-                Text("No scene is currently active. Activate one to show the board.")
+                Text("No board is currently active. Activate one to show the board.")
             }
         } actions: {
             Button("Open Settings") { caregiverMenu.requested = .admin }
@@ -1270,7 +1270,7 @@ struct TileGridView: View {
                 if let key = editablePageKey { caregiverMenu.requested = .editPage(key) }
             }
             Divider()
-            caregiverMenuRow("Edit This Scene", systemImage: "square.grid.3x3",
+            caregiverMenuRow("Edit This Board", systemImage: "square.grid.3x3",
                              enabled: activeScene != nil) {
                 showEditMenu = false
                 caregiverMenu.requested = .editScene
@@ -1362,7 +1362,7 @@ struct TileGridView: View {
                 }
             }
         } label: {
-            menuLabel("Scene", value: activeScene?.name ?? "None",
+            menuLabel("Board", value: activeScene?.name ?? "None",
                       systemImage: "square.grid.3x3")
         }
     }
@@ -1421,10 +1421,10 @@ struct TileGridView: View {
             let outcome = try scene.activate(context: modelContext)
             try? modelContext.save()
             if let message = outcome.message {
-                sceneNotice = SceneNotice(title: "Scene Activated", message: message)
+                sceneNotice = SceneNotice(title: "Board Activated", message: message)
             }
         } catch {
-            sceneNotice = SceneNotice(title: "Can't Use This Scene",
+            sceneNotice = SceneNotice(title: "Can't Use This Board",
                                       message: error.localizedDescription)
         }
     }

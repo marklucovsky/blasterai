@@ -102,7 +102,7 @@ struct BoardImportSheet: View {
                     settleForm
                 }
             }
-            .navigationTitle(isScene ? "Import Scene" : "Import Pages")
+            .navigationTitle(isScene ? "Import Board" : "Import Pages")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -205,7 +205,7 @@ struct BoardImportSheet: View {
 
     private var sourceSection: some View {
         Section {
-            TextField(isScene ? "Paste a link to a sheet or scene file" : "Paste a Google Sheets link", text: $link)
+            TextField(isScene ? "Paste a link to a sheet or board file" : "Paste a Google Sheets link", text: $link)
                 .textContentType(.URL)
                 .keyboardType(.URL)
                 .autocorrectionDisabled()
@@ -214,7 +214,7 @@ struct BoardImportSheet: View {
             // Its own row and plainly a button: beside a freshly pasted link it
             // read as part of the text.
             Button { fetchLink() } label: {
-                Label(isScene ? "Get Scene from Link" : "Get Pages from Link", systemImage: "arrow.down.circle.fill")
+                Label(isScene ? "Get Board from Link" : "Get Pages from Link", systemImage: "arrow.down.circle.fill")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
@@ -226,7 +226,7 @@ struct BoardImportSheet: View {
             }
         } header: {
             Text(isScene
-                 ? "Bring in a BlasterAI scene (.blasterscene) or a spreadsheet — Google Sheets, Excel, Numbers or CSV — from a link or a file."
+                 ? "Bring in a BlasterAI board file or a spreadsheet — Google Sheets, Excel, Numbers or CSV — from a link or a file."
                  : "Bring in pages from a spreadsheet — Google Sheets, Excel, Numbers or CSV — from a link or a file. Each tab is a page.")
                 .textCase(nil)
         } footer: {
@@ -238,22 +238,22 @@ struct BoardImportSheet: View {
 
     @ViewBuilder
     private func settleSections(_ preview: BoardWorkbook.Preview) -> some View {
-        Section("Scene") {
+        Section("Board") {
             if let scene {
                 LabeledContent("Into", value: scene.name)
             } else {
-                TextField("Scene name", text: $sceneName)
+                TextField("Board name", text: $sceneName)
                 if !sceneDescription.isEmpty {
                     LabeledContent("Description", value: sceneDescription)
                 }
             }
             LabeledContent("Source", value: sourceName)
             if sheetIsTemplate {
-                LabeledContent("Template", value: "Yes — other scenes can be built on it")
+                LabeledContent("Template", value: "Yes — other boards can be built on it")
             }
             if let name = sheetTemplateName {
                 if sheetNamesItself {
-                    LabeledContent("Built on", value: "Its own name \u{2014} ignored. Built On names the template this scene uses.")
+                    LabeledContent("Built on", value: "Its own name \u{2014} ignored. Built On names the template this board uses.")
                 } else if let template = sheetTemplate {
                     LabeledContent("Built on", value: BlasterScene.copyRoot(of: template.name))
                 } else {
@@ -267,7 +267,7 @@ struct BoardImportSheet: View {
             Text("Pages (\(preview.pages.count))")
         } footer: {
             if scene != nil, preview.pages.contains(where: { if case .filled = $0.existing { true } else { false } }) {
-                Text("The sheet replaces the pages it draws. Switch one off to keep the scene\u{2019}s. Pages the sheet doesn\u{2019}t draw are left as they are.")
+                Text("The sheet replaces the pages it draws. Switch one off to keep the board\u{2019}s. Pages the sheet doesn\u{2019}t draw are left as they are.")
             }
         }
         if !preview.newWords.isEmpty {
@@ -287,7 +287,7 @@ struct BoardImportSheet: View {
             } header: {
                 Text("New words (\(preview.newWords.count))")
             } footer: {
-                Text("Checked in the preview, like any new word, before they reach the board. Made without pictures; generate art for them from the scene afterwards.")
+                Text("Checked in the preview, like any new word, before they reach the board. Made without pictures; generate art for them from the board afterwards.")
             }
         }
         if !preview.emptyPages.isEmpty {
@@ -717,7 +717,7 @@ enum ImportSource {
     enum RouteError: LocalizedError {
         case notASpreadsheet
         var errorDescription: String? {
-            "Pages come in from a spreadsheet. To bring in a BlasterAI scene, use Import Scene in Settings › Boards and Vocabulary."
+            "Pages come in from a spreadsheet. To bring in a BlasterAI board, use Import Board in Settings › Boards and Vocabulary."
         }
     }
 

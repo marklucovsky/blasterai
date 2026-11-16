@@ -45,7 +45,7 @@ struct AboutStatsView: View {
                 if custom > 0 { LabeledContent("Added by you", value: "\(custom)") }
             }
             Section("Content") {
-                LabeledContent("Scenes", value: "\(scenes.count)")
+                LabeledContent("Boards", value: "\(scenes.count)")
                 LabeledContent("Pages", value: "\(pageCount)")
             }
             Section("Profiles & activity") {

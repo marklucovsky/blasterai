@@ -51,7 +51,7 @@ struct SceneFromCollectionsView: View {
                 TextField("e.g. Snack time", text: $sceneName)
                     .autocorrectionDisabled()
             } header: {
-                Text("Scene Name")
+                Text("Board Name")
             } footer: {
                 Text("Each pack, class or copied page you pick below becomes its own page, and the home page gets a link to every one.")
             }

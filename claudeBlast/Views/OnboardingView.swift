@@ -244,7 +244,7 @@ struct OnboardingView: View {
             Label {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("AI when you want it").font(.headline)
-                    Text("Build scenes from a description, draw new words in your board's style, and, when they're ready, turn taps into full sentences. Uses your own OpenAI key; set it up now or later.")
+                    Text("Build boards from a description, draw new words in your board's style, and, when they're ready, turn taps into full sentences. Uses your own OpenAI key; set it up now or later.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                     Button {
@@ -348,7 +348,7 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Your name")
                 .font(.title.bold())
-            Text("Credited when you share scenes, pages, or vocabulary packs you make — e.g. \u{201C}by Dr. Yalcin.\u{201D}")
+            Text("Credited when you share boards, pages, or vocabulary packs you make — e.g. \u{201C}by Dr. Yalcin.\u{201D}")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             TextField("Dr. Yalcin", text: $authorName)
@@ -493,7 +493,7 @@ struct OnboardingView: View {
             Toggle(isOn: $icloudEnabled) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Enable iCloud sync").font(.headline)
-                    Text("Sync profiles, scenes, and history across your own Apple devices.")
+                    Text("Sync profiles, boards, and history across your own Apple devices.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }

@@ -51,7 +51,7 @@ struct RailPageEditor: View {
                 } else {
                     ContentUnavailableView("This Page Can't Be Edited",
                                            systemImage: "pencil.slash",
-                                           description: Text("It is not a page of the active scene."))
+                                           description: Text("It is not a page of the active board."))
                 }
             }
             .toolbar {
@@ -79,7 +79,7 @@ struct RailSceneEditor: View {
                         SceneEditorView(scene: scene)
                     }
                 } else {
-                    ContentUnavailableView("No Active Scene", systemImage: "pencil.slash")
+                    ContentUnavailableView("No Active Board", systemImage: "pencil.slash")
                 }
             }
             .toolbar {
@@ -163,11 +163,11 @@ struct SystemPageCopyOffer: View {
             Text(template == nil
                  ? "\(page.title) is a BlasterAI 60 page. Edit your own copy of it: the copy replaces it on "
                    + "\(scene.name), and BlasterAI 60's updates no longer reach it. You can go back to "
-                   + "BlasterAI 60's page in Edit This Scene."
+                   + "BlasterAI 60's page in Edit This Board."
                  : owner?.template.isLockedTemplate == true
                    ? "\(page.title) is \(templateName)'s, which updates when its author sends a new version. "
                      + "Make a copy for \(scene.name): it replaces \(templateName)'s here, and its updates no longer reach it."
-                   : "\(page.title) is \(templateName)'s. Change it in \(templateName) for every scene built on it, "
+                   : "\(page.title) is \(templateName)'s. Change it in \(templateName) for every board built on it, "
                      + "or make a copy for \(scene.name) alone.")
         } actions: {
             // A template received from someone else changes only when they

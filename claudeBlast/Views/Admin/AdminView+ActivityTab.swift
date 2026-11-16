@@ -85,7 +85,7 @@ extension AdminView {
                 Image(systemName: isScene ? "square.grid.2x2.fill" : "doc.text.fill")
                     .font(.caption2)
                     .foregroundStyle(event.eventType == .refined ? Color.purple : Color.accentColor)
-                Text("\(verb) \(isScene ? "scene" : "page")")
+                Text("\(verb) \(isScene ? "board" : "page")")
                     .font(.caption.weight(.semibold))
                 Text(authoringName(for: event))
                     .font(.caption)
@@ -389,7 +389,7 @@ extension AdminView {
             Button("Reset All Data", role: .destructive) { performFactoryReset() }
             Button("Cancel", role: .cancel) { }
         } message: {
-            Text("Leaves this device as a fresh install: deletes all scenes, pages, tiles, activity, cache and settings. Vocabulary reloads from the bundle. Your API key is kept, and anything in iCloud is untouched.")
+            Text("Leaves this device as a fresh install: deletes all boards, pages, tiles, activity, cache and settings. Vocabulary reloads from the bundle. Your API key is kept, and anything in iCloud is untouched.")
         }
     }
 

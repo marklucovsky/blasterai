@@ -71,7 +71,7 @@ struct SceneStructurePicker: View {
             Text(plan.chrome.summary)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Text("Added after the words the scene is already about. Use Select Tiles in the page editor to move them wherever you want them.")
+            Text("Added after the words the board is already about. Use Select Tiles in the page editor to move them wherever you want them.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         } header: {
@@ -157,7 +157,7 @@ struct SceneStructurePicker: View {
     private var donorScenesSection: some View {
         Section(isExpanded: $showDonors) {
             if donorScenes.isEmpty {
-                Text("No other scenes to copy from yet.")
+                Text("No other boards to copy from yet.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -189,11 +189,11 @@ struct SceneStructurePicker: View {
             }
             // In the content rather than a footer: the collapsible Section has no
             // footer slot, and a note about copying belongs with the copying.
-            Text("Copies the words. Navigation links inside a copied page are dropped, because they point at pages that scene has and this one may not. BlasterAI 60's pages are linked instead, so they stay up to date.")
+            Text("Copies the words. Navigation links inside a copied page are dropped, because they point at pages that board has and this one may not. BlasterAI 60's pages are linked instead, so they stay up to date.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         } header: {
-            header("Add pages from another scene",
+            header("Add pages from another board",
                    count: plan.donorPages.count, isExpanded: $showDonors)
         }
     }
@@ -202,7 +202,7 @@ struct SceneStructurePicker: View {
     private var summarySection: some View {
         Section {
             if plan.isEmpty {
-                Text("Nothing selected — the scene stays exactly as it is. That is a fine answer; you can add pages later from the scene editor.")
+                Text("Nothing selected — the board stays exactly as it is. That is a fine answer; you can add pages later from the board editor.")
                     .font(.caption).foregroundStyle(.secondary)
             } else {
                 Label("Adds \(plan.additionCount) thing\(plan.additionCount == 1 ? "" : "s"). Nothing is removed or rearranged.",
@@ -222,7 +222,7 @@ struct SceneStructurePicker: View {
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title).foregroundStyle(.primary)
-                    Text(alreadyThere ? "already on this scene" : subtitle)
+                    Text(alreadyThere ? "already on this board" : subtitle)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -341,7 +341,7 @@ struct SceneStructureBoardPreview: View {
             if isExpanded {
                 ScrollView {
                     if existingHomeTiles.isEmpty && addedWords.isEmpty && outline.homeLinks.isEmpty {
-                        Text("This scene's home page is empty. Anything you add below lands here.")
+                        Text("This board's home page is empty. Anything you add below lands here.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)

@@ -6,7 +6,7 @@
 	<array>
 		<dict>
 			<key>CFBundleTypeName</key>
-			<string>Blaster Scene</string>
+			<string>Blaster Board</string>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>LSHandlerRank</key>
@@ -67,7 +67,7 @@
 				<string>public.json</string>
 			</array>
 			<key>UTTypeDescription</key>
-			<string>Blaster Scene</string>
+			<string>Blaster Board</string>
 			<key>UTTypeIconFiles</key>
 			<array/>
 			<key>UTTypeIdentifier</key>
@@ -76,6 +76,7 @@
 			<dict>
 				<key>public.filename-extension</key>
 				<array>
+					<string>blasterboard</string>
 					<string>blasterscene</string>
 				</array>
 				<key>public.mime-type</key>

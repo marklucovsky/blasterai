@@ -157,7 +157,7 @@ struct TileGridEditor<Cell: View>: View {
         cell(entry)
             .opacity(entry.isEmptyCell ? 0 : 0.45)
             .allowsHitTesting(false)
-            .accessibilityLabel("System row: \(entry.key)")
+            .accessibilityLabel("Navigation bar: \(entry.key)")
     }
 
     // MARK: - Cell

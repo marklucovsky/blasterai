@@ -26,7 +26,7 @@ struct AuthorNameField: View {
         } header: {
             Text("Author")
         } footer: {
-            Text("Optional. Scenes you create and share are labeled \u{201C}by \(name.isEmpty ? "you" : name)\u{201D} so others know who made them. Set or change it anytime.")
+            Text("Optional. Boards you create and share are labeled \u{201C}by \(name.isEmpty ? "you" : name)\u{201D} so others know who made them. Set or change it anytime.")
         }
         .onAppear {
             guard !loaded else { return }
@@ -130,7 +130,7 @@ struct SceneRow: View {
                         .font(.caption)
                         .foregroundStyle(.orange)
                 } else if scene.isTemplate {
-                    Label("Template \u{2014} other scenes can be built on it", systemImage: "square.stack.3d.up")
+                    Label("Template \u{2014} other boards can be built on it", systemImage: "square.stack.3d.up")
                         .font(.caption)
                         .foregroundStyle(.indigo)
                 }
@@ -274,7 +274,7 @@ struct SceneGeneratorSheet: View {
                         onAccept: { _ in },
                         onCancel: { dismiss() }
                     )
-                    .navigationTitle("Scene Preview")
+                    .navigationTitle("Board Preview")
                     .navigationBarTitleDisplayMode(.inline)
                 }
             case .structure:
@@ -304,7 +304,7 @@ struct SceneGeneratorSheet: View {
                         onAccept: { buildAndAccept($0) },
                         onCancel: { step = isFromCollections ? .collections : .structure }
                     )
-                    .navigationTitle("Scene Preview")
+                    .navigationTitle("Board Preview")
                     .navigationBarTitleDisplayMode(.inline)
                 }
             }
@@ -364,7 +364,7 @@ struct SceneGeneratorSheet: View {
                     } header: {
                         Text("Start from an example")
                     } footer: {
-                        Text("Loads instantly as a ready-made scene. Edit the description to generate a fresh one with AI.")
+                        Text("Loads instantly as a ready-made board. Edit the description to generate a fresh one with AI.")
                             .font(.caption)
                     }
                 }
@@ -390,7 +390,7 @@ struct SceneGeneratorSheet: View {
 
                 if apiKey.isEmpty {
                     Section {
-                        Text("Add an OpenAI API key in Settings to generate custom scenes. The ready-made examples above work without a key.")
+                        Text("Add an OpenAI API key in Settings to generate custom boards. The ready-made examples above work without a key.")
                             .font(.caption)
                             .foregroundStyle(.orange)
                     }
@@ -421,7 +421,7 @@ struct SceneGeneratorSheet: View {
                         // Demo mode always presents "Generate Scene" ✨ so a
                         // prebuilt sample reads as live AI on stage.
                         let isCached = StarterSceneCatalog.matching(sessionDescription) != nil && !demoMode
-                        Label(isCached ? "Load Example" : "Generate Scene",
+                        Label(isCached ? "Load Example" : "Generate Board",
                               systemImage: isCached ? "square.grid.2x2.fill" : "sparkles")
                     }
                 }
@@ -434,7 +434,7 @@ struct SceneGeneratorSheet: View {
                       || (apiKey.isEmpty && StarterSceneCatalog.matching(sessionDescription) == nil))
             .padding()
         }
-        .navigationTitle("New Scene")
+        .navigationTitle("New Board")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
@@ -449,11 +449,11 @@ struct SceneGeneratorSheet: View {
 
     private var manualForm: some View {
         Form {
-            Section("Scene Name") {
+            Section("Board Name") {
                 TextField("e.g. Morning routine", text: $manualName)
             }
         }
-        .navigationTitle("New Scene")
+        .navigationTitle("New Board")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
@@ -1010,10 +1010,10 @@ struct SceneRefineInputSheet: View {
                     TextField("Describe the change…", text: $instruction, axis: .vertical)
                         .lineLimit(3...6)
                 } footer: {
-                    Text("e.g. \u{201C}add a fish pond and a creek\u{201D}, or \u{201C}remove the tractor\u{201D}. This changes the words the scene is about; pages and core words are the next step.")
+                    Text("e.g. \u{201C}add a fish pond and a creek\u{201D}, or \u{201C}remove the tractor\u{201D}. This changes the words the board is about; pages and core words are the next step.")
                 }
             }
-            .navigationTitle("Refine Scene")
+            .navigationTitle("Refine Board")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

@@ -48,7 +48,7 @@ enum SceneActivation {
         var message: String {
             switch self {
             case .adoptedHomePage(let key):
-                return "This scene had no home page, so “\(key)” is now the page it opens on."
+                return "This board had no home page, so “\(key)” is now the page it opens on."
             }
         }
     }
@@ -65,7 +65,7 @@ enum SceneActivation {
         var message: String {
             switch self {
             case .noReachableWords:
-                return "No page in this scene has a word the user can press. "
+                return "No page in this board has a word the user can press. "
                      + "The board will be empty until you add some."
             case .missingWords(let keys):
                 let sample = keys.prefix(3).joined(separator: ", ")
@@ -83,7 +83,7 @@ enum SceneActivation {
         var errorDescription: String? {
             switch self {
             case .noPages:
-                return "This scene has no pages yet, so there is nothing to show. "
+                return "This board has no pages yet, so there is nothing to show. "
                      + "Add a page before making it active."
             }
         }

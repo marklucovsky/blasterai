@@ -34,6 +34,7 @@ struct ImportRouteSheet: View {
 
     static func route(for url: URL) -> Route {
         switch url.pathExtension.lowercased() {
+        case BlasterSceneFormat.fileExtension, BlasterSceneFormat.legacyFileExtension: return .scene
         case BlasterPackFormat.fileExtension:     return .pack
         case BlasterColorwayFormat.fileExtension: return .colorway
         case BlasterKeyFormat.fileExtension:      return .giftedKey
@@ -219,7 +220,7 @@ struct PackImportSheet: View {
             } header: {
                 Text(result.wasUpdate ? "Pack updated" : "Pack added")
             } footer: {
-                Text("Find these words under **\(result.pack.displayName)** in the tile picker, or start a board from them with **New Scene from Collections**.")
+                Text("Find these words under **\(result.pack.displayName)** in the tile picker, or start a board from them with **New Board from Collections**.")
             }
 
             if !result.oversizedImages.isEmpty {

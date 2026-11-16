@@ -6,7 +6,7 @@
 //
 //  Codable structs for the scene exchange format.
 //  Media type: application/vnd.claudeblast.scene+json
-//  File extension: .blasterscene
+//  File extension: .blasterboard (build 11 on); .blasterscene still opens
 //
 
 import Foundation
@@ -34,7 +34,13 @@ extension UTType {
 enum BlasterSceneFormat {
     static let mediaType = "application/vnd.claudeblast.scene+json"
     static let currentVersion = "1.0.0"
-    static let fileExtension = "blasterscene"
+    /// Board files are `.blasterboard` from build 11 (Mark, 2026-11-16, with
+    /// "scene" becoming "board" on screen). The type identifier and the
+    /// `@type` inside the file stay `scene`, so older builds still read the
+    /// contents; they just don't claim the new extension.
+    static let fileExtension = "blasterboard"
+    /// What every file before build 11 was saved as. Always opens.
+    static let legacyFileExtension = "blasterscene"
     /// Max decoded image data size in bytes (600 KB).
     static let maxImageDataSize = 600 * 1024
     /// Max image dimension for export (pixels).
@@ -76,6 +82,7 @@ enum BlasterPackFormat {
 enum BlasterFileFormat {
     static let openableExtensions: Set<String> = [
         BlasterSceneFormat.fileExtension,
+        BlasterSceneFormat.legacyFileExtension,
         BlasterPackFormat.fileExtension,
         BlasterColorwayFormat.fileExtension,
         BlasterKeyFormat.fileExtension,
@@ -173,7 +180,7 @@ struct ExportablePage: Codable {
 
 struct ExportableScene: Codable {
     let type: String
-    var comment: String? = "This is a Blaster AAC scene file. Tap the share icon and choose \"Blaster\" to import."
+    var comment: String? = "This is a Blaster AAC board file. Tap the share icon and choose \"Blaster\" to import."
     let version: String
     let name: String
     let description: String

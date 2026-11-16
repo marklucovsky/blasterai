@@ -29,7 +29,7 @@ enum ShareSubject {
 
     var title: String {
         switch self {
-        case .scene(let s): return s.name.isEmpty ? "Scene" : s.name
+        case .scene(let s): return s.name.isEmpty ? "Board" : s.name
         case .page(let p, _): return p.key
         }
     }
@@ -137,11 +137,11 @@ struct ShareBoardSheet: View {
                     }
                     sparseArtWarning
                 } header: {
-                    Text("Share \(isPage ? "Page" : "Scene")")
+                    Text("Share \(isPage ? "Page" : "Board")")
                 } footer: {
                     Text(isPage
                          ? "A shared page travels as a vocabulary pack: the words and their pictures, with no layout. Whoever receives it can build a page from those words whenever they like."
-                         : "A shared scene arrives as a scene — the same pages, laid out the same way.")
+                         : "A shared board arrives as a board — the same pages, laid out the same way.")
                 }
             }
             .navigationTitle(subject.title)
@@ -282,7 +282,7 @@ struct ShareBoardSheet: View {
     private var sceneOptionRows: some View {
         if !isPage {
             levelPicker($sceneLevel, allowsAll: false)
-            Text("The scene carries every level. This is the level it opens at for whoever receives it.")
+            Text("The board carries every level. This is the level it opens at for whoever receives it.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -515,7 +515,7 @@ struct ShareBoardSheet: View {
 
     private func title(for destination: ShareDestination) -> String {
         switch destination {
-        case .nativeFile: return isPage ? "Blaster Pack" : "Blaster Scene"
+        case .nativeFile: return isPage ? "Blaster Pack" : "Blaster Board"
         case .printablePDF: return "Printable PDF"
         case .tileImages: return "Tile Pictures"
         case .spreadsheet: return "Spreadsheet (.xlsx)"

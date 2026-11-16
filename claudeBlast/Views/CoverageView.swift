@@ -115,9 +115,9 @@ struct CoverageView: View {
                 otherScenesSection
             } else {
                 ContentUnavailableView(
-                    "No scene yet",
+                    "No board yet",
                     systemImage: "square.grid.2x2",
-                    description: Text("Coverage is measured against a scene's words.")
+                    description: Text("Coverage is measured against a board's words.")
                 )
             }
         }
@@ -130,7 +130,7 @@ struct CoverageView: View {
     @ViewBuilder
     private var scenePicker: some View {
         Section {
-            Picker("Scene", selection: $selectedSceneID) {
+            Picker("Board", selection: $selectedSceneID) {
                 ForEach(scenes.filter { !$0.isCarriedTemplate }) { scene in
                     Text(scene.name).tag(scene.sceneID)
                 }
@@ -145,7 +145,7 @@ struct CoverageView: View {
             .pickerStyle(.segmented)
             .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
         } footer: {
-            Text("Everything below covers one scene — all of its pages together. A single figure across every scene would climb whenever you add a good one, which is the wrong direction for a coverage number.")
+            Text("Everything below covers one board — all of its pages together. A single figure across every board would climb whenever you add a good one, which is the wrong direction for a coverage number.")
         }
     }
 
@@ -184,14 +184,14 @@ struct CoverageView: View {
             Text("Kinds of words used")
         } footer: {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Distinct words reached in \(window.rawValue.lowercased()), out of what \(report.sceneName) carries. A kind the scene has none of is left out rather than shown as nought of nought.")
+                Text("Distinct words reached in \(window.rawValue.lowercased()), out of what \(report.sceneName) carries. A kind the board has none of is left out rather than shown as nought of nought.")
                 // Both reconciliation notes. Without them the rows quietly fail
                 // to add up to the scene and there is no way to see why.
                 if report.unclassifiedCount > 0 {
-                    Text("\(report.unclassifiedCount) word\(report.unclassifiedCount == 1 ? "" : "s") in this scene are not in the part-of-speech index — words added here rather than shipped — so they appear in no row above.")
+                    Text("\(report.unclassifiedCount) word\(report.unclassifiedCount == 1 ? "" : "s") in this board are not in the part-of-speech index — words added here rather than shipped — so they appear in no row above.")
                 }
                 if report.offSceneWordCount > 0 {
-                    Text("\(report.offSceneWordCount) word\(report.offSceneWordCount == 1 ? "" : "s") said in this period are not in this scene.")
+                    Text("\(report.offSceneWordCount) word\(report.offSceneWordCount == 1 ? "" : "s") said in this period are not in this board.")
                 }
             }
         }
@@ -305,7 +305,7 @@ struct CoverageView: View {
                 }
             }
         } header: {
-            Text("Scene and page usage")
+            Text("Board and page usage")
         } footer: {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Ever pressed, not just in this period — a word used last month has been used. Ranked by how much is reached, so anything at nought collects at the bottom.")
@@ -371,9 +371,9 @@ struct CoverageView: View {
                     otherSceneRow(scene)
                 }
             } header: {
-                Text("Other scenes")
+                Text("Other boards")
             } footer: {
-                Text("Listed separately and never added together. A topic scene built for one outing shows low usage because the outing happened once — folding it into the everyday scene's figure would only drag that down. A scene at nought is the finding worth having.")
+                Text("Listed separately and never added together. A topic board built for one outing shows low usage because the outing happened once — folding it into the everyday board's figure would only drag that down. A board at nought is the finding worth having.")
             }
         }
     }
@@ -399,7 +399,7 @@ struct CoverageView: View {
                 navigations: navigations
             )
             if report.sceneWordCount == 0 {
-                Text("No vocabulary on this scene yet.")
+                Text("No vocabulary on this board yet.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             } else {
