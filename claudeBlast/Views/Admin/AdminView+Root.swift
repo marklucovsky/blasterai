@@ -324,7 +324,7 @@ extension AdminView {
                     sentenceEngine.clearStrip()
                 })) {
                 Text("Single Words").tag(InteractionMode.singleWord)
-                Text("AI Sentences").tag(InteractionMode.sentence)
+                Text("Sentences").tag(InteractionMode.sentence)
             }
             .pickerStyle(.segmented)
             .labelsHidden()

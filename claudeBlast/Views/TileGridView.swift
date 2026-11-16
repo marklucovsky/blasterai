@@ -1198,7 +1198,7 @@ struct TileGridView: View {
     /// its former call site below.
     private var caregiverMenuContent: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Caregiver Menu")
+            Text("Setup")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 16)
@@ -1220,7 +1220,7 @@ struct TileGridView: View {
             // Child mode on a caregiver device: the way back to the caregiver's
             // rail, behind the same gate as Admin.
             if railChildLock && !isPatientDevice {
-                caregiverMenuRow("Caregiver Controls", systemImage: "lock.open.fill") {
+                caregiverMenuRow("Leave Talk Mode", systemImage: "lock.open.fill") {
                     showCaregiverMenu = false
                     caregiverMenu.requested = .unlockCaregiverRail
                 }
@@ -1303,13 +1303,13 @@ struct TileGridView: View {
                 if engine.interactionMode != .sentence { toggleInteractionMode() }
             } label: {
                 if engine.interactionMode == .sentence {
-                    Label("AI Sentences", systemImage: "checkmark")
+                    Label("Sentences", systemImage: "checkmark")
                 } else {
-                    Text(engine.canGenerateSentences ? "AI Sentences" : "AI Sentences (needs a key)")
+                    Text(engine.canGenerateSentences ? "Sentences" : "Sentences (needs an AI key)")
                 }
             }
             .disabled(engine.interactionMode == .singleWord && !engine.canGenerateSentences)
-            Section("Tray chips") {
+            Section("Pictures") {
                 ForEach(TrayPictures.allCases) { option in
                     Button {
                         engine.trayPictures = option
@@ -1325,7 +1325,7 @@ struct TileGridView: View {
                 }
             }
         } label: {
-            menuLabel("Tray", value: engine.interactionMode == .singleWord ? "Single Words" : "AI Sentences",
+            menuLabel("Message", value: engine.interactionMode == .singleWord ? "Single Words" : "Sentences",
                       systemImage: "text.bubble")
         }
     }

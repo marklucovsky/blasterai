@@ -109,7 +109,7 @@ struct CoverPickerView: View {
                 } footer: {
                     switch subject {
                     case .scene:
-                        Text("This picture stands for the whole scene wherever it is linked, such as on a child's My Topics. Use any word's picture, add a photo, or draw one with AI from the scene's description.")
+                        Text("This picture stands for the whole scene wherever it is linked, such as on someone's My Topics. Use any word's picture, add a photo, or draw one with AI from the scene's description.")
                     case .page:
                         Text("This picture stands for the page on every folder that opens it. Use any word's picture, add a photo, or draw one with AI.")
                     }

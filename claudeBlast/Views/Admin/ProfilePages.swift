@@ -467,7 +467,7 @@ struct ProfileMePage: View {
                         Label("Share \(profile.visibleName)\u{2019}s Me Page", systemImage: "square.and.arrow.up")
                     }
                 } footer: {
-                    Text("Sends this Me page and the pages it includes. Whoever opens it can add it to a child\u{2019}s Me page; sending it again updates it there.")
+                    Text("Sends this Me page and the pages it includes. Whoever opens it can add it to the Me page of a profile there; sending it again updates it there.")
                 }
             }
         }
@@ -642,8 +642,8 @@ struct ProfileColorsPage: View {
                 Button("Cancel", role: .cancel) { namePrompt = nil }
                 Button("Save") { commitName() }
             } message: {
-                Text("Saved colors are yours, not this child's — they show up for "
-                     + "every child you set up on this device and anywhere else you "
+                Text("Saved colors are yours, not this profile's — they show up for "
+                     + "every profile you set up on this device and anywhere else you "
                      + "are signed in.")
             }
     }
@@ -777,11 +777,11 @@ struct ProfileColorsPage: View {
         } footer: {
             Text("Tap a color to change it.\n\nTile color normally shows the type "
                  + "of word, using the key most AAC boards share. Change it when this "
-                 + "child sees differently — with CVI, several of the default colors "
+                 + "user sees differently — with CVI, several of the default colors "
                  + "can look alike. Anything left alone keeps the default.\n\n"
                  + "Page Links are the tiles that open another page. They are not a "
                  + "kind of word, so they get their own color — change it if this "
-                 + "child cannot tell a link from the describing words beside it, or "
+                 + "user cannot tell a link from the describing words beside it, or "
                  + "to match a device they already use.")
         }
     }

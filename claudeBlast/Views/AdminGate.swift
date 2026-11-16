@@ -270,7 +270,7 @@ struct AdminGate<Content: View>: View {
                     .foregroundStyle(.secondary)
                 // Named here rather than only in Settings: someone locked out is
                 // the one person who needs to know the way back exists.
-                Text("Nothing is lost while you wait, and the app keeps working for the child.")
+                Text("Nothing is lost while you wait, and the app keeps working for the user.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

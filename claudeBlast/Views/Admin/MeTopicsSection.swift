@@ -94,7 +94,7 @@ struct MeTopicsSection: View {
         } header: {
             Text("Me Page by Page")
         } footer: {
-            Text("When the child presses the heart from one of these pages, the Me page adds what is listed: folders from column 8, and words below your own tiles. A page counts by its name, on BlasterAI 60 or any of your scenes.")
+            Text("When the user presses the heart from one of these pages, the Me page adds what is listed: folders from column 8, and words below your own tiles. A page counts by its name, on BlasterAI 60 or any of your scenes.")
         }
     }
 
@@ -143,7 +143,7 @@ struct MeTopicsSection: View {
         } header: {
             Text("My Topics")
         } footer: {
-            Text("Boards the child opens from the Me page without changing the main board. Tap one to show it for particular pages too.")
+            Text("Boards the user opens from the Me page without changing the main board. Tap one to show it for particular pages too.")
         }
     }
 }
@@ -369,7 +369,7 @@ struct TopicContextsView: View {
         let on = Set(MeScene.contexts(of: topic.sceneID, in: me))
         let shared = MeScene.sharedContextKeys(groups)
         BoardSectionsList(groups: groups,
-                          footer: "When the child presses the heart from one of these pages, \(topic.name) appears on their Me page, from column 8 into the free cells of columns 9 and 10. A page counts by its name, on any board. Each page's order is set in Edit Me Page, on its \"On …\" page.") { page in
+                          footer: "When the user presses the heart from one of these pages, \(topic.name) appears on their Me page, from column 8 into the free cells of columns 9 and 10. A page counts by its name, on any board. Each page's order is set in Edit Me Page, on its \"On …\" page.") { page in
                     Button {
                         var keys = on
                         if keys.contains(page.key) { keys.remove(page.key) } else { keys.insert(page.key) }

@@ -221,7 +221,7 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: 20) {
             Text("Welcome to BlasterAI")
                 .font(.largeTitle.bold())
-            Text("A free AAC board for children who don't yet speak. It works from the first launch.")
+            Text("A free AAC board for anyone who needs another way to talk. It works from the first launch.")
                 .font(.title3)
                 .foregroundStyle(.secondary)
             Divider().padding(.vertical, 8)
@@ -231,7 +231,7 @@ struct OnboardingView: View {
                 symbol: "square.grid.3x3.fill", color: .blue)
             welcomeRow(
                 "Private by default",
-                "Your child's data lives on this device. AI features are optional, and you'll be asked before any are turned on.",
+                "Everything stays on this device. AI features are optional, and you'll be asked before any are turned on.",
                 symbol: "lock.shield.fill", color: .green)
             welcomeRow(
                 "Free and open source",
@@ -244,7 +244,7 @@ struct OnboardingView: View {
             Label {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("AI when you want it").font(.headline)
-                    Text("Build scenes from a description, draw new words in your board's style, and, when your child is ready, turn taps into full sentences. Uses your own OpenAI key; set it up now or later.")
+                    Text("Build scenes from a description, draw new words in your board's style, and, when they're ready, turn taps into full sentences. Uses your own OpenAI key; set it up now or later.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                     Button {
@@ -304,7 +304,7 @@ struct OnboardingView: View {
                         .foregroundStyle(.blue)
                 }
                 Label {
-                    Text("Caregiver mode gives you your own profile so the app works out of the box. Add child profiles whenever you're ready.")
+                    Text("Setup mode gives you your own profile so the app works out of the box. Add profiles whenever you're ready.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } icon: {
@@ -366,7 +366,7 @@ struct OnboardingView: View {
             // Only Patient mode reaches this step now; copy is tuned for
             // that single audience. Caregiver mode skips it entirely and
             // adds patients later from Admin → Profiles.
-            Text("About the child")
+            Text("About the User")
                 .font(.title.bold())
 
             VStack(alignment: .leading, spacing: 6) {
@@ -381,7 +381,7 @@ struct OnboardingView: View {
             // predict expressive language level for an AAC user, and asking for
             // a birthday meant storing one. See BrownsStage.
             VStack(alignment: .leading, spacing: 6) {
-                Text("Where is your child now?").font(.headline)
+                Text("Where are they now?").font(.headline)
                 Picker("Stage", selection: $childStage) {
                     ForEach(BrownsStage.allCases) { stage in
                         Text(stage.label).tag(stage)
@@ -493,7 +493,7 @@ struct OnboardingView: View {
             Toggle(isOn: $icloudEnabled) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Enable iCloud sync").font(.headline)
-                    Text("Sync child profiles, scenes, and history across your own Apple devices.")
+                    Text("Sync profiles, scenes, and history across your own Apple devices.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -592,10 +592,10 @@ struct OnboardingView: View {
         switch role {
         case .patient:
             return childName.isEmpty
-                ? "Your patient device is set up. Tap Open Blaster to start."
+                ? "This device is set up in Talk mode. Tap Open Blaster to start."
                 : "\(childName)'s device is ready. Tap Open Blaster to start."
         case .caregiver:
-            return "Caregiver mode is on. Your own profile is active; add child profiles anytime from Settings → Profiles."
+            return "Setup mode is on. Your own profile is active; add profiles anytime from Settings › Profile."
         }
     }
 
@@ -771,7 +771,7 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Pick a tile style")
                 .font(.title.bold())
-            Text("Choose the style closest to what this child already uses. You can change it any time.")
+            Text("Choose the style closest to what they already use. You can change it any time.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 

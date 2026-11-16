@@ -159,23 +159,23 @@ enum DeviceRole: String, CaseIterable, Codable {
 
     var displayName: String {
         switch self {
-        case .patient:   return "Patient"
-        case .caregiver: return "Caregiver"
+        case .patient:   return "Talk Mode"
+        case .caregiver: return "Setup Mode"
         }
     }
 
     var summary: String {
         switch self {
         case .patient:
-            return "This device is for a non-verbal child to use as their voice. Settings is locked behind a PIN (and biometrics where the device has them) so the child can't change things by accident. The child's profile drives the voice and AI prompts."
+            return "This device is the user's voice. It stays in Talk mode: Settings is locked behind a PIN (and Face ID or Touch ID where the device has it) so nothing changes by accident. The user's profile sets the voice and AI."
         case .caregiver:
-            return "This device is for you — a therapist, parent, or family member. Your own profile drives generic use; you can add child profiles and switch between them to tune scenes. Settings is open by default."
+            return "This device is for setting up — yours, as a parent, teacher or therapist. It stays in Setup mode with Settings open. Your own profile is used until you add others, and you can switch between profiles to tune their boards."
         }
     }
 
     /// Used as the onboarding step-2 footer so the user knows nothing they
     /// pick here is permanent. Reinforces that the modes are reversible.
     static var reversibilityNote: String {
-        "You can switch a device between Patient and Caregiver mode anytime from Settings → Advanced → Lock and Role. None of these choices are permanent."
+        "You can switch a device between Talk mode and Setup mode anytime from Settings › Advanced › Lock and Role. None of these choices are permanent."
     }
 }

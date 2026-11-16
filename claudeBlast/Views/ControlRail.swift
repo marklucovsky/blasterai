@@ -22,7 +22,7 @@ enum RailItem: String, CaseIterable {
         case .search: "Search"
         case .edit: "Edit"
         case .levels: "Level"
-        case .childMode: "Child mode"
+        case .childMode: "Talk mode"
         case .tools: "Tools"
         }
     }

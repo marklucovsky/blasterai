@@ -1031,7 +1031,7 @@ struct TilePropertiesSheet: View {
                 }
 
                 Section {
-                    Toggle("Add to sentence tray", isOn: entryBinding.audible)
+                    Toggle("Add to message box", isOn: entryBinding.audible)
                         .disabled((entry?.link ?? "").isEmpty)
 
                     if scene.revealLevelCount > 0 {
@@ -1050,7 +1050,7 @@ struct TilePropertiesSheet: View {
                 } footer: {
                     VStack(alignment: .leading, spacing: 6) {
                         if (entry?.link ?? "").isEmpty {
-                            Text("A word tile always adds to the sentence tray.")
+                            Text("A word tile always adds to the message box.")
                         } else {
                             Text("This tile opens a page. Turn this on if it should also speak the word.")
                         }
@@ -1059,7 +1059,7 @@ struct TilePropertiesSheet: View {
                         // that is not obvious.
                         Text("Concealing keeps the tile's place on the board but draws it "
                              + "empty, so nothing else moves. Removing it instead would shift "
-                             + "every word after it, and the child would have to learn the "
+                             + "every word after it, and the user would have to learn the "
                              + "board again. This page only — the word stays available "
                              + "everywhere else.")
                     }

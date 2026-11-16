@@ -87,7 +87,7 @@ struct PatientTransitionSheet: View {
         switch c {
         case .keep:    return "Keep the key currently on this device"
         case .clear:   return "No key — tiles speak single words"
-        case .replace: return "Use a different key for the patient"
+        case .replace: return "Use a different key for the user"
         }
     }
 
@@ -125,7 +125,7 @@ struct PatientTransitionSheet: View {
                     .padding(.horizontal, 24)
                     .padding(.vertical, 12)
             }
-            .navigationTitle("Switch to Patient")
+            .navigationTitle("Switch to Talk Mode")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -237,7 +237,7 @@ struct PatientTransitionSheet: View {
             Section {
                 if realPatients.isEmpty {
                     Label {
-                        Text("No child profiles yet. Open Settings › Profile › All Profiles and add one before switching modes.")
+                        Text("No profiles yet. Open Settings › Profile › All Profiles and add one before switching to Talk mode.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } icon: {
@@ -245,7 +245,7 @@ struct PatientTransitionSheet: View {
                             .foregroundStyle(.orange)
                     }
                 } else {
-                    Picker("Patient", selection: $selectedPatientID) {
+                    Picker("Profile", selection: $selectedPatientID) {
                         ForEach(realPatients) { p in
                             Text("\(p.visibleName) · \(p.brownsStage.label)").tag(p.id)
                         }
@@ -256,7 +256,7 @@ struct PatientTransitionSheet: View {
             } header: {
                 Text("Whose Device Is This?")
             } footer: {
-                Text("Pick the child this device will belong to. Their profile drives the voice and AI prompts after the switch.")
+                Text("Pick whose device this will be. Their profile sets the voice and AI after the switch.")
             }
         }
     }
@@ -332,9 +332,9 @@ struct PatientTransitionSheet: View {
     private var keyFooter: String {
         switch keyChoice {
         case .keep:
-            return "The patient (or their family) will use the API key already on this device. Token usage bills to whoever owns that key."
+            return "The user (or their family) will use the API key already on this device. Token usage bills to whoever owns that key."
         case .clear:
-            return "Generation falls back to Mock. The patient can add a key later from Settings → AI."
+            return "Sentences fall back to Mock. A key can be added later from Settings › AI."
         case .replace:
             return "Stored in this device's Keychain. Never synced via iCloud."
         }
@@ -472,7 +472,7 @@ struct CaregiverTransitionSheet: View {
                     .padding(.horizontal, 24)
                     .padding(.vertical, 12)
             }
-            .navigationTitle("Switch to Caregiver")
+            .navigationTitle("Switch to Setup Mode")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -535,7 +535,7 @@ struct CaregiverTransitionSheet: View {
         VStack(spacing: 16) {
             Text("Confirm Current PIN")
                 .font(.headline)
-            Text("Re-entering the PIN prevents anyone with grid access — including the child — from quietly returning the device to caregiver mode.")
+            Text("Re-entering the PIN prevents anyone with grid access — including the user — from quietly returning the device to Setup mode.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -557,11 +557,11 @@ struct CaregiverTransitionSheet: View {
     private var optionsPage: some View {
         Form {
             Section {
-                Text("This swaps the active child profile for your own and removes the patient handoff. Nothing is deleted — you can return to Patient mode anytime.")
+                Text("This switches to your own profile and leaves Talk mode. Nothing is deleted — you can return to Talk mode anytime.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             } header: {
-                Text("Return to Caregiver Mode")
+                Text("Return to Setup Mode")
             }
 
             Section {
@@ -570,7 +570,7 @@ struct CaregiverTransitionSheet: View {
                 Text("Settings Lock")
             } footer: {
                 Text(keepGate
-                     ? "Face ID + PIN gate stays on. Recommended — your tuning work stays private even while the patient isn't using the device."
+                     ? "Face ID + PIN gate stays on. Recommended — your tuning work stays private even while the user isn't using the device."
                      : "Gate removed. Anyone can open Settings without authentication. The PIN is cleared.")
             }
 
