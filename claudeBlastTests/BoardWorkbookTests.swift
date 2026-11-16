@@ -344,10 +344,11 @@ struct BoardWorkbookTests {
 
     @Test func anImportGoesWhereItsBytesBelong() throws {
         #expect(try ImportSource.kind(of: Data(), fileExtension: "blasterscene") == .blaster("blasterscene"))
+        #expect(try ImportSource.kind(of: Data(), fileExtension: "blasterboard") == .blaster("blasterboard"))
         #expect(try ImportSource.kind(of: Data(), fileExtension: "XLSX") == .spreadsheet("xlsx"))
         #expect(try ImportSource.kind(of: Data([0x50, 0x4B, 3, 4]), fileExtension: "") == .spreadsheet("xlsx"))
         #expect(try ImportSource.kind(of: Data("\u{FEFF} {\"@type\": \"\(BlasterSceneFormat.mediaType)\"}".utf8),
-                                      fileExtension: "") == .blaster("blasterscene"))
+                                      fileExtension: "") == .blaster("blasterboard"))
         #expect(try ImportSource.kind(of: Data("{\"@type\": \"\(BlasterPackFormat.mediaType)\"}".utf8),
                                       fileExtension: "json") == .blaster("blasterpack"))
         #expect(try ImportSource.kind(of: Data("cat,dog\n".utf8), fileExtension: "") == .spreadsheet("csv"))

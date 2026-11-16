@@ -39,7 +39,7 @@ enum SceneMaterializer {
             case .levelForUnplacedWord(let page, let key):
                 return "level names \(key), which is not on page \(page)"
             case .levelOutOfRange(let page, let level):
-                return "level \(level) on page \(page) is outside the scene's levels"
+                return "level \(level) on page \(page) is outside the board's levels"
             case .unknownVocabularyKey(let k): return "Unknown vocabulary key: \(k)"
             case .unknownVocabularyClass(let c): return "Unknown vocabulary class: \(c)"
             case .homePageNotFound(let k): return "homePageKey not present in pages: \(k)"

@@ -320,7 +320,7 @@ struct WordWellView: View {
     private var sourcePicker: some View {
         Menu {
             Button("All Words") { setSource(.vocabulary) }
-            Menu("This Scene") {
+            Menu("This Board") {
                 ForEach(scenePages, id: \.key) { page in
                     Button(page.title) { setSource(.scenePage(page.key)) }
                 }
@@ -335,9 +335,9 @@ struct WordWellView: View {
             let others = allScenes.filter { !$0.isDefault && $0.sceneID != sceneID && !$0.pages.isEmpty
                 && !$0.isCarriedTemplate }
             if !others.isEmpty {
-                Menu("Other Scenes") {
+                Menu("Other Boards") {
                     ForEach(others, id: \.persistentModelID) { scene in
-                        Menu(scene.name.isEmpty ? "Untitled scene" : scene.name) {
+                        Menu(scene.name.isEmpty ? "Untitled board" : scene.name) {
                             ForEach(scene.pages, id: \.key) { page in
                                 Button(page.title) {
                                     setSource(.vocabulary)

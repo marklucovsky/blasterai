@@ -116,7 +116,7 @@ struct ScenePreviewBoardView: View {
                         .tabViewStyle(.page(indexDisplayMode: .automatic))
                     }
                 } else {
-                    ContentUnavailableView("Empty scene", systemImage: "square.grid.2x2")
+                    ContentUnavailableView("Empty board", systemImage: "square.grid.2x2")
                         .padding(.top, 60)
                 }
             }

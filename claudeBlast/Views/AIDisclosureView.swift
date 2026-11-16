@@ -28,7 +28,7 @@ struct AIDisclosureContent: View {
                         "Vocabulary Images",
                         "a vocabulary word or description is sent to OpenAI to generate an image.")
                 feature("square.grid.3x3.fill", .green,
-                        "Scene Generation",
+                        "Board Generation",
                         "a description of a situation, such as “field trip to a farm,” is sent to OpenAI to suggest relevant vocabulary.")
             }
             Label {

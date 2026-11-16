@@ -149,9 +149,9 @@ struct CoverageGridView: View {
     /// How to read the grid. Above it, always.
     private var readingNote: String {
         if let board {
-            return "Dimmed tiles have never been pressed on this page, folders included. Drawn on the board's own \(board.grid.cols) × \(board.grid.rows) grid, under the system row."
+            return "Dimmed tiles have never been pressed on this page, folders included. Drawn on the board's own \(board.grid.cols) × \(board.grid.rows) grid, under the navigation bar."
         }
-        return "Dimmed words have never been pressed. Listed alphabetically — a part of speech can appear anywhere within a scene."
+        return "Dimmed words have never been pressed. Listed alphabetically — a part of speech can appear anywhere within a board."
     }
 
     // MARK: - Board layout

@@ -395,7 +395,7 @@ struct SceneEditorView: View {
             Section {
               DisclosureGroup("Details", isExpanded: $isDetailsExpanded) {
                 LabeledContent("Name") {
-                    TextField("Scene name", text: $scene.name)
+                    TextField("Board name", text: $scene.name)
                         .multilineTextAlignment(.trailing)
                 }
                 LabeledContent("Description") {
@@ -452,7 +452,7 @@ struct SceneEditorView: View {
         .onChange(of: scene.pages) {
             SceneLinkColors.refresh(scene: scene, context: modelContext)
         }
-        .navigationTitle(scene.name.isEmpty ? "New Scene" : scene.name)
+        .navigationTitle(scene.name.isEmpty ? "New Board" : scene.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { sceneEditorToolbar }
         .alert(activationMessage?.title ?? "", isPresented: Binding(
@@ -793,8 +793,8 @@ struct SceneEditorView: View {
                     NavigationLink(destination: PageEditorView(scene: scene, pageKey: BlasterScene.rowPageKey)) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Navigation Bar").font(.headline)
-                            Text(scene.isTemplate ? "This template\u{2019}s own, for every scene built on it"
-                                 : "This scene\u{2019}s own").font(.caption).foregroundStyle(.indigo)
+                            Text(scene.isTemplate ? "This template\u{2019}s own, for every board built on it"
+                                 : "This board\u{2019}s own").font(.caption).foregroundStyle(.indigo)
                         }
                     }
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) { useInheritedRowButton }
@@ -823,7 +823,7 @@ struct SceneEditorView: View {
                                                                 placement: chain?.navBarPlacement ?? .top)
                         try? modelContext.save()
                     } label: {
-                        Label("Make the Navigation Bar This Scene\u{2019}s Own", systemImage: "square.on.square")
+                        Label("Make the Navigation Bar This Board\u{2019}s Own", systemImage: "square.on.square")
                     }
                 }
         }
@@ -911,7 +911,7 @@ struct SceneEditorView: View {
                     bind(to: choice)
                 }
                 if !choice.isEmpty {
-                    Button("Keep This Scene\u{2019}s") { bind(to: choice) }
+                    Button("Keep This Board\u{2019}s") { bind(to: choice) }
                 }
                 Button("Cancel", role: .cancel) { pendingBuiltOn = nil }
             } message: { choice in
@@ -1348,7 +1348,7 @@ private struct PageGeneratorSheet: View {
                 if !copyableScenes.isEmpty {
                     Section {
                         ForEach(copyableScenes, id: \.persistentModelID) { src in
-                            DisclosureGroup(src.name.isEmpty ? "Untitled scene" : src.name) {
+                            DisclosureGroup(src.name.isEmpty ? "Untitled board" : src.name) {
                                 ForEach(src.pages, id: \.key) { page in
                                     Button {
                                         loadCopiedPage(from: src, page: page)
@@ -1375,9 +1375,9 @@ private struct PageGeneratorSheet: View {
                             }
                         }
                     } header: {
-                        Text("Copy from another scene")
+                        Text("Copy from another board")
                     } footer: {
-                        Text("Copies a page's word tiles into this scene. Navigation links are dropped — re-add them here if needed.")
+                        Text("Copies a page's word tiles into this board. Navigation links are dropped — re-add them here if needed.")
                             .font(.caption)
                     }
                 }
@@ -1703,7 +1703,7 @@ private struct PageGeneratorSheet: View {
             return
         }
         cachedCopy = page
-        cachedCopyFrom = src.name.isEmpty ? "another scene" : src.name
+        cachedCopyFrom = src.name.isEmpty ? "another board" : src.name
         pageName = page.key
         let gen = tiles.map {
             GeneratedTile(key: $0.key, isAudible: true, link: "",
@@ -2265,9 +2265,9 @@ private struct SceneRefinementSheet: View {
                 TextField("Describe the change…", text: $instruction, axis: .vertical)
                     .lineLimit(3...6)
             } header: {
-                Text("Refine \(scene.name.isEmpty ? "Scene" : scene.name)")
+                Text("Refine \(scene.name.isEmpty ? "Board" : scene.name)")
             } footer: {
-                Text("e.g. \u{201C}add a fish pond and a creek\u{201D} — this rewrites the words the scene is about. Pages you added yourself are left alone.")
+                Text("e.g. \u{201C}add a fish pond and a creek\u{201D} — this rewrites the words the board is about. Pages you added yourself are left alone.")
             }
 
             if let errorMessage {
@@ -2289,7 +2289,7 @@ private struct SceneRefinementSheet: View {
                 .disabled(instruction.trimmingCharacters(in: .whitespaces).isEmpty || apiKey.isEmpty || isRefining)
             }
         }
-        .navigationTitle("Refine Scene")
+        .navigationTitle("Refine Board")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {

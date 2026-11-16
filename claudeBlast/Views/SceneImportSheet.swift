@@ -56,10 +56,10 @@ struct SceneImportSheet: View {
                 } else if let preview {
                     importPreview(preview)
                 } else {
-                    ProgressView("Loading scene…")
+                    ProgressView("Loading board…")
                 }
             }
-            .navigationTitle("Import Scene")
+            .navigationTitle("Import Board")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -164,7 +164,7 @@ struct SceneImportSheet: View {
                 .buttonStyle(.bordered).controlSize(.large)
             } else {
                 Button { performImport() } label: {
-                    Label("Import Scene", systemImage: "square.and.arrow.down").frame(maxWidth: .infinity)
+                    Label("Import Board", systemImage: "square.and.arrow.down").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent).controlSize(.large)
             }
@@ -273,7 +273,7 @@ struct SceneImportSheet: View {
                   systemImage: isClean ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                 .foregroundStyle(isClean ? .green : .orange).font(.headline)
             if result.wasUpdate {
-                Text("This scene was already on your device (matched by id) — refreshed in place, not duplicated.")
+                Text("This board was already on your device (matched by id) — refreshed in place, not duplicated.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             if result.newTileCount > 0 {
@@ -292,7 +292,7 @@ struct SceneImportSheet: View {
             // ("from Greta"), like naming a contact. Optional; saved on Done too.
             if result.needsReceiverLabel {
                 Divider().padding(.vertical, 2)
-                Text("This scene didn't include an author. Tag who it's from (optional):")
+                Text("This board didn't include an author. Tag who it's from (optional):")
                     .font(.caption).foregroundStyle(.secondary)
                 TextField("e.g. from Greta", text: $receiverLabel)
                     .textFieldStyle(.roundedBorder)

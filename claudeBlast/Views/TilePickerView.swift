@@ -230,7 +230,7 @@ struct TilePickerView: View {
                   !t.isStructuralChrome else { return nil }
             return t.key
         }
-        pageSourceLabel = "\(scene.name.isEmpty ? "Scene" : scene.name) · \(page.key)"
+        pageSourceLabel = "\(scene.name.isEmpty ? "Board" : scene.name) · \(page.key)"
         selectedWordClass = "all"
     }
 
@@ -290,7 +290,7 @@ struct TilePickerView: View {
                     if !pageSourceScenes.isEmpty {
                         Menu {
                             ForEach(pageSourceScenes, id: \.persistentModelID) { scene in
-                                Menu(scene.name.isEmpty ? "Untitled scene" : scene.name) {
+                                Menu(scene.name.isEmpty ? "Untitled board" : scene.name) {
                                     ForEach(scene.pages, id: \.key) { page in
                                         Button {
                                             selectPageSource(scene, page)

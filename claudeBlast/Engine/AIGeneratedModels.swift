@@ -260,7 +260,7 @@ extension GeneratedScene {
         }.filter { !$0.tiles.isEmpty }
 
         guard !sanitizedPages.isEmpty else {
-            throw OpenAIError.decodingError("No valid tiles found in generated scene")
+            throw OpenAIError.decodingError("No valid tiles found in generated board")
         }
 
         let homeKey = sanitizedPages.contains(where: { $0.key == raw.homePageKey })

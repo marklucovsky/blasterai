@@ -94,7 +94,7 @@ struct MeTopicsSection: View {
         } header: {
             Text("Me Page by Page")
         } footer: {
-            Text("When the user presses the heart from one of these pages, the Me page adds what is listed: folders from column 8, and words below your own tiles. A page counts by its name, on BlasterAI 60 or any of your scenes.")
+            Text("When the user presses the heart from one of these pages, the Me page adds what is listed: folders from column 8, and words below your own tiles. A page counts by its name, on BlasterAI 60 or any of your boards.")
         }
     }
 

@@ -234,7 +234,7 @@ struct PageEditorView: View {
 
     private var wordCountText: String {
         let count = page?.tiles.filter { !$0.isSpacer }.count ?? 0
-        return count == 1 ? "1 word" : "\(count) words"
+        return count == 1 ? "1 tile" : "\(count) tiles"
     }
 
     /// Settings for the whole page. `labelled: false` is the narrow fallback.
@@ -1059,7 +1059,7 @@ struct TilePropertiesSheet: View {
                         // that is not obvious.
                         Text("Concealing keeps the tile's place on the board but draws it "
                              + "empty, so nothing else moves. Removing it instead would shift "
-                             + "every word after it, and the user would have to learn the "
+                             + "every tile after it, and the user would have to learn the "
                              + "board again. This page only — the word stays available "
                              + "everywhere else.")
                     }

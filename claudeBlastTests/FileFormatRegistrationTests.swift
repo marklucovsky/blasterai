@@ -56,7 +56,8 @@ struct FileFormatRegistrationTests {
     @Test("Every shipped format is declared and openable")
     func bothFormatsRegistered() {
         let declared = declaredExtensions
-        for ext in [BlasterSceneFormat.fileExtension, BlasterPackFormat.fileExtension,
+        for ext in [BlasterSceneFormat.fileExtension, BlasterSceneFormat.legacyFileExtension,
+                    BlasterPackFormat.fileExtension,
                     BlasterColorwayFormat.fileExtension, BlasterKeyFormat.fileExtension] {
             #expect(declared.contains(ext), "Info.plist does not declare .\(ext)")
             #expect(BlasterFileFormat.openableExtensions.contains(ext))
@@ -75,6 +76,7 @@ struct FileFormatRegistrationTests {
     func everyFormatRoutes() {
         let expected: [String: ImportRouteSheet.Route] = [
             BlasterSceneFormat.fileExtension: .scene,
+            BlasterSceneFormat.legacyFileExtension: .scene,
             BlasterPackFormat.fileExtension: .pack,
             BlasterColorwayFormat.fileExtension: .colorway,
             BlasterKeyFormat.fileExtension: .giftedKey,
@@ -92,6 +94,18 @@ struct FileFormatRegistrationTests {
     @Test("An unknown extension still lands somewhere")
     func unknownExtensionFallsThrough() {
         #expect(ImportRouteSheet.route(for: URL(fileURLWithPath: "/tmp/x.whatever")) == .scene)
+    }
+
+    /// Board files became `.blasterboard` in build 11; everything shared
+    /// before that is `.blasterscene` and has to keep opening.
+    @Test("A board file from before build 11 still opens")
+    func oldBoardFilesStillOpen() {
+        #expect(BlasterSceneFormat.fileExtension == "blasterboard")
+        for name in ["/tmp/Aubrey.blasterscene", "/tmp/Aubrey.blasterboard"] {
+            let url = URL(fileURLWithPath: name)
+            #expect(BlasterFileFormat.canOpen(url))
+            #expect(ImportRouteSheet.route(for: url) == .scene)
+        }
     }
 
     @Test("An unrelated file is left alone")

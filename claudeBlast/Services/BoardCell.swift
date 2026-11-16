@@ -196,7 +196,7 @@ enum BoardCell {
                     return .error(link.isTemplate
                         ? (systemPages.contains { TileToken.isTemplateKey($0.key) }
                             ? "The template has no page \u{201C}\(link.page)\u{201D}"
-                            : "This scene isn\u{2019}t built on a template")
+                            : "This board isn\u{2019}t built on a template")
                         : "BlasterAI 60 has no page \u{201C}\(link.page)\u{201D}")
                 }
                 target = found

@@ -109,7 +109,7 @@ struct CoverPickerView: View {
                 } footer: {
                     switch subject {
                     case .scene:
-                        Text("This picture stands for the whole scene wherever it is linked, such as on someone's My Topics. Use any word's picture, add a photo, or draw one with AI from the scene's description.")
+                        Text("This picture stands for the whole board wherever it is linked, such as on someone's My Topics. Use any word's picture, add a photo, or draw one with AI from the board's description.")
                     case .page:
                         Text("This picture stands for the page on every folder that opens it. Use any word's picture, add a photo, or draw one with AI.")
                     }
@@ -142,7 +142,7 @@ struct CoverPickerView: View {
                 } header: {
                     Text("Use a Word's Picture")
                 } footer: {
-                    if search.isEmpty { Text("Words from this \(isPage ? "page and scene" : "scene"). Search to use any word.") }
+                    if search.isEmpty { Text("Words from this \(isPage ? "page and board" : "board"). Search to use any word.") }
                 }
             }
         }

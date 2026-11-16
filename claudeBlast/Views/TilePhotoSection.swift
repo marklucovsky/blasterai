@@ -169,7 +169,7 @@ struct TilePhotoSection: View {
                 .font(.subheadline)
             }
 
-            Text("A photo replaces this tile's picture everywhere it appears, on every device signed in to your iCloud.")
+            Text("A photo replaces this word's picture everywhere it appears, on every device signed in to your iCloud.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
