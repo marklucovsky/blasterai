@@ -151,7 +151,7 @@ enum MeScene {
         // The same entries on the context pages, kept in step.
         var pages = me.pages
         var changed = false
-        for i in pages.indices where isContextPage(pages[i].key) {
+        for i in pages.indices where isContextPage(pages[i].key) || pages[i].key == alwaysPageKey {
             let tiles = pages[i].tiles.map { entry -> TileEntry in
                 // Only an item for a topic's home stands for the topic; one
                 // for another of its pages keeps that page's picture and name.
@@ -181,7 +181,13 @@ enum MeScene {
     static let contextPrefix = "on:"
 
     static func contextPageKey(for systemKey: String) -> String {
-        contextPrefix + TileToken.systemLink(to: systemKey)
+        systemKey == alwaysKey ? alwaysPageKey : contextPrefix + TileToken.systemLink(to: systemKey)
+    }
+
+    /// The title a list page is given when it is made: "Always", or "On
+    /// <title>" for a page the child comes from.
+    private static func listTitle(_ systemKey: String, _ title: String) -> String {
+        systemKey == alwaysKey ? "Always" : "On " + title
     }
 
     static func isContextPage(_ key: String) -> Bool { key.hasPrefix(contextPrefix) }
@@ -331,7 +337,7 @@ enum MeScene {
                 pages[i].tiles.append(item)
             }
         } else {
-            pages.append(PageSpec(key: pageKey, displayName: "On " + title, tiles: [item]))
+            pages.append(PageSpec(key: pageKey, displayName: listTitle(systemKey, title), tiles: [item]))
         }
         me.pages = pages
     }
@@ -358,7 +364,7 @@ enum MeScene {
         let pageKey = contextPageKey(for: systemKey)
         var pages = me.pages
         let i = pages.firstIndex { $0.key == pageKey } ?? {
-            pages.append(PageSpec(key: pageKey, displayName: "On " + title, tiles: []))
+            pages.append(PageSpec(key: pageKey, displayName: listTitle(systemKey, title), tiles: []))
             return pages.count - 1
         }()
         var listed = Set(pages[i].tiles.filter(isWordItem).map(\.key))
@@ -481,6 +487,223 @@ enum MeScene {
             }
         }
         return tiles
+    }
+
+    // MARK: - Always, Pinned and Includes
+
+    /// The rules a Me page carries besides "came from a page" (Mark
+    /// 2026-11-15). All are pages of the Me scene, so they sync with it and
+    /// travel when it is shared, with no schema change:
+    ///
+    /// - `always`: items applied every time the Me page opens, in order, laid
+    ///   out like a context page's (words in columns 1–7, folders from 8).
+    ///   Edited with the same list as a context page, under `alwaysKey`.
+    /// - `pinned`: a 10 × 6 page edited in the page editor; each tile goes in
+    ///   its own cell. One the child's page already uses goes to the next free
+    ///   cell instead, so the family's own layout is never covered.
+    /// - `includes`: other Me pages whose rules are applied after this one's,
+    ///   each a `<scene:ID>:home` link; a concealed entry is switched off.
+    ///   That is how an SLP's "Room 4" reaches every student's page.
+    static let alwaysKey = "*"
+    static let alwaysPageKey = "always"
+    static let pinnedPageKey = "pinned"
+    static let includesPageKey = "includes"
+
+    /// The Pinned page, made empty the first time it is edited.
+    static func ensurePinned(in me: BlasterScene) {
+        guard me.page(withKey: pinnedPageKey) == nil else { return }
+        me.pages = me.pages + [PageSpec(key: pinnedPageKey, displayName: "Pinned", tiles: [])]
+    }
+
+    /// The included Me pages, on and off, in order.
+    static func includeEntries(in me: BlasterScene) -> [TileEntry] {
+        (me.page(withKey: includesPageKey)?.tiles ?? []).filter { TileToken.scenePageKey($0.link) != nil }
+    }
+
+    static func includedID(_ entry: TileEntry) -> String? { TileToken.scenePageKey(entry.link)?.sceneID }
+
+    private static func setIncludeEntries(_ entries: [TileEntry], in me: BlasterScene) {
+        var pages = me.pages
+        if let i = pages.firstIndex(where: { $0.key == includesPageKey }) {
+            if entries.isEmpty { pages.remove(at: i) } else { pages[i].tiles = entries }
+        } else if !entries.isEmpty {
+            pages.append(PageSpec(key: includesPageKey, displayName: "Includes", tiles: entries))
+        }
+        me.pages = pages
+    }
+
+    /// Include `other` at the end. False, changing nothing, when it is not a
+    /// Me page or would make a loop (`wouldLoop`); true when it is included,
+    /// already or now.
+    @discardableResult
+    static func addInclude(_ other: BlasterScene, to me: BlasterScene,
+                           find: (String) -> BlasterScene?) -> Bool {
+        guard isMeScene(other), !wouldLoop(adding: other, to: me, find: find) else { return false }
+        guard !includeEntries(in: me).contains(where: { includedID($0) == other.sceneID }) else { return true }
+        let entry = TileEntry(key: topicsFolderKey, link: TileToken.sceneLink(other.sceneID, to: homePageKey),
+                              isAudible: false, label: other.name)
+        setIncludeEntries(includeEntries(in: me) + [entry], in: me)
+        return true
+    }
+
+    /// The id a Me page is shared under. The caregiver profile's page has the
+    /// same id on every device (`kCaregiverProfileID`), so sent as it is, it
+    /// would land as the receiver's *own* caregiver page — and a page that
+    /// includes it would loop on arrival (Mark, 2026-11-15: Aubrey's page
+    /// from the iPad added nothing on the phone). It travels under the
+    /// sender's author id instead; every other Me page keeps its id.
+    static func sharedID(_ sceneID: String, authorID: String) -> String {
+        sceneID == self.sceneID(forProfileID: kCaregiverProfileID) && !authorID.isEmpty
+            ? "me-" + authorID + "-caregiver" : sceneID
+    }
+
+    static func removeInclude(sceneID: String, from me: BlasterScene) {
+        setIncludeEntries(includeEntries(in: me).filter { includedID($0) != sceneID }, in: me)
+    }
+
+    static func setInclude(_ on: Bool, sceneID: String, in me: BlasterScene) {
+        setIncludeEntries(includeEntries(in: me).map { entry in
+            guard includedID(entry) == sceneID else { return entry }
+            var e = entry
+            e.isConcealed = !on
+            return e
+        }, in: me)
+    }
+
+    /// `me` and every Me page it includes that is switched on, depth first,
+    /// each once. A page met again (a loop, or two pages including the same
+    /// one) is skipped, so this always ends.
+    static func layers(of me: BlasterScene, find: (String) -> BlasterScene?) -> [BlasterScene] {
+        var seen: Set<String> = []
+        var out: [BlasterScene] = []
+        func visit(_ scene: BlasterScene) {
+            guard seen.insert(scene.sceneID).inserted else { return }
+            out.append(scene)
+            for entry in includeEntries(in: scene) where !entry.isConcealed {
+                if let id = includedID(entry), let next = find(id) { visit(next) }
+            }
+        }
+        visit(me)
+        return out
+    }
+
+    /// Whether including `other` in `me` would make `me` include itself.
+    static func wouldLoop(adding other: BlasterScene, to me: BlasterScene,
+                          find: (String) -> BlasterScene?) -> Bool {
+        other.sceneID == me.sceneID
+            || layers(of: other, find: find).contains { $0.sceneID == me.sceneID }
+    }
+
+    /// The Me home with every rule applied, as the child sees it: the page
+    /// itself, then each included page's own tiles and each layer's pinned
+    /// tiles in their cells, then each layer's Always items and, when the
+    /// child came from a page, its items for that page — flowing into the
+    /// free cells (`compose`).
+    ///
+    /// An included page's own tiles count: "Room 4" is mostly what its author
+    /// put on its page (Mark, 2026-11-15, first device test). They are placed
+    /// like pinned tiles — their cell if free, else the next free one — and
+    /// its My Topics folder is left out; the child's own is already there.
+    static func composeHome(_ home: [TileEntry], layers: [BlasterScene], contextKey: String?,
+                            systemIsActive: Bool, rowKeys: Set<String>,
+                            words: (TileEntry) -> [TileEntry]) -> [TileEntry] {
+        let cells = PageTemplate.cols * (PageTemplate.rows - 1)
+        var tiles = home
+        var used = Set(home.filter { !$0.isEmptyCell }.map(\.key)).union(rowKeys)
+        var displaced: [TileEntry] = []
+        for (depth, layer) in layers.enumerated() {
+            let own = depth == 0 ? [] : (layer.page(withKey: homePageKey)?.tiles ?? [])
+                .map { $0.link == topicsPageKey ? .spacer() : $0 }
+            let placed = [own, layer.page(withKey: pinnedPageKey)?.tiles ?? []]
+            for (index, raw) in placed.flatMap({ $0.enumerated().map { $0 } })
+            where !raw.isEmptyCell && !raw.key.hasPrefix("<") {
+                let entry = depth == 0 ? raw : anchored(raw, in: layer)
+                guard !used.contains(entry.key) else { continue }
+                while tiles.count <= index, index < cells { tiles.append(.spacer()) }
+                if index < cells, tiles[index].isSpacer {
+                    tiles[index] = entry
+                    used.insert(entry.key)
+                } else {
+                    displaced.append(entry)
+                }
+            }
+        }
+        var items = displaced
+        for (depth, layer) in layers.enumerated() {
+            var layerItems = (layer.page(withKey: alwaysPageKey)?.tiles ?? []).filter { !$0.isEmptyCell }
+            if let contextKey {
+                layerItems += contextEntries(forNavKey: contextKey, systemIsActive: systemIsActive, in: layer)
+            }
+            items += depth == 0 ? layerItems : layerItems.map { anchored($0, in: layer) }
+        }
+        return steady(compose(tiles, items: items, rowKeys: rowKeys, words: words))
+    }
+
+    /// The composed page with keys that stay put from one drawing to the
+    /// next. The board names each cell by its key; the gaps composing adds
+    /// were fresh random spacers every time the page was drawn, so on a phone
+    /// the cells were new on every redraw and a swipe to the next screen
+    /// never settled (Mark, 2026-11-15). A gap is named by its cell, and a
+    /// tile met twice — the same folder from two included pages — keeps its
+    /// first cell only.
+    static func steady(_ tiles: [TileEntry]) -> [TileEntry] {
+        var seen = Set<String>()
+        return tiles.enumerated().map { index, entry in
+            var e = entry
+            if e.isSpacer || !seen.insert(e.key).inserted {
+                e = TileEntry(key: TileToken.spacerPrefix + "me\(index)", link: "", isAudible: false)
+            }
+            return e
+        }
+    }
+
+    /// My Topics as the child sees it: the page's own topics, then those of
+    /// every page it includes, each board once, laid out as the page lays
+    /// out its own (`layout`). An included page's topics are part of what it
+    /// brings — "Room 4" with its School board.
+    static func composeTopics(layers: [BlasterScene]) -> [TileEntry] {
+        var seen = Set<String>()
+        let entries = layers.flatMap(topicEntries(in:)).filter { entry in
+            TileToken.scenePageKey(entry.link).map { seen.insert($0.sceneID).inserted } ?? false
+        }
+        return steady(layout(entries))
+    }
+
+    /// An included page's tile, drawn on another Me page: a folder to one of
+    /// its own pages names its scene, or it would open the host's page of
+    /// that name. Links that already name where they go are left alone.
+    static func anchored(_ entry: TileEntry, in layer: BlasterScene) -> TileEntry {
+        guard !entry.link.isEmpty, !entry.link.hasPrefix("<") else { return entry }
+        var e = entry
+        e.link = TileToken.sceneLink(layer.sceneID, to: entry.link)
+        return e
+    }
+
+    /// Whether any layer has something for the page `navKey`: the ♥'s dot.
+    static func hasContextItems(forNavKey navKey: String, systemIsActive: Bool,
+                                layers: [BlasterScene]) -> Bool {
+        layers.contains { !contextEntries(forNavKey: navKey, systemIsActive: systemIsActive, in: $0).isEmpty }
+    }
+
+    /// What `me` can include: every other profile's Me page on this device,
+    /// named by its profile, and Me pages received in a file that are no
+    /// profile's own — each one that would not make a loop.
+    static func includeChoices(for me: BlasterScene, scenes: [BlasterScene], profiles: [ChildProfile])
+        -> (onDevice: [(scene: BlasterScene, name: String)], received: [BlasterScene]) {
+        let byID = Dictionary(scenes.map { ($0.sceneID, $0) }, uniquingKeysWith: { a, _ in a })
+        let find = { (id: String) in byID[id] }
+        let present = Set(includeEntries(in: me).compactMap(includedID))
+        let owners = Dictionary(profiles.map { (sceneID(forProfileID: $0.id), $0) },
+                                uniquingKeysWith: { a, _ in a })
+        let candidates = scenes.filter {
+            isMeScene($0) && !present.contains($0.sceneID) && !wouldLoop(adding: $0, to: me, find: find)
+        }
+        let onDevice: [(scene: BlasterScene, name: String)] = candidates
+            .compactMap { s in owners[s.sceneID].map { (scene: s, name: $0.visibleName) } }
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        let received = candidates.filter { owners[$0.sceneID] == nil }
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        return (onDevice, received)
     }
 
     // MARK: - Layout

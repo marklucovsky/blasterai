@@ -635,6 +635,27 @@ struct ShareBoardSheet: View {
             // first-party AND absent from a fresh install, so `isSystem` here
             // dropped every pack word. See `BundledVocabulary`.
             let defaultKeys = BundledVocabulary.keys
+            // A Me page brings the Me pages it includes.
+            let meIncludes: [BlasterScene] = MeScene.isMeScene(scene)
+                ? Array(MeScene.layers(of: scene, find: { id in
+                    (try? modelContext.fetch(FetchDescriptor<BlasterScene>(
+                        predicate: #Predicate { $0.sceneID == id })))?.first
+                }).dropFirst())
+                : []
+            // And the boards on those pages' My Topics, each with the
+            // templates it is built on, so the topics open where it lands.
+            var topicIDs: [String] = []
+            for page in [scene] + meIncludes {
+                for id in MeScene.topicIDs(in: page) where !topicIDs.contains(id) { topicIDs.append(id) }
+            }
+            let meTopics: [(board: BlasterScene, templates: [BlasterScene])] = topicIDs.compactMap { id in
+                guard let board = (try? modelContext.fetch(FetchDescriptor<BlasterScene>(
+                    predicate: #Predicate { $0.sceneID == id })))?.first else { return nil }
+                let templates = systemScenes.first.map {
+                    TemplateChain(scene: board, templates: templateScenes, system: $0).templates
+                } ?? []
+                return (board, templates)
+            }
             // A scene built on a template carries it, so one file is
             // everything the receiver needs.
             let data = try SceneExporter.exportJSON(scene,
@@ -642,7 +663,13 @@ struct ShareBoardSheet: View {
                                                     tileLookup: tileLookup,
                                                     context: modelContext,
                                                     level: sharesLevels ? sceneLevel : nil,
-                                                    templates: chain?.templates ?? [])
+                                                    templates: chain?.templates ?? [],
+                                                    // A Me page brings the Me pages it includes.
+                                                    includes: meIncludes,
+                                                    topics: meTopics,
+                                                    idMap: Dictionary(([scene] + meIncludes).map {
+                                                        ($0.sceneID, MeScene.sharedID($0.sceneID, authorID: authorID))
+                                                    }, uniquingKeysWith: { a, _ in a }))
             return try ExportedFile.write(data, named: "\(subject.basename).\(BlasterSceneFormat.fileExtension)")
 
         case .page(let page, let scene):

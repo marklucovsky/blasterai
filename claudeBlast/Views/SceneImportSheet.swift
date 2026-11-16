@@ -22,6 +22,12 @@ struct SceneImportSheet: View {
     @Environment(TileImageResolver.self) private var resolver
 
     @State private var preview: ExportableScene?
+    @Query(sort: \ChildProfile.displayName) private var profiles: [ChildProfile]
+    /// Profiles whose Me page now includes the Me page just imported.
+    @State private var includedFor: Set<String> = []
+    /// Profiles whose Me page could not include it, because it already
+    /// includes that profile's page (a loop).
+    @State private var refusedFor: Set<String> = []
     @State private var error: String?
     @State private var importResult: SceneImporter.ImportResult?
 
@@ -279,6 +285,9 @@ struct SceneImportSheet: View {
             ForEach(problems, id: \.self) { line in
                 Text(line).font(.caption).foregroundStyle(.orange)
             }
+            if MeScene.isMeScene(result.scene), result.scene.isImported {
+                includeOffer(result.scene)
+            }
             // The file carried no author — let the receiver tag who it's from
             // ("from Greta"), like naming a contact. Optional; saved on Done too.
             if result.needsReceiverLabel {
@@ -369,6 +378,59 @@ struct SceneImportSheet: View {
             importResult = result
         } catch {
             self.error = error.localizedDescription
+        }
+    }
+
+    /// A Me page from someone else is added to a profile's Me page rather
+    /// than used as a board: "Add to Aubrey's Me Page". A page a profile
+    /// already reaches — included directly, or through a page it includes,
+    /// as Room 4 is through Aubrey — is listed as already there: an update to
+    /// it has applied, and nothing more is asked.
+    @ViewBuilder
+    private func includeOffer(_ received: BlasterScene) -> some View {
+        let byID = { (id: String) in
+            (try? modelContext.fetch(FetchDescriptor<BlasterScene>(
+                predicate: #Predicate { $0.sceneID == id })))?.first
+        }
+        // Never a page into itself: the caregiver profile's Me page has the
+        // same id on every device, so a file of it is that page, not another.
+        let candidates = profiles.filter { MeScene.sceneID(forProfileID: $0.id) != received.sceneID }
+        let reached = candidates.filter { profile in
+            includedFor.contains(profile.id)
+                || byID(MeScene.sceneID(forProfileID: profile.id)).map {
+                    MeScene.layers(of: $0, find: byID).contains { $0.sceneID == received.sceneID }
+                } == true
+        }
+        let reachedIDs = Set(reached.map(\.id))
+        Divider().padding(.vertical, 2)
+        if !reached.isEmpty {
+            Label("Part of " + ListFormatter.localizedString(byJoining: reached.map { "\($0.visibleName)\u{2019}s" })
+                  + " Me page" + (reached.count == 1 ? "" : "s") + ". Changes in it apply there now.",
+                  systemImage: "checkmark.circle.fill")
+                .font(.caption).foregroundStyle(.green)
+        }
+        let others = candidates.filter { !reachedIDs.contains($0.id) }
+        if !others.isEmpty {
+            Text("A Me page adds its words and folders to a child\u{2019}s own Me page.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+        ForEach(others) { profile in
+            Button {
+                let me = MeScene.ensure(profileID: profile.id, context: modelContext)
+                if MeScene.addInclude(received, to: me, find: byID) {
+                    try? modelContext.save()
+                    includedFor.insert(profile.id)
+                } else {
+                    refusedFor.insert(profile.id)
+                }
+            } label: {
+                Label("Add to \(profile.visibleName)\u{2019}s Me Page", systemImage: "plus.circle")
+            }
+            .font(.subheadline)
+            if refusedFor.contains(profile.id) {
+                Text("Can\u{2019}t add: this Me page already includes \(profile.visibleName)\u{2019}s.")
+                    .font(.caption).foregroundStyle(.orange)
+            }
         }
     }
 

@@ -166,6 +166,49 @@ enum SceneImporter {
                            asCarried: true)
     }
 
+    /// Install a Me page carried inside another's file
+    /// (`ExportableScene.includes`): added when missing, updated when the
+    /// carried copy is newer. A received Me page is its author's to change,
+    /// so the newer one replaces it; this device's own is never touched.
+    /// Not marked carried: a carried template is removed with the last scene
+    /// built on it, and nothing is built on a Me page.
+    static func installIncluded(_ included: ExportableScene, context: ModelContext,
+                                sourceURL: String = "") throws {
+        guard let id = included.id, id.hasPrefix("me-") else { return }
+        let installed = (try? context.fetch(
+            FetchDescriptor<BlasterScene>(predicate: #Predicate { $0.sceneID == id })
+        ))?.first
+        if let installed {
+            guard installed.isImported,
+                  let modified = included.modified, modified > installed.lastModified else { return }
+        }
+        var carried = included
+        carried.includes = nil
+        carried.templates = nil
+        _ = try importJSON(SceneExporter.encode(carried), context: context, sourceURL: sourceURL,
+                           resolution: installed == nil ? nil : .takeUpdate)
+    }
+
+    /// Install a topic board carried inside a Me page's file: added when
+    /// missing, updated when the carried copy is newer and the installed one
+    /// is a received copy nobody here has edited. This device's own board, or
+    /// a received one edited here, is left as it is.
+    static func installTopic(_ topic: ExportableScene, context: ModelContext,
+                             sourceURL: String = "") throws {
+        guard let id = topic.id, !id.isEmpty else { return }
+        let installed = (try? context.fetch(
+            FetchDescriptor<BlasterScene>(predicate: #Predicate { $0.sceneID == id })
+        ))?.first
+        if let installed {
+            let edited = installed.importedContentHash.isEmpty
+                || installed.contentHash != installed.importedContentHash
+            guard installed.isImported, !edited,
+                  let modified = topic.modified, modified > installed.lastModified else { return }
+        }
+        _ = try importJSON(SceneExporter.encode(topic), context: context, sourceURL: sourceURL,
+                           resolution: installed == nil ? nil : .takeUpdate)
+    }
+
     /// Import a scene from JSON data.
     /// - Parameters:
     ///   - data: Raw JSON data in the ExportableScene format.
@@ -203,6 +246,14 @@ enum SceneImporter {
         // in first, farthest first, so the scene finds them when it lands.
         for template in (exportable.templates ?? []).reversed() {
             try installCarried(template, context: context, sourceURL: sourceURL)
+        }
+        // A Me page's topic boards travel inside it too, so its My Topics
+        // open; then the Me pages it includes.
+        for topic in exportable.topics ?? [] {
+            try installTopic(topic, context: context, sourceURL: sourceURL)
+        }
+        for included in (exportable.includes ?? []).reversed() {
+            try installIncluded(included, context: context, sourceURL: sourceURL)
         }
 
         // Fetch existing tiles + categorize the file's custom tiles.

@@ -36,7 +36,16 @@ enum SceneExporter {
                        tileLookup: [String: TileModel],
                        context: ModelContext? = nil,
                        level: Int? = nil,
-                       templates: [BlasterScene] = []) -> ExportableScene {
+                       templates: [BlasterScene] = [],
+                       includes: [BlasterScene] = [],
+                       topics: [(board: BlasterScene, templates: [BlasterScene])] = [],
+                       idMap: [String: String] = [:]) -> ExportableScene {
+        // A scene id the file must carry under another name, and every
+        // `<scene:ID>:` link to it rewritten to match (`MeScene.sharedID`).
+        func mapped(_ link: String) -> String {
+            guard let target = TileToken.scenePageKey(link), let to = idMap[target.sceneID] else { return link }
+            return TileToken.sceneLink(to, to: target.page)
+        }
         var exportTiles: [ExportableTile] = []
         var seenTileKeys = Set<String>()
 
@@ -76,7 +85,7 @@ enum SceneExporter {
                 return ExportablePageTile(
                     key: tile.key,
                     isAudible: entry.isAudible,
-                    link: entry.link,
+                    link: mapped(entry.link),
                     // Only when set, so the common case adds nothing to the file.
                     isConcealed: entry.isConcealed ? true : nil,
                     revealLevel: entry.revealLevel > 0 ? entry.revealLevel : nil
@@ -107,7 +116,7 @@ enum SceneExporter {
             // Decentralized identity rides inside the file. Empty strings become
             // nil so a legacy/unstamped scene exports cleanly (import falls back
             // to name). `receivedLabel` is local-only and deliberately not sent.
-            id: scene.sceneID.isEmpty ? nil : scene.sceneID,
+            id: scene.sceneID.isEmpty ? nil : (idMap[scene.sceneID] ?? scene.sceneID),
             slug: scene.slug.isEmpty ? nil : scene.slug,
             sceneVersion: scene.sceneVersion.isEmpty ? nil : scene.sceneVersion,
             authorName: scene.authorName.isEmpty ? nil : scene.authorName,
@@ -121,6 +130,14 @@ enum SceneExporter {
             templates: templates.isEmpty ? nil : templates.map {
                 export($0, defaultTileKeys: defaultTileKeys, tileLookup: tileLookup, context: context)
             },
+            includes: includes.isEmpty ? nil : includes.map {
+                export($0, defaultTileKeys: defaultTileKeys, tileLookup: tileLookup, context: context,
+                       idMap: idMap)
+            },
+            topics: topics.isEmpty ? nil : topics.map {
+                export($0.board, defaultTileKeys: defaultTileKeys, tileLookup: tileLookup, context: context,
+                       templates: $0.templates)
+            },
             tiles: exportTiles.isEmpty ? nil : exportTiles,
             pages: exportPages
         )
@@ -132,10 +149,13 @@ enum SceneExporter {
                            tileLookup: [String: TileModel],
                            context: ModelContext? = nil,
                            level: Int? = nil,
-                           templates: [BlasterScene] = []) throws -> Data {
+                           templates: [BlasterScene] = [],
+                           includes: [BlasterScene] = [],
+                           topics: [(board: BlasterScene, templates: [BlasterScene])] = [],
+                           idMap: [String: String] = [:]) throws -> Data {
         let exportable = export(scene, defaultTileKeys: defaultTileKeys,
                                 tileLookup: tileLookup, context: context, level: level,
-                                templates: templates)
+                                templates: templates, includes: includes, topics: topics, idMap: idMap)
         return try encode(exportable)
     }
 
