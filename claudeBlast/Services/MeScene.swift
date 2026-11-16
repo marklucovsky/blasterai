@@ -657,6 +657,76 @@ enum MeScene {
         }
     }
 
+    // MARK: - Preview
+
+    /// Where a cell of the composed Me page came from, for the editor's
+    /// Preview: the layout rules decide where added tiles land, and a
+    /// caregiver cannot be expected to work that out (Mark, 2026-11-15).
+    enum Source: Equatable {
+        /// On the page itself.
+        case own
+        /// A pinned tile of the named page; `moved` when its cell was taken.
+        case pinned(String, moved: Bool)
+        /// The own page of an included page, named.
+        case included(String, moved: Bool)
+        /// Always, from the named page.
+        case always(String)
+        /// For the page the child came from, from the named page.
+        case page(String)
+    }
+
+    /// The composed Me home, cell by cell, each tagged with where it came
+    /// from: exactly what `composeHome` draws, plus why. A word inlined from
+    /// a source page is credited to the first rule that names that source.
+    static func preview(_ home: [TileEntry], layers: [BlasterScene], name: (BlasterScene) -> String,
+                        contextKey: String?, systemIsActive: Bool, rowKeys: Set<String>,
+                        words: (TileEntry) -> [TileEntry]) -> [(tile: TileEntry, source: Source?)] {
+        let tiles = composeHome(home, layers: layers, contextKey: contextKey, systemIsActive: systemIsActive,
+                                rowKeys: rowKeys, words: words)
+        var origin: [String: Source] = [:]
+        func credit(_ key: String, _ source: Source) {
+            if origin[key] == nil { origin[key] = source }
+        }
+        for entry in home where !entry.isEmptyCell { credit(entry.key, .own) }
+        let placedAt = Dictionary(tiles.enumerated().map { ($1.key, $0) }, uniquingKeysWith: { a, _ in a })
+        for (depth, layer) in layers.enumerated() {
+            let label = name(layer)
+            if depth > 0 {
+                for (i, e) in (layer.page(withKey: homePageKey)?.tiles ?? []).enumerated()
+                where !e.isEmptyCell && e.link != topicsPageKey {
+                    credit(e.key, .included(label, moved: placedAt[e.key] != i))
+                }
+            }
+            for (i, e) in (layer.page(withKey: pinnedPageKey)?.tiles ?? []).enumerated() where !e.isEmptyCell {
+                credit(e.key, .pinned(label, moved: placedAt[e.key] != i))
+            }
+        }
+        func creditItems(_ items: [TileEntry], _ source: Source) {
+            for item in items where !item.isEmptyCell {
+                if isWordItem(item) || !item.hidesFolder { credit(item.key, source) }
+                if item.inline != nil { for word in words(item) { credit(word.key, source) } }
+            }
+        }
+        for (depth, layer) in layers.enumerated() {
+            let label = name(layer)
+            let anchor = { (e: TileEntry) in depth == 0 ? e : anchored(e, in: layer) }
+            creditItems((layer.page(withKey: alwaysPageKey)?.tiles ?? []).map(anchor), .always(label))
+            if let contextKey {
+                creditItems(contextEntries(forNavKey: contextKey, systemIsActive: systemIsActive, in: layer)
+                    .map(anchor), .page(label))
+            }
+        }
+        return tiles.map { ($0, $0.isEmptyCell ? nil : origin[$0.key]) }
+    }
+
+    /// The pages any layer has rules for, as navigation keys: what the
+    /// Preview's "Show for" offers besides Home.
+    static func contextKeys(layers: [BlasterScene]) -> [String] {
+        var seen = Set<String>()
+        return layers.flatMap { $0.pages.compactMap { systemKey(ofContextPage: $0.key) } }
+            .filter { seen.insert($0).inserted }
+    }
+
     /// My Topics as the child sees it: the page's own topics, then those of
     /// every page it includes, each board once, laid out as the page lays
     /// out its own (`layout`). An included page's topics are part of what it

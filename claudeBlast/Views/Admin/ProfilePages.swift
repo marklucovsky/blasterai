@@ -423,6 +423,7 @@ struct ProfileMePage: View {
     @Query(filter: #Predicate<BlasterScene> { $0.isDefault }) private var systemScenes: [BlasterScene]
     @State private var editing: String?
     @State private var isSharing = false
+    @State private var isPreviewing = false
 
     private var me: BlasterScene? {
         scenes.first { $0.sceneID == MeScene.sceneID(forProfileID: profile.id) }
@@ -444,6 +445,7 @@ struct ProfileMePage: View {
             if let me, let system = systemScenes.first {
                 Section {
                     Button("Edit \(profile.visibleName)\u{2019}s Page") { editing = MeScene.homePageKey }
+                    NavigationLink("Preview") { MePreviewView(profile: profile) }
                     NavigationLink {
                         ContextPageView(me: me, system: system, systemKey: MeScene.alwaysKey)
                     } label: {
@@ -479,6 +481,23 @@ struct ProfileMePage: View {
                         .toolbar {
                             ToolbarItem(placement: .topBarLeading) {
                                 Button("Done") { editing = nil }
+                            }
+                            // What the page will look like with its rules,
+                            // while placing tiles on it.
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button { isPreviewing = true } label: {
+                                    Label("Preview", systemImage: "eye")
+                                }
+                            }
+                        }
+                        .sheet(isPresented: $isPreviewing) {
+                            NavigationStack {
+                                MePreviewView(profile: profile)
+                                    .toolbar {
+                                        ToolbarItem(placement: .confirmationAction) {
+                                            Button("Done") { isPreviewing = false }
+                                        }
+                                    }
                             }
                         }
                 }
