@@ -69,6 +69,29 @@ struct MeRuleTests {
         #expect(keys(tiles).contains("dog"))
     }
 
+    /// The Preview tags every added tile with where it came from, and says
+    /// when a pinned tile moved because its cell was taken.
+    @Test func previewSaysWhereEachTileCameFrom() {
+        let ctx = TestStore.freshContainer().mainContext
+        let aubrey = me("aubrey", always: ["mom"], pinned: [0: "dog", 3: "cat"], in: ctx)
+        aubrey.pages = aubrey.pages + [PageSpec(key: MeScene.contextPageKey(for: "places"),
+                                                tiles: [TileEntry(key: "park")])]
+        let room = me("room4", always: ["teacher"], in: ctx)
+        let byID = { (id: String) in [aubrey, room].first { $0.sceneID == id } }
+        MeScene.addInclude(room, to: aubrey, find: byID)
+        let cells = MeScene.preview([TileEntry(key: "mine")], layers: MeScene.layers(of: aubrey, find: byID),
+                                    name: { $0.name }, contextKey: "places", systemIsActive: true,
+                                    rowKeys: [], words: { _ in [] })
+        func source(_ key: String) -> MeScene.Source? { cells.first { $0.tile.key == key }?.source }
+        #expect(source("mine") == .own)
+        #expect(source("cat") == .pinned("aubrey", moved: false))
+        #expect(source("dog") == .pinned("aubrey", moved: true))     // cell 0 is "mine"
+        #expect(source("mom") == .always("aubrey"))
+        #expect(source("teacher") == .always("room4"))
+        #expect(source("park") == .page("aubrey"))
+        #expect(MeScene.contextKeys(layers: [aubrey, room]) == ["places"])
+    }
+
     /// Drawn twice, the composed page is the same cells with the same keys:
     /// the board names cells by key, and fresh gaps every drawing left a
     /// phone's swipe to the next screen unable to settle. A tile two layers
