@@ -76,6 +76,15 @@ extension ChildProfile {
     /// The name as text, without the `sys:` part. Use this wherever a name is
     /// shown or sorted; `displayName` is the stored form.
     var visibleName: String { parsedName.text }
+    /// Whose page a label means: "Aubrey's", or "Your" when the profile is
+    /// yours or still has the default name ("Edit me's Page" read wrong;
+    /// Mark 2026-11-16).
+    var possessive: String {
+        let name = visibleName
+        return isSystem || name.isEmpty || name.lowercased() == "me" ? "Your" : name + "\u{2019}s"
+    }
+    /// The same, standing alone: "Aubrey's" or "yours".
+    var possessiveAlone: String { possessive == "Your" ? "yours" : possessive }
 }
 
 /// A profile's picture alone, on a small rounded card. Draws nothing for a
@@ -444,7 +453,7 @@ struct ProfileMePage: View {
         Form {
             if let me, let system = systemScenes.first {
                 Section {
-                    Button("Edit \(profile.visibleName)\u{2019}s Page") { editing = MeScene.homePageKey }
+                    Button("Edit \(profile.possessive) Page") { editing = MeScene.homePageKey }
                     NavigationLink("Preview") { MePreviewView(profile: profile) }
                     NavigationLink {
                         ContextPageView(me: me, system: system, systemKey: MeScene.alwaysKey)
@@ -464,7 +473,7 @@ struct ProfileMePage: View {
             if me != nil {
                 Section {
                     Button { isSharing = true } label: {
-                        Label("Share \(profile.visibleName)\u{2019}s Me Page", systemImage: "square.and.arrow.up")
+                        Label("Share \(profile.possessive) Me Page", systemImage: "square.and.arrow.up")
                     }
                 } footer: {
                     Text("Sends this Me page and the pages it includes. Whoever opens it can add it to the Me page of a profile there; sending it again updates it there.")

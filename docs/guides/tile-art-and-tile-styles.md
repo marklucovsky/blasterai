@@ -1,16 +1,17 @@
-# Tile art and image sets
+# Tile art and tile styles
 
-Which pictures a child sees, how to change them, and what to do when none of
+Which pictures the user sees, how to change them, and what to do when none of
 the built-in styles are right.
 
 ---
 
 ## Switching style
 
-**Settings → Device → Image Set.** It changes every tile everywhere,
-immediately. It's a per-device setting, not per-child or per-scene.
+**Settings › Look, Sound, Feel › Tile Style**, or **Tile Style** in the rail's
+**Edit** (or **Tools**) menu in Setup mode. It changes every tile everywhere,
+immediately. It's a per-device setting, not per-profile or per-board.
 
-Five sets ship:
+Five tile styles ship:
 
 **Classic — Light, Medium and Dark** — flat pictograms with bold outlines and
 saturated color, in the tradition most AAC symbol sets follow. Familiar to
@@ -21,37 +22,38 @@ cosmetic detail. Classic — Light is the default.
 **Playful 3D** — soft clay-sculpture renders, warm and friendly.
 
 **High Contrast** — white line art on true black. A starting point for low
-vision, not a CVI set; see below for what it leaves out.
+vision, not a CVI style; see below for what it leaves out.
 
 All five cover the entire vocabulary — every word that ships with the app. At
 1.0 that is **more than a thousand words — the BlasterAI 60 board and the
-bundled packs — five sets over: 5,472 pieces of tile art.** Letters and numbers
+bundled packs — five styles over: 5,472 pieces of tile art.** Letters and numbers
 are drawn by the app rather than painted, and a few whole phrases borrow a
 picture the board already has, the way an SLP reuses *new* for "This is new".
-Three sets were drawn in full; Classic
-Medium and Dark are Classic retoned, where a tile shows skin. All five sets were generated
+Three styles were drawn in full; Classic
+Medium and Dark are Classic retoned, where a tile shows skin. All five styles were generated
 by us, so none of them carries licensing baggage. None is more
 "correct" than another: some children track photographic-ish 3D better, some
 track flat symbols better, and the only way to know is to try them with the
-child.
+user.
 
 ---
 
 ## When a single tile is wrong
 
-You don't have to accept the set's picture for any given word.
+You don't have to accept the style's picture for any given word.
 
-**A photo.** Tile Settings → **Photo** → pick from your library, crop square.
-A photo of the child's actual cup beats any generic cup. Photos win over
+**A photo.** Tile Settings → **Photo** → **Add Photo** → pick from your library,
+crop square.
+A photo of Aubrey's actual cup beats any generic cup. Photos win over
 generated art, apply everywhere that tile appears, and sync across your
 devices.
 
-**Different AI art.** Tile Settings → the style strip → regenerate. Or use
-**Refine this image** to keep the picture and change one thing ("make the
-apple red", "show it from the side"). Refine keeps the composition;
+**Different AI art.** Tile Settings → **Photo** → **Artwork** → **Regenerate
+(fresh image)**. Or use **Refine this image** to keep the picture and change
+one thing ("make the apple red", "show it from the side"). Refine keeps the composition;
 regenerate starts over.
 
-For a child whose vocabulary is full of specific real things — their dog, their
+For a user whose vocabulary is full of specific real things — their dog, their
 school, their cup — photos are usually the right answer, and faster than
 prompting.
 
@@ -59,7 +61,7 @@ prompting.
 
 ## Tile size
 
-**Settings → Device → Board Layout** — Standard, Large or Largest. Fewer, bigger
+**Settings › Look, Sound, Feel › Board Layout** — Standard, Large or Largest. Fewer, bigger
 tiles per screen, or more, smaller ones. Per-device.
 
 The grid is fixed for each layout, so a word stays in the same place on every
@@ -71,7 +73,7 @@ iPad, and overflow pages rather than reflowing. See
 ## The tile
 
 Every tile is a square in a light tint of its part-of-speech colour, packed
-close, with the word in a band along the bottom. Each image set holds its
+close, with the word in a band along the bottom. Each tile style holds its
 picture its own way — Classic art sits cut out on the tint, Playful 3D on a
 white card, High Contrast on black. A label too long for one line, like
 *Wanna do something different?*, gets two lines in a smaller type on a plate of
@@ -83,18 +85,18 @@ its own rather than being cut short.
 
 **High Contrast** is white line art on true black, with saturated accents kept
 only where color carries meaning. It covers the whole vocabulary rather than a
-subset — gaps in an accessibility style land on exactly the words a child uses
+subset — gaps in an accessibility style land on exactly the words the user uses
 most.
 
-Switch to it like any other style: **Settings → Device → Image Set**.
+Switch to it like any other style: **Settings › Look, Sound, Feel › Tile Style**.
 
-**Color is adjustable per child.** The Fitzgerald part-of-speech palette can be
-changed — any part of speech, or a single word whose grammar you disagree with —
+**Color is adjustable per profile** (**Settings › Profile › Colors**). The
+Fitzgerald part-of-speech palette can be changed — any part of speech, or a single word whose grammar you disagree with —
 and a palette is a file you can export and send to every device in a caseload,
-so a child sees the same board at school and at home.
+so Aubrey sees the same board at school and at home.
 
 **What is still missing, and it matters:** there is no background control, no
-complexity or density-of-detail setting, and no per-child visual profile that
+complexity or density-of-detail setting, and no per-profile visual setting that
 bundles those together. A real CVI provision would let you dial down visual
 clutter, not just invert contrast. High Contrast plus a palette is a useful
 start and it is not that, and we would rather say so than let the checkbox
@@ -104,39 +106,42 @@ imply more than it does.
 
 The more useful answer, we think, is not one more style from us.
 
-The complete pipeline for **commissioning a set** — specifying a style,
-
+The complete pipeline for **commissioning a tile style** — specifying a style,
 generating art for every word that ships with the app, measuring it against
 that spec, and reviewing
 it tile by tile — is in the open-source repo and documented end to end in
-**[Commissioning an image set](commissioning-an-image-set.md)**. It costs about
+**[Commissioning a tile style](commissioning-a-tile-style.md)**. It costs about
 $12–$42 of compute and an afternoon, and it needs someone comfortable with a
 terminal, not an artist.
 
-That means a set can be built for **one child's actual vision** — their
+That means a tile style can be built for **one child's actual vision** — their
 acuity, their color response, how much visual clutter they can filter —
 rather than us guessing at a compromise from the literature and shipping it to
 everybody.
 
-If you know what a set should look like for a child you work with, that spec is
+If you know what a tile style should look like for a child you work with, that spec is
 the valuable part. Tell us and we'll help build it.
 
 ---
 
 ## Where art comes from
 
-Tiles that ship with the app have reviewed artwork in both styles. Words you
-add get AI-generated art automatically, in the background.
+Tiles that ship with the app have reviewed artwork in every style. Words you
+add get AI-generated art from the board's **Artwork** page (board editor →
+**Artwork**), which shows how complete the board's pictures are, style by
+style. **Draw N new words** draws the words that have no picture yet, in the
+style you're using now; **Finish** a style, or **Finish All N Styles**, fills
+in the rest. Every run starts behind a confirmation that gives the number of
+pictures, a rough cost and time. For one word, Tile Settings → **Photo** →
+**Artwork** → **Fill all N styles** does the same.
 
-**Generate all styles** (in the scene editor's New-Word Art section, and in the
-New Word sheet) makes art for every style rather than just the one you're
-using. Slower and slightly more expensive, but the scene then still looks right
-if you or a family switch styles later. Worth it for a scene you intend to
-share.
+Finishing every style is slower and slightly more expensive, but the board then
+still looks right if you or a family switch styles later. Worth it for a board
+you intend to share.
 
 ---
 
 ## Next
 
-- **[Commissioning an image set](commissioning-an-image-set.md)** — build your own
+- **[Commissioning a tile style](commissioning-a-tile-style.md)** — build your own
 - **[Adding vocabulary](adding-vocabulary.md)**

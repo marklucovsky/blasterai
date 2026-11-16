@@ -404,7 +404,7 @@ struct SceneImportSheet: View {
         let reachedIDs = Set(reached.map(\.id))
         Divider().padding(.vertical, 2)
         if !reached.isEmpty {
-            Label("Part of " + ListFormatter.localizedString(byJoining: reached.map { "\($0.visibleName)\u{2019}s" })
+            Label("Part of " + ListFormatter.localizedString(byJoining: reached.map { $0.possessive == "Your" ? "your" : $0.possessive })
                   + " Me page" + (reached.count == 1 ? "" : "s") + ". Changes in it apply there now.",
                   systemImage: "checkmark.circle.fill")
                 .font(.caption).foregroundStyle(.green)
@@ -424,11 +424,11 @@ struct SceneImportSheet: View {
                     refusedFor.insert(profile.id)
                 }
             } label: {
-                Label("Add to \(profile.visibleName)\u{2019}s Me Page", systemImage: "plus.circle")
+                Label("Add to \(profile.possessive) Me Page", systemImage: "plus.circle")
             }
             .font(.subheadline)
             if refusedFor.contains(profile.id) {
-                Text("Can\u{2019}t add: this Me page already includes \(profile.visibleName)\u{2019}s.")
+                Text("Can\u{2019}t add: this Me page already includes \(profile.possessiveAlone).")
                     .font(.caption).foregroundStyle(.orange)
             }
         }
