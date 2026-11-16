@@ -11,16 +11,47 @@ import UniformTypeIdentifiers
 
 extension AdminView {
 
-    /// Settings › Boards and Vocabulary.
+    /// Settings › Boards and Vocabulary: Vocabulary, then the boards, with a
+    /// filter, a search field, and one + menu for making and bringing them in.
+    /// Built for 20 or more boards: one line each, the active board pinned at
+    /// the top, templates folded into a group at the bottom.
     var boardsPage: some View {
         List {
             Section {
                 NavigationLink("Vocabulary", value: AdminPage.vocabulary)
             }
+            Section {
+                Picker("Show", selection: $boardFilter) {
+                    ForEach(BoardFilter.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
+            }
             scenesSection
-            newSceneSection
         }
+        .searchable(text: $boardSearch, placement: .navigationBarDrawer(displayMode: .automatic),
+                    prompt: "Search boards")
         .navigationTitle("Boards and Vocabulary")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    Button { isCreatingScene = true } label: {
+                        Label("New Board", systemImage: "plus")
+                    }
+                    Button { isImportingBoard = true } label: {
+                        Label("Import Board or Spreadsheet", systemImage: "square.and.arrow.down")
+                    }
+                    Divider()
+                    Picker("Sort", selection: $boardsSortByName) {
+                        Text("Recent").tag(false)
+                        Text("Name").tag(true)
+                    }
+                } label: {
+                    Label("Add", systemImage: "plus")
+                }
+            }
+        }
     }
 
     /// The board pages' sheets and dialogs, hosted on Settings' one
@@ -92,61 +123,103 @@ extension AdminView {
 
     // MARK: - Sections
 
+    /// The boards a filter shows, searched and sorted, Me pages and carried
+    /// templates left out: a Me page is reached from its profile, and a
+    /// carried template is how another board works (Settings › Advanced ›
+    /// Authoring lists those).
+    var listedScenes: [BlasterScene] {
+        let topicIDs: Set<String> = {
+            guard boardFilter == .topics, let profile = profileResolver.active,
+                  let me = MeScene.find(profileID: profile.id, context: modelContext) else { return [] }
+            return Set(MeScene.topicIDs(in: me))
+        }()
+        let query = boardSearch.trimmingCharacters(in: .whitespaces)
+        let shown = scenes.filter { scene in
+            guard !MeScene.isMeScene(scene), !scene.isCarriedTemplate else { return false }
+            switch boardFilter {
+            case .all: break
+            case .mine: if scene.provenance == .firstParty { return false }
+            case .builtIn: if scene.provenance != .firstParty { return false }
+            case .topics: if !topicIDs.contains(scene.sceneID) { return false }
+            }
+            return query.isEmpty
+                || scene.name.localizedCaseInsensitiveContains(query)
+                || scene.descriptionText.localizedCaseInsensitiveContains(query)
+        }
+        return boardsSortByName
+            ? shown.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+            : shown.sorted { $0.lastModified > $1.lastModified }
+    }
+
     @ViewBuilder
     var scenesSection: some View {
-        Section {
-            // A Me page is reached from its profile, and is mounted rather
-            // than activated, shared or duplicated.
-            ForEach(scenes.filter { !MeScene.isMeScene($0) && !$0.isCarriedTemplate }) { scene in
-                Group {
-                    if scene.isSystemOwned || scene.isLockedTemplate {
-                        // System scenes are immutable — the editor is the single
-                        // door to every scene mutation, so refusing to open it
-                        // here is what keeps them pristine. Tapping offers an
-                        // editable copy instead.
-                        Button {
-                            sceneToClone = scene
-                        } label: {
-                            SceneRow(scene: scene, onActivate: { activateScene(scene) }, builtOn: templateNote(scene))
-                        }
-                        .buttonStyle(.plain)
-                    } else {
-                        NavigationLink(destination: SceneEditorView(scene: scene)) {
-                            SceneRow(scene: scene, onActivate: { activateScene(scene) }, builtOn: templateNote(scene))
-                        }
-                    }
+        let listed = listedScenes
+        // One list, the current board first and checked.
+        let boards = listed.filter(\.isActive) + listed.filter { !$0.isActive && !$0.isTemplate }
+        let templates = listed.filter { !$0.isActive && $0.isTemplate }
+        if listed.isEmpty {
+            Section {
+                Text(boardSearch.isEmpty ? boardFilter.emptyText : "No boards match \u{201C}\(boardSearch)\u{201D}.")
+                    .foregroundStyle(.secondary)
+            }
+        }
+        if !boards.isEmpty {
+            Section {
+                ForEach(boards) { boardRow($0) }
+            } footer: {
+                Text("Swipe a board, or touch and hold it, for more.")
+            }
+        }
+        if !templates.isEmpty {
+            Section {
+                // Open while searching, so a match is never hidden in a fold.
+                DisclosureGroup("Templates (\(templates.count))", isExpanded: Binding(
+                    get: { isTemplatesExpanded || !boardSearch.isEmpty },
+                    set: { isTemplatesExpanded = $0 })) {
+                    ForEach(templates) { boardRow($0) }
                 }
-                .swipeActions(edge: .leading) {
-                    activateButton(scene)
-                    topicButton(scene)
+            } footer: {
+                Text("A template is a board other boards are built on.")
+            }
+        }
+    }
+
+    /// One board, one line: its name, then pages and date. The checkmark is
+    /// the current board. The row opens the editor; a board we ship, or
+    /// someone else's template, offers an editable copy first.
+    func boardRow(_ scene: BlasterScene) -> some View {
+        Group {
+            if scene.isSystemOwned || scene.isLockedTemplate {
+                Button { sceneToClone = scene } label: {
+                    BoardRow(scene: scene, builtOn: templateNote(scene))
                 }
-                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                    deleteButton(scene)
-                    shareButton(scene)
-                    duplicateButton(scene)
-                }
-                // The same actions on touch-and-hold.
-                //
-                // A swipe is invisible until you already know it is there, and it
-                // is the wrong gesture on a Mac, where these boards are edited
-                // with a trackpad and a right-click is what a caregiver reaches
-                // for. Offering both costs one modifier and means no action is
-                // reachable only by a gesture nobody discovered.
-                .contextMenu {
-                    activateButton(scene)
-                    topicButton(scene)
-                    shareButton(scene)
-                    duplicateButton(scene)
-                    if isDeletable(scene) {
-                        Divider()
-                        deleteButton(scene)
-                    }
+                .buttonStyle(.plain)
+            } else {
+                NavigationLink(destination: SceneEditorView(scene: scene)) {
+                    BoardRow(scene: scene, builtOn: templateNote(scene))
                 }
             }
-        } header: {
-            Text("Scenes")
-        } footer: {
-            Text("Swipe a board left to share, duplicate or delete it, or right to make it active or add it to My Topics. Touch and hold a board for the same actions.")
+        }
+        .swipeActions(edge: .leading) {
+            activateButton(scene)
+            topicButton(scene)
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            deleteButton(scene)
+            shareButton(scene)
+            duplicateButton(scene)
+        }
+        // The same actions on touch-and-hold: a swipe is invisible until you
+        // know it is there, and on a Mac a right-click is what people reach for.
+        .contextMenu {
+            activateButton(scene)
+            topicButton(scene)
+            shareButton(scene)
+            duplicateButton(scene)
+            if isDeletable(scene) {
+                Divider()
+                deleteButton(scene)
+            }
         }
     }
 
@@ -230,27 +303,6 @@ extension AdminView {
             } label: {
                 Label("Delete", systemImage: "trash")
             }
-        }
-    }
-
-    /// Making a scene and bringing one in, side by side: one Import takes a
-    /// BlasterAI scene file or a spreadsheet, from a link or a file, and every
-    /// path previews before anything is written.
-    @ViewBuilder
-    var newSceneSection: some View {
-        Section {
-            Button {
-                isCreatingScene = true
-            } label: {
-                Label("New Scene", systemImage: "plus.circle")
-            }
-            Button {
-                isImportingBoard = true
-            } label: {
-                Label("Import Scene", systemImage: "square.and.arrow.down")
-            }
-        } footer: {
-            Text("Import a BlasterAI scene (.blasterscene) or a scene drawn in a spreadsheet — Google Sheets, Excel, Numbers or CSV — from a link or a file. You'll see it before anything is added.")
         }
     }
 
@@ -426,4 +478,107 @@ extension AdminView {
     /// every pack word from every export. See `BundledVocabulary`.
     var defaultTileKeys: Set<String> { BundledVocabulary.keys }
 
+}
+
+/// Which boards Boards and Vocabulary shows.
+enum BoardFilter: String, CaseIterable, Identifiable {
+    case all, mine, builtIn, topics
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .all: "All"
+        case .mine: "Mine"
+        case .builtIn: "Built-in"
+        case .topics: "Topics"
+        }
+    }
+
+    var emptyText: String {
+        switch self {
+        case .all: "No boards yet. Tap + to make one or bring one in."
+        case .mine: "No boards of your own yet. Tap + to make one, or duplicate a built-in board."
+        case .builtIn: "No built-in boards."
+        case .topics: "Nothing on My Topics yet. Swipe a board right to add it."
+        }
+    }
+}
+
+/// A board on one line, for a list of 20 or more: name, then pages and the
+/// date it last changed; a mark for a template or a built-in board, a
+/// warning when its template is missing, and a check on the current board.
+struct BoardRow: View {
+    let scene: BlasterScene
+    var builtOn: SceneRow.TemplateNote? = nil
+
+    var body: some View {
+        HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(scene.name).lineLimit(1)
+                    if scene.isTemplate {
+                        Image(systemName: "square.stack.3d.up")
+                            .font(.caption)
+                            .foregroundStyle(.indigo)
+                            .accessibilityLabel("Template")
+                    }
+                    if case .missing = builtOn {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                            .accessibilityLabel("Its template is missing")
+                    }
+                }
+                HStack(spacing: 5) {
+                    // Where it came from, at a glance: the same dot the old
+                    // rows used (purple BlasterAI, green yours, orange shared).
+                    Circle().fill(provenanceColor).frame(width: 7, height: 7)
+                        .accessibilityHidden(true)
+                    Text(detail).lineLimit(1)
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+            if scene.isActive {
+                Image(systemName: "checkmark")
+                    .foregroundStyle(.tint)
+                    .accessibilityLabel("Current board")
+            }
+        }
+        .contentShape(Rectangle())
+    }
+
+    private var provenanceColor: Color {
+        switch scene.provenance {
+        case .firstParty: .purple
+        case .local: .green
+        case .imported: .orange
+        }
+    }
+
+    /// Pages, where it came from, and when it last changed:
+    /// "12 pages · Built-in", "12 pages · Mine · Nov 14",
+    /// "12 pages · Shared by Greta, edited · Nov 14".
+    private var detail: String {
+        var parts = ["\(scene.pages.count) page\(scene.pages.count == 1 ? "" : "s")"]
+        let edited = scene.isLocallyModified ? ", edited" : ""
+        switch scene.provenance {
+        case .firstParty:
+            parts.append("Built-in")
+        case .local:
+            parts.append("Mine")
+        case .imported:
+            parts.append((scene.authorName.isEmpty ? "Shared" : "Shared by \(scene.authorName)") + edited)
+        }
+        if scene.provenance != .firstParty {
+            parts.append(scene.lastModified.formatted(.dateTime.month(.abbreviated).day()))
+        }
+        switch builtOn {
+        case .template(let name): parts.append("on \(name)")
+        case .missing(let name): parts.append("\(name) missing")
+        case nil: break
+        }
+        return parts.joined(separator: " · ")
+    }
 }

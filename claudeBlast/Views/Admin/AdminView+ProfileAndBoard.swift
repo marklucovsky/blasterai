@@ -94,20 +94,12 @@ extension AdminView {
     var currentBoardPage: some View {
         List {
             Section {
-                ForEach(switchableScenes) { scene in
+                // The current board first, as on Boards and Vocabulary.
+                ForEach(switchableScenes.filter(\.isActive) + switchableScenes.filter { !$0.isActive }) { scene in
                     Button {
                         activateScene(scene)
                     } label: {
-                        HStack {
-                            Text(scene.name)
-                                .foregroundStyle(.primary)
-                            Spacer()
-                            if scene.isActive {
-                                Image(systemName: "checkmark")
-                                    .foregroundStyle(Color.accentColor)
-                            }
-                        }
-                        .contentShape(Rectangle())
+                        BoardRow(scene: scene, builtOn: templateNote(scene))
                     }
                     .buttonStyle(.plain)
                 }

@@ -17,6 +17,7 @@ struct SceneEditorView: View {
     @Environment(TileImageResolver.self) private var imageResolver
     @Environment(SceneArtCoordinator.self) private var sceneArtCoordinator
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(ChildProfileResolver.self) private var profileResolver
 
     /// Per-scene art controller from the app-level coordinator, so a background
     /// run survives this editor being dismissed and re-entered.
@@ -35,6 +36,17 @@ struct SceneEditorView: View {
     @State private var showPreview = false
     @State private var showStructureSheet = false
     @State private var showKeySheet = false
+    /// Board Setup starts folded: it is set once, and Pages is the job a
+    /// caregiver opens the editor for.
+    @State private var isSetupExpanded = false
+    /// Details (name, description, cover, home page) starts folded too; a new
+    /// board opens with it unfolded so it can be named.
+    @State private var isDetailsExpanded = false
+    /// Bumped on add/remove so the heart redraws: the change is on the Me
+    /// scene, which this view does not observe.
+    @State private var topicRevision = 0
+    /// Why activating this board failed, or what it changed.
+    @State private var activationMessage: (title: String, message: String)?
     @State private var pageToLink: PageLinkTarget? = nil
     /// The page being shared, if any. Keyed rather than held by value so the
     /// sheet always reads the page as it currently is.
@@ -162,8 +174,7 @@ struct SceneEditorView: View {
     /// it is now. Placements get their level in the page editor, from the same
     /// control that conceals them.
     @ViewBuilder
-    private var levelsSection: some View {
-        Section {
+    private var levelsRows: some View {
             Picker("Levels", selection: Binding(
                 get: { scene.revealLevelCount },
                 set: { scene.setRevealLevelCount($0); try? modelContext.save() })) {
@@ -176,13 +187,6 @@ struct SceneEditorView: View {
                 RevealLevelControl(scene: scene)
                     .frame(maxWidth: .infinity)
             }
-        } header: {
-            Text("Levels")
-        } footer: {
-            Text(scene.revealLevelCount > 0
-                 ? "Each word appears from a level you choose in the page editor. Words above the board's level keep their place as empty cells, so the board grows without rearranging. Copies start at this level; when sharing, you can choose another."
-                 : "Levels let a board start small and grow with the child. Turn them on here, or choose \"Show from level…\" when concealing words in the page editor.")
-        }
     }
 
     /// Art coverage, style by style — and it stays put.
@@ -199,10 +203,9 @@ struct SceneEditorView: View {
     /// single green line rather than nothing, because "no gaps" and "we stopped
     /// asking" look identical if the section simply disappears.
     @ViewBuilder
-    private var artCoverageSection: some View {
+    private var artCoverageRows: some View {
         let coverage = artCoverage
         if !coverage.isEmpty {
-            Section {
                 if coverage.allSatisfy(\.isComplete) {
                     Label("Every word has art in all \(coverage.count) styles.",
                           systemImage: "checkmark.circle.fill")
@@ -230,15 +233,6 @@ struct SceneEditorView: View {
                         .disabled(resolvedAPIKey.isEmpty || artController.isActive)
                     }
                 }
-            } header: {
-                Text("Art Coverage")
-            } footer: {
-                if resolvedAPIKey.isEmpty {
-                    Text("Add an AI key in Settings to fill these in.")
-                } else {
-                    Text("A style is only complete when every word on this board has art in it. Recoloring reuses the picture you already have, so the figure stays the same; drawing a style from scratch makes a new picture.")
-                }
-            }
         }
     }
 
@@ -314,141 +308,7 @@ struct SceneEditorView: View {
                     }
                 }
             }
-            if artController.isActive {
-                Section {
-                    Button {
-                        isGeneratingArt = true
-                    } label: {
-                        HStack(spacing: 10) {
-                            if artController.phase == .paused {
-                                Image(systemName: "pause.circle.fill").foregroundStyle(.orange)
-                            } else {
-                                ProgressView()
-                            }
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text(artController.phase == .paused ? "Art paused" : "Creating new-word art…")
-                                    .font(.subheadline.weight(.semibold))
-                                Text("\(artController.completed) of \(artController.total) done · tap to manage")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                } header: {
-                    Text("In progress")
-                } footer: {
-                    Text(artController.phase == .paused
-                         ? "Paused. Tap to resume, continue in the background, or cancel."
-                         : "Running in the background. Tap to view progress, pause, or cancel.")
-                }
-            } else {
-                // Once per render: each read is a scan of every word in the scene.
-                let needingArt = tilesNeedingArt
-                if !needingArt.isEmpty {
-                    if resolvedAPIKey.isEmpty {
-                        Section {
-                            Button {
-                                showKeySheet = true
-                            } label: {
-                                Label("Add an AI Key to generate artwork for new words",
-                                      systemImage: "key.fill")
-                            }
-                        } header: {
-                            Text("New-Word Art")
-                        } footer: {
-                            Text("\(needingArt.count) new word\(needingArt.count == 1 ? "" : "s") still need a picture. Add your key to generate them with AI.")
-                        }
-                    } else {
-                        Section {
-                            Button {
-                                artController.start(tiles: needingArt, apiKey: resolvedAPIKey,
-                                                    context: modelContext, resolver: imageResolver)
-                                isGeneratingArt = true
-                            } label: {
-                                Label("Generate art for \(needingArt.count) new word\(needingArt.count == 1 ? "" : "s")",
-                                      systemImage: "sparkles")
-                            }
-                        } header: {
-                            Text("New-Word Art")
-                        } footer: {
-                            Text("These words don't have pictures yet. They are drawn in the style you're using now; Art Coverage below is where you fill in the others, once you can see how much each one is.")
-                        }
-                    }
-                }
-            }
-
-            artCoverageSection
-
-            Section("Scene Info") {
-                LabeledContent("Name") {
-                    TextField("Scene name", text: $scene.name)
-                        .multilineTextAlignment(.trailing)
-                }
-                LabeledContent("Description") {
-                    TextField("Optional description", text: $scene.descriptionText)
-                        .multilineTextAlignment(.trailing)
-                }
-                // The picture that stands for this scene where it is mounted —
-                // a topic on My Topics. See `SceneCover`.
-                if !scene.isDefault, !MeScene.isMeScene(scene), !scene.sceneID.isEmpty {
-                    NavigationLink {
-                        SceneCoverView(scene: scene)
-                    } label: {
-                        LabeledContent("Cover") {
-                            // Not minted until someone opens it or adds the
-                            // scene as a topic; until then it is the default word.
-                            let key = SceneCover.key(for: scene)
-                            TileImageView(key: allTiles.contains { $0.key == key }
-                                              ? key : SceneCover.defaultWord(of: scene) ?? key,
-                                          wordClass: PageLink.wordClass)
-                                .frame(width: 32, height: 32)
-                                .clipShape(RoundedRectangle(cornerRadius: 6))
-                        }
-                    }
-                }
-                if !scene.pages.isEmpty {
-                    Picker("Home Page", selection: $scene.homePageKey) {
-                        ForEach(scene.pages, id: \.key) { page in
-                            Text(page.title).tag(page.key)
-                        }
-                    }
-                }
-                // The grid this board is authored against. The preview and the
-                // page editor show it; a matching device's board uses it. See
-                // `DesignedLayout`.
-                Picker(selection: $scene.designedFor) {
-                    Text("Not set").tag("")
-                    ForEach(DesignedLayout.all) { designed in
-                        Text(designed.title).tag(designed.rawValue)
-                    }
-                } label: {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Designed For")
-                        Text("Word positions hold on this grid. Devices of that kind show it unless they opt out.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-
-            levelsSection
-
-            templateSection
-
-            rowSection
-
-            Section {
-                Button {
-                    showStructureSheet = true
-                } label: {
-                    Label("Add pages and core words…", systemImage: "square.stack.3d.up")
-                }
-                .disabled(scene.isDefault)
-            } header: {
-                Text("Structure")
-            } footer: {
-                Text("The same step the new-scene wizard walks through: category pages, pages from a vocabulary pack or another scene, and a core-word strip for the home page. Everything here is added — nothing you have already built is removed or rearranged.")
-            }
+            artBanner
 
             // Page count, then the scene's total tile placements across them —
             // the per-page rows below already give the breakdown, so the header
@@ -527,8 +387,50 @@ struct SceneEditorView: View {
             } header: {
                 Text("Pages (\(scene.pages.count), \(sceneTileCount))")
             } footer: {
-                Text("Swipe a page left to share or delete it, or right to duplicate or link to it. Touch and hold a page for the same actions.")
+                Text("Swipe a page, or touch and hold it, for more.")
             }
+
+            artworkSection
+
+            Section {
+              DisclosureGroup("Details", isExpanded: $isDetailsExpanded) {
+                LabeledContent("Name") {
+                    TextField("Scene name", text: $scene.name)
+                        .multilineTextAlignment(.trailing)
+                }
+                LabeledContent("Description") {
+                    TextField("Optional description", text: $scene.descriptionText)
+                        .multilineTextAlignment(.trailing)
+                }
+                // The picture that stands for this scene where it is mounted —
+                // a topic on My Topics. See `SceneCover`.
+                if !scene.isDefault, !MeScene.isMeScene(scene), !scene.sceneID.isEmpty {
+                    NavigationLink {
+                        SceneCoverView(scene: scene)
+                    } label: {
+                        LabeledContent("Cover") {
+                            // Not minted until someone opens it or adds the
+                            // scene as a topic; until then it is the default word.
+                            let key = SceneCover.key(for: scene)
+                            TileImageView(key: allTiles.contains { $0.key == key }
+                                              ? key : SceneCover.defaultWord(of: scene) ?? key,
+                                          wordClass: PageLink.wordClass)
+                                .frame(width: 32, height: 32)
+                                .clipShape(RoundedRectangle(cornerRadius: 6))
+                        }
+                    }
+                }
+                if !scene.pages.isEmpty {
+                    Picker("Home Page", selection: $scene.homePageKey) {
+                        ForEach(scene.pages, id: \.key) { page in
+                            Text(page.title).tag(page.key)
+                        }
+                    }
+                }
+              }
+            }
+
+            boardSetupSection
         }
         .sheet(item: $pageToShare) { target in
             if let page = scene.pages.first(where: { $0.key == target.pageKey }) {
@@ -543,13 +445,22 @@ struct SceneEditorView: View {
         // Cheap and safe to repeat: `refresh` is a pure computation over the
         // pages and writes only when something actually changed, so this cannot
         // loop and costs nothing on a board that is already correct.
-        .onAppear { SceneLinkColors.refresh(scene: scene, context: modelContext) }
+        .onAppear {
+            SceneLinkColors.refresh(scene: scene, context: modelContext)
+            if scene.pages.isEmpty { isDetailsExpanded = true }
+        }
         .onChange(of: scene.pages) {
             SceneLinkColors.refresh(scene: scene, context: modelContext)
         }
         .navigationTitle(scene.name.isEmpty ? "New Scene" : scene.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { sceneEditorToolbar }
+        .alert(activationMessage?.title ?? "", isPresented: Binding(
+            get: { activationMessage != nil }, set: { if !$0 { activationMessage = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(activationMessage?.message ?? "")
+        }
         .sheet(isPresented: $isSharingScene) {
             ShareBoardSheet(subject: .scene(scene))
         }
@@ -614,31 +525,42 @@ struct SceneEditorView: View {
 
     // MARK: - Toolbar
 
-    /// Preview, refine and share all sit in the navigation bar beside an inline
-    /// title. At a narrow width SwiftUI protects the title and **drops** the
-    /// items it cannot fit, with no indication they ever existed — the same
-    /// failure the page editor hit on a resized Mac window.
+    /// Preview, make current and share sit in the navigation bar beside an
+    /// inline title. At a narrow width SwiftUI protects the title and **drops**
+    /// the items it cannot fit, with no indication they ever existed — the
+    /// same failure the page editor hit on a resized Mac window.
     ///
     /// Below regular width they collapse into an explicit overflow menu, which
-    /// also gives them real labels instead of bare glyphs.
+    /// also gives them real labels instead of bare glyphs. Refine with AI is
+    /// rare, so it lives in Board Setup.
     @ToolbarContentBuilder
     private var sceneEditorToolbar: some ToolbarContent {
         if hSizeClass == .compact {
             ToolbarItem(placement: .primaryAction) {
                 Menu {
                     Button { showPreview = true } label: {
-                        Label("Preview Scene", systemImage: "eye")
+                        Label("Preview Board", systemImage: "eye")
                     }
-                    Button { isRefining = true } label: {
-                        Label("Refine with AI", systemImage: "sparkles")
+                    if canActivate {
+                        Button(action: activate) {
+                            Label(scene.isActive ? "Current Board" : "Make Current Board",
+                                  systemImage: scene.isActive ? "checkmark.circle.fill" : "checkmark.circle")
+                        }
+                        .disabled(scene.isActive)
+                    }
+                    if let topic = topicState {
+                        Button(action: toggleTopic) {
+                            Label(topic.isOn ? "Remove from \(topic.listName)" : "Add to \(topic.listName)",
+                                  systemImage: topic.isOn ? "heart.fill" : "heart")
+                        }
                     }
                     Button { isSharingScene = true } label: {
-                        Label("Share Scene", systemImage: "square.and.arrow.up")
+                        Label("Share Board", systemImage: "square.and.arrow.up")
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
-                .accessibilityLabel("Scene actions")
+                .accessibilityLabel("Board actions")
             }
         } else {
             ToolbarItem(placement: .primaryAction) {
@@ -647,15 +569,25 @@ struct SceneEditorView: View {
                 } label: {
                     Image(systemName: "eye")
                 }
-                .accessibilityLabel("Preview scene")
+                .accessibilityLabel("Preview board")
             }
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    isRefining = true
-                } label: {
-                    Image(systemName: "sparkles")
+            if canActivate {
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: activate) {
+                        Image(systemName: scene.isActive ? "checkmark.circle.fill" : "checkmark.circle")
+                    }
+                    .disabled(scene.isActive)
+                    .accessibilityLabel(scene.isActive ? "Current board" : "Make current board")
                 }
-                .accessibilityLabel("Refine with AI")
+            }
+            if let topic = topicState {
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: toggleTopic) {
+                        Image(systemName: topic.isOn ? "heart.fill" : "heart")
+                    }
+                    .tint(.pink)
+                    .accessibilityLabel(topic.isOn ? "Remove from \(topic.listName)" : "Add to \(topic.listName)")
+                }
             }
             ToolbarItem(placement: .primaryAction) {
                 Button {
@@ -663,8 +595,48 @@ struct SceneEditorView: View {
                 } label: {
                     Image(systemName: "square.and.arrow.up")
                 }
-                .accessibilityLabel("Share scene")
+                .accessibilityLabel("Share board")
             }
+        }
+    }
+
+    /// Whether this board is on the talking profile's My Topics, and what that
+    /// list is called for them; nil when the board cannot be a topic.
+    private var topicState: (isOn: Bool, listName: String)? {
+        _ = topicRevision
+        guard MeScene.isEligibleTopic(scene), let profile = profileResolver.active else { return nil }
+        let me = MeScene.find(profileID: profile.id, context: modelContext)
+        let name = profile.isSystem || profile.visibleName.isEmpty
+            ? "My Topics" : "\(profile.visibleName)\u{2019}s Topics"
+        return (me.map { MeScene.contains(scene, in: $0) } ?? false, name)
+    }
+
+    /// The same add and remove as the boards list's swipe.
+    private func toggleTopic() {
+        guard let profile = profileResolver.active else { return }
+        if let me = MeScene.find(profileID: profile.id, context: modelContext),
+           MeScene.contains(scene, in: me) {
+            MeScene.removeTopic(sceneID: scene.sceneID, from: me)
+        } else {
+            let me = MeScene.ensure(profileID: profile.id, context: modelContext)
+            MeScene.addTopic(scene, to: me, context: modelContext)
+        }
+        try? modelContext.save()
+        topicRevision += 1
+    }
+
+    /// A Me page is mounted from its profile, never made the board.
+    private var canActivate: Bool { !MeScene.isMeScene(scene) && !scene.isCarriedTemplate }
+
+    private func activate() {
+        do {
+            let outcome = try scene.activate(context: modelContext)
+            try? modelContext.save()
+            if let message = outcome.message {
+                activationMessage = ("Board Activated", message)
+            }
+        } catch {
+            activationMessage = ("Can\u{2019}t Use This Board", error.localizedDescription)
         }
     }
 
@@ -724,15 +696,99 @@ struct SceneEditorView: View {
         BlasterScene.copyRoot(of: barOwner?.name ?? "BlasterAI 60")
     }
 
+    // MARK: - Art banner and Board Setup
+
+    /// A run in progress, at the top while it lasts: tap to pause, resume or
+    /// cancel. Starting one is the Artwork page's job.
+    @ViewBuilder
+    private var artBanner: some View {
+        if artController.isActive {
+            Section {
+                Button {
+                    isGeneratingArt = true
+                } label: {
+                    HStack(spacing: 10) {
+                        if artController.phase == .paused {
+                            Image(systemName: "pause.circle.fill").foregroundStyle(.orange)
+                        } else {
+                            ProgressView()
+                        }
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(artController.phase == .paused ? "Art paused" : "Creating art\u{2026}")
+                                .font(.subheadline.weight(.semibold))
+                            Text("\(artController.completed) of \(artController.total) done \u{00B7} tap to manage")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// Artwork, hoisted: how complete the pictures are, in one row. Every run
+    /// starts on the Artwork page, behind a confirmation with its size, cost
+    /// and time — never from a single tap here.
+    private var artworkSection: some View {
+        Section {
+            NavigationLink {
+                SceneArtworkView(scene: scene)
+            } label: {
+                LabeledContent("Artwork", value: artworkSummary)
+            }
+        }
+    }
+
+    private var artworkSummary: String {
+        let newWords = tilesNeedingArt.count
+        let coverage = artCoverage
+        let complete = coverage.filter(\.isComplete).count
+        if newWords == 0, complete == coverage.count { return "Complete" }
+        var parts: [String] = []
+        if newWords > 0 { parts.append("\(newWords) without a picture") }
+        if complete < coverage.count { parts.append("\(complete) of \(coverage.count) styles") }
+        return parts.joined(separator: " \u{00B7} ")
+    }
+
+    /// How the board is built, set once and folded away: the grid it is
+    /// designed for, levels, its template, the navigation bar, adding
+    /// structure, and refining with AI.
+    private var boardSetupSection: some View {
+        builtOnAlert(Section {
+            DisclosureGroup(isExpanded: $isSetupExpanded) {
+                    // The grid this board is authored against. See `DesignedLayout`.
+                    Picker("Designed For", selection: $scene.designedFor) {
+                        Text("Not set").tag("")
+                        ForEach(DesignedLayout.all) { designed in
+                            Text(designed.title).tag(designed.rawValue)
+                        }
+                    }
+                    levelsRows
+                    templateRows
+                    navigationBarRows
+                    Button {
+                        showStructureSheet = true
+                    } label: {
+                        Label("Add Pages and Core Words\u{2026}", systemImage: "square.stack.3d.up")
+                    }
+                    .disabled(scene.isDefault)
+                    Button { isRefining = true } label: {
+                        Label("Refine with AI\u{2026}", systemImage: "sparkles")
+                    }
+            } label: {
+                Text("Board Setup")
+            }
+        })
+    }
+
     /// The navigation bar: the template's (BlasterAI 60's unless the scene is
     /// built on another), followed as it changes, until the caregiver makes it
     /// the scene's own — then edited like a page of one row. "Use …'s"
     /// deletes the copy. Copy-on-write, as for pages. A template's bar is
     /// changed in the template, for every scene built on it.
     @ViewBuilder
-    private var rowSection: some View {
+    private var navigationBarRows: some View {
         if BoardChrome.inherits(scene), !scene.isDefault, !scene.isSystemOwned {
-            Section {
                 if scene.ownRow != nil {
                     NavigationLink(destination: PageEditorView(scene: scene, pageKey: BlasterScene.rowPageKey)) {
                         VStack(alignment: .leading, spacing: 2) {
@@ -770,17 +826,6 @@ struct SceneEditorView: View {
                         Label("Make the Navigation Bar This Scene\u{2019}s Own", systemImage: "square.on.square")
                     }
                 }
-            } header: {
-                Text("Navigation Bar")
-            } footer: {
-                Text(scene.ownRow != nil
-                     ? "The folders and words on every page. \(inheritedBarName)\u{2019}s changes to its bar no longer reach this one."
-                     : barOwner?.isLockedTemplate == true
-                        ? "The folders and words on every page, following \(inheritedBarName)\u{2019}s as its author updates it, or make this scene\u{2019}s own."
-                     : barOwner != nil
-                        ? "The folders and words on every page, following \(inheritedBarName)\u{2019}s. Change it there for every scene built on \(inheritedBarName), or make this scene\u{2019}s own."
-                        : "The folders and words on every page, following BlasterAI 60\u{2019}s. Make it your own to choose them.")
-            }
         }
     }
 
@@ -815,9 +860,14 @@ struct SceneEditorView: View {
     /// BlasterAI 60 gives it BlasterAI 60's bar, and choosing None makes the
     /// bar it draws its own. `sys:` links reach BlasterAI 60 either way.
     @ViewBuilder
-    private var templateSection: some View {
+    private var templateRows: some View {
         if BoardChrome.inherits(scene), !scene.isDefault, !scene.isSystemOwned, !MeScene.isMeScene(scene) {
-            Section {
+                if chain?.isMissingTemplate == true {
+                    Label("Its template isn\u{2019}t on this device, so it uses BlasterAI 60\u{2019}s pages and bar until it arrives.",
+                          systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                }
                 Picker("Built On", selection: Binding(
                     get: {
                         scene.templateID.isEmpty && scene.ownRow != nil ? Self.builtOnNothing : scene.templateID
@@ -847,16 +897,12 @@ struct SceneEditorView: View {
                         scene.isTemplate = on
                         try? modelContext.save()
                     }))
-            } header: {
-                Text("Template")
-            } footer: {
-                if chain?.isMissingTemplate == true {
-                    Text("The template this scene was built on is not on this device, so it uses BlasterAI 60\u{2019}s pages and bar until it arrives.")
-                } else {
-                    Text("A scene built on a template draws its navigation bar and links to its pages with template:, as every scene can link to BlasterAI 60\u{2019}s with sys:. Change a template and every scene built on it follows. None: the scene draws its own bar.")
-                }
-            }
-            .alert(pendingBuiltOn.map { "Use \(barName(for: $0))\u{2019}s Navigation Bar?" } ?? "",
+        }
+    }
+
+    /// Built On's confirmation, on the Board Setup section that holds it.
+    private func builtOnAlert<V: View>(_ content: V) -> some View {
+            content.alert(pendingBuiltOn.map { "Use \(barName(for: $0))\u{2019}s Navigation Bar?" } ?? "",
                    isPresented: Binding(get: { pendingBuiltOn != nil },
                                         set: { if !$0 { pendingBuiltOn = nil } }),
                    presenting: pendingBuiltOn) { choice in
@@ -871,7 +917,6 @@ struct SceneEditorView: View {
             } message: { choice in
                 Text("\(scene.name) has its own navigation bar. Using \(barName(for: choice))\u{2019}s removes it.")
             }
-        }
     }
 
     /// Off every template: the template pages the scene links to become its
