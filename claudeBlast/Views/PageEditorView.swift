@@ -127,14 +127,30 @@ struct PageEditorView: View {
     /// single undoable step.
     private var tilesBinding: Binding<[TileEntry]> {
         Binding(
-            get: { page?.tiles ?? [] },
+            get: { shown(page?.tiles ?? []) },
             set: { newTiles in
                 guard page != nil else { return }
                 recordUndo(page?.tiles ?? [])
-                scene.updatePage(pageKey) { $0.tiles = newTiles }
+                scene.updatePage(pageKey) { $0.tiles = stored(newTiles) }
                 try? modelContext.save()
             }
         )
+    }
+
+    /// Cells the app keeps on this page: My Topics on a Me page and its
+    /// Pinned (`MeScene.lockedCells`). The grid shows them taken, so a word
+    /// is never put where it would be moved on the board.
+    private var lockedCells: [Int: TileEntry] { MeScene.lockedCells(of: scene, pageKey: pageKey) }
+
+    /// The page as the grid shows it: stored tiles with the kept cells filled.
+    private func shown(_ tiles: [TileEntry]) -> [TileEntry] {
+        lockedCells.isEmpty ? tiles : MeScene.showingTopicsCell(tiles)
+    }
+
+    /// The page as it is stored: the kept cells empty again, and anything
+    /// that got into one moved to the next empty cell.
+    private func stored(_ tiles: [TileEntry]) -> [TileEntry] {
+        lockedCells.isEmpty ? tiles : MeScene.keepingTopicsCell(tiles)
     }
 
     /// Caregiver allows a flagged/blocked word — clears the review flags so it
@@ -312,6 +328,7 @@ struct PageEditorView: View {
                         pageOwners: templatePageOwners,
                         templateName: chain.flatMap { $0.templates.isEmpty ? nil : $0.name },
                         cells: pageCells,
+                        lockedCells: Set(lockedCells.keys),
                         chrome: BoardChrome.inherits(scene) && !isRow
                             ? BoardChrome.row(for: scene, level: scene.effectiveRevealLevel,
                                               inherited: chain?.navBar) : [],
@@ -452,7 +469,7 @@ struct PageEditorView: View {
         recordUndo(before)
         if after.count > before.count, Array(after.suffix(before.count)) == before {
             let added = Array(after.prefix(after.count - before.count))
-            setTiles(pageCells.placing(added, intoEmptyFrom: pickerStart, in: before))
+            setTiles(pageCells.placing(added, intoEmptyFrom: pickerStart, in: shown(before)))
         }
     }
 
@@ -572,7 +589,7 @@ struct PageEditorView: View {
     }
 
     private func setTiles(_ tiles: [TileEntry]) {
-        scene.updatePage(pageKey) { $0.tiles = tiles }
+        scene.updatePage(pageKey) { $0.tiles = stored(tiles) }
         try? modelContext.save()
     }
 

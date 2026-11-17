@@ -81,6 +81,9 @@ struct PageSpreadsheetView: View {
     /// What the scene is built on, when that is a template.
     var templateName: String? = nil
     let cells: PageCells
+    /// Cells the app keeps (My Topics on a Me page): drawn dimmed with a lock,
+    /// and never selected, typed, dragged or dropped on.
+    var lockedCells: Set<Int> = []
     /// The system row drawn over each screen; empty when not inherited.
     let chrome: [TileEntry]
     /// Where the bar sits: over each screen or under it.
@@ -948,6 +951,9 @@ struct PageSpreadsheetView: View {
         let isCursor = hasCursor && cell == selected
         let isInSelection = selection.contains(index)
         let isChecked = isInSelection || (isCursor && selection.isEmpty)
+        if lockedCells.contains(index), let entry {
+            lockedCellView(entry)
+        } else {
         ZStack {
             if isCursor, let draft, let preview = previewEntry(draft) {
                 entryView(preview).opacity(0.7)
@@ -1029,6 +1035,23 @@ struct PageSpreadsheetView: View {
             selectionActions(menuTargets)
         })
         .accessibilityLabel(address(cell) + ": " + (entry.map { cellText(index: index, $0) } ?? "empty"))
+        }
+    }
+
+    /// A kept cell: the tile as the board shows it, dimmed, with a lock.
+    private func lockedCellView(_ entry: TileEntry) -> some View {
+        entryView(entry)
+            .opacity(0.5)
+            .overlay(alignment: .topTrailing) {
+                Image(systemName: "lock.fill")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(.white)
+                    .padding(4)
+                    .background(Circle().fill(Color.black.opacity(0.55)))
+                    .padding(4)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel((entry.label ?? entry.key) + ", always in this cell")
     }
 
     private func outline(index: Int, isCursor: Bool, isInSelection: Bool) -> Color {
@@ -1207,6 +1230,7 @@ struct PageSpreadsheetView: View {
 
     private func selectAll() {
         selection = Set(tiles.indices.filter { cells.entry(at: $0, in: tiles) != nil })
+            .subtracting(lockedCells)
         anchor = nil
     }
 
@@ -1214,7 +1238,7 @@ struct PageSpreadsheetView: View {
         selection = Set(tiles.indices.filter {
             guard let entry = cells.entry(at: $0, in: tiles) else { return false }
             return lookup[entry.key]?.wordClass == wordClass
-        })
+        }).subtracting(lockedCells)
         anchor = nil
     }
 
@@ -1237,6 +1261,7 @@ struct PageSpreadsheetView: View {
     // MARK: - Editing
 
     private func beginEdit(with text: String?) {
+        guard !lockedCells.contains(selectedIndex) else { return }
         PerfSignposts.signposter.emitEvent("cell.edit")
         keyboardRun = true
         hasCursor = true

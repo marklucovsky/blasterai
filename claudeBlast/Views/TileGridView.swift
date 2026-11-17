@@ -79,6 +79,8 @@ struct TileGridView: View {
     /// messages Admin › Scenes shows.
     @State private var sceneNotice: SceneNotice?
     @State private var showFindWord = false
+    /// An empty My Topics, tapped in Setup mode: what it is and how to fill it.
+    @State private var showTopicsHelp = false
     /// Set by the menu's Find Word row; the sheet opens once the popover is gone.
     /// The word Find Word went to. It breathes until any tap on the board.
     @State private var findHighlight: FindHighlight?
@@ -275,6 +277,19 @@ struct TileGridView: View {
                                        layers: MeScene.layers(of: me, find: mountedScene))
     }
 
+    /// My Topics has nothing in it, for the user or from an included page:
+    /// its folder is dimmed, and does not open an empty page.
+    private var isMyTopicsEmpty: Bool {
+        guard let me = existingMe else { return true }
+        return MeScene.composeTopics(layers: MeScene.layers(of: me, find: mountedScene))
+            .allSatisfy(\.isEmptyCell)
+    }
+
+    /// The My Topics folder on a Me page, while it is empty.
+    private func isEmptyTopicsFolder(_ entry: TileEntry) -> Bool {
+        entry.link == MeScene.topicsPageKey && isMyTopicsEmpty
+    }
+
     /// A scene a `<scene:ID>:` key names, which the board shows without
     /// activating it: the child's Me page and their topics.
     private func mountedScene(_ sceneID: String) -> BlasterScene? {
@@ -459,6 +474,7 @@ struct TileGridView: View {
         .alert(item: $sceneNotice) { notice in
             Alert(title: Text(notice.title), message: Text(notice.message))
         }
+        .sheet(isPresented: $showTopicsHelp) { MyTopicsHelpSheet() }
         .sheet(isPresented: $showFindWord) {
             if let scene = activeScene {
                 FindWordSheet(scene: scene, lookup: tileLookup) { finding in
@@ -1155,6 +1171,7 @@ struct TileGridView: View {
                 lastTappedKey = entry.key
                 handleTileTap(entry)
             }
+            .opacity(isEmptyTopicsFolder(entry) ? 0.4 : 1)
             // Lift the tile that just pulsed (live tap or scripted) above its
             // neighbors so the grow animation draws on top — not half-under the
             // cell to its right.
@@ -1495,6 +1512,10 @@ struct TileGridView: View {
     }
 
     private func handleTileTap(_ entry: TileEntry) {
+        if isEmptyTopicsFolder(entry) {
+            if railProfile == .caregiver { showTopicsHelp = true }
+            return
+        }
         let key = entry.key
         guard let tile = tileLookup[key] else { return }
         // Resolve the symbolic "<home>" link to the active scene's homePageKey

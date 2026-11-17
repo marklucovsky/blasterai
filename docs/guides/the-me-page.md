@@ -12,14 +12,16 @@ Everything here is in **Settings › Profile › Me Page** for the current profi
 
 **Edit Aubrey's Page** opens the Me page in the page editor, the same one every board uses. What you put there stays exactly where you put it. Nothing below ever covers it.
 
-New profiles start with an almost empty Me page: a **My Topics** folder and nothing else. That is deliberate. Most of what a Me page shows usually comes from the rules below, which you can share, rather than from tiles placed by hand on one device.
+The first cell under the navigation bar is always **My Topics**. The editor shows it dimmed, with a lock: it can't be moved or covered, so it is in the same place on every Me page and every device.
+
+New profiles start with an almost empty Me page: My Topics and nothing else. That is deliberate. Most of what a Me page shows usually comes from the rules below, which you can share, rather than from tiles placed by hand on one device.
 
 ## Rules: what gets added
 
 Three kinds of rule add to the page each time it opens. None of them covers anything on the page itself.
 
 - **Always** adds its words and folders every time the Me page opens.
-- **Pinned** puts tiles in cells you choose. If the page already uses a cell, the pinned tile moves to the next free one.
+- **Pinned** puts tiles in cells you choose. If the page already uses a cell, the pinned tile moves to the next free one. The Pinned editor shows My Topics locked in its cell too.
 - **Me Page by Page** adds words and folders only when the user presses the heart *from* a particular page. Pressing it from Food can bring up favorite snacks; pressing it from Places, the park and grandma's house. A page counts by its name, on BlasterAI 60 or any of your boards.
 
 An Always list or a page's list holds **items**. An item is a page to take words from (a BlasterAI 60 page or a topic's page) or words you pick yourself (**Words…**). For a page you choose how many of its words to bring in (none, 1 to 8, or all) and whether to add a **Folder** to it as well, so what doesn't fit is one tap away. Words already on the Me page are left out rather than shown twice.
@@ -36,7 +38,7 @@ Put what should always stay in one place on the page itself or under Pinned. Wha
 
 ![The Me page on the board, opened with the heart from the I page](/img/guides/me-board.jpg)
 
-Here the heart was pressed from the *I* page. Under the navigation bar: the **My Topics** folder from the page itself; *That's really cool*, *fries* and *lemonade*, pinned; the **Phrases** folder, added by Always, in column 8; and *ipad* and *grandpa*, added for the I page, after an empty row.
+Here the heart was pressed from the *I* page. Under the navigation bar: **My Topics**, in its fixed first cell; *That's really cool*, *fries* and *lemonade*, pinned; the **Phrases** folder, added by Always, in column 8; and *ipad* and *grandpa*, added for the I page, after an empty row.
 
 ## Preview
 
@@ -64,6 +66,8 @@ This is how a class works. Ms. K keeps a Me page called *Room 4* with the class'
 **My Topics** holds boards the user opens from the Me page without changing the main board: a Thanksgiving dinner board, a zoo trip, a Sunday School board. Tap a topic to also show it for particular pages, so pressing the heart from Food brings the Thanksgiving board forward.
 
 Add a board to My Topics with the heart in the board editor's toolbar, or **Add a Topic** here.
+
+Until it has a topic, the My Topics folder is dimmed. In Talk mode it does nothing; in Setup mode, tapping it explains what it is for and how to add one.
 
 ## Sharing a Me page
 

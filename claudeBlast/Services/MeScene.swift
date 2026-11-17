@@ -25,7 +25,8 @@ import SwiftData
 ///
 /// It is on the 10×6 template, under the inherited row 1. Columns 1–8 are the
 /// button field; columns 9–10 are kept for pinned topics and extension links.
-/// `home` starts with one folder, My Topics, which the system keeps.
+/// The first cell under the bar is My Topics, always, and nothing else can
+/// have it (`topicsCell`).
 ///
 /// ## The topic list is a page
 ///
@@ -69,8 +70,17 @@ enum MeScene {
         var pages = scene.pages
         var changed = false
         if !pages.contains(where: { $0.key == homePageKey }) {
-            pages.insert(PageSpec(key: homePageKey, tiles: [topicsFolder]), at: 0)
+            pages.insert(PageSpec(key: homePageKey, tiles: []), at: 0)
             changed = true
+        }
+        // My Topics was once a tile on the page, which could be moved, and a
+        // tile pinned to its cell quietly landed somewhere else.
+        for i in pages.indices where pages[i].key == homePageKey || pages[i].key == pinnedPageKey {
+            let kept = keepingTopicsCell(pages[i].tiles)
+            if kept != pages[i].tiles {
+                pages[i].tiles = kept
+                changed = true
+            }
         }
         if !pages.contains(where: { $0.key == topicsPageKey }) {
             pages.append(PageSpec(key: topicsPageKey, displayName: topicsFolderLabel, tiles: []))
@@ -83,6 +93,47 @@ enum MeScene {
     static var topicsFolder: TileEntry {
         TileEntry(key: topicsFolderKey, link: topicsPageKey, isAudible: false,
                   label: topicsFolderLabel)
+    }
+
+    /// My Topics' cell: the first under the navigation bar, on every Me page,
+    /// drawn by the app rather than stored. A tile there could be moved off it
+    /// on one page and not on another, and the Pinned editor showed the cell
+    /// free when the page already had it (Mark, 2026-11-16). Fixed, it is
+    /// where it was on every device, and the phone's first band starts with
+    /// it however sparse the page.
+    static let topicsCell = 0
+
+    /// The cells the editor shows as taken on `pageKey` of `scene`: My Topics,
+    /// on a Me page's own page and on its Pinned.
+    static func lockedCells(of scene: BlasterScene, pageKey: String) -> [Int: TileEntry] {
+        guard isMeScene(scene), pageKey == homePageKey || pageKey == pinnedPageKey else { return [:] }
+        return [topicsCell: topicsFolder]
+    }
+
+    /// `tiles` with `topicsCell` left empty, as a Me page stores it: the
+    /// stored My Topics folder taken off, wherever it was, and a tile in its
+    /// cell moved to the first empty one after it. Nothing else moves.
+    static func keepingTopicsCell(_ tiles: [TileEntry]) -> [TileEntry] {
+        var result = tiles.map { $0.link == topicsPageKey ? .spacer() : $0 }
+        if topicsCell < result.count, !result[topicsCell].isSpacer {
+            let held = result[topicsCell]
+            result[topicsCell] = .spacer()
+            if let free = result.indices.first(where: { $0 > topicsCell && result[$0].isSpacer }) {
+                result[free] = held
+            } else {
+                result.append(held)
+            }
+        }
+        while let last = result.last, last.isSpacer { result.removeLast() }
+        return result
+    }
+
+    /// `tiles` with My Topics in its cell, as the board and the editor show it.
+    static func showingTopicsCell(_ tiles: [TileEntry]) -> [TileEntry] {
+        var result = keepingTopicsCell(tiles)
+        while result.count <= topicsCell { result.append(.spacer()) }
+        result[topicsCell] = topicsFolder
+        return result
     }
 
     // MARK: - Topics
@@ -608,8 +659,8 @@ enum MeScene {
                             systemIsActive: Bool, rowKeys: Set<String>,
                             words: (TileEntry) -> [TileEntry]) -> [TileEntry] {
         let cells = PageTemplate.cols * (PageTemplate.rows - 1)
-        var tiles = home
-        var used = Set(home.filter { !$0.isEmptyCell }.map(\.key)).union(rowKeys)
+        var tiles = showingTopicsCell(home)
+        var used = Set(tiles.filter { !$0.isEmptyCell }.map(\.key)).union(rowKeys)
         var displaced: [TileEntry] = []
         for (depth, layer) in layers.enumerated() {
             let own = depth == 0 ? [] : (layer.page(withKey: homePageKey)?.tiles ?? [])
@@ -687,7 +738,7 @@ enum MeScene {
         func credit(_ key: String, _ source: Source) {
             if origin[key] == nil { origin[key] = source }
         }
-        for entry in home where !entry.isEmptyCell { credit(entry.key, .own) }
+        for entry in showingTopicsCell(home) where !entry.isEmptyCell { credit(entry.key, .own) }
         let placedAt = Dictionary(tiles.enumerated().map { ($1.key, $0) }, uniquingKeysWith: { a, _ in a })
         for (depth, layer) in layers.enumerated() {
             let label = name(layer)
