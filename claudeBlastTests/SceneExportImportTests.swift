@@ -363,6 +363,32 @@ struct SceneExportImportTests {
         #expect(result.scene.name == "Compatible")
     }
 
+    /// Every field of a placed tile survives sharing. A shared board lost its
+    /// folder colours, and a shared Me page its labels, how many words each
+    /// item brings in, and whether its folder shows.
+    @Test func everyTileFieldSurvivesSharing() throws {
+        func seeded() -> ModelContext {
+            let ctx = TestStore.freshContext()
+            for key in ["go", "places", "mom"] { ctx.insert(TileModel(key: key, wordClass: "actions")) }
+            return ctx
+        }
+        let from = seeded()
+        let tiles = [
+            TileEntry(key: "go", link: "places", isAudible: false, linkColor: "verb",
+                      linkColorIsAuto: false, label: "Let\u{2019}s go"),
+            TileEntry(key: "places", link: "places", isAudible: false, inline: 3, hidesFolder: true),
+            TileEntry(key: "mom", isConcealed: true, revealLevel: 2),
+        ]
+        let scene = BlasterScene(name: "Colours", homePageKey: "home")
+        scene.pages = [PageSpec(key: "home", tiles: tiles), PageSpec(key: "places", tiles: [TileEntry(key: "mom")])]
+        from.insert(scene)
+        let lookup = Dictionary(try from.fetch(FetchDescriptor<TileModel>()).map { ($0.key, $0) },
+                                uniquingKeysWith: { a, _ in a })
+        let data = try SceneExporter.exportJSON(scene, tileLookup: lookup)
+        let result = try SceneImporter.importJSON(data, context: seeded())
+        #expect(result.scene.page(withKey: "home")?.tiles == tiles)
+    }
+
     @Test func exportThenImportRoundTrip() throws {
         let container = try makeTestContainer()
         let context = container.mainContext

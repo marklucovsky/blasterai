@@ -69,6 +69,10 @@ enum SceneImporter {
         /// nothing pointing at them.
         var newTileKeys: [String] = []
 
+        /// The level a quiet refresh kept, when the file was at another one:
+        /// an unedited copy keeps the level its caregiver set, and says so.
+        var keptLevel: Int? = nil
+
         /// Whether `undo` is meaningful. False for an update, where the incoming
         /// content has already overwritten the copy that was there and deleting
         /// the scene would take the caregiver's own board with it.
@@ -78,7 +82,32 @@ enum SceneImporter {
     /// An incoming update matches a scene the receiver has locally edited.
     enum SceneImportConflict: Equatable {
         case none
+        /// A received copy edited here since it arrived.
         case modifiedExisting(name: String)
+        /// A board with this id that was never received: made on this device
+        /// (one of the author's own, coming back) or from before imports kept
+        /// a baseline. There is no telling what changed, so the importer is
+        /// asked, but not told they edited it.
+        case neverImported(name: String)
+
+        static func of(_ existing: BlasterScene) -> SceneImportConflict {
+            existing.importedContentHash.isEmpty ? .neverImported(name: existing.name)
+                : .modifiedExisting(name: existing.name)
+        }
+    }
+
+    /// The board's level before and after Replace Mine, which opens it at the
+    /// file's level; nil when it has no levels or the level would not change.
+    static func levelChange(for data: Data, context: ModelContext) -> (yours: Int, file: Int)? {
+        guard let exportable = try? JSONDecoder().decode(ExportableScene.self, from: data),
+              let id = exportable.id, !id.isEmpty,
+              let existing = (try? context.fetch(
+                FetchDescriptor<BlasterScene>(predicate: #Predicate { $0.sceneID == id })))?.first,
+              let yours = existing.effectiveRevealLevel else { return nil }
+        let count = min(max(exportable.revealLevels ?? 0, 0), BlasterScene.maxRevealLevels)
+        guard count > 0 else { return nil }
+        let file = min(max(exportable.revealLevel ?? count, 1), count)
+        return file == yours ? nil : (yours, file)
     }
 
     /// How to resolve a `.modifiedExisting` conflict.
@@ -101,7 +130,7 @@ enum SceneImporter {
         // Empty baseline (legacy import) → can't prove it's unmodified → be safe.
         let modified = existing.importedContentHash.isEmpty
             || existing.contentHash != existing.importedContentHash
-        return modified ? .modifiedExisting(name: existing.name) : .none
+        return modified ? .of(existing) : .none
     }
 
     /// How the file's custom tiles relate to THIS device's vocabulary — used to
@@ -380,13 +409,7 @@ enum SceneImporter {
                     }
                     return nil
                 }
-                return TileEntry(
-                    key: exportTile.key,
-                    link: exportTile.link,
-                    isAudible: exportTile.isAudible,
-                    isConcealed: exportTile.isConcealed ?? false,
-                    revealLevel: max(0, exportTile.revealLevel ?? 0)
-                )
+                return exportTile.entry
             }
             // A cover this device has no tile for falls back to the default.
             let cover = exportPage.cover.flatMap { tileLookup[$0] == nil ? nil : $0 } ?? ""
@@ -468,6 +491,7 @@ enum SceneImporter {
 
         let scene: BlasterScene
         let wasUpdate: Bool
+        var keptLevel: Int?
 
         if let existing, isModified {
             // The local copy diverged from what was imported. Never silently
@@ -479,7 +503,7 @@ enum SceneImporter {
                     scene: existing, skippedKeys: skippedKeys, newTileCount: newTileCount,
                     oversizedImages: oversizedImages, imageUpdatedKeys: imageUpdatedKeys,
                     wasUpdate: false, needsReceiverLabel: false,
-                    conflict: resolution == nil ? .modifiedExisting(name: existing.name) : .none)
+                    conflict: resolution == nil ? .of(existing) : .none)
             case .takeUpdate:
                 refresh(existing, takeFileLevel: true)
                 existing.importedContentHash = existing.contentHash
@@ -509,6 +533,8 @@ enum SceneImporter {
         } else if let existing {
             // Clean re-import (unmodified) → refresh in place; no duplicate.
             refresh(existing)
+            if let kept = existing.effectiveRevealLevel, let sent = exportable.revealLevel,
+               sent != kept { keptLevel = kept }
             existing.importedContentHash = existing.contentHash
             scene = existing; wasUpdate = true
         } else {
@@ -564,7 +590,8 @@ enum SceneImporter {
             // already present, and never for BlasterAI content.
             needsReceiverLabel: !wasUpdate && incomingAuthor.isEmpty && !scene.isFirstParty,
             warnings: warnings,
-            newTileKeys: newTileKeys
+            newTileKeys: newTileKeys,
+            keptLevel: keptLevel
         )
     }
 

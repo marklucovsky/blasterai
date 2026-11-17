@@ -223,6 +223,46 @@ struct SceneIdentityTests {
         #expect(SceneImporter.conflict(for: update, context: ctx) == .modifiedExisting(name: "Edited"))
     }
 
+    /// A board with the file's id that never arrived by import (the author's
+    /// own, coming back) is asked about, but not called edited: there is no
+    /// baseline to say what changed.
+    @Test func aBoardNeverReceivedHereIsAskedAboutNotCalledEdited() throws {
+        let ctx = try makeContext()
+        seedTiles(ctx, "a")
+        let mine = scene(ctx, "Mine")
+        mine.sceneID = "someone/mine"
+        try ctx.save()
+        let file = importData(id: "someone/mine", name: "Mine v2", tiles: ["a"])
+        #expect(SceneImporter.conflict(for: file, context: ctx) == .neverImported(name: "Mine"))
+        let r = try SceneImporter.importJSON(file, context: ctx, resolution: nil)
+        #expect(r.conflict == .neverImported(name: "Mine"))
+    }
+
+    /// An unedited copy refreshed by a file at another level keeps its own
+    /// level and says so; Replace Mine says which level it would move to.
+    @Test func levelsKeptOnRefreshAndNamedForReplace() throws {
+        let ctx = try makeContext()
+        seedTiles(ctx, "a")
+        func file(_ name: String) -> Data {
+            """
+            { "@type": "application/vnd.claudeblast.scene+json", "version": "1.0.0",
+              "name": "\(name)", "description": "", "homePageKey": "home",
+              "id": "greta/lv", "slug": "lv", "sceneVersion": "1.0.0",
+              "revealLevels": 3, "revealLevel": 3,
+              "pages": [{ "key": "home", "tiles": [{ "key": "a", "isAudible": true, "link": "" }] }] }
+            """.data(using: .utf8)!
+        }
+        let first = try SceneImporter.importJSON(file("Levels"), context: ctx)
+        #expect(first.scene.effectiveRevealLevel == 3)
+        first.scene.setRevealLevel(1)
+        try ctx.save()
+        let change = SceneImporter.levelChange(for: file("Levels"), context: ctx)
+        #expect(change?.yours == 1 && change?.file == 3)
+        let again = try SceneImporter.importJSON(file("Levels"), context: ctx)
+        #expect(again.keptLevel == 1)
+        #expect(again.scene.effectiveRevealLevel == 1)
+    }
+
     @Test func modifiedImportWithNoResolutionReturnsConflictAndDoesNotWrite() throws {
         let ctx = try makeContext()
         let edited = try importThenEdit(ctx)
