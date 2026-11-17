@@ -82,14 +82,9 @@ enum SceneExporter {
                     }
                 }
 
-                return ExportablePageTile(
-                    key: tile.key,
-                    isAudible: entry.isAudible,
-                    link: mapped(entry.link),
-                    // Only when set, so the common case adds nothing to the file.
-                    isConcealed: entry.isConcealed ? true : nil,
-                    revealLevel: entry.revealLevel > 0 ? entry.revealLevel : nil
-                )
+                // Every field, each only when set, so the common case adds
+                // nothing to the file.
+                return ExportablePageTile(entry, link: mapped(entry.link))
             }
             // A rename has to travel, or sharing a board silently reverts
             // every page name the caregiver chose.

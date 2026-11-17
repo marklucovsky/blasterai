@@ -42,6 +42,8 @@ struct SceneImportSheet: View {
 
     /// Conflict detected before writing (an update to a locally-edited scene).
     @State private var conflict: SceneImporter.SceneImportConflict = .none
+    /// The level Replace Mine moves the board from and to, when it changes it.
+    @State private var levelChange: (yours: Int, file: Int)?
     /// The resolution actually applied — for the result banner's wording.
     @State private var lastResolution: SceneImporter.SceneImportResolution?
     /// Receiver's local "from …" tag for an import that carried no author.
@@ -140,12 +142,11 @@ struct SceneImportSheet: View {
     @ViewBuilder
     private func importActions() -> some View {
         VStack(spacing: 10) {
-            if case .modifiedExisting(let name) = conflict {
+            if let prompt = conflictPrompt {
                 VStack(alignment: .leading, spacing: 3) {
-                    Label("You've edited your copy of \u{201C}\(name)\u{201D}",
-                          systemImage: "exclamationmark.triangle.fill")
+                    Label(prompt.title, systemImage: "exclamationmark.triangle.fill")
                         .font(.subheadline).foregroundStyle(.orange)
-                    Text("This file is a newer version. Choose what to do with your edited copy:")
+                    Text(prompt.detail)
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -158,6 +159,11 @@ struct SceneImportSheet: View {
                     Label("Replace Mine with the Update", systemImage: "arrow.down.circle").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered).controlSize(.large)
+                if let change = levelChange {
+                    Text("Replace Mine moves the board from level \(change.yours) to the file\u{2019}s level \(change.file).")
+                        .font(.caption).foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
                 Button { performImport(resolution: .keepMine) } label: {
                     Label("Keep Mine (skip the update)", systemImage: "hand.raised").frame(maxWidth: .infinity)
                 }
@@ -170,6 +176,21 @@ struct SceneImportSheet: View {
             }
         }
         .padding()
+    }
+
+    /// What the import prompt says: edited since it arrived, or a board that
+    /// was never received here (likely the importer's own, coming back).
+    private var conflictPrompt: (title: String, detail: String)? {
+        switch conflict {
+        case .none:
+            return nil
+        case .modifiedExisting(let name):
+            return ("You've edited your copy of \u{201C}\(name)\u{201D}",
+                    "This file is a newer version. Choose what to do with your edited copy:")
+        case .neverImported(let name):
+            return ("\u{201C}\(name)\u{201D} is already on this device",
+                    "This file is another version of it. Choose what to do with the one you have:")
+        }
     }
 
     /// Horizontal strip of word thumbnails (shared image or letter placeholder).
@@ -276,6 +297,9 @@ struct SceneImportSheet: View {
                 Text("This board was already on your device (matched by id) — refreshed in place, not duplicated.")
                     .font(.caption).foregroundStyle(.secondary)
             }
+            if let kept = result.keptLevel {
+                Text("Kept your level \(kept).").font(.caption).foregroundStyle(.secondary)
+            }
             if result.newTileCount > 0 {
                 Text("\(result.newTileCount) new word\(result.newTileCount == 1 ? "" : "s") added").font(.caption)
             }
@@ -337,6 +361,7 @@ struct SceneImportSheet: View {
             // Detect (without writing) whether this updates a scene the receiver
             // has locally edited — so we can prompt instead of clobbering.
             conflict = SceneImporter.conflict(for: data, context: modelContext)
+            levelChange = SceneImporter.levelChange(for: data, context: modelContext)
 
             let deviceTiles = (try? modelContext.fetch(FetchDescriptor<TileModel>())) ?? []
             let analysis = SceneImporter.analyze(scene, deviceTiles: deviceTiles)

@@ -39,11 +39,7 @@ Session 18 was the editor pass, and it ended with build 10. Worktree
   - Fix what testers report.
   - Mark re-traces the editor-open freeze on a device to confirm #184 fixed it.
   - The phone's bottom navigation bar sits above the rail and feels awkward. Decide once there's feedback.
-  - Eyeball the Classic *awake* and *movie* tiles. Their corners are opaque, and they're probably deliberate full scenes.
-- **Sharing bugfixes, one small PR.**
-  - A shared scene drops its folder colours (`linkColor` / `linkColorIsAuto`, `SceneExporter.swift`).
-  - Ask about scenes that were never imported.
-  - Tell the importer which level they're replacing with Replace Mine.
+- **Sharing bugfixes, one small PR.** Done: every tile field now travels (folder colours, labels, Me page item settings); a board never received here gets its own prompt; Replace Mine names the level change, and a quiet refresh says which level it kept.
 - **Admin cleanup.**
   - Inventory every section and control in Settings and the scene editor.
   - Propose a grouping: everyday, occasional, advanced.

@@ -157,6 +157,46 @@ struct ExportablePageTile: Codable {
     var isConcealed: Bool? = nil
     /// The level this placement first appears at. Absent when 0 (always shown).
     var revealLevel: Int? = nil
+    /// The rest of `TileEntry`, each absent at its default. Files from before
+    /// these travelled decode as the defaults. A board shared without them
+    /// lost its folder colours, and a Me page lost its labels, how many words
+    /// each item brings in, and whether its folder shows.
+    var linkColor: String? = nil
+    var linkColorIsAuto: Bool? = nil
+    var label: String? = nil
+    var inline: Int? = nil
+    var hidesFolder: Bool? = nil
+
+    /// A placed tile as the file carries it, its link already mapped.
+    init(_ entry: TileEntry, link: String) {
+        key = entry.key
+        isAudible = entry.isAudible
+        self.link = link
+        isConcealed = entry.isConcealed ? true : nil
+        revealLevel = entry.revealLevel > 0 ? entry.revealLevel : nil
+        linkColor = entry.linkColor
+        linkColorIsAuto = entry.linkColorIsAuto ? nil : false
+        label = entry.label
+        inline = entry.inline
+        hidesFolder = entry.hidesFolder ? true : nil
+    }
+
+    init(key: String, isAudible: Bool, link: String, isConcealed: Bool? = nil, revealLevel: Int? = nil) {
+        self.key = key
+        self.isAudible = isAudible
+        self.link = link
+        self.isConcealed = isConcealed
+        self.revealLevel = revealLevel
+    }
+
+    /// The tile this device places.
+    var entry: TileEntry {
+        TileEntry(key: key, link: link, isAudible: isAudible,
+                  isConcealed: isConcealed ?? false,
+                  linkColor: linkColor, linkColorIsAuto: linkColorIsAuto ?? true,
+                  revealLevel: max(0, revealLevel ?? 0), label: label,
+                  inline: inline, hidesFolder: hidesFolder ?? false)
+    }
 }
 
 struct ExportablePage: Codable {
