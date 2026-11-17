@@ -82,32 +82,34 @@ reviewer needs so a keyless app does not read as a broken one.
 >
 > A five-minute walkthrough that needs no key:
 >
-> 1. At onboarding choose **Caregiver**, then **Not now** at Enable AI Features
->    (and **Skip** if it asks for a key).
+> 1. At onboarding choose **Setup mode**, then **Not now** at Enable AI
+>    Features (and **Skip** if it asks for a key).
 > 2. Tap tiles on the home board — each speaks immediately.
 > 3. Tap a tile with a small arrow badge to open another page. **Home** and
 >    **Back** are on the rail beside the board.
 
 > 4. **Touch and hold Home on the rail for about half a second.** That opens
->    the caregiver menu; choose **Settings**, a row of tabs: Now, Profiles,
->    Scenes, Device, Activity.
-> 5. **Scenes** → tap the board we ship. It will offer to make you an editable
+>    the caregiver menu; choose **Settings**, one list: Profile, Current Board,
+>    Message Box, Look, Sound, Feel, Boards and Vocabulary, Activity, AI,
+>    Help, About, Advanced.
+> 5. **Boards and Vocabulary** → tap the board we ship. It will offer to make you an editable
 >    copy and switch to it; accept. The boards we supply are read-only so an app
 >    update can never overwrite a caregiver's work.
-> 6. In your copy: open a page → **Select Tiles** → tick a few → **Conceal**.
+> 6. In your copy: open a page, tap a tile → **Visibility** → **Conceal**.
 >    Concealed words stay on the board for the caregiver and disappear for the
->    child.
-> 7. **Scenes** → touch and hold a board → **Share** → **Printable PDF**. The
+>    person using it.
+> 7. **Boards and Vocabulary** → touch and hold a board → **Share** →
+>    **Printable PDF**. The
 >    same board as paper, which is what many classrooms still run on.
-> 8. **Device** → **Image Set** → switch styles. Every word is drawn in every
+> 8. **Look, Sound, Feel** → **Tile Style** → switch styles. Every word is drawn in every
 >    style; the whole board changes and nothing goes missing.
 > 9. **Activity** → what was said, and which words have never been used.
 >
 > **Listed under Education, not Kids.** The person who installs, configures and
 > maintains the app is an adult caregiver or speech-language pathologist. The
 > child is who it is *for*, not who sets it up. Caregiver settings sit behind an
-> optional Face ID / PIN gate, and a device can be put in a patient mode that
-> keeps a child inside the board.
+> optional Face ID / PIN gate, and a device can be put in Talk mode, which
+> keeps the person using it inside the board.
 >
 > **Privacy: no data collected.** A child's words and usage stay on the device
 > and in the user's own iCloud. https://blasterai.app/privacy
@@ -131,9 +133,148 @@ New in This Version" will need.
 > Thanks for looking at this. Start with what is new in this build. The full
 > walk is in the TestFlight PDF that came with your invitation.
 >
-> At onboarding, choose **Caregiver** as the device role, and **Not now** at
-> **Enable AI Features**. Most of this needs no key, and that is the
+> At onboarding, choose **Setup mode**, and **Not now** at **Enable AI
+> Features**. Most of this needs no key, and that is the
 > configuration most families will run.
+>
+> ### What's new in build 11
+>
+> **Some words changed.** A *scene* is now a **board**. The device modes are
+> **Talk mode** (for the person using the board to talk) and **Setup mode**
+> (for you). The tray is the **message box**, and the top row is the
+> **navigation bar**. Image sets are now **Tile Styles**.
+>
+> - **Settings is one short list:** Profile, Current Board, Message Box, Look,
+>   Sound, Feel, Boards and Vocabulary, Activity, AI, Help, About, Advanced.
+>   On an iPad it opens on the current profile and Quick Settings.
+> - **Each profile has its own message settings:** Single Words or
+>   Sentences, words per message (4 to 8), and pictures in the message box.
+>   The stage you pick only sets where they start.
+> - **Help is in the app.** Settings › Help opens the blasterai.app guides,
+>   and any guide you've opened before still opens offline.
+> - **Boards and Vocabulary** has a search field, a filter (All · Mine ·
+>   Built-in · Topics) and a **+** menu for new and imported boards.
+> - **The board editor** puts Pages first. Artwork shows what each tile
+>   style still needs, and asks before any run that costs money, with an
+>   estimate.
+> - **The Me page has rules.** **Always** shows a word every time. **Pinned**
+>   puts a tile in a cell you choose. **Includes** brings in another Me page:
+>   one "Room 4" page reaches every student who includes it. **Preview**
+>   shows where each added tile lands and why. My Topics is always the first
+>   cell.
+> - **Share a Me page** along with its topic boards.
+> - **Choosing a word or a page.** One word chooser: search, plus a chip for
+>   each kind of word in its colour. Pages are listed by folder, the way you
+>   reach them on the board. A search also finds a page by a word on it. In
+>   the page editor, type **>** and tap **Browse** to pick a folder's page.
+> - **Sharing keeps every tile setting,** including folder colours and labels.
+>   Board files are now `.blasterboard`; older `.blasterscene` files still
+>   open.
+>
+> ### What to test in build 11
+>
+> - **Find your way around Settings** without the guides. Change the voice,
+>   switch between Single Words and Sentences, and try another Tile Style.
+>   Was anything not where you expected?
+> - **Build a Me page.** Settings › Profile › Me Page. Add a word that
+>   always shows, pin one to a cell, then open **Preview**. Does it explain
+>   where each tile went?
+> - **If you work with several users:** make one Me page for the group,
+>   include it from two profiles, and share one of them to another device.
+> - **Link a folder by browsing.** In the page editor, type **>** in a cell
+>   and tap **Browse**. Is that easier than remembering the page's name?
+> - **The new words.** Do *user*, *Talk mode*, *Setup mode* and *board* read
+>   right to you, and to the families you work with?
+>
+<!-- pdf-only -->
+> ---
+>
+> ### The walk
+>
+> About half an hour, done once, and you can stop anywhere.
+>
+> ### The user's side
+>
+> 1. **Tap tiles on the home board.** Each word should speak the instant you
+>    touch it — no wait, no spinner.
+> 2. **Follow a folder** into another page and back. Home and Back are on the
+>    rail beside the board, always in the same place — that is deliberate, and
+>    we want to know whether it feels obvious or hidden.
+>
+> ### Getting to the caregiver side
+>
+> 3. **Touch and hold Home** on the rail → **Settings**. Tell us whether you
+>    would have found that on your own. **Settings › Help** has the guides.
+>
+> ### Making a board of your own
+>
+> 4. **Boards and Vocabulary → + → New Board.** Take either route:
+>    - a ready-made example, or
+>    - **Build from Collections** — tick vocabulary packs and word classes and
+>      let it assemble a board.
+> 5. Open your new board and open a page. Tap a word, then **Visibility** →
+>    **Concealed**; tap another, then **Clear**. Conceal keeps a word on the
+>    board for you and hides it from the child; Clear removes it. We would like
+>    to know whether that distinction is clear without being told.
+
+> 6. Rename a page (tap its name on the card above the grid), and drag a
+>    tile to a new cell.
+>
+> Nothing above needs the guides, but they exist if you want them — and we would
+> like to know whether you needed them:
+>
+> - **blasterai.app/guides/boards-pages-and-packs**
+> - **blasterai.app/guides/pages-and-navigation**
+> - **blasterai.app/guides/adding-vocabulary**
+> - **blasterai.app/guides/editing-a-board**
+> - **blasterai.app/guides/spreadsheet-boards**
+> - **blasterai.app/guides/the-me-page**
+>
+> ### Taking a board off the device
+>
+> 7. **Boards and Vocabulary → touch and hold a board → Share.** Try **Printable PDF** — pick a
+>    layout and paper size. Plenty of classrooms still run on paper, and a board
+>    that cannot be printed is only half a board.
+
+> 8. Same Share sheet, two more destinations:
+>    - **Images** — the pictures as image files, for a worksheet or a label.
+>    - **Blaster Board** — the board as a file. Text or email it to another
+>      device running BlasterAI and tapping it rebuilds the board, artwork
+>      included. That is how a therapist hands a board to a family.
+>
+> ### Looking at how it is used
+>
+> 9. **Look, Sound, Feel → Tile Style.** Switch styles. Every word is drawn
+>    in every style.
+> 10. **Activity.** The log of what was said, and **Coverage** — which of the
+>     board's words have and have not been used. Does that screen answer a
+>     question you would actually ask about the person using it?
+> ### Now add a key
+>
+> **Settings → AI**: read the screen, turn it on, then add an OpenAI key — or
+> open the key file if one was sent to you. Then **Message Box → Message →
+> Sentences**.
+>
+> First, the message box. Tiles you tap collect along the top.
+> **Tap a tile in the message box to take it back out.**
+> Beside them are **Play** and **Clear**. At Stage IV+ there is also a
+> backspace — see below.
+>
+> 11. **Start deliberately.** Tap three tiles, then press **Play**. You decide
+>     when it speaks. Press **Clear** and do it again with different words.
+> 12. **Now let it decide.** Tap four and pause without pressing anything — it
+>     generates on its own once you stop. Try: **mom**, then the **places** page
+>     link, then **park**, then **slide**. Note that walking to another page
+>     mid-sentence does not lose what you already picked.
+> 13. **Ask again, more urgently.** With a sentence on screen, press **Play**
+>     again — or re-tap the last tile. Either repeats the request, and the
+>     phrasing escalates rather than repeating verbatim, the way a child who was
+>     not heard the first time would ask again. Try: from **home**, tap **dad**,
+>     tap **chocolate**, press **Play**, then tap **chocolate** again.
+> 14. **Add a new word** to one of your boards and let it draw a picture for it.
+> 15. **Go back to Activity.** It should now show the sentences, and what they
+>     cost.
+> ### Earlier builds
 >
 > ### What's new in build 10
 >
@@ -173,93 +314,6 @@ New in This Version" will need.
 >   board's own → Placement: Bottom. Better or worse for your child?
 > - **On a phone:** edit a page. Usable, or iPad-only?
 > - **Share a board** to a second device. Does it arrive looking the same?
->
-<!-- pdf-only -->
-> ---
->
-> ### The walk
->
-> About half an hour, done once, and you can stop anywhere.
->
-> ### The child's side
->
-> 1. **Tap tiles on the home board.** Each word should speak the instant you
->    touch it — no wait, no spinner.
-> 2. **Follow a folder** into another page and back. Home and Back are on the
->    rail beside the board, always in the same place — that is deliberate, and
->    we want to know whether it feels obvious or hidden.
->
-> ### Getting to the caregiver side
->
-> 3. **Touch and hold Home** on the rail → **Settings**. Tell us whether you
->    would have found that on your own.
->
-> ### Making a board of your own
->
-> 4. **Scenes → New Scene.** Take either route:
->    - a ready-made example, or
->    - **Build from Collections** — tick vocabulary packs and word classes and
->      let it assemble a board.
-> 5. Open your new board and open a page. Tap a word, then **Visibility** →
->    **Concealed**; tap another, then **Clear**. Conceal keeps a word on the
->    board for you and hides it from the child; Clear removes it. We would like
->    to know whether that distinction is clear without being told.
-
-> 6. Rename a page (tap its name on the card above the grid), and drag a
->    tile to a new cell.
->
-> Nothing above needs the guides, but they exist if you want them — and we would
-> like to know whether you needed them:
->
-> - **blasterai.app/guides/scenes-pages-and-packs**
-> - **blasterai.app/guides/pages-and-navigation**
-> - **blasterai.app/guides/adding-vocabulary**
-> - **blasterai.app/guides/editing-a-scene**
-> - **blasterai.app/guides/spreadsheet-boards**
->
-> ### Taking a board off the device
->
-> 7. **Scenes → touch and hold a board → Share.** Try **Printable PDF** — pick a
->    layout and paper size. Plenty of classrooms still run on paper, and a board
->    that cannot be printed is only half a board.
-
-> 8. Same Share sheet, two more destinations:
->    - **Tile images** — the pictures as image files, for a worksheet or a label.
->    - **Blaster scene** — the board as a file. Text or email it to another
->      device running BlasterAI and tapping it rebuilds the board, artwork
->      included. That is how a therapist hands a board to a family.
->
-> ### Looking at how it is used
->
-> 9. **Device → Image Set.** Switch styles. Every word is drawn in every style.
-> 10. **Activity.** The log of what was said, and **Coverage** — which of the
->     board's words have and have not been used. Does that screen answer a
->     question you would actually ask about a child?
-> ### Now add a key
->
-> **Settings → Device → AI Features**: read the screen, choose **Enable**, then
-> add an OpenAI key — or open the key file if one was sent to you.
->
-> First, the tray. Tiles you tap collect along the top.
-> **Tap a tile in the tray to take it back out.**
-> Beside them are **Play** and **Clear**. At Stage IV+ there is also a
-> backspace — see below.
->
-> 11. **Start deliberately.** Tap three tiles, then press **Play**. You decide
->     when it speaks. Press **Clear** and do it again with different words.
-> 12. **Now let it decide.** Tap four and pause without pressing anything — it
->     generates on its own once you stop. Try: **mom**, then the **places** page
->     link, then **park**, then **slide**. Note that walking to another page
->     mid-sentence does not lose what you already picked.
-> 13. **Ask again, more urgently.** With a sentence on screen, press **Play**
->     again — or re-tap the last tile. Either repeats the request, and the
->     phrasing escalates rather than repeating verbatim, the way a child who was
->     not heard the first time would ask again. Try: from **home**, tap **dad**,
->     tap **chocolate**, press **Play**, then tap **chocolate** again.
-> 14. **Add a new word** to one of your boards and let it draw a picture for it.
-> 15. **Go back to Activity.** It should now show the sentences, and what they
->     cost.
-> ### Earlier builds
 >
 > ### What's new in build 9 — 1.0.0
 >
