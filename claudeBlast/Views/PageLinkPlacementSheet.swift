@@ -39,40 +39,16 @@ struct PageLinkPlacementSheet: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    ForEach(candidatePages, id: \.key) { page in
-                        if alreadyLinked(page) {
-                            // Shown, not hidden, and not a toggle: the honest
-                            // answer to "where does this page link from" includes
-                            // the places it already does. Removing a link is an
-                            // edit to that page, not something to bury in a
-                            // checkbox that only ever adds.
-                            HStack {
-                                Text(pageLabel(page))
-                                Spacer()
-                                Label("Linked", systemImage: "checkmark.circle.fill")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .labelStyle(.titleAndIcon)
-                            }
-                        } else {
-                            Toggle(isOn: binding(for: page.key)) {
-                                HStack {
-                                    Text(pageLabel(page))
-                                    Spacer()
-                                    Text("\(page.tiles.count)")
-                                        .font(.caption).foregroundStyle(.secondary)
-                                }
-                            }
-                        }
-                    }
-                } header: {
-                    Text("Add a “\(displayName)” link to…")
-                } footer: {
-                    Text("Drops a silent navigation tile that opens the \(displayName) page. You can also add it later from the tile picker’s Page Links filter.")
-                }
-            }
+            // Pages by route, as everywhere a page is chosen; one that
+            // already links here is listed but not choosable — removing a
+            // link is an edit to that page, not something to bury in a
+            // checkbox that only ever adds.
+            PageChooser(groups: [PageChoice.ownPages(of: scene, excluding: [target.pageKey])],
+                        disabled: linkedPages,
+                        note: { linkedPages.contains($0) ? "Already links here" : nil },
+                        intro: "Add a “\(displayName)” link to…",
+                        footer: "Drops a silent navigation tile that opens the \(displayName) page. You can also add it later from the tile picker’s Page Links filter.",
+                        pick: .many($selectedPages))
             .navigationTitle("Link this page in?")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -96,19 +72,12 @@ struct PageLinkPlacementSheet: View {
         }
     }
 
-    private func binding(for key: String) -> Binding<Bool> {
-        Binding(
-            get: { selectedPages.contains(key) },
-            set: { on in if on { selectedPages.insert(key) } else { selectedPages.remove(key) } }
-        )
+    private var linkedPages: Set<String> {
+        Set(candidatePages.filter(alreadyLinked).map(\.key))
     }
 
     private func alreadyLinked(_ page: PageSpec) -> Bool {
         page.tiles.contains { $0.key == linkKey }
-    }
-
-    private func pageLabel(_ page: PageSpec) -> String {
-        page.key == scene.homePageKey ? "\(page.key)  ·  Home" : page.key
     }
 
     private func applyLinks() {

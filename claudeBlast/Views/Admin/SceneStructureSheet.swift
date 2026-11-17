@@ -517,7 +517,7 @@ struct SceneStructureSheet: View {
 
     private var donorScenes: [BlasterScene] {
         allScenes.filter { $0.persistentModelID != scene.persistentModelID && !$0.pages.isEmpty
-            && !$0.isCarriedTemplate }
+            && !$0.isCarriedTemplate && !MeScene.isMeScene($0) }
     }
 
     private var existingPageKeys: Set<String> { Set(scene.pages.map(\.key)) }

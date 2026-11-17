@@ -77,16 +77,9 @@ struct MeTopicsSection: View {
             }
             NavigationLink {
                 // BlasterAI 60's pages, then the pages of the caregiver's own
-                // scenes: a page is matched by name on any board.
-                let groups = MeScene.contextChoices(system: system, scenes: scenes)
-                let shared = MeScene.sharedContextKeys(groups)
-                BoardSectionsList(groups: groups) { page in
-                    NavigationLink {
-                        ContextPageView(me: me, system: system, systemKey: page.key)
-                    } label: {
-                        ContextChoiceLabel(title: page.title, isShared: shared.contains(page.key))
-                    }
-                }
+                // scenes, by route: a page is matched by name on any board.
+                AddContextPageChooser(me: me, system: system,
+                                      groups: PageChoice.contextTargets(system: system, scenes: scenes))
                 .navigationTitle("Add a Page")
             } label: {
                 Label("Add a Page", systemImage: "plus.circle")
@@ -160,12 +153,7 @@ struct ContextPageView: View {
     @Query(sort: \BlasterScene.name) private var scenes: [BlasterScene]
     @Query(sort: \TileModel.key) private var allTiles: [TileModel]
     @State private var isPickingWords = false
-
-    /// Pages of the main board an item can come from or be shown for: all
-    /// but its home, which clears the context.
-    static func boardPages(_ system: BlasterScene) -> [PageSpec] {
-        system.pages.filter { $0.key != system.homePageKey }
-    }
+    @State private var isPickingPage = false
 
     private var isAlways: Bool { systemKey == MeScene.alwaysKey }
     private var title: String {
@@ -212,6 +200,25 @@ struct ContextPageView: View {
             ToolbarItem(placement: .primaryAction) { addMenu }
             ToolbarItem(placement: .primaryAction) { EditButton() }
         }
+        .sheet(isPresented: $isPickingPage) {
+            NavigationStack {
+                let present = Set(items.map(\.link))
+                PageChooser(groups: sourceGroups, disabled: present,
+                            note: { present.contains($0) ? "Already listed" : nil },
+                            intro: "Take words, a folder or both from a page.",
+                            pick: .one(selected: nil) { link in
+                                addSource(link)
+                                isPickingPage = false
+                            })
+                .navigationTitle("Add a Page")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") { isPickingPage = false }
+                    }
+                }
+            }
+        }
         .sheet(isPresented: $isPickingWords) {
             ContextWordPicker(listed: Set(items.filter(MeScene.isWordItem).map(\.key))) { keys in
                 MeScene.addWords(keys, onPage: systemKey, in: me, title: title)
@@ -240,31 +247,36 @@ struct ContextPageView: View {
         let present = Set(items.map(\.link))
         return Menu {
             Button("Words…") { isPickingWords = true }
-            Menu("A Topic Page") {
-                ForEach(topics) { topic in
-                    Menu(topic.name) {
-                        ForEach(topicPages(topic), id: \.key) { page in
-                            let link = TileToken.sceneLink(topic.sceneID, to: page.key)
-                            Button(page.key == topic.homePageKey ? topic.name : page.title) {
-                                add(topicItem(topic, page: page))
-                            }
-                            .disabled(present.contains(link))
-                        }
-                    }
-                }
-            }
-            Menu("A Board Page") {
-                ForEach(Self.boardPages(system), id: \.key) { page in
-                    Button(page.title) {
-                        add(TileEntry(key: MeScene.folderKey(forPage: page.key, in: system),
-                                      link: TileToken.systemLink(to: page.key),
-                                      isAudible: false, label: page.title))
-                    }
-                    .disabled(present.contains(TileToken.systemLink(to: page.key)))
-                }
-            }
+            Button("A Page…") { isPickingPage = true }
         } label: {
             Label("Add", systemImage: "plus")
+        }
+    }
+
+    /// Pages an item can come from, by route: BlasterAI 60's (all but its
+    /// home), then each topic's. A value is the item's link.
+    private var sourceGroups: [PageGroup] {
+        var groups = [PageChoice.group(board: system.baseName, pages: system.pages,
+                                       homeKey: system.homePageKey,
+                                       row: BoardChrome.rowPages(of: system), includeHome: false,
+                                       value: { TileToken.systemLink(to: $0) })]
+        for topic in topics {
+            groups.append(PageChoice.group(board: topic.name, pages: topicPages(topic),
+                                           homeKey: topic.homePageKey,
+                                           value: { TileToken.sceneLink(topic.sceneID, to: $0) }))
+        }
+        return groups
+    }
+
+    /// Adds the page `link` names, a BlasterAI 60 page or a topic's.
+    private func addSource(_ link: String) {
+        if let key = TileToken.systemPageKey(link), let page = system.page(withKey: key) {
+            add(TileEntry(key: MeScene.folderKey(forPage: page.key, in: system),
+                          link: link, isAudible: false, label: page.title))
+        } else if let mounted = TileToken.scenePageKey(link),
+                  let topic = topics.first(where: { $0.sceneID == mounted.sceneID }),
+                  let page = topic.page(withKey: mounted.page) {
+            add(topicItem(topic, page: page))
         }
     }
 
@@ -363,30 +375,26 @@ struct TopicContextsView: View {
         MeScene.contextChoices(system: system, scenes: scenes.filter { $0.sceneID != topic.sceneID })
     }
 
+    /// `groups` by route, for the chooser.
+    private var targets: [PageGroup] {
+        PageChoice.contextTargets(system: system, scenes: scenes, excludingScene: topic.sceneID)
+    }
+
     private var pages: [PageSpec] { groups.flatMap(\.pages) }
 
     var body: some View {
-        let on = Set(MeScene.contexts(of: topic.sceneID, in: me))
-        let shared = MeScene.sharedContextKeys(groups)
-        BoardSectionsList(groups: groups,
-                          footer: "When the user presses the heart from one of these pages, \(topic.name) appears on their Me page, from column 8 into the free cells of columns 9 and 10. A page counts by its name, on any board. Each page's order is set in Edit Me Page, on its \"On …\" page.") { page in
-                    Button {
-                        var keys = on
-                        if keys.contains(page.key) { keys.remove(page.key) } else { keys.insert(page.key) }
-                        MeScene.setContexts(keys, for: topic, in: me, context: modelContext,
-                                            titles: Dictionary(pages.map { ($0.key, $0.title) },
-                                                               uniquingKeysWith: { first, _ in first }))
-                        try? modelContext.save()
-                    } label: {
-                        HStack {
-                            ContextChoiceLabel(title: page.title, isShared: shared.contains(page.key))
-                            Spacer()
-                            if on.contains(page.key) {
-                                Image(systemName: "checkmark").foregroundStyle(.tint)
-                            }
-                        }
-                    }
-        }
+        let shared = PageChoice.sharedValues(targets)
+        PageChooser(groups: targets,
+                    note: { shared.contains($0) ? "Same name on another board: one list for both" : nil },
+                    footer: "When the user presses the heart from one of these pages, \(topic.name) appears on their Me page, from column 8 into the free cells of columns 9 and 10. A page counts by its name, on any board. Each page's order is set in Edit Me Page, on its \"On …\" page.",
+                    pick: .many(Binding(
+                        get: { Set(MeScene.contexts(of: topic.sceneID, in: me)) },
+                        set: { keys in
+                            MeScene.setContexts(keys, for: topic, in: me, context: modelContext,
+                                                titles: Dictionary(pages.map { ($0.key, $0.title) },
+                                                                   uniquingKeysWith: { first, _ in first }))
+                            try? modelContext.save()
+                        })))
         .navigationTitle("Show \(topic.name) On")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -406,43 +414,12 @@ struct ContextWordPicker: View {
     let onAdd: ([String]) -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @Query(sort: \TileModel.key) private var allTiles: [TileModel]
-    @State private var query = ""
     @State private var picked: [String] = []
-
-    private var words: [TileModel] {
-        let q = query.trimmingCharacters(in: .whitespaces).lowercased()
-        return allTiles
-            .filter { $0.wordClass != PageLink.wordClass && !listed.contains($0.key) }
-            .filter { q.isEmpty || $0.key.contains(q) || $0.displayName.lowercased().contains(q) }
-            .sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
-    }
 
     var body: some View {
         NavigationStack {
-            List(words, id: \.key) { tile in
-                Button { toggle(tile.key) } label: {
-                    HStack(spacing: 12) {
-                        TileImageView(key: tile.key, wordClass: tile.wordClass)
-                            .frame(width: 36, height: 36)
-                            .clipShape(RoundedRectangle(cornerRadius: 6))
-                        Text(tile.displayName).foregroundStyle(.primary)
-                        Spacer()
-                        if let n = picked.firstIndex(of: tile.key) {
-                            Text("\(n + 1)")
-                                .font(.caption.weight(.semibold).monospacedDigit())
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(.tint))
-                        }
-                    }
-                }
-            }
-            .listStyle(.plain)
-            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
-                        prompt: "Find a word")
-            .autocorrectionDisabled()
-            .textInputAutocapitalization(.never)
+            WordChooser(rules: .init(excluding: listed), prompt: "Find a word",
+                        pick: .ordered($picked))
             .navigationTitle("Add Words")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -459,57 +436,22 @@ struct ContextWordPicker: View {
             }
         }
     }
-
-    private func toggle(_ key: String) {
-        if let i = picked.firstIndex(of: key) { picked.remove(at: i) } else { picked.append(key) }
-    }
 }
 
-/// A page a context can be for. A name more than one board has is one
-/// context, so it says so: choosing Places on Sunday School chooses
-/// BlasterAI 60's Places too.
-struct ContextChoiceLabel: View {
-    let title: String
-    let isShared: Bool
+/// Me Page by Page › Add a Page: a page chosen by route opens its list.
+private struct AddContextPageChooser: View {
+    @Bindable var me: BlasterScene
+    let system: BlasterScene
+    let groups: [PageGroup]
+    @State private var chosen: String?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title).foregroundStyle(.primary)
-            if isShared {
-                Text("Same name on another board: one list for both")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+        let shared = PageChoice.sharedValues(groups)
+        PageChooser(groups: groups,
+                    note: { shared.contains($0) ? "Same name on another board: one list for both" : nil },
+                    pick: .one(selected: nil) { chosen = $0 })
+        .navigationDestination(item: $chosen) { key in
+            ContextPageView(me: me, system: system, systemKey: key)
         }
-    }
-}
-
-/// Pages grouped by board, each board's section collapsible: a caregiver
-/// with several scenes would otherwise scroll past all of BlasterAI 60 to
-/// reach their own. Every section starts open.
-struct BoardSectionsList<Row: View>: View {
-    let groups: [(board: String, pages: [PageSpec])]
-    var footer: String? = nil
-    @ViewBuilder let row: (PageSpec) -> Row
-    @State private var collapsed: Set<String> = []
-
-    var body: some View {
-        List {
-            ForEach(groups, id: \.board) { group in
-                Section(isExpanded: Binding(
-                    get: { !collapsed.contains(group.board) },
-                    set: { open in
-                        if open { collapsed.remove(group.board) } else { collapsed.insert(group.board) }
-                    })) {
-                    ForEach(group.pages, id: \.key) { page in row(page) }
-                } header: {
-                    Text(group.board)
-                }
-            }
-            if let footer {
-                Section {} footer: { Text(footer) }
-            }
-        }
-        .listStyle(.sidebar)
     }
 }

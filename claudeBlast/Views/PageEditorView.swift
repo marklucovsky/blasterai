@@ -327,6 +327,7 @@ struct PageEditorView: View {
                         systemPages: chain?.pages(atLevel: nil) ?? [],
                         pageOwners: templatePageOwners,
                         templateName: chain.flatMap { $0.templates.isEmpty ? nil : $0.name },
+                        linkGroups: { PageChoice.linkTargets(scene: scene, chain: chain) },
                         cells: pageCells,
                         lockedCells: Set(lockedCells.keys),
                         chrome: BoardChrome.inherits(scene) && !isRow
@@ -1083,26 +1084,20 @@ struct TilePropertiesSheet: View {
                 }
 
                 Section("Navigation") {
-                    Picker("Link to Page", selection: entryBinding.link) {
-                        Text("None").tag("")
-                        ForEach(scene.pages, id: \.key) { page in
-                            Text(page.title).tag(page.key)
-                        }
-                        // The core board's own pages. Not offered on the core
-                        // board itself, where they are already the list above.
-                        // Each label names the board: a menu-style picker does
-                        // not draw a Section header, so a heading would not say
-                        // whose Actions page this is.
-                        if let chain {
-                            Divider()
-                            // The template's pages first: the nearer, smaller set.
-                            let pages = chain.pages(atLevel: nil)
-                            ForEach(pages.filter { TileToken.isTemplateKey($0.key) }
-                                    + pages.filter { !TileToken.isTemplateKey($0.key) },
-                                    id: \.key) { page in
-                                let link = TileToken.systemLink(to: page.key)
-                                Text(SystemLinks.displayName(of: link, chain: chain)).tag(link)
-                            }
+                    // Pages by where they are (Mark, 2026-11-16): a caregiver
+                    // knows Groups › Animals, not the page's key, and a flat
+                    // menu of every board's titles could not say whose
+                    // Actions page an entry was.
+                    let targets = PageChoice.linkTargets(scene: scene, chain: chain)
+                    NavigationLink {
+                        LinkTargetChooser(groups: targets, link: entryBinding.link)
+                    } label: {
+                        LabeledContent("Link to Page") {
+                            let link = entry?.link ?? ""
+                            Text(link.isEmpty ? "None"
+                                 : PageChoice.fullPath(of: link, in: targets)
+                                    ?? SystemLinks.displayName(of: link, chain: chain))
+                                .multilineTextAlignment(.trailing)
                         }
                     }
                     let currentLink = entry?.link ?? ""
@@ -1202,6 +1197,23 @@ func partOfSpeechSwatch(_ color: Color, size: CGFloat = 12) -> some View {
 /// A pushed list rather than a menu because the color is the point, and a menu
 /// renders its option icons monochrome. Here each row owns its own swatch, so a
 /// therapist picks the color they can see.
+/// The page a tile links to, chosen by path; popping back once chosen.
+private struct LinkTargetChooser: View {
+    let groups: [PageGroup]
+    @Binding var link: String
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        PageChooser(groups: groups, noneLabel: "None",
+                    pick: .one(selected: link) { value in
+                        link = value
+                        dismiss()
+                    })
+        .navigationTitle("Link to Page")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
 struct PartOfSpeechPickerList: View {
     @Binding var selection: PartOfSpeech?
     /// What Automatic works out to for this tile, so the row is never a mystery.
