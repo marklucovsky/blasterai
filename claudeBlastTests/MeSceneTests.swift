@@ -109,11 +109,34 @@ struct MeSceneTests {
         #expect(me.sceneID == "me-p1")
         #expect(MeScene.isMeScene(me))
         #expect(BoardChrome.inherits(me))
-        #expect(me.page(withKey: "home")?.tiles.first?.link == MeScene.topicsPageKey)
-        #expect(me.page(withKey: "home")?.tiles.first?.label == "My Topics")
+        // My Topics is drawn in its cell, not stored on the page.
+        #expect(me.page(withKey: "home")?.tiles.isEmpty == true)
+        #expect(MeScene.showingTopicsCell([]).first?.label == "My Topics")
         #expect(me.page(withKey: MeScene.topicsPageKey) != nil)
         let all = try ctx.fetch(FetchDescriptor<BlasterScene>())
         #expect(all.filter(MeScene.isMeScene).count == 1)
+    }
+
+    /// A Me page from before My Topics had a fixed cell: the stored folder
+    /// comes off wherever it was moved to, and a tile in its cell, on the
+    /// page or pinned, moves to the next empty cell. Nothing else moves.
+    @Test func ensureFreesTheTopicsCellOnAnOlderPage() {
+        let ctx = TestStore.freshContainer().mainContext
+        let me = MeScene.ensure(profileID: "p1", context: ctx)
+        me.pages = me.pages.filter { $0.key != MeScene.homePageKey } + [
+            PageSpec(key: MeScene.homePageKey,
+                     tiles: [TileEntry(key: "mom"), TileEntry(key: "dad"), .spacer(), MeScene.topicsFolder,
+                             TileEntry(key: "dog")]),
+            PageSpec(key: MeScene.pinnedPageKey, tiles: [TileEntry(key: "cat")]),
+        ]
+        MeScene.ensure(profileID: "p1", context: ctx)
+        let home = me.page(withKey: MeScene.homePageKey)!.tiles
+        #expect(home[0].isSpacer && home[1].key == "dad" && home[2].key == "mom")
+        #expect(home[3].isSpacer && home[4].key == "dog")
+        #expect(me.page(withKey: MeScene.pinnedPageKey)?.tiles.last?.key == "cat")
+        #expect(me.page(withKey: MeScene.pinnedPageKey)?.tiles.first?.isSpacer == true)
+        #expect(MeScene.lockedCells(of: me, pageKey: MeScene.pinnedPageKey).keys.sorted() == [0])
+        #expect(MeScene.lockedCells(of: me, pageKey: MeScene.alwaysPageKey).isEmpty)
     }
 
     @Test func ensureRepairsARemovedTopicsPage() {

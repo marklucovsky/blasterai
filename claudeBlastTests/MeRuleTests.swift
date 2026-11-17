@@ -45,8 +45,9 @@ struct MeRuleTests {
                             rowKeys: [], words: { _ in [] })
     }
 
+    /// What the page adds, without the My Topics folder every page has.
     private func keys(_ tiles: [TileEntry]) -> [String] {
-        tiles.filter { !$0.isEmptyCell }.map(\.key)
+        tiles.filter { !$0.isEmptyCell && $0.link != MeScene.topicsPageKey }.map(\.key)
     }
 
     /// Always applies when the heart is pressed from Home too, with no page
@@ -61,12 +62,39 @@ struct MeRuleTests {
     /// moves to the next free cell instead of covering it.
     @Test func pinnedTakesItsCellUnlessThePageUsesIt() {
         let ctx = TestStore.freshContainer().mainContext
-        let aubrey = me("aubrey", pinned: [0: "dog", 5: "cat"], in: ctx)
-        let home = [TileEntry(key: "mine")]
+        let aubrey = me("aubrey", pinned: [1: "dog", 5: "cat"], in: ctx)
+        let home = [.spacer(), TileEntry(key: "mine")]
         let tiles = compose(home, [aubrey])
-        #expect(tiles[0].key == "mine")
+        #expect(tiles[1].key == "mine")
         #expect(tiles[5].key == "cat")
         #expect(keys(tiles).contains("dog"))
+    }
+
+    /// My Topics is in the first cell under the bar on every Me page, drawn
+    /// rather than stored: a tile pinned there, an included page's tile
+    /// there, or one left there on the page itself all move to the next free
+    /// cell, and a stored My Topics folder elsewhere is not drawn twice.
+    @Test func myTopicsAlwaysHasTheFirstCell() {
+        let ctx = TestStore.freshContainer().mainContext
+        let aubrey = me("aubrey", pinned: [0: "dog"], in: ctx)
+        let room = me("room4", in: ctx)
+        room.pages = [PageSpec(key: MeScene.homePageKey, tiles: [TileEntry(key: "teacher")])]
+        let byID = { (id: String) in [aubrey, room].first { $0.sceneID == id } }
+        MeScene.addInclude(room, to: aubrey, find: byID)
+        let layers = MeScene.layers(of: aubrey, find: byID)
+
+        #expect(compose([], layers)[0].link == MeScene.topicsPageKey)
+        let moved = compose([TileEntry(key: "mine"), .spacer(), .spacer(), MeScene.topicsFolder], layers)
+        #expect(moved[0].link == MeScene.topicsPageKey)
+        #expect(moved[1].key == "mine")
+        #expect(moved.filter { $0.link == MeScene.topicsPageKey }.count == 1)
+        #expect(Set(keys(moved)) == ["mine", "dog", "teacher"])
+
+        let cells = MeScene.preview([], layers: layers, name: { $0.name }, contextKey: nil,
+                                    systemIsActive: true, rowKeys: [], words: { _ in [] })
+        #expect(cells[0].source == .own)
+        #expect(cells.first { $0.tile.key == "dog" }?.source == .pinned("aubrey", moved: true))
+        #expect(cells.first { $0.tile.key == "teacher" }?.source == .included("room4", moved: true))
     }
 
     /// The Preview tags every added tile with where it came from, and says
@@ -85,7 +113,7 @@ struct MeRuleTests {
         func source(_ key: String) -> MeScene.Source? { cells.first { $0.tile.key == key }?.source }
         #expect(source("mine") == .own)
         #expect(source("cat") == .pinned("aubrey", moved: false))
-        #expect(source("dog") == .pinned("aubrey", moved: true))     // cell 0 is "mine"
+        #expect(source("dog") == .pinned("aubrey", moved: true))     // cell 0 is My Topics
         #expect(source("mom") == .always("aubrey"))
         #expect(source("teacher") == .always("room4"))
         #expect(source("park") == .page("aubrey"))
