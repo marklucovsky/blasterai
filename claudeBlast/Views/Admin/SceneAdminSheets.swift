@@ -791,7 +791,7 @@ struct ScenePreviewView: View {
                             let isHome = page.key == working.homePageKey
                             Button { selectedPageIndex = i } label: {
                                 HStack(spacing: 4) {
-                                    Text(page.key)
+                                    Text(page.displayName.isEmpty ? PageNaming.displayName(page.key) : page.displayName)
                                     if isHome {
                                         Image(systemName: "house.fill")
                                             .font(.caption2)

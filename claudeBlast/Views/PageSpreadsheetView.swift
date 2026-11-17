@@ -80,6 +80,9 @@ struct PageSpreadsheetView: View {
     var pageOwners: [String: String] = [:]
     /// What the scene is built on, when that is a template.
     var templateName: String? = nil
+    /// Every page a link here can open, by board and folder, for browsing
+    /// after `>` (`PageChoice.linkTargets`). Asked for only when browsing.
+    var linkGroups: () -> [PageGroup] = { [] }
     let cells: PageCells
     /// Cells the app keeps (My Topics on a Me page): drawn dimmed with a lock,
     /// and never selected, typed, dragged or dropped on.
@@ -128,6 +131,8 @@ struct PageSpreadsheetView: View {
     @State private var suggestionMemo = SuggestionMemo()
     @State private var error: String?
     @State private var highlighted = 0
+    /// The link chooser is up, over these pages.
+    @State private var browsing: CellSuggestion.BrowseScope?
     /// Screens shown beyond those the page fills, so a new screen can be typed into.
     @State private var extraScreens = 0
     /// Bumped to hand the keyboard back to the formula bar after a tap.
@@ -182,6 +187,40 @@ struct PageSpreadsheetView: View {
     }
 
     var body: some View {
+        grid
+            .sheet(item: $browsing) { scope in
+                NavigationStack {
+                    PageChooser(groups: linkGroups().filter(scope.includes),
+                                pick: .one(selected: nil) { link in chooseLink(link) })
+                        .navigationTitle("Link to a Page")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Cancel") { browsing = nil; focusToken += 1 }
+                            }
+                        }
+                }
+            }
+    }
+
+    /// A page chosen by browsing goes after the `>` being typed.
+    private func chooseLink(_ link: String) {
+        let text = draft ?? ""
+        let lhs = text.firstIndex(of: ">").map { String(text[..<$0]).trimmingCharacters(in: .whitespaces) } ?? ""
+        let page = CellSuggestion.cellText(forLink: link)
+        draft = lhs.isEmpty ? "> \(page)" : "\(lhs) > \(page)"
+        highlighted = 0
+        error = nil
+        browsing = nil
+        // Choosing is the decision, as Return is after typing: commit and
+        // move on. Left as a draft, it was lost when the editor closed with
+        // the sheet's dismissal still taking the keyboard away (Mark,
+        // 2026-11-17). A link that fails stays in the bar with its error.
+        _ = commit(thenMove: (0, 1))
+        focusToken += 1
+    }
+
+    private var grid: some View {
         GeometryReader { outer in
             let placement = wellPlacement(outer.size)
             let showsWell = placement != .none && wellVisible
@@ -712,6 +751,11 @@ struct PageSpreadsheetView: View {
                   systemImage: isSystem ? "square.grid.3x3.fill" : "folder")
                 .font(.subheadline)
                 .padding(.horizontal, 8).padding(.vertical, 6)
+        case .browse(let scope):
+            Label(scope.title(template: templateName), systemImage: "list.bullet.indent")
+                .font(.subheadline.weight(.semibold))
+                .padding(.horizontal, 10).padding(.vertical, 7)
+                .background(Capsule().fill(Color.accentColor.opacity(0.2)))
         case .newPage(let key):
             Label("New page \u{201C}\(PageNaming.displayName(key))\u{201D}", systemImage: "folder.badge.plus")
                 .font(.subheadline)
@@ -751,8 +795,13 @@ struct PageSpreadsheetView: View {
         let key = SuggestionMemo.Key(draft: draft ?? "", words: lookup.count,
                                      scenePages: scene.pages.count, systemPages: systemPages.count)
         if let kept = suggestionMemo.value, suggestionMemo.key == key { return kept }
-        let fresh = CellSuggestion.suggestions(for: draft ?? "", lookup: lookup,
+        var fresh = CellSuggestion.suggestions(for: draft ?? "", lookup: lookup,
                                                scenePages: scene.pages, systemPages: systemPages)
+        // Browsing leads: a caregiver who doesn't know a page's name finds it
+        // by its folders, not by scrolling a strip of every page.
+        if let scope = CellSuggestion.browseScope(for: draft ?? "") {
+            fresh.insert(.browse(scope), at: 0)
+        }
         suggestionMemo.key = key
         suggestionMemo.value = fresh
         return fresh
@@ -1352,6 +1401,10 @@ struct PageSpreadsheetView: View {
     }
 
     private func accept(_ suggestion: CellSuggestion) {
+        if case .browse(let scope) = suggestion {
+            browsing = scope
+            return
+        }
         draft = suggestion.applied(to: draft ?? "")
         highlighted = 0
         error = nil
@@ -1696,6 +1749,53 @@ enum CellSuggestion: Hashable {
     case systemPages(count: Int)
     /// The same for the template's pages (`> template:`).
     case templatePages(count: Int)
+    /// After `>`, `> sys:` or `> template:` with nothing more typed: open
+    /// those pages as a tree of folders, to find one without its name.
+    case browse(BrowseScope)
+
+    enum BrowseScope: String, Identifiable, Hashable {
+        case all, system, template
+        var id: String { rawValue }
+
+        func title(template: String?) -> String {
+            switch self {
+            case .all: "Browse Pages\u{2026}"
+            case .system: "Browse BlasterAI 60\u{2026}"
+            case .template: "Browse \(template ?? "Template")\u{2026}"
+            }
+        }
+
+        /// Whether `group` of `PageChoice.linkTargets` is in scope: its
+        /// values say whose pages they are.
+        func includes(_ group: PageGroup) -> Bool {
+            guard let value = group.options.first?.value else { return false }
+            switch self {
+            case .all: return true
+            case .system: return value.hasPrefix(TileToken.systemPrefix)
+            case .template: return value.hasPrefix(TileToken.templatePrefix)
+            }
+        }
+    }
+
+    /// What browsing would open for `text`: nil unless the link side is
+    /// empty, or is only `sys:` or `template:`.
+    static func browseScope(for text: String) -> BrowseScope? {
+        guard let arrow = text.firstIndex(of: ">") else { return nil }
+        let rest = text[text.index(after: arrow)...].trimmingCharacters(in: .whitespaces).lowercased()
+        switch rest {
+        case "": return .all
+        case BoardCell.systemMarker: return .system
+        case BoardCell.templateMarker: return .template
+        default: return nil
+        }
+    }
+
+    /// The text after `>` that links to `link` (a link as stored): the
+    /// scene's own page bare, `sys:people`, or `template:random`.
+    static func cellText(forLink link: String) -> String {
+        guard let key = TileToken.systemPageKey(link) else { return link }
+        return TileToken.isTemplateKey(key) ? key : BoardCell.systemMarker + key
+    }
 
     static let limit = 8
 
@@ -1747,7 +1847,7 @@ enum CellSuggestion: Hashable {
     /// Fills the field and waits for the next choice, rather than being one.
     var opensMore: Bool {
         switch self {
-        case .systemPages, .templatePages: true
+        case .systemPages, .templatePages, .browse: true
         default: false
         }
     }
@@ -1805,6 +1905,8 @@ enum CellSuggestion: Hashable {
             return lhs.isEmpty ? "> \(page)" : "\(lhs) > \(page)"
         case .newPage(let key):
             return lhs.isEmpty ? "> \(key)" : "\(lhs) > \(key)"
+        case .browse:
+            return text
         case .systemPages:
             let page = BoardCell.systemMarker
             return lhs.isEmpty ? "> \(page)" : "\(lhs) > \(page)"

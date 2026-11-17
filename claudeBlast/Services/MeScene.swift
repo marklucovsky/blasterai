@@ -348,11 +348,15 @@ enum MeScene {
             if !pages.isEmpty { groups.append((BlasterScene.copyRoot(of: board.name), pages)) }
         }
         if let system { add(system) }
-        for scene in scenes where !scene.isDefault && !scene.isSystemOwned && !scene.isCarriedTemplate
-            && !isMeScene(scene) && BoardChrome.inherits(scene) {
-            add(scene)
-        }
+        for scene in scenes where offersContexts(scene) { add(scene) }
         return groups
+    }
+
+    /// Whether a caregiver's scene lists its pages as contexts: their own,
+    /// on the 10 × 6 layout, and not a Me page.
+    static func offersContexts(_ scene: BlasterScene) -> Bool {
+        !scene.isDefault && !scene.isSystemOwned && !scene.isCarriedTemplate
+            && !isMeScene(scene) && BoardChrome.inherits(scene)
     }
 
     /// Page names more than one board in `groups` has: choosing one chooses

@@ -1099,6 +1099,36 @@ private struct PageGeneratorSheet: View {
     /// accept path + the provenance badge.
     @State private var cachedCopy: PageSpec? = nil
     @State private var cachedCopyFrom: String = ""
+    @State private var isChoosingCopy = false
+
+    private static let copySeparator = "\u{1F}"
+
+    /// Every other board's pages, browsed by folder; a value is the board's
+    /// ID and the page's key.
+    private var copyGroups: [PageGroup] {
+        copyableScenes.map { src in
+            PageChoice.ownPages(of: src).mapValues { src.sceneID + Self.copySeparator + $0 }
+        }
+    }
+
+    private func copyChosenPage(_ value: String) {
+        let parts = value.components(separatedBy: Self.copySeparator)
+        guard parts.count == 2,
+              let src = copyableScenes.first(where: { $0.sceneID == parts[0] }),
+              let page = src.pages.first(where: { $0.key == parts[1] }) else { return }
+        isChoosingCopy = false
+        loadCopiedPage(from: src, page: page)
+    }
+
+    /// "12 words" under a page in the copy chooser: what copying it brings.
+    private func copyNote(_ value: String) -> String? {
+        let parts = value.components(separatedBy: Self.copySeparator)
+        guard parts.count == 2,
+              let page = copyableScenes.first(where: { $0.sceneID == parts[0] })?
+                .pages.first(where: { $0.key == parts[1] }) else { return nil }
+        let n = copyableTiles(from: page).count
+        return n == 0 ? "No words to copy" : "\(n) word\(n == 1 ? "" : "s")"
+    }
 
     /// Set while previewing "all words of a class"; drives the class-query accept
     /// path + the provenance badge.
@@ -1170,8 +1200,11 @@ private struct PageGeneratorSheet: View {
     }
 
     /// Other scenes that have at least one page — sources to copy a page from.
+    /// Not a Me page: its pages are one child's own lists, not a board's.
     private var copyableScenes: [BlasterScene] {
-        allScenes.filter { $0.persistentModelID != scene.persistentModelID && !$0.pages.isEmpty }
+        allScenes.filter {
+            $0.persistentModelID != scene.persistentModelID && !$0.pages.isEmpty && !MeScene.isMeScene($0)
+        }
     }
 
     var body: some View {
@@ -1347,33 +1380,10 @@ private struct PageGeneratorSheet: View {
 
                 if !copyableScenes.isEmpty {
                     Section {
-                        ForEach(copyableScenes, id: \.persistentModelID) { src in
-                            DisclosureGroup(src.name.isEmpty ? "Untitled board" : src.name) {
-                                ForEach(src.pages, id: \.key) { page in
-                                    Button {
-                                        loadCopiedPage(from: src, page: page)
-                                    } label: {
-                                        HStack(spacing: 6) {
-                                            Image(systemName: "doc.on.doc")
-                                                .font(.caption).foregroundStyle(.tint)
-                                            Text(page.title).foregroundStyle(.primary)
-                                            if page.key == src.homePageKey {
-                                                Label("Home", systemImage: "house.fill")
-                                                    .labelStyle(.titleAndIcon)
-                                                    .font(.caption2.weight(.semibold))
-                                                    .padding(.horizontal, 6).padding(.vertical, 2)
-                                                    .background(Capsule().fill(Color.blue.opacity(0.15)))
-                                                    .foregroundStyle(.blue)
-                                            }
-                                            Spacer()
-                                            Text("\(page.tiles.count) tiles")
-                                                .font(.caption2).foregroundStyle(.secondary)
-                                        }
-                                    }
-                                    .disabled(isGenerating)
-                                }
-                            }
+                        Button { isChoosingCopy = true } label: {
+                            Label("Choose a Page\u{2026}", systemImage: "doc.on.doc")
                         }
+                        .disabled(isGenerating)
                     } header: {
                         Text("Copy from another board")
                     } footer: {
@@ -1454,6 +1464,20 @@ private struct PageGeneratorSheet: View {
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") { dismiss() }
+            }
+        }
+        .sheet(isPresented: $isChoosingCopy) {
+            NavigationStack {
+                PageChooser(groups: copyGroups, note: copyNote,
+                            footer: "Copies a page's word tiles into this board. Navigation links are dropped; add them again here if you need them.",
+                            pick: .one(selected: nil, copyChosenPage))
+                    .navigationTitle("Copy a Page")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Cancel") { isChoosingCopy = false }
+                        }
+                    }
             }
         }
     }

@@ -425,45 +425,13 @@ struct ExistingArtPicker: View {
         self.onPick = onPick
     }
 
-    @Query(sort: \TileModel.key) private var allTiles: [TileModel]
     @Environment(\.dismiss) private var dismiss
-    @State private var search = ""
-
-    private var matches: [TileModel] {
-        let candidates = allTiles.filter {
-            $0.key != excludingKey && !$0.isHiddenFromChild && PageLink.targetPage(forKey: $0.key) == nil
-        }
-        let query = WordFinder.normalize(search)
-        guard !query.isEmpty else { return candidates.sorted { $0.displayName < $1.displayName } }
-        return candidates
-            .compactMap { t in WordFinder.rank(of: query, in: t).map { (t, $0) } }
-            .sorted { ($0.1, $0.0.key.count, $0.0.key) < ($1.1, $1.0.key.count, $1.0.key) }
-            .map(\.0)
-    }
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 88), spacing: 10)], spacing: 10) {
-                    ForEach(matches, id: \.key) { source in
-                        Button { onPick(source) } label: {
-                            VStack(spacing: 4) {
-                                TileImageView(key: source.key, wordClass: source.wordClass)
-                                    .frame(width: 80, height: 80)
-                                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                                Text(source.displayName)
-                                    .font(.caption)
-                                    .foregroundStyle(.primary)
-                                    .lineLimit(1)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding()
-            }
-            .searchable(text: $search, placement: .navigationBarDrawer(displayMode: .always),
-                        prompt: "Search all words")
+            WordChooser(layout: .grid,
+                        rules: .init(excluding: excludingKey.map { [$0] } ?? []),
+                        pick: .one(onPick))
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

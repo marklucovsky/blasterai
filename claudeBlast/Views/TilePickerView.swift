@@ -37,6 +37,7 @@ struct TilePickerView: View {
     @State private var sessionNewWordKeys: Set<String> = []
     @State private var showAddWord = false
     @State private var showBulkWord = false
+    @State private var isChoosingPageSource = false
     @FocusState private var searchFocused: Bool
 
     // P3: editable `key, class[, Display]` list bound to the selection. Tapping
@@ -230,8 +231,27 @@ struct TilePickerView: View {
                   !t.isStructuralChrome else { return nil }
             return t.key
         }
-        pageSourceLabel = "\(scene.name.isEmpty ? "Board" : scene.name) · \(page.key)"
+        let route = PageChoice.ownPages(of: scene).options.first { $0.value == page.key }?.path ?? page.title
+        pageSourceLabel = "\(scene.name.isEmpty ? "Board" : BlasterScene.copyRoot(of: scene.baseName)) › \(route)"
         selectedWordClass = "all"
+    }
+
+    /// Every board's pages for "From a page…", by route; a value is the
+    /// scene's ID and the page's key.
+    private var pageSourceGroups: [PageGroup] {
+        pageSourceScenes.map { scene in
+            PageChoice.ownPages(of: scene).mapValues { scene.sceneID + Self.sourceSeparator + $0 }
+        }
+    }
+
+    private static let sourceSeparator = "\u{1F}"
+
+    private func selectPageSource(value: String) {
+        let parts = value.components(separatedBy: Self.sourceSeparator)
+        guard parts.count == 2,
+              let scene = pageSourceScenes.first(where: { $0.sceneID == parts[0] }),
+              let page = scene.page(withKey: parts[1]) else { return }
+        selectPageSource(scene, page)
     }
 
     private func clearPageSource() {
@@ -288,19 +308,7 @@ struct TilePickerView: View {
                     .buttonStyle(.bordered)
 
                     if !pageSourceScenes.isEmpty {
-                        Menu {
-                            ForEach(pageSourceScenes, id: \.persistentModelID) { scene in
-                                Menu(scene.name.isEmpty ? "Untitled board" : scene.name) {
-                                    ForEach(scene.pages, id: \.key) { page in
-                                        Button {
-                                            selectPageSource(scene, page)
-                                        } label: {
-                                            Text(page.key == scene.homePageKey ? "\(page.key) — Home" : page.key)
-                                        }
-                                    }
-                                }
-                            }
-                        } label: {
+                        Button { isChoosingPageSource = true } label: {
                             Label("From a page…", systemImage: "doc.on.doc")
                                 .font(.caption)
                         }
@@ -386,6 +394,23 @@ struct TilePickerView: View {
                 ) { tile in
                     selectKey(tile.key)
                     searchText = ""
+                }
+            }
+            .sheet(isPresented: $isChoosingPageSource) {
+                NavigationStack {
+                    PageChooser(groups: pageSourceGroups,
+                                intro: "Show the words of a page, to add them here.",
+                                pick: .one(selected: nil) { value in
+                                    selectPageSource(value: value)
+                                    isChoosingPageSource = false
+                                })
+                    .navigationTitle("From a Page")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Cancel") { isChoosingPageSource = false }
+                        }
+                    }
                 }
             }
             .sheet(isPresented: $showBulkWord) {
@@ -715,24 +740,14 @@ struct TilePickerView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(wordClasses, id: \.self) { wc in
-                    Button {
+                    // A class chip wears the class's color, as in every word
+                    // chooser (`ClassChip`); All keeps the accent.
+                    ClassChip(label: classLabel(wc),
+                              color: wc == "all" ? .accentColor : ClassChip.color(ofClass: wc),
+                              isSelected: selectedWordClass == wc) {
                         selectedWordClass = wc
                         clearPageSource()
-                    } label: {
-                        Text(classLabel(wc))
-                            .font(.caption)
-                            .fontWeight(selectedWordClass == wc ? .semibold : .regular)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(
-                                Capsule()
-                                    .fill(selectedWordClass == wc
-                                          ? Color.accentColor
-                                          : Color.secondary.opacity(0.15))
-                            )
-                            .foregroundStyle(selectedWordClass == wc ? .white : .primary)
                     }
-                    .buttonStyle(.plain)
                 }
             }
             .padding(.horizontal)

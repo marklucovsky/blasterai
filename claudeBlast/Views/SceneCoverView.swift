@@ -48,7 +48,7 @@ struct CoverPickerView: View {
     @State private var cover: TileModel?
     @State private var cropTarget: CropTarget?
     @State private var photoError: String?
-    @State private var search = ""
+    @State private var isChoosingWord = false
 
     private struct CropTarget: Identifiable {
         let id = UUID()
@@ -80,16 +80,10 @@ struct CoverPickerView: View {
         }
     }
 
-    /// Any word of the vocabulary, best match first.
-    private var matches: [String] {
-        let query = WordFinder.normalize(search)
-        guard !query.isEmpty else { return Array(suggestions.prefix(40)) }
-        return allTiles
-            .filter { $0.key != cover?.key && !$0.isHiddenFromChild }
-            .compactMap { tile in WordFinder.rank(of: query, in: tile).map { (tile, $0) } }
-            .sorted { ($0.1, $0.0.key.count, $0.0.key) < ($1.1, $1.0.key.count, $1.0.key) }
-            .prefix(40)
-            .map(\.0.key)
+    /// The first few suggestions, shown in place; the rest are a tap away.
+    private var shortList: [String] {
+        let present = tileLookup
+        return Array(suggestions.filter { present[$0].map { !$0.isHiddenFromChild } ?? false }.prefix(8))
     }
 
     var body: some View {
@@ -120,11 +114,19 @@ struct CoverPickerView: View {
                 }
 
                 Section {
-                    TextField("Search all words", text: $search)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
+                    Button { isChoosingWord = true } label: {
+                        Label("Choose Any Word…", systemImage: "magnifyingglass")
+                    }
+                } header: {
+                    Text("Use a Word's Picture")
+                } footer: {
+                    Text("Search every word, or browse by kind of word.")
+                }
+
+                if !shortList.isEmpty {
+                Section {
                     let lookup = tileLookup
-                    ForEach(matches, id: \.self) { word in
+                    ForEach(shortList, id: \.self) { word in
                         Button { use(word) } label: {
                             HStack(spacing: 12) {
                                 TileImageView(key: word, wordClass: lookup[word]?.wordClass ?? "")
@@ -140,14 +142,26 @@ struct CoverPickerView: View {
                         }
                     }
                 } header: {
-                    Text("Use a Word's Picture")
-                } footer: {
-                    if search.isEmpty { Text("Words from this \(isPage ? "page and board" : "board"). Search to use any word.") }
+                    Text("Or a word already on this \(isPage ? "page or board" : "board")")
+                        .textCase(nil)
+                }
                 }
             }
         }
         .navigationTitle("Cover")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(isPresented: $isChoosingWord) {
+            WordChooser(rules: .init(excluding: cover.map { [$0.key] } ?? []),
+                        suggested: suggestions,
+                        suggestedTitle: isPage ? "From This Page and Board" : "From This Board",
+                        checked: cover.flatMap { $0.hasUserImage ? nil : $0.bundleImage },
+                        pick: .one { tile in
+                            use(tile.key)
+                            isChoosingWord = false
+                        })
+            .navigationTitle("Choose a Word")
+            .navigationBarTitleDisplayMode(.inline)
+        }
         .onAppear {
             if cover == nil {
                 switch subject {
