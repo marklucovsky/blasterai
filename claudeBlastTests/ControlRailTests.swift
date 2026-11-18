@@ -37,11 +37,15 @@ struct ControlRailTests {
         }
     }
 
-    /// The child's rail changes nothing about the board: no search, no edit,
-    /// no level, no way out of Child mode.
+    /// The child's rail changes nothing about the board: no edit, no level,
+    /// no way out of Child mode. Search only goes to a page, so it stays,
+    /// full size over Keyboard (Mark 2026-11-18).
     @Test func theChildsRailHoldsNoCaregiverTools() {
         let items = Set(RailProfile.child.slots.flatMap(\.items))
-        #expect(items == [.home, .back, .me, .keyboard])
+        #expect(items == [.home, .back, .me, .search, .keyboard])
+        #expect(RailProfile.child.slots == [
+            .one(.home), .one(.back), .one(.me), .empty, .one(.search), .one(.keyboard),
+        ])
     }
 
     /// Mark's layout, top to bottom: Levels over Topics, Search over Edit.

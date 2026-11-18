@@ -68,6 +68,52 @@ struct WordFinderTests {
         #expect(horse?.place == "Things › Animals")
     }
 
+    /// A copy of BlasterAI 60 holds only its Home; every other page is the
+    /// core board's, reached through `<system>:` links. Find Word searched the
+    /// copy's own pages alone and found nothing past Home (Mark, 2026-11-18).
+    @Test("A sparse copy finds words on the core board's pages")
+    func aSparseCopyFindsCoreBoardWords() {
+        let context = TestStore.freshContainer().mainContext
+        let system = BootstrapLoader.loadDefaultVocabulary(context: context).scene
+        let tiles = (try? context.fetch(FetchDescriptor<TileModel>())) ?? []
+        let lookup = Dictionary(tiles.map { ($0.key, $0) }, uniquingKeysWith: { a, _ in a })
+        let copy = BlasterScene.cloneForEditing(system, in: context, authorID: "me", authorName: "Me")
+        #expect(copy.pages.count == 1, "the copy is sparse: Home alone")
+        let levels = BoardLevels(scene: copy, system: system)
+
+        #expect(WordFinder.find("horse", in: copy, lookup: lookup).isEmpty,
+                "without the board's reach only Home is searched")
+        let horse = WordFinder.find("horse", in: copy, lookup: lookup, levels: levels).first
+        #expect(horse?.isAvailable == true)
+        #expect(horse?.route == ["Things", "Animals"])
+        #expect(horse?.path.allSatisfy { TileToken.systemPageKey($0) != nil } == true,
+                "the pages to open are the core board's, keyed as the board navigates")
+        #expect(horse?.path.last == horse?.pageKey)
+
+        // Home is still the copy's own.
+        let eat = WordFinder.find("eat", in: copy, lookup: lookup, levels: levels)
+            .first { $0.pageKey == copy.homePageKey }
+        #expect(eat?.path == [])
+    }
+
+    /// A page the copy has made its own is found once, as its own copy, under
+    /// the key the board opens it by.
+    @Test("A sparse copy's own page stands in for the core board's")
+    func aShadowedPageIsFoundOnce() {
+        let context = TestStore.freshContainer().mainContext
+        let system = BootstrapLoader.loadDefaultVocabulary(context: context).scene
+        let tiles = (try? context.fetch(FetchDescriptor<TileModel>())) ?? []
+        let lookup = Dictionary(tiles.map { ($0.key, $0) }, uniquingKeysWith: { a, _ in a })
+        let copy = BlasterScene.cloneForEditing(system, in: context, authorID: "me", authorName: "Me",
+                                                alsoShadowing: "animals")
+        let levels = BoardLevels(scene: copy, system: system)
+        let horses = WordFinder.find("horse", in: copy, lookup: lookup, levels: levels)
+            .filter { $0.key == "horse" }
+        #expect(horses.count == 1, "\(horses.map(\.pageKey))")
+        #expect(horses.first?.pageKey == TileToken.systemLink(to: "animals"))
+        #expect(horses.first?.isAvailable == true)
+    }
+
     @Test func aHomeWordOpensNothing() {
         let (scene, lookup) = bundled()
         let eat = WordFinder.find("eat", in: scene, lookup: lookup).first { $0.pageKey == scene.homePageKey }

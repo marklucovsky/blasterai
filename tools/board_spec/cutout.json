@@ -144,12 +144,12 @@
     }
   },
   "decided": {
-    "classic": ["almost", "bath_time", "bedroom", "bedtime", "bicycle", "birthday", "boat", "bowl", "bowling_alley", "cake", "cant", "cough", "december", "describe", "don't", "dry", "fly", "folder_taking_care", "folder_thinking", "forget", "goodnight", "gym", "hot", "january", "kick", "march_", "may_", "meals", "messy", "movie", "never_mind", "not", "november", "october", "pee", "plate", "popcorn", "pretend", "rainbow", "rice", "say", "september"]
+    "classic": ["almost", "awake", "bath_time", "bedroom", "bedtime", "bicycle", "birthday", "boat", "bowl", "bowling_alley", "cake", "cant", "cough", "december", "describe", "don't", "dry", "fly", "folder_taking_care", "folder_thinking", "forget", "goodnight", "gym", "hot", "january", "kick", "march_", "may_", "meals", "messy", "movie", "never_mind", "not", "november", "october", "pee", "plate", "popcorn", "pretend", "rainbow", "rice", "say", "september"]
   },
   "opaque": {
     "classic": []
   },
   "edgesChecked": {
-    "classic": ["always", "awesome", "buy", "many", "movie", "of", "pen", "we", "zebra"]
+    "classic": ["always", "awesome", "buy", "many", "of", "pen", "we", "zebra"]
   }
 }

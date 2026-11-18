@@ -131,6 +131,42 @@ enum PackImporter {
         var wasUpdate: Bool = false
     }
 
+    /// What a pack file is to this device, said before Add rather than after.
+    ///
+    /// The board importer learned this in #196: a file whose id is already
+    /// here needs naming up front, and a device's own work coming back is not
+    /// the same as a newer copy of something received.
+    enum Standing: Equatable {
+        /// Never seen here: its words join the vocabulary as a new pack.
+        case new
+        /// Received here before: adding replaces that pack's word list.
+        /// The versions are set only when both are known and they differ.
+        case update(name: String, received: Date, from: String?, to: String?)
+        /// Made on this device (its id carries this device's author id) and
+        /// never received here: the words are already in the vocabulary.
+        case ownPack(name: String)
+    }
+
+    static func standing(of pack: ExportablePack, context: ModelContext) -> Standing {
+        let packID = pack.id
+        if let row = (try? context.fetch(
+            FetchDescriptor<ReceivedPack>(predicate: #Predicate { $0.packID == packID })))?.first {
+            let changed = !row.packVersion.isEmpty && !pack.packVersion.isEmpty
+                && row.packVersion != pack.packVersion
+            return .update(name: row.displayName.isEmpty ? pack.displayName : row.displayName,
+                           received: row.received,
+                           from: changed ? row.packVersion : nil,
+                           to: changed ? pack.packVersion : nil)
+        }
+        // Read, never minted: a device that has authored nothing has no id,
+        // and so cannot be the author.
+        if let author = DeviceProfileStore.current(context: context)?.authorID, !author.isEmpty,
+           packID.hasPrefix(author + "/") {
+            return .ownPack(name: pack.displayName)
+        }
+        return .new
+    }
+
     /// Side-effect-free decode, for previewing a pack before it lands.
     static func preview(_ data: Data) throws -> ExportablePack {
         let pack: ExportablePack

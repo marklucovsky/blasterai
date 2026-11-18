@@ -71,6 +71,8 @@ struct PackImportSheet: View {
 
     /// Words the device already has — their identity will not be touched.
     @State private var knownKeys: Set<String> = []
+    /// Whether this pack is new here, an update, or this device's own.
+    @State private var standing: PackImporter.Standing = .new
 
     var body: some View {
         NavigationStack {
@@ -110,6 +112,16 @@ struct PackImportSheet: View {
         let existing = pack.words.filter { knownKeys.contains($0.key) }
 
         List {
+            if let prompt = standingPrompt {
+                Section {
+                    Label(prompt.title, systemImage: "info.circle.fill")
+                        .font(.headline)
+                    Text(prompt.detail)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
             Section {
                 LabeledContent("Pack", value: pack.displayName)
                 if let author = pack.authorName, !author.isEmpty {
@@ -145,6 +157,24 @@ struct PackImportSheet: View {
                     Text("These stay exactly as they are. Pictures are added only for styles you have none for.")
                 }
             }
+        }
+    }
+
+    /// What the sheet says first when this pack is already here: a newer copy
+    /// of one received before, or this device's own pack coming back.
+    private var standingPrompt: (title: String, detail: String)? {
+        switch standing {
+        case .new:
+            return nil
+        case .update(let name, let received, let from, let to):
+            let when = received.formatted(date: .abbreviated, time: .omitted)
+            var detail = "You received it on \(when). Adding this file updates it"
+            if let from, let to { detail += " from version \(from) to \(to)" }
+            detail += ". Words already in your vocabulary stay as they are."
+            return ("\u{201C}\(name)\u{201D} is already here", detail)
+        case .ownPack(let name):
+            return ("\u{201C}\(name)\u{201D} was made on this device",
+                    "Its words are already in your vocabulary. Adding it lists it with the packs you\u{2019}ve received.")
         }
     }
 
@@ -243,6 +273,7 @@ struct PackImportSheet: View {
             let decoded = try PackImporter.preview(data)
             let deviceTiles = (try? modelContext.fetch(FetchDescriptor<TileModel>())) ?? []
             knownKeys = Set(deviceTiles.map(\.key))
+            standing = PackImporter.standing(of: decoded, context: modelContext)
             pack = decoded
         } catch {
             self.error = error.localizedDescription
