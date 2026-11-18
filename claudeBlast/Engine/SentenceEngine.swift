@@ -50,6 +50,10 @@ final class SentenceEngine {
     /// tapping `dad` twice yields `[dad, dad]`. Empty / unused in sentence mode.
     private(set) var spokenStrip: [TileSelection] = []
 
+    /// The word being typed on the keyboard, drawn red at the end of the
+    /// message box until Space commits it. See the Typing extension.
+    private(set) var typingDraft: String = ""
+
     /// Hard cap on the FIFO strip so it can't grow unbounded; the view shows a
     /// rolling window and older words scroll off as new ones arrive.
     private let spokenStripCap = 20
@@ -327,6 +331,8 @@ final class SentenceEngine {
     /// `nil` until configured — `maxTilesPerGroup` and `speak()` handle that
     /// with UserDefaults fallbacks.
     private(set) var profileResolver: ChildProfileResolver?
+    /// Where a typed word is looked up in the vocabulary (`TypedWords`).
+    private var modelContext: ModelContext?
 
     // MARK: - Internal state
 
@@ -375,6 +381,7 @@ final class SentenceEngine {
     func configure(modelContext: ModelContext, profileResolver: ChildProfileResolver? = nil) {
         self.cacheManager = SentenceCacheManager(modelContext: modelContext)
         self.profileResolver = profileResolver
+        self.modelContext = modelContext
     }
 
     // MARK: - Provider switching
@@ -440,7 +447,8 @@ final class SentenceEngine {
         // a no-op (no toggle-off, no duplicate). Removal happens from the tray chip.
         if activeGroup.tiles.contains(where: { $0.key == selection.key }) { return }
 
-        guard activeGroup.tiles.count < maxTilesPerGroup else { return }
+        // A typed line is not held to the cap (`TileGroup.isTyped`).
+        guard activeGroup.isTyped || activeGroup.tiles.count < maxTilesPerGroup else { return }
 
         // Locked → unlocked: the stale sentence will be cleared by scheduleGeneration().
         if activeGroup.state == .locked {
@@ -540,6 +548,7 @@ final class SentenceEngine {
     /// Clear the entire spoken strip (the strip's ✕ button).
     func clearStrip() {
         spokenStrip.removeAll()
+        typingDraft = ""
         repetitionCount = 0
         lastTileKey = nil
     }
@@ -574,6 +583,7 @@ final class SentenceEngine {
             idleTask?.cancel()
             generationTask?.cancel()
             activeGroup.sentence = nil
+            activeGroup.isTyped = false
             activeGroup.state = .building
             comparisonSentence = nil
             isThinking = false
@@ -589,6 +599,11 @@ final class SentenceEngine {
     /// Explicit "Go" tap — generate immediately. The default path now (auto-generation on idle is
     /// disabled except at cap). No-op if there aren't enough tiles or the group is already locked.
     func triggerGo() {
+        // A typed line is said as typed, never generated.
+        if activeGroup.isTyped {
+            speakTypedLine()
+            return
+        }
         guard activeGroup.tiles.count >= 2 else { return }
         guard activeGroup.state != .locked else { return }
         // Already asked. `isThinking` only flips once the task runs, so a second
@@ -720,6 +735,7 @@ final class SentenceEngine {
         idleTask?.cancel()
         generationTask?.cancel()
         activeGroup = TileGroup()
+        typingDraft = ""
         activeIsSuppressed = false
         comparisonSentence = nil
         isThinking = false
@@ -794,7 +810,11 @@ final class SentenceEngine {
         activeGroup.sentence = tile.value
         activeGroup.state = .locked
         isIdleNudge = false
-        speak(tile.value, key: tile.key)
+        if activeGroup.isTyped {
+            speak(SpeechNormalizer.line(tile.value))
+        } else {
+            speak(tile.value, key: tile.key)
+        }
         startIdleTimers()
     }
 
@@ -870,6 +890,7 @@ final class SentenceEngine {
     /// and reset. Wired to the tray's Done/clear button under the play control.
     func commitActiveAndStartNew() {
         flushActiveToHistory(allowWithoutSentence: true)
+        typingDraft = ""
     }
 
     // MARK: - Generation pipeline
@@ -900,6 +921,13 @@ final class SentenceEngine {
         isThinking = false
         isIdleNudge = false
         isDoneNudge = false
+
+        // A typed line is never sent for a sentence; Play says it as typed.
+        if activeGroup.isTyped {
+            isWaiting = false
+            startIdleTimers()
+            return
+        }
 
         // Single tile: no sentence generation (the view shows the spelled-out
         // tile and the primary button becomes a cancel-✕). Still run the idle
@@ -1260,9 +1288,13 @@ final class SentenceEngine {
     /// pass would quietly teach that the board says something other than what
     /// was pressed.
     func speakStrip() {
-        let line = spokenStrip
+        // A word still being typed is said with the rest, as on Play.
+        if !typingDraft.isEmpty { commitTypedWord(speaking: false) }
+        // Through `line` as well, for typed words: "2 + 2" typed is three
+        // strip words and one sum.
+        let line = SpeechNormalizer.line(spokenStrip
             .map { SpeechNormalizer.tile($0.value, wordClass: $0.wordClass, inLine: spokenStrip.count > 1) }
-            .joined(separator: " ")
+            .joined(separator: " "))
         guard !line.isEmpty else { return }
         speak(line, key: spokenStrip.count == 1 ? spokenStrip.first?.key : nil)
     }
@@ -1323,5 +1355,120 @@ private extension Duration {
     var timeInterval: Double {
         let c = components
         return Double(c.seconds) + Double(c.attoseconds) / 1e18
+    }
+}
+
+// MARK: - Typing
+
+/// The keyboard's side of the message box (`docs/keyboard-design.md`).
+///
+/// A typed word joins whichever message box is showing — the active group in
+/// sentence mode, the strip in single-word mode — so there is one message box,
+/// not a second one for typing. The word being typed is `typingDraft`, drawn
+/// red at the end until Space commits it. A committed word that is in the
+/// vocabulary becomes that word's chip; anything else is a text chip.
+///
+/// Each key is spoken as it is pressed, and each word as it is committed,
+/// through `SpeechNormalizer`. A line with anything typed in it is never sent
+/// for a sentence.
+extension SentenceEngine {
+
+    /// A letter, digit or symbol key — or a multi-character key such as `:15`.
+    func typeKey(_ key: String) {
+        guard !key.isEmpty else { return }
+        caregiverEditing = false
+        typingDraft += key
+        speak(SpeechNormalizer.key(key))
+        rearmForTyping()
+    }
+
+    /// Space: commit the word being typed and say it. With nothing typed,
+    /// nothing happens — a space is not a word.
+    func typeSpace() {
+        guard !typingDraft.isEmpty else { return }
+        caregiverEditing = false
+        commitTypedWord()
+    }
+
+    /// Backspace: a letter off the word being typed, or, with none being
+    /// typed, the last word off the line.
+    func typeBackspace() {
+        caregiverEditing = false
+        if !typingDraft.isEmpty {
+            typingDraft.removeLast()
+            rearmForTyping()
+        } else {
+            removeLastWord()
+        }
+    }
+
+    /// Delete word: the word being typed, or else the last word.
+    func typeDeleteWord() {
+        caregiverEditing = false
+        if !typingDraft.isEmpty {
+            typingDraft = ""
+            rearmForTyping()
+        } else {
+            removeLastWord()
+        }
+    }
+
+    /// Say the whole line as typed — Play on a typed line. A word still being
+    /// typed is committed first, so what is said is what is shown.
+    func speakTypedLine() {
+        if !typingDraft.isEmpty { commitTypedWord(speaking: false) }
+        guard !activeGroup.tiles.isEmpty else { return }
+        isIdleNudge = false
+        speak(SpeechNormalizer.line(activeGroup.tiles.map(\.value).joined(separator: " ")))
+        startIdleTimers()
+    }
+
+    /// The vocabulary's tile for a typed word, or a text chip.
+    func selection(forTyped word: String) -> TileSelection {
+        let tiles = (try? modelContext?.fetch(FetchDescriptor<TileModel>())) ?? []
+        return TypedWords.match(word, in: tiles).map(TileSelection.init(from:)) ?? .typed(word)
+    }
+
+    private func commitTypedWord(speaking: Bool = true) {
+        let word = typingDraft
+        typingDraft = ""
+        guard !word.isEmpty else { return }
+        let selection = selection(forTyped: word)
+        if interactionMode == .singleWord {
+            // Every typed word is its own chip, a repeat included: typing
+            // "no no" is two words, not a mash.
+            repetitionCount = 0
+            spokenStrip.append(selection)
+            if spokenStrip.count > spokenStripCap {
+                spokenStrip.removeFirst(spokenStrip.count - spokenStripCap)
+            }
+            lastTileKey = selection.key
+            cacheManager?.logUtterance(tiles: [selection], sentence: word, repetitionCount: 0,
+                                       pageKeys: [currentPageKey],
+                                       childID: profileResolver?.activeChildID)
+        } else {
+            if activeGroup.state == .locked { activeGroup.state = .unlockedEditable }
+            activeGroup.isTyped = true
+            activeGroup.tiles.append(selection)
+            activeGroup.pageKeys.append(currentPageKey)
+            refreshActiveSuppressed()
+            scheduleGeneration()
+        }
+        if speaking { speak(SpeechNormalizer.line(word)) }
+    }
+
+    private func removeLastWord() {
+        if interactionMode == .singleWord {
+            guard !spokenStrip.isEmpty else { return }
+            removeStripWord(at: spokenStrip.count - 1)
+        } else {
+            removeLastSelectedTile()
+        }
+    }
+
+    /// Typing is activity: keep the message box from timing out under it.
+    private func rearmForTyping() {
+        guard interactionMode != .singleWord, !activeGroup.tiles.isEmpty else { return }
+        startIdleTimers()
     }
 }

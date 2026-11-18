@@ -72,7 +72,8 @@ struct SingleWordTrayView: View {
                         if both {
                             StripPlayButton(height: height, width: w, isEnabled: !strip.isEmpty) { engine.speakStrip() }
                         }
-                        ClearButton(height: height, width: w, isEnabled: !strip.isEmpty, action: onClear)
+                        ClearButton(height: height, width: w,
+                                    isEnabled: !strip.isEmpty || !engine.typingDraft.isEmpty, action: onClear)
                     }
                     .frame(width: column)
                 }
@@ -106,7 +107,8 @@ struct SingleWordTrayView: View {
                 }
             }
 
-            ClearButton(height: height, isEnabled: !strip.isEmpty, action: onClear)
+            ClearButton(height: height, isEnabled: !strip.isEmpty || !engine.typingDraft.isEmpty,
+                        action: onClear)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 4)
@@ -125,7 +127,7 @@ struct SingleWordTrayView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 // Tiles get tile spacing; words get word spacing.
                 HStack(spacing: engine.trayShowsPictures ? 6 : 5) {
-                    if strip.isEmpty {
+                    if strip.isEmpty && engine.typingDraft.isEmpty {
                         Text("Tap tiles to speak words")
                             .font(.system(size: promptSize))
                             .foregroundStyle(.secondary)
@@ -147,10 +149,17 @@ struct SingleWordTrayView: View {
                                 .id(idx)
                         }
 
+                        // The word being typed, red until Space.
+                        if !engine.typingDraft.isEmpty {
+                            TypingDraftView(text: engine.typingDraft, height: 56)
+                                .id("draft")
+                        }
+
                         // At the end of the words, where a caret would be.
                         if !engine.trayShowsPictures {
-                            BackspaceButton(isEnabled: !strip.isEmpty, compact: true) {
-                                engine.removeStripWord(at: strip.count - 1)
+                            BackspaceButton(isEnabled: !strip.isEmpty || !engine.typingDraft.isEmpty,
+                                            compact: true) {
+                                engine.typeBackspace()
                             }
                             .padding(.leading, 2)
                             .id("backspace")
@@ -232,7 +241,8 @@ private struct WordChip: View {
 
     var body: some View {
         Button(action: onTap) {
-            if showsPicture { card } else { word }
+            // A typed word with no tile has no picture: it is its word.
+            if showsPicture && !tile.isTyped { card } else { word }
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Remove \(tile.value)")

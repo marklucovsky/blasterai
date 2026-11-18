@@ -168,7 +168,7 @@ struct SentenceTrayView: View {
     }
 
     private var hasActiveContent: Bool {
-        !engine.activeGroup.tiles.isEmpty
+        !engine.activeGroup.tiles.isEmpty || !engine.typingDraft.isEmpty
     }
 
     /// Where the board's grid and side rail are. The tray then lines up with
@@ -289,12 +289,13 @@ struct SentenceTrayView: View {
     private var activeCard: some View {
             ActiveTrayCard(
                 tiles: engine.activeGroup.tiles,
+                draft: engine.typingDraft,
                 sentence: engine.activeGroup.sentence,
                 isThinking: engine.isThinking,
                 onTileTap: onTileTap,
                 onExpandSentence: onExpandSentence,
                 onBubbleLongPress: { showBubbleActions = true },
-                onBackspace: { engine.removeLastSelectedTile() },
+                onBackspace: { engine.typeBackspace() },
                 isSuppressed: engine.activeIsSuppressed,
                 showsPictures: engine.trayShowsPictures,
                 isFlush: railAlignment != nil && isSquare
@@ -371,6 +372,8 @@ private let kIPadNavCornerRadius: CGFloat = 11
 /// GlassSentencePopover — rarely needed on iPad but kept for parity.
 private struct ActiveTrayCard: View {
     let tiles: [TileSelection]
+    /// The word being typed, drawn red after the chips.
+    var draft: String = ""
     let sentence: String?
     let isThinking: Bool
     let onTileTap: (Int) -> Void
@@ -426,10 +429,14 @@ private struct ActiveTrayCard: View {
     /// prevent.
     private func sentenceWidth(in width: CGFloat) -> CGFloat {
         let spacing: CGFloat = showsPictures ? 8 : 5
-        let chips: CGFloat = showsPictures
-            ? CGFloat(tiles.count) * (isFlush ? kPlainChipWidth : kActiveCardWidth)
-            : tiles.reduce(0) { $0 + Self.wordWidth(of: $1.value) }
-        let total = chips
+        // A typed word with no tile is drawn as its word in either mode.
+        let chips: CGFloat = tiles.reduce(0) { sum, tile in
+            sum + (showsPictures && !tile.isTyped
+                   ? (isFlush ? kPlainChipWidth : kActiveCardWidth)
+                   : Self.wordWidth(of: tile.value))
+        }
+        let typing: CGFloat = draft.isEmpty ? 0 : Self.wordWidth(of: draft) + spacing
+        let total = chips + typing
             + CGFloat(max(0, tiles.count - 1)) * spacing
             + 8   // the chip group's own horizontal padding
         return width - total - 12 - 10   // card padding + HStack spacing
@@ -448,7 +455,7 @@ private struct ActiveTrayCard: View {
         let room = sentenceWidth(in: width)
 
         HStack(alignment: .center, spacing: 10) {
-            if tiles.isEmpty {
+            if tiles.isEmpty && draft.isEmpty {
                 Text("Tap tiles to build a sentence")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -471,11 +478,16 @@ private struct ActiveTrayCard: View {
                             .transition(.scale.combined(with: .opacity))
                     }
 
+                    // The word being typed, red until Space commits it.
+                    if !draft.isEmpty {
+                        TypingDraftView(text: draft, height: kActiveCardHeight)
+                    }
+
                     // Sits at the end of the words, where a caret would be.
                     // Only where the tray is text: a picture chip is plainly a
                     // button already, and tapping it to remove it is obvious.
                     if !showsPictures {
-                        BackspaceButton(isEnabled: !tiles.isEmpty, action: onBackspace)
+                        BackspaceButton(isEnabled: !tiles.isEmpty || !draft.isEmpty, action: onBackspace)
                             .padding(.leading, 2)
                     }
                 }
@@ -781,7 +793,8 @@ private struct ActiveTileCard: View {
 
     var body: some View {
         Button(action: onTap) {
-            if showsPicture { picture } else { word }
+            // A typed word with no tile has no picture: it is its word.
+            if showsPicture && !tile.isTyped { picture } else { word }
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Remove \(tile.value)")
@@ -1468,3 +1481,20 @@ struct TileGroupBubble: View {
 }
 
 
+
+/// The word being typed, at the end of the message box: red until Space
+/// commits it, as Avaz draws it (Mark, 2026-11-17). Shared by both trays.
+struct TypingDraftView: View {
+    let text: String
+    let height: CGFloat
+
+    var body: some View {
+        Text(text)
+            .font(.headline)
+            .foregroundStyle(Color.red)
+            .lineLimit(1)
+            .fixedSize()
+            .frame(height: height)
+            .accessibilityLabel("Typing \(text)")
+    }
+}

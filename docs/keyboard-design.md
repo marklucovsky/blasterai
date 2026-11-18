@@ -51,6 +51,30 @@ Both speak each key as it is typed and read the word on Space.
   numbers page stays ours on both, since the system keyboard has no `÷` or
   time keys.
 
+## Typed text in the message box (PR C)
+
+The keyboard's side of `SentenceEngine` is its Typing extension:
+`typeKey`, `typeSpace`, `typeBackspace`, `typeDeleteWord`,
+`speakTypedLine`. Tests: `TypingTests`.
+
+- **One message box.** A typed word joins whatever the box is showing: the
+  active group in sentence mode, the strip in single-word mode. There is no
+  second tray for typing; two trays over two engine states has bitten before.
+- **The word being typed** is `typingDraft`, drawn red at the end of either
+  tray (`TypingDraftView`) until Space commits it. Each key is spoken as
+  pressed, each word as committed, both through `SpeechNormalizer`.
+- **A word we have becomes its tile.** `TypedWords.match` looks the word up by
+  label, value or key, skipping hidden words, folders and the Letters pack, so
+  "cookie" is the cookie chip with its picture and "a" is the word *a*. A word
+  we don't have is a text chip (`TileSelection.typed`, key `<typed>:word`).
+- **A typed line** (`TileGroup.isTyped`) is never sent for a sentence and
+  ignores the words-per-message cap. It stays typed even when every word
+  matched a tile, and a tile tapped onto it joins it. Play says it through
+  `SpeechNormalizer.line`; an emptied line stops being typed.
+- **Backspace** takes a letter off the word being typed, or, with none, the
+  last word. Delete word takes the word being typed, or the last word.
+  Clear and Done take the word being typed too.
+
 ## Speech: `SpeechNormalizer`
 
 `claudeBlast/Engine/SpeechNormalizer.swift`, tested case by case in
