@@ -389,6 +389,36 @@ enum BootstrapLoader {
     }
 
     @discardableResult
+    /// Every word key in a pack this device has: the bundled packs and any it
+    /// was sent. Pack words are system vocabulary that is not in
+    /// vocabulary.json.
+    static func packWordKeys(context: ModelContext) -> Set<String> {
+        Set(PackCatalog.available(in: context).flatMap { $0.words.map(\.key) })
+    }
+
+    /// Un-hide pack words that an update retired as "removed from the built-in
+    /// vocabulary" when they never were (see `updateSystemScene`). Only words
+    /// retired for that reason: a pack word a caregiver hid stays hidden.
+    /// Cheap, idempotent, run at every launch. Returns how many it restored.
+    @discardableResult
+    static func restoreRetiredPackWords(context: ModelContext) -> Int {
+        let reason = removedFromBundleReason
+        let retired = (try? context.fetch(FetchDescriptor<TileModel>(
+            predicate: #Predicate { $0.isRetired && $0.retiredReason == reason }))) ?? []
+        guard !retired.isEmpty else { return 0 }
+        let packKeys = packWordKeys(context: context)
+        var restored = 0
+        for tile in retired where packKeys.contains(tile.key) {
+            tile.restore()
+            restored += 1
+        }
+        if restored > 0 {
+            try? context.save()
+            print("restoreRetiredPackWords: restored \(restored) pack word(s)")
+        }
+        return restored
+    }
+
     static func updateSystemScene(context: ModelContext) -> Bool {
         guard let url = Bundle.main.url(forResource: "core_first", withExtension: "json"),
               let data = try? Data(contentsOf: url),
@@ -440,7 +470,14 @@ enum BootstrapLoader {
             // would sit in the tile picker as a blank. Retiring hides it the
             // ordinary, reversible way; nothing is deleted, so a caregiver who had
             // used it can restore it.
-            let bundledKeys = Set(vocab.map(\.key))
+            //
+            // "The bundle" is the vocabulary AND the packs. Pack words are
+            // `isSystem` too (`PackInstaller`) but are not in vocabulary.json, so
+            // checking the vocabulary alone retired every installed pack word on
+            // each update: a Tide Pools board lost all but `fish`, a word the
+            // core vocabulary also has. `restoreRetiredPackWords` repairs stores
+            // that update already reached.
+            let bundledKeys = Set(vocab.map(\.key)).union(packWordKeys(context: context))
             let live = (try? context.fetch(FetchDescriptor<TileModel>(
                 predicate: #Predicate { $0.isSystem && !$0.isRetired }))) ?? []
             var retiredTiles = 0

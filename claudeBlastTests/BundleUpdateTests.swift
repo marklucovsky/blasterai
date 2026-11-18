@@ -201,6 +201,63 @@ struct BundleUpdateTests {
         }
     }
 
+    /// Pack words are system words that vocabulary.json does not list. An
+    /// update must leave an installed pack alone: it used to retire every pack
+    /// word as "removed from the built-in vocabulary", leaving a Tide Pools
+    /// board with only `fish`.
+    @Test func anUpdateKeepsInstalledPackWords() throws {
+        try withCleanDefaults {
+            let ctx = TestStore.freshContainer().mainContext
+            _ = BootstrapLoader.loadDefaultVocabulary(context: ctx)
+            let pack = try #require(PackCatalog.all.first { $0.slug == "tidepools" })
+            let existing = Dictionary(try ctx.fetch(FetchDescriptor<TileModel>()).map { ($0.key, $0) },
+                                      uniquingKeysWith: { a, _ in a })
+            PackInstaller.install(pack, context: ctx, existing: existing)
+            try ctx.save()
+
+            UserDefaults.standard.set("a-stale-hash-from-an-older-bundle",
+                                      forKey: AppSettingsKey.bootstrapContentHash)
+            #expect(BootstrapLoader.updateSystemScene(context: ctx))
+
+            let keys = Set(pack.words.map(\.key))
+            let packTiles = try ctx.fetch(FetchDescriptor<TileModel>()).filter { keys.contains($0.key) }
+            #expect(packTiles.count == keys.count)
+            #expect(packTiles.filter(\.isRetired).map(\.key) == [])
+        }
+    }
+
+    /// A store an earlier update already reached gets its pack words back at
+    /// launch, but only those retired for that reason: a pack word a caregiver
+    /// hid stays hidden.
+    @Test func retiredPackWordsAreRestored() throws {
+        try withCleanDefaults {
+            let ctx = TestStore.freshContainer().mainContext
+            _ = BootstrapLoader.loadDefaultVocabulary(context: ctx)
+            let pack = try #require(PackCatalog.all.first { $0.slug == "numbers" })
+            let existing = Dictionary(try ctx.fetch(FetchDescriptor<TileModel>()).map { ($0.key, $0) },
+                                      uniquingKeysWith: { a, _ in a })
+            PackInstaller.install(pack, context: ctx, existing: existing)
+            let tiles = try ctx.fetch(FetchDescriptor<TileModel>())
+            let keys = Set(pack.words.map(\.key))
+            let packTiles = tiles.filter { keys.contains($0.key) && $0.isSystem }
+            try #require(packTiles.count >= 2)
+            for tile in packTiles { tile.retire(reason: BootstrapLoader.removedFromBundleReason) }
+            let hidden = packTiles[0]
+            hidden.retire()                                   // the caregiver's own
+            let dropped = TileModel(key: "hard_", wordClass: "describe")
+            dropped.isSystem = true
+            dropped.retire(reason: BootstrapLoader.removedFromBundleReason)
+            ctx.insert(dropped)                               // really gone from the bundle
+            try ctx.save()
+
+            #expect(BootstrapLoader.restoreRetiredPackWords(context: ctx) == packTiles.count - 1)
+            #expect(packTiles.dropFirst().allSatisfy { !$0.isRetired })
+            #expect(hidden.isRetired)
+            #expect(dropped.isRetired)
+            #expect(BootstrapLoader.restoreRetiredPackWords(context: ctx) == 0)
+        }
+    }
+
     /// The pronoun is "I". A fresh install reads the bundled label; the key,
     /// which names the art and the cache, stays lowercase.
     @Test func aFreshInstallSpellsThePronounWithACapital() throws {

@@ -217,6 +217,20 @@ struct MeSceneTests {
         #expect(MeScene.topicIDs(in: me).isEmpty)
     }
 
+    /// A board made by hand with New Board is on the standard grid, so once it
+    /// has a page it can be a topic. It used to declare no grid and never could.
+    @Test func aBlankBoardCanBeATopic() {
+        let ctx = TestStore.freshContainer().mainContext
+        let board = SceneBuilder.blank(name: "Room 4")
+        board.ensureIdentity(authorID: "a1", authorName: "Mark")
+        ctx.insert(board)
+        #expect(board.designedFor == PageTemplate.designedFor)
+        #expect(SceneBuilder.blank(name: "").name == "New Board")
+        board.pages = [PageSpec(key: "home", tiles: [TileEntry(key: "cat")])]
+        board.homePageKey = "home"
+        #expect(MeScene.isEligibleTopic(board))
+    }
+
     @Test func topicsFillColumnsOneToEight() {
         let entries = (0..<10).map { TileEntry(key: "w\($0)", link: "<scene:s\($0)>:home") }
         let tiles = MeScene.layout(entries)
