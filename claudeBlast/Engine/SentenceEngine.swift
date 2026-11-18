@@ -1260,7 +1260,9 @@ final class SentenceEngine {
     /// pass would quietly teach that the board says something other than what
     /// was pressed.
     func speakStrip() {
-        let line = spokenStrip.map(\.value).joined(separator: " ")
+        let line = spokenStrip
+            .map { SpeechNormalizer.tile($0.value, wordClass: $0.wordClass, inLine: spokenStrip.count > 1) }
+            .joined(separator: " ")
         guard !line.isEmpty else { return }
         speak(line, key: spokenStrip.count == 1 ? spokenStrip.first?.key : nil)
     }
@@ -1268,7 +1270,7 @@ final class SentenceEngine {
     /// One tile's word, on its own. `key` lets a word the voice would read as a
     /// letter (*I*) be said as a word (`SpeechSynthesizer.loneSpeech`).
     func speakTile(_ text: String, key: String? = nil) {
-        speak(text, key: key)
+        speak(SpeechNormalizer.tile(text), key: key)
     }
 
     private func speak(_ text: String, key: String? = nil) {
