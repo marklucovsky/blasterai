@@ -283,6 +283,43 @@ struct PackTransferTests {
         #expect(try context.fetch(FetchDescriptor<TileModel>()).count == 2)
     }
 
+    /// The sheet names what a pack is before Add: new, a newer copy of one
+    /// received here, or this device's own pack coming back.
+    @Test("A pack is new, an update, or this device's own")
+    func packStandingIsNamedBeforeAdd() throws {
+        TestStore.reset()
+        var context = TestStore.container.mainContext
+        let (scene, lookup) = makeScene(context: context)
+        let data = try PackExporter.exportPageJSON(scene.pages[0], from: scene,
+                                                   tileLookup: lookup, context: context)
+        let pack = try PackImporter.preview(data)
+
+        // On the device that made it: its own, never received.
+        #expect(PackImporter.standing(of: pack, context: context) == .ownPack(name: "Dinner"))
+
+        // Elsewhere: new, then an update once received.
+        TestStore.reset()
+        context = TestStore.container.mainContext
+        #expect(PackImporter.standing(of: pack, context: context) == .new)
+        try PackImporter.importJSON(data, context: context)
+        guard case .update(let name, _, let from, let to) =
+                PackImporter.standing(of: pack, context: context) else {
+            Issue.record("a received pack should be an update"); return
+        }
+        #expect(name == "Dinner")
+        #expect(from == nil && to == nil)
+
+        // A newer version names both.
+        var json = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+        json["packVersion"] = "1.1.0"
+        let newer = try PackImporter.preview(try JSONSerialization.data(withJSONObject: json))
+        guard case .update(_, _, let from2, let to2) =
+                PackImporter.standing(of: newer, context: context) else {
+            Issue.record("a newer copy should be an update"); return
+        }
+        #expect(from2 == "1.0.0" && to2 == "1.1.0")
+    }
+
     @Test("A received pack shows up alongside the bundled ones")
     func receivedPackJoinsTheCatalog() throws {
         TestStore.reset()

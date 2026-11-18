@@ -72,6 +72,28 @@ SET_STYLES: dict[str, str] = {
 # (extracted from prompts.json) doesn't translate well to high_contrast — e.g.
 # abstract concepts where DALL-E improvises with secondary icons, or cases
 # where the shared subject says "clay" / "pastel". Looked up by lowercase key.
+# Per-tile subject overrides for Classic. Classic ships cut off its white
+# ground onto a rounded, tinted tile (optimize_tiles.py), so a picture that
+# runs to the canvas edge shows square corners and a hard edge. The shared
+# subjects for these were written for full-bleed scenes; here each is one
+# compact picture with closed outlines and white on every side.
+CLASSIC_SUBJECT_OVERRIDES: dict[str, str] = {
+    "awake": (
+        "A child sitting up in bed, wide awake with eyes wide open, a small "
+        "dark window with stars on the wall above. The whole bed is drawn "
+        "complete with closed black outlines: headboard, pillow, blanket and "
+        "the bed's legs. Plain white space on every side; nothing touches or "
+        "runs off the edges of the canvas"
+    ),
+    "movie": (
+        "A movie theater screen with red curtains drawn back on either side, "
+        "and a red-and-white striped bucket of popcorn in front of it, as one "
+        "compact picture. Every shape has a closed black outline. No seats, "
+        "no walls, no floor. Plain white space on every side; nothing touches "
+        "or runs off the edges of the canvas"
+    ),
+}
+
 HC_SUBJECT_OVERRIDES: dict[str, str] = {
     # Session 8: the shared subject came back with black faces (lost on the
     # black ground) or, for pee, a visible stream. Spelled out for HC only.
@@ -465,7 +487,9 @@ def run_set(style_name: str, keys: list[str], prompts: dict[str, str],
 
     for i, key in enumerate(keys):
         override = (HC_SUBJECT_OVERRIDES.get(key.lower())
-                    if style_key.startswith("high_contrast") else None)
+                    if style_key.startswith("high_contrast")
+                    else CLASSIC_SUBJECT_OVERRIDES.get(key.lower())
+                    if style_key == "classic" else None)
         if not override and key not in prompts:
             print(f"  ✗ {key:40s} no prompt — skipping")
             failed.append(key)

@@ -17,6 +17,8 @@ import SwiftUI
 struct FindWordSheet: View {
     let scene: BlasterScene
     let lookup: [String: TileModel]
+    /// The board's reach into BlasterAI 60, so its pages are searched too.
+    var levels: BoardLevels? = nil
     let onPick: (WordFinder.Finding) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -24,7 +26,7 @@ struct FindWordSheet: View {
     @FocusState private var isSearchFocused: Bool
 
     private var results: [WordFinder.Finding] {
-        WordFinder.find(query, in: scene, lookup: lookup)
+        WordFinder.find(query, in: scene, lookup: lookup, levels: levels)
     }
 
     var body: some View {

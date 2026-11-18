@@ -73,7 +73,7 @@ enum WordFinder {
     /// matches hundreds of words, and nobody reads past the first screen.
     static let limit = 60
 
-    /// Every place a word matching `query` appears in `scene`.
+    /// Every place a word matching `query` appears on `scene`'s board.
     ///
     /// Matches a word's label, its spoken value, or its key, ignoring case and
     /// accents: the whole word first, then a word that starts with the query
@@ -82,44 +82,58 @@ enum WordFinder {
     /// first — those a folder leads to ahead of those none does — then by
     /// word, then by the shortest route.
     ///
-    /// - Parameter lookup: the tiles by key. Words hidden from the child
-    ///   (retired, needs review) are left out entirely — the board reflows
-    ///   around them, so they have no place on it.
+    /// - Parameters:
+    ///   - lookup: the tiles by key. Words hidden from the child (retired,
+    ///     needs review) are left out entirely — the board reflows around
+    ///     them, so they have no place on it.
+    ///   - levels: the board's reach into BlasterAI 60 and its templates. A
+    ///     copy of BlasterAI 60 holds only its Home and the pages edited since;
+    ///     every other page is still the core board's, reached through
+    ///     `<system>:` links, and is as much the child's board as Home is.
+    ///     Searching only the scene's own pages found nothing on them
+    ///     (Mark, 2026-11-18: *movie* and *awake* on a one-page copy). Nil
+    ///     searches the scene's own pages alone.
     static func find(_ query: String, in scene: BlasterScene,
-                     lookup: [String: TileModel]) -> [Finding] {
+                     lookup: [String: TileModel], levels: BoardLevels? = nil) -> [Finding] {
         let q = normalize(query)
         guard !q.isEmpty else { return [] }
 
-        let level = scene.effectiveRevealLevel
+        let board = boardPages(of: scene, levels: levels)
         // Routes at the current level: a folder above it is not a way in.
-        let paths = WordPlaces.pathsFromHome(pages: scene.visiblePages, homeKey: scene.homePageKey,
-                                             row: BoardChrome.rowPages(of: scene))
-        let titles = Dictionary(scene.pages.map { ($0.key, $0.title) },
+        let paths = WordPlaces.pathsFromHome(pages: board.pages.map(\.visible),
+                                             homeKey: scene.homePageKey, row: board.row)
+        let titles = Dictionary(board.pages.map { ($0.visible.key, $0.title) },
                                 uniquingKeysWith: { first, _ in first })
 
         var ranked: [(rank: Int, finding: Finding)] = []
         var index: [String: Int] = [:]
-        for page in scene.pages {
-            for entry in page.tiles where !entry.isSpacer {
+        for page in board.pages {
+            let pageKey = page.visible.key
+            // A core-board page nothing on this board reaches is not on it.
+            if page.isBorrowed && paths[pageKey] == nil { continue }
+            for (i, entry) in page.stored.tiles.enumerated() where !entry.isSpacer {
                 guard let tile = lookup[entry.key], !tile.isHiddenFromChild,
                       let rank = rank(of: q, in: tile) else { continue }
+                // Above the level is read off the projection, which knows the
+                // dial each board answers to (`BoardLevels`).
+                let shown = i < page.visible.tiles.count ? page.visible.tiles[i] : entry
                 let status: Finding.Status
                 if entry.isConcealed {
                     status = .concealed
-                } else if entry.isAboveLevel(level) {
+                } else if shown.isConcealed {
                     status = .aboveLevel(entry.revealLevel)
-                } else if paths[page.key] == nil {
+                } else if paths[pageKey] == nil {
                     status = .unreachable
                 } else {
                     status = .available
                 }
-                let path = paths[page.key] ?? [page.key]
+                let path = paths[pageKey] ?? [pageKey]
                 let finding = Finding(key: entry.key,
                                       label: tile.displayName.isEmpty ? tile.value : tile.displayName,
-                                      pageKey: page.key,
+                                      pageKey: pageKey,
                                       pageTitle: page.title,
                                       path: path,
-                                      route: paths[page.key].map { $0.compactMap { titles[$0] } } ?? [],
+                                      route: paths[pageKey].map { $0.compactMap { titles[$0] } } ?? [],
                                       status: status,
                                       isExact: rank == 0)
                 // A word twice on one page is one place — the better of the two.
@@ -157,6 +171,70 @@ enum WordFinder {
         if available.count == 1 { return available[0] }
         let exact = available.filter(\.isExact)
         return exact.count == 1 ? exact[0] : nil
+    }
+
+    // MARK: - The board
+
+    /// One page of the board, under the key the board navigates by.
+    private struct BoardPage {
+        /// As stored: what a word's own level and concealment say.
+        let stored: PageSpec
+        /// At the board's level, keyed by navigation key (`<system>:actions`
+        /// for a core-board page), its links made navigation keys too.
+        let visible: PageSpec
+        let title: String
+        /// A page of BlasterAI 60 or a template, not of the scene.
+        let isBorrowed: Bool
+    }
+
+    /// The scene's pages, then every core-board and template page it does not
+    /// have its own copy of, with the pages the system row opens — all keyed
+    /// the way `TileGridView` navigates, so a finding's path is the taps.
+    private static func boardPages(of scene: BlasterScene,
+                                   levels: BoardLevels?) -> (pages: [BoardPage], row: [String]) {
+        let shadowed = scene.shadowedSystemKeys
+        // A scene's copy of a core-board page opens as that page.
+        var navKey: [String: String] = [:]
+        for page in scene.pages where page.isShadow {
+            navKey[page.key] = TileToken.systemLink(to: page.shadows)
+        }
+
+        var raw: [(stored: PageSpec, visible: PageSpec, borrowed: Bool)] =
+            zip(scene.pages, scene.visiblePages).map { ($0, $1, false) }
+        var row = BoardChrome.rowPages(of: scene)
+        if let levels, let chain = levels.chain {
+            let shown = Dictionary(levels.systemPages.map { ($0.key, $0) },
+                                   uniquingKeysWith: { first, _ in first })
+            for page in chain.pages(atLevel: nil)
+            where page.key != levels.systemHomePageKey && !shadowed.contains(page.key) {
+                raw.append((page, shown[page.key] ?? page, true))
+                navKey[page.key] = TileToken.systemLink(to: page.key)
+            }
+            if BoardChrome.inherits(scene) {
+                row += BoardChrome.systemPageKeys(of: scene, inherited: levels.inheritedNavBar)
+                    .map(TileToken.systemLink(to:))
+            }
+        }
+
+        let pages = raw.map { item -> BoardPage in
+            let key = navKey[item.stored.key] ?? item.stored.key
+            var visible = item.visible
+            visible.key = key
+            visible.tiles = visible.tiles.map { entry in
+                guard !entry.link.isEmpty else { return entry }
+                var out = entry
+                let target = SystemLinks.destination(of: entry.link, fromPage: key,
+                                                     homePageKey: scene.homePageKey,
+                                                     systemHomePageKey: levels?.systemHomePageKey,
+                                                     shadowed: shadowed)
+                // A plain link to the scene's copy of a core-board page.
+                out.link = item.borrowed ? target : (navKey[target] ?? target)
+                return out
+            }
+            return BoardPage(stored: item.stored, visible: visible,
+                             title: item.stored.title, isBorrowed: item.borrowed)
+        }
+        return (pages, row)
     }
 
     // MARK: - Matching

@@ -39,6 +39,8 @@ struct SceneEditorView: View {
     /// Board Setup starts folded: it is set once, and Pages is the job a
     /// caregiver opens the editor for.
     @State private var isSetupExpanded = false
+    /// Asking before a board with no declared grid moves onto the standard one.
+    @State private var confirmStandardLayout = false
     /// Details (name, description, cover, home page) starts folded too; a new
     /// board opens with it unfolded so it can be named.
     @State private var isDetailsExpanded = false
@@ -755,6 +757,9 @@ struct SceneEditorView: View {
     /// structure, and refining with AI.
     private var boardSetupSection: some View {
         builtOnAlert(Section {
+            if scene.designedFor.isEmpty, !scene.isDefault, !scene.isSystemOwned {
+                standardLayoutRow
+            }
             DisclosureGroup(isExpanded: $isSetupExpanded) {
                     // The grid this board is authored against. See `DesignedLayout`.
                     Picker("Designed For", selection: $scene.designedFor) {
@@ -779,6 +784,27 @@ struct SceneEditorView: View {
                 Text("Board Setup")
             }
         })
+    }
+
+    /// A board made by hand before #199 declares no grid: no navigation bar,
+    /// and never a topic on My Topics. Offered, never done for it: a board laid
+    /// out on another grid (an old 12 × 5) keeps its own first row, which would
+    /// then sit under the navigation bar.
+    private var standardLayoutRow: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("This board has no layout set, so it has no navigation bar and can\u{2019}t be a topic on My Topics.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+            Button("Use the Standard Layout\u{2026}") { confirmStandardLayout = true }
+        }
+        .confirmationDialog("Use the Standard Layout?", isPresented: $confirmStandardLayout,
+                            titleVisibility: .visible) {
+            Button("Use the Standard Layout") {
+                scene.designedFor = PageTemplate.designedFor
+            }
+        } message: {
+            Text("The board moves onto the \(DesignedLayout(rawValue: PageTemplate.designedFor)?.title ?? "standard") grid, under the navigation bar. If its first row was its own navigation, that row stays on its pages; remove it in the editor. You can change this under Board Setup \u{203A} Designed For.")
+        }
     }
 
     /// The navigation bar: the template's (BlasterAI 60's unless the scene is

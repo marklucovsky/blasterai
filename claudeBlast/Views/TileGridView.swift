@@ -477,7 +477,7 @@ struct TileGridView: View {
         .sheet(isPresented: $showTopicsHelp) { MyTopicsHelpSheet() }
         .sheet(isPresented: $showFindWord) {
             if let scene = activeScene {
-                FindWordSheet(scene: scene, lookup: tileLookup) { finding in
+                FindWordSheet(scene: scene, lookup: tileLookup, levels: levels(scene)) { finding in
                     go(to: finding, in: scene)
                 }
             }
@@ -722,7 +722,9 @@ struct TileGridView: View {
             // an onChange, so it runs after navigation has reset the grid to
             // its first screen rather than racing it.
             .task(id: findHighlight?.token) {
-                guard let target = findHighlight, target.pageKey == page.key,
+                // Matched by navigation key: a core-board page's own key is
+                // `actions`, but the board reached it as `<system>:actions`.
+                guard let target = findHighlight, target.pageKey == identityPageKey,
                       let chunk = screen(target.key) else { return }
                 if currentDisplayPage != chunk {
                     withAnimation { showScreen(chunk) }

@@ -62,6 +62,9 @@ enum RailSlot: Equatable {
 /// Home is the first slot and Keyboard the last on both, so the two controls
 /// a child reaches for most are in the same place whoever set the device up.
 /// The child's rail is short on purpose: nothing on it changes the board.
+/// Search is the one caregiver tool on it, full size over Keyboard: it only
+/// goes to a page, and a parent or SLP finding a word mid-conversation should
+/// not have to switch to Setup mode first (Mark 2026-11-18).
 enum RailProfile: Equatable {
     case child, caregiver
 
@@ -82,7 +85,7 @@ enum RailProfile: Equatable {
     func slots(compact: Bool) -> [RailSlot] {
         switch self {
         case .child:
-            [.one(.home), .one(.back), .one(.me), .empty, .empty, .one(.keyboard)]
+            [.one(.home), .one(.back), .one(.me), .empty, .one(.search), .one(.keyboard)]
         case .caregiver where compact:
             [.one(.home), .one(.back), .pair(.me, .search), .one(.tools),
              .one(.childMode), .one(.keyboard)]
