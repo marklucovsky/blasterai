@@ -401,6 +401,9 @@ extension AdminView {
                     Toggle("Haptics", isOn: $hapticsEnabled)
                 }
             }
+            Section("Keyboard") {
+                Toggle("Highlight Vowels", isOn: $keyboardHighlightVowels)
+            }
         }
         .navigationTitle("Look, Sound, Feel")
     }

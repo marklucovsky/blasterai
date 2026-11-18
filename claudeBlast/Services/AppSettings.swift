@@ -101,6 +101,9 @@ nonisolated enum AppSettingsKey {
     /// The board's haptics (`BoardHaptics`). On unless a caregiver turns them
     /// off. Device-local.
     static let hapticsEnabled        = "haptics_enabled"
+    /// Tint the vowel keys on the keyboard pages, as TouchChat and Avaz
+    /// offer. On unless turned off. Device-local.
+    static let keyboardHighlightVowels = "keyboard_highlight_vowels"
     /// Child mode on a caregiver device: the board shows the child's rail
     /// until the Admin gate turns it off (`RailProfile`). Device-local.
     static let railChildLock         = "rail_child_lock"

@@ -34,12 +34,13 @@ Both speak each key as it is typed and read the word on Space.
 
 ## Decisions
 
-- **Keys: hybrid first, surface likely.** A keyboard page is an ordinary page
-  (links, navigation bar, levels and editing all work) whose cells may hold key
-  tokens (`key:a`, `key:space`, `key:bksp`, `key:shift`) drawn as keys. Ten
-  columns is tight — a QWERTY row is exactly ten letters, with no room for
-  backspace beside it — so the keyboard area is built to swap to its own key
-  geometry (Mark, 2026-11-18).
+- **Keys: a surface, not cells (Mark, 2026-11-18).** The hybrid of key cells
+  on the 10-column grid was the plan; ten columns leave no room for backspace
+  beside a QWERTY row, so the keys got their own geometry from the start. A
+  keyboard page is still an ordinary page of BlasterAI 60 — `sys:keyboard`,
+  the navigation bar and the rail all work — with nothing stored on it: the
+  grid area draws the keys. The cost is that a keyboard is not editable in
+  the board editor.
 - **Typed text shares the message box.** One text item per word; the word being
   typed shows tinted red until Space commits it; a committed word that is in the
   vocabulary becomes that word's chip. A line with typed text ignores the
@@ -50,6 +51,52 @@ Both speak each key as it is typed and read the word on Space.
   vowels, offer ABC, resize keys or stay up without a focused field. The
   numbers page stays ours on both, since the system keyboard has no `÷` or
   time keys.
+
+## Typed text in the message box (PR C)
+
+The keyboard's side of `SentenceEngine` is its Typing extension:
+`typeKey`, `typeSpace`, `typeBackspace`, `typeDeleteWord`,
+`speakTypedLine`. Tests: `TypingTests`.
+
+- **One message box.** A typed word joins whatever the box is showing: the
+  active group in sentence mode, the strip in single-word mode. There is no
+  second tray for typing; two trays over two engine states has bitten before.
+- **The word being typed** is `typingDraft`, drawn red at the end of either
+  tray (`TypingDraftView`) until Space commits it. Each key is spoken as
+  pressed, each word as committed, both through `SpeechNormalizer`.
+- **A word we have becomes its tile.** `TypedWords.match` looks the word up by
+  label, value or key, skipping hidden words, folders and the Letters pack, so
+  "cookie" is the cookie chip with its picture and "a" is the word *a*. A word
+  we don't have is a text chip (`TileSelection.typed`, key `<typed>:word`).
+- **A typed line** (`TileGroup.isTyped`) is never sent for a sentence and
+  ignores the words-per-message cap. It stays typed even when every word
+  matched a tile, and a tile tapped onto it joins it. Play says it through
+  `SpeechNormalizer.line`; an emptied line stops being typed.
+- **Backspace** takes a letter off the word being typed, or, with none, the
+  last word. Delete word takes the word being typed, or the last word.
+  Clear and Done take the word being typed too.
+
+## Keyboard pages (PR D)
+
+`KeyboardLayout` is the key geometry; `KeyboardSurfaceView` draws it in the
+grid area when the page showing is `keyboard` (QWERTY) or `keyboard_abc`
+(ABC), as `<system>:` pages from any board built on BlasterAI 60. A scene's
+own page of that name is just a page. Tests: `KeyboardLayoutTests`.
+
+- Every row is 11.5 key-widths, so rows of any key count end on the grid's
+  edge. QWERTY: `q`–`p` + backspace; `a`–`l`, `'` + speak; shift, `z`–`m`,
+  `, . ?`; the ABC switch, space, delete word. ABC runs the alphabet the same
+  way.
+- The top content row is kept empty for word prediction (PR F), so the keys
+  don't move when it lands.
+- Shift is one-shot; a quick second tap locks it. Key caps show what will be
+  typed. Keys are spoken lowercase whatever Shift shows.
+- Speak (green) commits the word being typed and says the line, never a
+  generated sentence (`typeSpeakLine`).
+- Vowels are tinted unless Settings › Look, Sound, Feel › Keyboard ›
+  Highlight Vowels is off (device-local).
+- The numbers key arrives with the numbers page (PR E). The phone's iOS
+  keyboard path is its own PR; a phone shows the same surface, smaller.
 
 ## Speech: `SpeechNormalizer`
 

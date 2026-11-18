@@ -73,8 +73,9 @@ def inherited_row(scene):
     templates = json.loads(TEMPLATES.read_text())
     if scene["designedFor"] != templates["designedFor"]:
         return []
-    # The rail's Keyboard opens the keyboard page from anywhere, too.
-    return [e["page"] for e in templates["systemRow"]] + ["keyboard"]
+    # The rail's Keyboard opens the keyboard page from anywhere, too, and its
+    # ABC key opens the ABC keyboard (KeyboardLayout, drawn, not a tile).
+    return [e["page"] for e in templates["systemRow"]] + ["keyboard", "keyboard_abc"]
 
 
 def check(path, vocab):

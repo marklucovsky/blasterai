@@ -39,6 +39,22 @@ struct TileSelection: Sendable, Equatable, Hashable {
         self.wordClass = tile.wordClass
         self.partOfSpeech = tile.resolvedPartOfSpeech
     }
+
+    // MARK: - Typed words
+
+    /// Key prefix of a typed word that is not in the vocabulary. Angle
+    /// brackets keep it clear of every tile key, which are lowercase words.
+    static let typedPrefix = "<typed>:"
+    /// The class a typed word carries: no picture, no part of speech.
+    static let typedClass = "typed"
+
+    /// A word typed on the keyboard that matches no tile: drawn as text.
+    static func typed(_ word: String) -> TileSelection {
+        TileSelection(key: typedPrefix + word, value: word, wordClass: typedClass)
+    }
+
+    /// Typed, and not a word of the vocabulary — it has no picture.
+    var isTyped: Bool { key.hasPrefix(Self.typedPrefix) }
 }
 
 struct TokenUsage: Sendable {
@@ -86,6 +102,12 @@ struct TileGroup: Identifiable, Sendable, Equatable {
     var state: TileGroupState
     let createdAt: Date
     var repetitionCount: Int
+    /// Something in it was typed on the keyboard. A typed line is said as
+    /// typed: never sent to sentence generation, and not held to the
+    /// words-per-message cap (Mark, 2026-11-17). Stays set once set, even if
+    /// every typed word matched a tile, because the line is still the user's
+    /// own words in their own order.
+    var isTyped: Bool = false
 
     init(
         id: UUID = UUID(),
