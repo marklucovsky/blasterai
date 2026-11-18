@@ -657,7 +657,15 @@ struct TileGridView: View {
             let board = VStack(spacing: spec.verticalSpacing) {
                 if !barAtBottom { bar }
                 Group {
-                    if isLandscape {
+                    if let keyboard = keyboardLayout {
+                        // A keyboard page draws its keys in place of cells.
+                        KeyboardSurfaceView(layout: keyboard,
+                                            size: CGSize(width: gridWidth, height: contentHeight),
+                                            spacing: spec.horizontalSpacing,
+                                            onSwitch: openKeyboard)
+                            .padding(.horizontal, gridPadding)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    } else if isLandscape {
                         landscapeTabView(chunks: chunkedTiles, spec: spec, lookup: lookup, padding: gridPadding)
                     } else {
                         portraitScrollView(chunks: chunkedTiles, pageHeight: contentHeight, spec: spec,
@@ -1090,6 +1098,23 @@ struct TileGridView: View {
 
     /// Page a tile is rendered on, used to scope its identity. Falls back the
     /// same way `currentPage` does so the two cannot disagree.
+    /// The keyboard the page showing is, if it is one of BlasterAI 60's
+    /// keyboard pages: `<system>:keyboard` from a board built on it, or
+    /// `keyboard` on BlasterAI 60 itself. A scene's own page of that name is
+    /// just a page.
+    private var keyboardLayout: KeyboardLayout? {
+        let key = identityPageKey
+        guard TileToken.systemPageKey(key) != nil || activeScene?.isDefault == true else { return nil }
+        return KeyboardLayout.forPage(key)
+    }
+
+    /// Open another keyboard page — the ABC or QWERTY key on a keyboard.
+    private func openKeyboard(_ pageKey: String) {
+        let key = activeScene?.isDefault == true ? pageKey : TileToken.systemLink(to: pageKey)
+        withAnimation(Self.pageChange) { coordinator.navigate(to: key, linkKey: pageKey) }
+        if recorder.state == .recording { recorder.recordNavigate(pageKey: key) }
+    }
+
     private var identityPageKey: String {
         coordinator.currentPageKey ?? activeScene?.homePageKey ?? "home"
     }

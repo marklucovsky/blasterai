@@ -145,6 +145,22 @@ struct TypingTests {
         }
     }
 
+    /// The keyboard's speak key says a line of tiles as it stands: on the
+    /// keyboard, nothing is sent for a sentence.
+    @Test func theSpeakKeyNeverGenerates() throws {
+        try withEngine(mode: .sentence) { engine, ctx in
+            let tiles = try ctx.fetch(FetchDescriptor<TileModel>())
+            for key in ["i", "want"] {
+                engine.addTile(try #require(tiles.first { $0.key == key }))
+            }
+            type("cook", into: engine)
+            engine.typeSpeakLine()
+            #expect(engine.selectedTiles.map(\.key) == ["i", "want", "<typed>:cook"])
+            #expect(engine.activeGroup.isTyped)
+            #expect(!engine.isWaiting && !engine.isThinking)
+        }
+    }
+
     // MARK: - Single-word mode
 
     /// In single-word mode a typed word joins the strip, and a repeat is a

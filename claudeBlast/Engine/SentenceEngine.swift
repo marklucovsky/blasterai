@@ -1423,6 +1423,14 @@ extension SentenceEngine {
         startIdleTimers()
     }
 
+    /// The keyboard's speak key: commit the word being typed and say the line
+    /// — the strip in single-word mode, the active line otherwise. Never a
+    /// generated sentence: the keyboard is typing.
+    func typeSpeakLine() {
+        caregiverEditing = false
+        if interactionMode == .singleWord { speakStrip() } else { speakTypedLine() }
+    }
+
     /// The vocabulary's tile for a typed word, or a text chip.
     func selection(forTyped word: String) -> TileSelection {
         let tiles = (try? modelContext?.fetch(FetchDescriptor<TileModel>())) ?? []

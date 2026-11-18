@@ -57,6 +57,7 @@ struct AdminView: View {
     @AppStorage(AppSettingsKey.audioEnabled) var audioEnabled: Bool = true
     @AppStorage(AppSettingsKey.tileSpeechEnabled) var tileSpeechEnabled: Bool = true
     @AppStorage(AppSettingsKey.hapticsEnabled) var hapticsEnabled: Bool = true
+    @AppStorage(AppSettingsKey.keyboardHighlightVowels) var keyboardHighlightVowels: Bool = true
     @AppStorage(AppSettingsKey.speechVoiceIdentifier) var voiceIdentifier: String = ""
     @AppStorage(AppSettingsKey.boardLayout) var boardLayoutRaw: String =
         BoardLayout.current().rawValue

@@ -1267,13 +1267,13 @@
     },
     {
       "key": "keyboard",
-      "tiles": [
-        {
-          "keys": [
-            "ipad"
-          ]
-        }
-      ]
+      "name": "Keyboard",
+      "tiles": []
+    },
+    {
+      "key": "keyboard_abc",
+      "name": "ABC Keyboard",
+      "tiles": []
     },
     {
       "key": "questions",

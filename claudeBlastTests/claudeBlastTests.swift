@@ -188,7 +188,9 @@ struct claudeBlastTests {
         // Bathroom (House things).
         // 66 -> 67: Phrases on Small words, an SLP's GLP starter phrases
         // (session 15, tools/board_spec/glp_phrases.json).
-        #expect(result.scene.pages.count == 67)
+        // 67 -> 68: `keyboard_abc`, the ABC keyboard (session 20,
+        // `KeyboardLayout`).
+        #expect(result.scene.pages.count == 68)
         // The bundled scene is tagged as system-defined, which now also means
         // immutable — caregivers edit a clone instead.
         #expect(result.scene.systemSceneKey == "core_first")
