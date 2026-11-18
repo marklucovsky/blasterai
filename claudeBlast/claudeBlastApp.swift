@@ -104,6 +104,7 @@ struct claudeBlastApp: App {
         if BootstrapLoader.isBundleUpdateAvailable() {
             BootstrapLoader.updateSystemScene(context: container.mainContext)
         }
+        BootstrapLoader.restoreRetiredPackWords(context: container.mainContext)
 
         ProfileMigration.ensureProfilesAfterBootstrap(context: container.mainContext)
 

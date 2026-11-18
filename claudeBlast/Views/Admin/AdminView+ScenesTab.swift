@@ -463,7 +463,7 @@ extension AdminView {
     }
 
     func createBlankScene(name: String) {
-        let scene = BlasterScene(name: name.isEmpty ? "New Board" : name)
+        let scene = SceneBuilder.blank(name: name)
         scene.ensureIdentity(authorID: DeviceProfileStore.ensureAuthorID(context: modelContext),
                              authorName: DeviceProfileStore.authorName(context: modelContext))
         modelContext.insert(scene)

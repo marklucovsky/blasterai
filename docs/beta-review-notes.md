@@ -137,7 +137,7 @@ New in This Version" will need.
 > Features**. Most of this needs no key, and that is the
 > configuration most families will run.
 >
-> ### What's new in build 11
+> ### What's new in build 12
 >
 > **Some words changed.** A *scene* is now a **board**. The device modes are
 > **Talk mode** (for the person using the board to talk) and **Setup mode**
@@ -170,8 +170,13 @@ New in This Version" will need.
 > - **Sharing keeps every tile setting,** including folder colours and labels.
 >   Board files are now `.blasterboard`; older `.blasterscene` files still
 >   open.
+> - **Word packs stay put.** An app update used to hide the words of any
+>   pack you had added, leaving a Tide Pools board with only *fish*. They
+>   stay now, and words an update hid come back on first launch.
+> - **A board made with New Board** has the navigation bar like every other
+>   board, so it can be one of the user's topics.
 >
-> ### What to test in build 11
+> ### What to test in build 12
 >
 > - **Find your way around Settings** without the guides. Change the voice,
 >   switch between Single Words and Sentences, and try another Tile Style.

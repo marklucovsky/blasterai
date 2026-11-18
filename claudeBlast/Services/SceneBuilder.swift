@@ -116,6 +116,16 @@ enum SceneBuilder {
 
     /// BlasterAI 60's home page, which a templated page takes its system row
     /// and core frame from.
+    /// A new, empty board, on the standard grid like every other board: it
+    /// draws under the navigation bar, and so can be a topic on My Topics.
+    /// It used to declare no grid at all, which left a hand-made board with
+    /// no navigation bar and kept it off My Topics.
+    static func blank(name: String) -> BlasterScene {
+        let scene = BlasterScene(name: name.isEmpty ? "New Board" : name)
+        scene.designedFor = PageTemplate.designedFor
+        return scene
+    }
+
     static func systemHome(in context: ModelContext) -> PageSpec? {
         systemScene(in: context).flatMap { $0.page(withKey: $0.homePageKey) }
     }
