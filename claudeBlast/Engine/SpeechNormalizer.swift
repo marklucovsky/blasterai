@@ -41,6 +41,7 @@ enum SpeechNormalizer {
         ":": "colon", ";": "semicolon", "(": "open bracket", ")": "close bracket",
         "&": "and", "@": "at", "#": "number",
         ":00": "o'clock", ":15": "fifteen", ":30": "thirty", ":45": "forty-five",
+        "^": "to the power of", "²": "squared", "³": "cubed", "√": "square root",
     ]
 
     // MARK: - A tile
@@ -86,6 +87,17 @@ enum SpeechNormalizer {
         }
         s = replace(s, #"\$(\d+)\b"#) { "\($0[1]) \(Int($0[1]) == 1 ? "dollar" : "dollars")" }
         s = replace(s, #"(\d)\s*%"#) { "\($0[1]) percent" }
+        // A checked answer put right (`5+5=9→10`): "5 plus 5 is not 9, it's 10";
+        // a sum put right whole (`3>5→3<5`): "3 is greater than 5, no, 3 is
+        // less than 5". See `MathHelper.correction`.
+        s = replace(s, #"\s*=\s*([^\s=→]+)\s*→\s*([^\s=<>→]+)\s*$"#) { " is not \($0[1]), it's \($0[2])" }
+        s = replace(s, #"\s*→\s*"#) { _ in ", no, " }
+        // The calculator's powers and roots (`3² = 9`, `√2 ≈ 1.414`).
+        s = replace(s, #"²"#) { _ in " squared" }
+        s = replace(s, #"³"#) { _ in " cubed" }
+        s = replace(s, #"\s*\^\s*"#) { _ in " to the power of " }
+        s = replace(s, #"√"#) { _ in "the square root of " }
+        s = replace(s, #"\s*≈\s*"#) { _ in " is about " }
         // A mixed number, as the math helper shows one: `3 1/3` is "3 and 1 third".
         s = replace(s, #"\b(\d+) (\d+)/(\d+)\b"#) { "\($0[1]) and \(fraction($0[2], over: $0[3]))" }
         s = replace(s, #"\b(\d+)/(\d+)\b"#) { fraction($0[1], over: $0[2]) }

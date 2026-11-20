@@ -22,7 +22,7 @@ struct KeyboardLayoutTests {
     @Test(arguments: KeyboardLayout.allCases)
     func everyRowIsTheSameWidth(_ layout: KeyboardLayout) {
         for (i, row) in layout.rows.enumerated() {
-            #expect(row.reduce(0) { $0 + $1.width } == KeyboardLayout.rowWidth, "\(layout) row \(i)")
+            #expect(row.reduce(0) { $0 + $1.width } == layout.rowWidth(compact: false), "\(layout) row \(i)")
         }
     }
 
@@ -41,7 +41,8 @@ struct KeyboardLayoutTests {
         #expect(Set(keys.map(\.id)).count == keys.count, "key ids are unique")
     }
 
-    /// Every keyboard opens the other two from its bottom row.
+    /// The letter keyboards open each other and the numbers; the numbers
+    /// and the calculator open every other keyboard.
     @Test func theKeyboardsSwitchToEachOther() {
         func targets(_ layout: KeyboardLayout) -> Set<String> {
             Set(layout.rows.flatMap { $0 }.compactMap { key -> String? in
@@ -50,7 +51,8 @@ struct KeyboardLayoutTests {
             })
         }
         for layout in KeyboardLayout.allCases {
-            let others = Set(KeyboardLayout.allCases.filter { $0 != layout }.map(\.pageKey))
+            var others = Set(KeyboardLayout.allCases.filter { $0 != layout }.map(\.pageKey))
+            if layout == .qwerty || layout == .abc { others.remove(KeyboardLayout.calculator.pageKey) }
             #expect(targets(layout) == others, "\(layout)")
         }
     }
@@ -72,6 +74,49 @@ struct KeyboardLayoutTests {
         for needed: KeyboardKey.Action in [.backspace, .deleteWord, .space, .speakLine] {
             #expect(keys.contains { $0.action == needed })
         }
+    }
+
+    /// The phone's portrait layouts: rows end on the edge, every letter and
+    /// digit is there, and each keyboard still reaches the other two.
+    @Test func compactLayoutsAreWholeAndSquare() {
+        for layout in KeyboardLayout.allCases {
+            let rows = layout.rows(compact: true)
+            for (i, row) in rows.enumerated() {
+                #expect(row.reduce(0) { $0 + $1.width } == layout.compactRowWidth, "\(layout) row \(i)")
+            }
+            let keys = rows.flatMap { $0 }
+            let typed = Set(keys.compactMap { k -> String? in
+                if case .character(let c) = k.action { return c } else { return nil }
+            })
+            let expected = layout == .numbers || layout == .calculator ? "0123456789" : "abcdefghijklmnopqrstuvwxyz"
+            #expect(expected.allSatisfy { typed.contains(String($0)) }, "\(layout)")
+            let switches = Set(keys.compactMap { k -> String? in
+                if case .switchTo(let page, _) = k.action { return page } else { return nil }
+            })
+            var others = Set(KeyboardLayout.allCases.filter { $0 != layout }.map(\.pageKey))
+            if layout == .qwerty || layout == .abc { others.remove(KeyboardLayout.calculator.pageKey) }
+            #expect(switches == others, "\(layout)")
+            #expect(keys.contains { $0.action == .speakLine } && keys.contains { $0.action == .backspace })
+        }
+        #expect(KeyboardLayout.numbers.rows(compact: true).flatMap { $0 }.contains { $0.action == .mathHelp })
+    }
+
+    /// The calculator: five across at every size, brackets, powers and
+    /// roots, a plain `=`, and the `?` helper.
+    @Test func theCalculatorIsACalculator() {
+        let calc = KeyboardLayout.calculator
+        #expect(calc.rowWidth(compact: false) == 5 && calc.rowWidth(compact: true) == 5)
+        #expect(calc.rows(compact: false) == calc.rows(compact: true))
+        let keys = calc.rows(compact: false).flatMap { $0 }
+        let typed = Set(keys.compactMap { k -> String? in
+            if case .character(let c) = k.action { return c } else { return nil }
+        })
+        for needed in ["(", ")", "²", "√", "^", "÷", "×", "\u{2212}", "+", ".", "="] {
+            #expect(typed.contains(needed), "lacks \(needed)")
+        }
+        // `=` is a key a child types; `?` is the helper, as on the numbers page.
+        #expect(keys.contains { $0.action == .mathHelp })
+        #expect(KeyboardLayout.forPage("<system>:calculator") == .calculator)
     }
 
     /// The signs are the numbers page's vowels: tinted when Highlight Signs

@@ -1281,6 +1281,11 @@
       "tiles": []
     },
     {
+      "key": "calculator",
+      "name": "Calculator",
+      "tiles": []
+    },
+    {
       "key": "questions",
       "tiles": [
         {

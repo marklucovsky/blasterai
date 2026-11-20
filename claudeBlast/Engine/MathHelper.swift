@@ -30,12 +30,15 @@ enum MathHelper {
 
     enum Reason: Equatable {
         case notMath, startWithANumber, divideByZero, tooBig, oneQuestionAtATime, noNumberWorks, anyNumberWorks
+        case wholePowersOnly, noRootOfNegative
 
         /// Said and shown, to a child.
         var message: String {
             switch self {
             case .notMath: "I can only help with numbers."
             case .startWithANumber: "Start with a number."
+            case .wholePowersOnly: "I can only do whole-number powers."
+            case .noRootOfNegative: "A negative number has no square root here."
             case .divideByZero: "Nobody can divide by zero!"
             case .tooBig: "That number is too big for me."
             case .oneQuestionAtATime: "One question mark at a time."
@@ -73,7 +76,7 @@ enum MathHelper {
         guard !text.isEmpty else { return false }
         let hasDigit = text.contains { $0.isASCII && $0.isNumber }
         return text.allSatisfy { c in
-            (c.isASCII && c.isNumber) || "+-\u{2212}×÷*/=<>?.%$:".contains(c)
+            (c.isASCII && c.isNumber) || "+-\u{2212}×÷*/=<>?.%$:()^²³√→".contains(c)
                 || (hasDigit && (c == "x" || c == "X"))
         }
     }
@@ -100,6 +103,10 @@ enum MathHelper {
             return .cannot(.divideByZero)
         } catch MathHelperError.tooBig {
             return .cannot(.tooBig)
+        } catch MathHelperError.wholePowersOnly {
+            return .cannot(.wholePowersOnly)
+        } catch MathHelperError.negativeRoot {
+            return .cannot(.noRootOfNegative)
         } catch {
             return .cannot(.notMath)
         }
@@ -109,10 +116,20 @@ enum MathHelper {
 
     enum Op: Equatable {
         case plus, minus, times, divide
+        /// `2^5`, `3²`: before × and ÷, and right to left (`2^3^2` is 2^9).
+        case power
         var symbol: String {
-            switch self { case .plus: "+"; case .minus: "\u{2212}"; case .times: "×"; case .divide: "÷" }
+            switch self {
+            case .plus: "+"; case .minus: "\u{2212}"; case .times: "×"; case .divide: "÷"; case .power: "^"
+            }
         }
-        var precedence: Int { self == .plus || self == .minus ? 1 : 2 }
+        var precedence: Int {
+            switch self {
+            case .plus, .minus: 1
+            case .times, .divide: 2
+            case .power: 3
+            }
+        }
     }
 
     enum Relation: Equatable {
@@ -132,6 +149,9 @@ enum MathHelper {
         case relation(Relation)
         /// A `?`, with its place among the line's question marks.
         case question(Int)
+        case open, close
+        /// `√`, the square root of what follows it.
+        case root
     }
 
     private struct Failure: Error {
@@ -166,6 +186,13 @@ enum MathHelper {
             case "<": tokens.append(.relation(.less))
             case ">": tokens.append(.relation(.greater))
             case "?": tokens.append(.question(questions)); questions += 1
+            case "(", "[": tokens.append(.open)
+            case ")", "]": tokens.append(.close)
+            case "^": tokens.append(.op(.power))
+            // The calculator's x² key types `²`: a power of two.
+            case "²": tokens += [.op(.power), .number(Rational(2))]
+            case "³": tokens += [.op(.power), .number(Rational(3))]
+            case "√": tokens.append(.root)
             default: throw Failure.cannot(.notMath)
             }
             i += 1
@@ -199,7 +226,7 @@ enum MathHelper {
             }
             let sides = try equation(rest)
             if let relation = sides.relation, let right = sides.right {
-                return .solved(try check(sides.left, relation, right))
+                return .solved(try check(sides.left, relation, right, marker: marker))
             }
             // `3?` is the start of `3?5`, not a question about 3.
             if case .number = sides.left { return .incomplete }
@@ -217,13 +244,13 @@ enum MathHelper {
         var t = tokens[...]
         if case .question = t.last, t.count > 1 {
             switch t[t.endIndex - 2] {
-            case .op, .relation: return true
+            case .op, .relation, .open, .root: return true
             default: break
             }
             t = t.dropLast()
         }
         switch t.last {
-        case .op, .relation: return true
+        case .op, .relation, .open, .root: return true
         default: return false
         }
     }
@@ -234,25 +261,46 @@ enum MathHelper {
         case number(Rational)
         case unknown(Int)
         case binary(Op, Node, Node)
+        /// `√9`.
+        case root(Node)
 
         var hasUnknown: Bool {
             switch self {
             case .number: false
             case .unknown: true
             case .binary(_, let l, let r): l.hasUnknown || r.hasUnknown
+            case .root(let x): x.hasUnknown
             }
         }
 
-        /// As typed, tidied: `1 + 2 × 3`. Parsed from a line without
-        /// brackets, so it reads back without them.
-        func shown(filling unknown: Rational? = nil) -> String {
+        var isNumber: Bool { if case .number = self { true } else { false } }
+
+        /// The sum with its `?` filled in.
+        func filling(_ value: Rational?) -> Node {
             switch self {
-            case .number(let n): n.shown
-            case .unknown: unknown?.shown ?? "?"
-            case .binary(let op, let l, let r):
-                "\(l.shown(filling: unknown)) \(op.symbol) \(r.shown(filling: unknown))"
+            case .number: self
+            case .unknown: value.map(Node.number) ?? self
+            case .binary(let op, let l, let r): .binary(op, l.filling(value), r.filling(value))
+            case .root(let x): .root(x.filling(value))
             }
         }
+
+        /// As typed, tidied: `1 + 2 × 3`, `2 × (3 + 4)`, `3²`, `√9`. Brackets
+        /// only where the order needs them.
+        func shown(filling unknown: Rational? = nil) -> String {
+            MathHelper.join(MathHelper.layout(filling(unknown)).tokens)
+        }
+    }
+
+    /// Pieces of a sum as one line: spaced, except inside brackets, after `√`
+    /// and before `²`.
+    static func join(_ tokens: [String]) -> String {
+        var out = ""
+        for (i, t) in tokens.enumerated() {
+            let tight = i == 0 || ["(", "√"].contains(tokens[i - 1]) || [")", "²", "³"].contains(t)
+            out += (tight ? "" : " ") + t
+        }
+        return out
     }
 
     private struct Sides {
@@ -289,7 +337,8 @@ enum MathHelper {
             var left = try operand()
             while i < tokens.count, case .op(let op) = tokens[i], op.precedence >= minimum {
                 i += 1
-                let right = try expression(minimum: op.precedence + 1)
+                // A power groups to the right: `2^3^2` is 2^(3^2).
+                let right = try expression(minimum: op == .power ? op.precedence : op.precedence + 1)
                 left = .binary(op, left, right)
             }
             return left
@@ -300,6 +349,16 @@ enum MathHelper {
             switch tokens[i] {
             case .number(let n): i += 1; return .number(n)
             case .question(let q): i += 1; return .unknown(q)
+            case .open:
+                i += 1
+                let inner = try expression(minimum: 1)
+                guard i < tokens.count else { throw Failure.incomplete }
+                guard tokens[i] == .close else { throw Failure.cannot(.notMath) }
+                i += 1
+                return inner
+            case .root:
+                i += 1
+                return .root(try operand())
             case .op(.minus):
                 // A negative number: `−3 + 5`.
                 i += 1
@@ -373,31 +432,75 @@ enum MathHelper {
     /// in working order, with a number on each side. `reduceOnce` works out
     /// the same pair.
     static func layout(_ node: Node) -> (tokens: [String], ready: Range<Int>?) {
+        func shifted(_ r: Range<Int>?, _ by: Int) -> Range<Int>? {
+            r.map { ($0.lowerBound + by)..<($0.upperBound + by) }
+        }
+        func wrapped(_ l: (tokens: [String], ready: Range<Int>?)) -> (tokens: [String], ready: Range<Int>?) {
+            (["("] + l.tokens + [")"], shifted(l.ready, 1))
+        }
         switch node {
         case .number(let v): return ([v.shown], nil)
         case .unknown: return (["?"], nil)
-        case .binary(let op, let l, let r):
-            let left = layout(l), right = layout(r)
-            let tokens = left.tokens + [op.symbol] + right.tokens
-            if let ready = left.ready { return (tokens, ready) }
-            if let ready = right.ready {
-                let offset = left.tokens.count + 1
-                return (tokens, (ready.lowerBound + offset)..<(ready.upperBound + offset))
-            }
-            if case .number = l, case .number = r { return (tokens, 0..<tokens.count) }
+        case .root(let x):
+            var inner = layout(x)
+            if case .binary = x { inner = wrapped(inner) }
+            let tokens = ["√"] + inner.tokens
+            if let ready = inner.ready { return (tokens, shifted(ready, 1)) }
+            if case .number = x { return (tokens, 0..<tokens.count) }
             return (tokens, nil)
+        case .binary(let op, let l, let r):
+            var left = layout(l), right = layout(r)
+            if needsBrackets(l, under: op, onRight: false) { left = wrapped(left) }
+            if needsBrackets(r, under: op, onRight: true) { right = wrapped(right) }
+            let tokens: [String]
+            if op == .power, case .number(let e) = r, e == Rational(2) || e == Rational(3) {
+                tokens = left.tokens + [e == Rational(2) ? "²" : "³"]
+            } else {
+                tokens = left.tokens + [op.symbol] + right.tokens
+            }
+            if let ready = left.ready { return (tokens, ready) }
+            if let ready = right.ready { return (tokens, shifted(ready, left.tokens.count + 1)) }
+            if l.isNumber, r.isNumber { return (tokens, 0..<tokens.count) }
+            return (tokens, nil)
+        }
+    }
+
+    /// Brackets a child needs to read back in the order it is worked out.
+    private static func needsBrackets(_ child: Node, under op: Op, onRight: Bool) -> Bool {
+        switch child {
+        case .binary(let inner, _, _):
+            if inner.precedence < op.precedence { return true }
+            if inner.precedence == op.precedence {
+                // `a − (b − c)`, `a ÷ (b × c)`, `(2^3)^2`.
+                return op == .power ? !onRight : onRight && (op == .minus || op == .divide)
+            }
+            return false
+        case .number(let n):
+            // `(−3)²`, not `−3²`.
+            return op == .power && !onRight && n < Rational(0)
+        default:
+            return false
         }
     }
 
     /// The first ready pair worked out: the sum with it replaced by its
     /// value, and the step as a line.
     private static func reduceOnce(_ node: Node) throws -> (Node, String)? {
-        guard case .binary(let op, let l, let r) = node else { return nil }
-        if let once = try reduceOnce(l) { return (.binary(op, once.0, r), once.1) }
-        if let once = try reduceOnce(r) { return (.binary(op, l, once.0), once.1) }
-        guard case .number(let a) = l, case .number(let b) = r else { return nil }
-        let c = try apply(op, a, b)
-        return (.number(c), "\(a.shown) \(op.symbol) \(b.shown) = \(c.shown)")
+        switch node {
+        case .root(let x):
+            if let once = try reduceOnce(x) { return (.root(once.0), once.1) }
+            guard case .number(let v) = x else { return nil }
+            let (c, exact) = try v.squareRoot()
+            return (.number(c), "\(join(layout(node).tokens)) \(exact ? "=" : "≈") \(c.shown)")
+        case .binary(let op, let l, let r):
+            if let once = try reduceOnce(l) { return (.binary(op, once.0, r), once.1) }
+            if let once = try reduceOnce(r) { return (.binary(op, l, once.0), once.1) }
+            guard case .number(let a) = l, case .number(let b) = r else { return nil }
+            let c = try apply(op, a, b)
+            return (.number(c), "\(join(layout(node).tokens)) = \(c.shown)")
+        default:
+            return nil
+        }
     }
 
     private static func apply(_ op: Op, _ a: Rational, _ b: Rational) throws -> Rational {
@@ -406,6 +509,7 @@ enum MathHelper {
         case .minus: try a.minus(b)
         case .times: try a.times(b)
         case .divide: try a.divided(by: b)
+        case .power: try a.power(b)
         }
     }
 
@@ -419,7 +523,14 @@ enum MathHelper {
     }
 
     /// `2+2=5?` — worked out, and said right or not.
-    private static func check(_ left: Node, _ relation: Relation, _ right: Node) throws -> Solution {
+    /// The mark a checked answer leaves in the line: `5+5=9→10` is "9 is
+    /// wrong, it's 10"; `3>5→3<5` puts a whole sum right. Drawn with the
+    /// wrong part struck and the right part green (`MathChipView`), said as
+    /// "is not 9, it's 10" (`SpeechNormalizer`) — Mark, 2026-11-20.
+    static let correction: Character = "→"
+
+    private static func check(_ left: Node, _ relation: Relation, _ right: Node,
+                              marker: Int) throws -> Solution {
         var work = Working()
         let sides = try work.reduce(left, relation.symbol, right)
         guard case .number(let a) = sides.0, case .number(let b)? = sides.1 else {
@@ -427,18 +538,23 @@ enum MathHelper {
         }
         let typed = "\(left.shown()) \(relation.symbol) \(right.shown())"
         if relation.holds(a, b) {
+            // Right: the `?` comes off, and the sum stands as typed.
             return Solution(kind: .check(correct: true), steps: work.steps, frames: work.frames,
-                            summary: "Yes! \(typed)", edits: [:])
+                            summary: "Yes! \(typed)", edits: [marker: ""])
         }
-        // `2+2=5` is put right as `2 + 2 = 4`; otherwise the right sign.
+        // `2+2=5` is put right as `2 + 2 = 4`; otherwise the right sign. The
+        // line keeps the wrong answer and gains the right one.
         let corrected: String
+        let mark: String
         if relation == .equal, case .number = right {
             corrected = "\(left.shown()) = \(a.shown)"
+            mark = String(correction) + a.shown
         } else {
             corrected = "\(left.shown()) \(Relation.between(a, b).symbol) \(right.shown())"
+            mark = String(correction) + corrected.filter { !$0.isWhitespace }
         }
         return Solution(kind: .check(correct: false), steps: work.steps, frames: work.frames,
-                        summary: "Not quite: \(corrected)", edits: [:])
+                        summary: "Not quite: \(corrected)", edits: [marker: mark])
     }
 
     /// `3?5` — the sign between two sides.
@@ -481,6 +597,8 @@ enum MathHelper {
         guard case .some(.unknown(let q)) = unknownLeaf(node) else { throw Failure.cannot(.notMath) }
 
         while case .binary(let op, let a, let b) = node {
+            // A power or root over the missing number is past this helper.
+            guard op != .power else { throw Failure.cannot(.notMath) }
             let unknownOnLeft = a.hasUnknown
             guard case .number(let n) = unknownOnLeft ? b : a else { throw Failure.cannot(.notMath) }
             let (undo, x, y) = try inverse(op, unknownOnLeft: unknownOnLeft, n, target)
@@ -492,6 +610,7 @@ enum MathHelper {
             work.steps.append("\(x.shown) \(undo.symbol) \(y.shown) = \(next.shown)")
             target = next
         }
+        guard case .unknown = node else { throw Failure.cannot(.notMath) }
 
         let filled = "\(sides.left.shown(filling: target)) = \(right.shown(filling: target))"
         var edits = [q: target.shown]
@@ -514,6 +633,8 @@ enum MathHelper {
         case (.divide, false):                            // n ÷ ? = t → n ÷ t
             if target.isZero { throw Failure.cannot(n.isZero ? .anyNumberWorks : .noNumberWorks) }
             return (.divide, n, target)
+        case (.power, _):
+            throw Failure.cannot(.notMath)
         }
     }
 
@@ -522,6 +643,7 @@ enum MathHelper {
         case .unknown: node
         case .number: nil
         case .binary(_, let l, let r): unknownLeaf(l) ?? unknownLeaf(r)
+        case .root(let x): unknownLeaf(x)
         }
     }
 }
@@ -599,6 +721,30 @@ struct Rational: Equatable, Comparable {
         return whole == 0 ? "\(sign)\(rest)/\(denominator)" : "\(sign)\(whole) \(rest)/\(denominator)"
     }
 
+    /// A whole-number power: `2^5`, `2^−1` = 1/2. Thirty-two at most.
+    func power(_ e: Rational) throws -> Rational {
+        guard e.denominator == 1 else { throw MathHelperError.wholePowersOnly }
+        guard abs(e.numerator) <= 32 else { throw MathHelperError.tooBig }
+        var result = Rational(1)
+        for _ in 0..<abs(e.numerator) { result = try result.times(self) }
+        return e.numerator < 0 ? try Rational(1).divided(by: result) : result
+    }
+
+    /// The square root, and whether it is exact. A whole square (`√9`,
+    /// `√(9/4)`) is exact; anything else is to three places (`√2 ≈ 1.414`).
+    func squareRoot() throws -> (Rational, exact: Bool) {
+        guard numerator >= 0 else { throw MathHelperError.negativeRoot }
+        func whole(_ n: Int) -> Int? {
+            let r = Int(Double(n).squareRoot().rounded())
+            return r * r == n ? r : nil
+        }
+        if let n = whole(numerator), let d = whole(denominator) {
+            return (try Rational(n, over: d), true)
+        }
+        let approx = (Double(numerator) / Double(denominator)).squareRoot()
+        return (try Rational(Int((approx * 1000).rounded()), over: 1000), false)
+    }
+
     private static func gcd(_ a: Int, _ b: Int) -> Int { b == 0 ? a : gcd(b, a % b) }
     private static func mul(_ a: Int, _ b: Int) throws -> Int {
         let (r, o) = a.multipliedReportingOverflow(by: b)
@@ -614,5 +760,5 @@ struct Rational: Equatable, Comparable {
 
 /// What `Rational` throws; `MathHelper.solve` turns it into a reason.
 enum MathHelperError: Error {
-    case divideByZero, tooBig, notMath
+    case divideByZero, tooBig, notMath, wholePowersOnly, negativeRoot
 }

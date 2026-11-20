@@ -68,7 +68,13 @@ final class MathWalkthrough {
     func replay(_ sum: String, engine: SentenceEngine) {
         cancel()
         var solution: MathHelper.Solution?
-        if let eq = sum.firstIndex(of: "="),
+        if let mark = sum.firstIndex(of: MathHelper.correction) {
+            // An answer that was put right replays its whole check: the
+            // working, then "Not quite".
+            if case .solved(let checked) = MathHelper.solve(String(sum[..<mark]) + "?") {
+                solution = checked
+            }
+        } else if let eq = sum.firstIndex(of: "="),
            case .solved(let worked) = MathHelper.solve(String(sum[..<eq]) + "?"),
            Self.sameSum(worked.summary, sum) {
             solution = worked
@@ -253,15 +259,9 @@ private struct AnswerCard: View {
     }
 
     var body: some View {
-        HStack(spacing: height * 0.12) {
-            if style == .answer {
-                Image(systemName: "star.fill").foregroundStyle(.yellow)
-                    .shadow(color: .orange.opacity(0.6), radius: 1)
-            }
-            Text(text)
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
-        }
+        Text(text)
+            .lineLimit(1)
+            .minimumScaleFactor(0.5)
         .font(.system(size: height * (style == .note ? 0.3 : 0.38),
                       weight: style == .note ? .medium : .bold, design: .rounded))
         .padding(.horizontal, height * 0.25)
@@ -274,7 +274,25 @@ private struct AnswerCard: View {
                         .strokeBorder(Color.primary.opacity(0.12), lineWidth: 1)
                 }
         }
+        .overlay(alignment: .topLeading) {
+            if style == .answer { StarAccent(size: height * 0.26) }
+        }
         .accessibilityLabel(SpeechNormalizer.line(text))
+    }
+}
+
+/// The right-answer star: a small accent on the card's corner, not a
+/// second thing to read (Mark, 2026-11-20).
+struct StarAccent: View {
+    let size: CGFloat
+
+    var body: some View {
+        Image(systemName: "star.fill")
+            .font(.system(size: size))
+            .foregroundStyle(.yellow)
+            .shadow(color: .black.opacity(0.25), radius: 1, y: 0.5)
+            .offset(x: -size * 0.3, y: -size * 0.3)
+            .accessibilityHidden(true)
     }
 }
 
@@ -303,7 +321,7 @@ struct MathChipView: View {
     static func spaced(_ text: String) -> String {
         var out = ""
         for ch in text {
-            if "+-\u{2212}×÷*=<>".contains(ch) { out += " \(ch) " } else { out.append(ch) }
+            if "+-\u{2212}×÷*=<>→".contains(ch) { out += " \(ch) " } else { out.append(ch) }
         }
         return out.replacingOccurrences(of: "  ", with: " ").trimmingCharacters(in: .whitespaces)
     }
@@ -311,9 +329,9 @@ struct MathChipView: View {
     /// How wide it draws, for a tray measuring its room.
     static func width(of text: String, height: CGFloat) -> CGFloat {
         if SumStyle.current == .cards {
-            let font = UIFont.systemFont(ofSize: height * 0.5, weight: .semibold)
+            let font = UIFont.systemFont(ofSize: height * 0.4, weight: .bold)
             let measured = (spaced(text) as NSString).size(withAttributes: [.font: font]).width
-            return ceil(measured) + height * 0.5 + height * 0.55   // padding + star
+            return ceil(measured) + height * 0.44 + height * 0.1   // padding + the star's overhang
         }
         let n = CGFloat(text.count)
         return n * glyphWidth(height) + max(0, n - 1) * 2
@@ -336,20 +354,14 @@ struct MathChipView: View {
     private var card: some View {
         let older = style == .spoken
         let scale: CGFloat = older && shrinkOld ? 0.78 : 1
-        return HStack(spacing: height * 0.1) {
-            if style == .latest {
-                Image(systemName: "star.fill").foregroundStyle(.yellow)
-                    .shadow(color: .orange.opacity(0.6), radius: 1)
-            }
-            Text(Self.spaced(text))
-                .lineLimit(1)
-                .fixedSize()
-        }
-        .font(.system(size: height * 0.5 * scale, weight: style == .latest ? .bold : .semibold,
+        return cardText
+            .lineLimit(1)
+            .fixedSize()
+        .font(.system(size: height * 0.4 * scale, weight: style == .latest ? .bold : .semibold,
                       design: .rounded))
         .foregroundStyle(style == .draft ? Color.red : older ? Color.secondary : Color.primary)
-        .padding(.horizontal, height * 0.25 * scale)
-        .frame(height: height * 0.9 * scale)
+        .padding(.horizontal, height * 0.22 * scale)
+        .frame(height: height * 0.75 * scale)
         .background {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(cardFill)
@@ -358,11 +370,42 @@ struct MathChipView: View {
                         .strokeBorder(cardEdge, lineWidth: style == .spoken ? 1 : 1.5)
                 }
         }
+        .overlay(alignment: .topLeading) {
+            if style == .latest, !isCorrected { StarAccent(size: height * 0.24) }
+        }
         .transition(.scale(scale: 0.4).combined(with: .opacity))
     }
 
+    /// An answer the helper put right (`5+5=9→10`, `MathHelper.correction`).
+    private var isCorrected: Bool { text.contains(MathHelper.correction) }
+
+    /// The card's words. A corrected answer shows what was typed with the
+    /// wrong part struck through in red, then the right answer in green:
+    /// `5 + 5 = 9̶ 10`, or `3 > 5̶` `3 < 5` for a sum put right whole.
+    private var cardText: Text { Self.sumText(text) }
+
+    /// A sum as text, with a correction drawn: shared by the card and the
+    /// calculator's display.
+    static func sumText(_ text: String) -> Text {
+        guard let mark = text.firstIndex(of: MathHelper.correction) else {
+            return Text(spaced(text))
+        }
+        let typed = String(text[..<mark])
+        let fix = String(text[text.index(after: mark)...])
+        let right = Text("  " + spaced(fix)).foregroundStyle(Color.green).bold()
+        let fixIsNumber = !fix.contains { "=<>".contains($0) }
+        if fixIsNumber, let eq = typed.lastIndex(of: "=") {
+            let before = Text(spaced(String(typed[...eq])) + " ")
+            let wrong = Text(String(typed[typed.index(after: eq)...]))
+                .foregroundStyle(Color.red).strikethrough(true, color: .red)
+            return before + wrong + right
+        }
+        return Text(spaced(typed)).foregroundStyle(Color.red).strikethrough(true, color: .red) + right
+    }
+
     private var cardFill: Color {
-        switch style {
+        if isCorrected, style == .latest { return Color.orange.opacity(0.2) }
+        return switch style {
         case .latest: Color.green.opacity(0.35)
         case .spoken: Color(.systemGray5)
         case .fresh, .draft: Color(.systemGray6)
@@ -370,7 +413,8 @@ struct MathChipView: View {
     }
 
     private var cardEdge: Color {
-        switch style {
+        if isCorrected, style == .latest { return Color.orange.opacity(0.7) }
+        return switch style {
         case .latest: Color.green.opacity(0.6)
         case .spoken: Color.primary.opacity(0.1)
         case .fresh: Self.purple
