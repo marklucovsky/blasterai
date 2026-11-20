@@ -74,8 +74,9 @@ def inherited_row(scene):
     if scene["designedFor"] != templates["designedFor"]:
         return []
     # The rail's Keyboard opens the keyboard page from anywhere, too, and its
-    # ABC key opens the ABC keyboard (KeyboardLayout, drawn, not a tile).
-    return [e["page"] for e in templates["systemRow"]] + ["keyboard", "keyboard_abc"]
+    # ABC and 123 keys open the ABC keyboard and the numbers page
+    # (KeyboardLayout, drawn, not tiles).
+    return [e["page"] for e in templates["systemRow"]] + ["keyboard", "keyboard_abc", "numbers"]
 
 
 def check(path, vocab):

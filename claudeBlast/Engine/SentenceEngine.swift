@@ -49,10 +49,21 @@ final class SentenceEngine {
     /// `spokenStripCap` the oldest drops off the left. Duplicates are allowed —
     /// tapping `dad` twice yields `[dad, dad]`. Empty / unused in sentence mode.
     private(set) var spokenStrip: [TileSelection] = []
+    /// Of the strip's typed sums, what Play has said (`SpokenSums`).
+    private(set) var stripSpokenSums = SpokenSums()
 
     /// The word being typed on the keyboard, drawn red at the end of the
     /// message box until Space commits it. See the Typing extension.
     private(set) var typingDraft: String = ""
+    /// Set while the numbers page's math helper is on screen: a tap on a
+    /// said sum in the message box then replays its working there, as when
+    /// it was first worked out (Mark, 2026-11-20). Nil elsewhere, where the
+    /// tap just says the sum.
+    @ObservationIgnored var mathReplayHandler: ((String) -> Void)?
+    /// Which keyboard view set `mathReplayHandler`, so one going away clears
+    /// only its own: the page a keyboard leaves disappears *after* the page
+    /// it opens has appeared, and used to clear the new one's handler.
+    @ObservationIgnored var mathReplayOwner: UUID?
 
     /// Hard cap on the FIFO strip so it can't grow unbounded; the view shows a
     /// rolling window and older words scroll off as new ones arrive.
@@ -506,6 +517,7 @@ final class SentenceEngine {
             repetitionCount = 0
             spokenStrip.append(selection)
             if spokenStrip.count > spokenStripCap {
+                stripSpokenSums.dropFirst(spokenStrip.count - spokenStripCap)
                 spokenStrip.removeFirst(spokenStrip.count - spokenStripCap)
             }
         }
@@ -540,6 +552,7 @@ final class SentenceEngine {
     func removeStripWord(at index: Int) {
         guard spokenStrip.indices.contains(index) else { return }
         spokenStrip.remove(at: index)
+        stripSpokenSums.remove(at: index)
         // Editing the strip ends the current escalation run.
         repetitionCount = 0
         lastTileKey = nil
@@ -548,6 +561,7 @@ final class SentenceEngine {
     /// Clear the entire spoken strip (the strip's ✕ button).
     func clearStrip() {
         spokenStrip.removeAll()
+        stripSpokenSums = SpokenSums()
         typingDraft = ""
         repetitionCount = 0
         lastTileKey = nil
@@ -573,6 +587,7 @@ final class SentenceEngine {
 
         let wasLocked = activeGroup.state == .locked
         activeGroup.tiles.remove(at: index)
+        activeGroup.spokenSums.remove(at: index)
         refreshActiveSuppressed()   // combo changed → may no longer be suppressed
 
         if wasLocked {
@@ -753,6 +768,7 @@ final class SentenceEngine {
         clearSelection()
         groupHistory.removeAll()
         spokenStrip.removeAll()
+        stripSpokenSums = SpokenSums()
         repetitionCount = 0
         lastTileKey = nil
     }
@@ -811,6 +827,8 @@ final class SentenceEngine {
         activeGroup.state = .locked
         isIdleNudge = false
         if activeGroup.isTyped {
+            // A sum said here is said: the next Play says only what follows.
+            if tile.isMath, activeGroup.spokenSums.count == 0 { markSpoken(from: 0) }
             speak(SpeechNormalizer.line(tile.value))
         } else {
             speak(tile.value, key: tile.key)
@@ -1290,6 +1308,8 @@ final class SentenceEngine {
     func speakStrip() {
         // A word still being typed is said with the rest, as on Play.
         if !typingDraft.isEmpty { commitTypedWord(speaking: false) }
+        // Sums are said once each, as on a typed line.
+        if saySumsOnce() { return }
         // Through `line` as well, for typed words: "2 + 2" typed is three
         // strip words and one sum.
         let line = SpeechNormalizer.line(spokenStrip
@@ -1374,12 +1394,82 @@ private extension Duration {
 extension SentenceEngine {
 
     /// A letter, digit or symbol key — or a multi-character key such as `:15`.
-    func typeKey(_ key: String) {
+    /// `speaking: false` types it silently: the math helper's `?`, which says
+    /// the working instead.
+    func typeKey(_ key: String, speaking: Bool = true) {
         guard !key.isEmpty else { return }
         caregiverEditing = false
         typingDraft += key
-        speak(SpeechNormalizer.key(key))
+        if speaking { speak(SpeechNormalizer.key(key)) }
         rearmForTyping()
+    }
+
+    /// The line as it reads: the message box's words, then the word being
+    /// typed.
+    var typingLine: String {
+        let words = interactionMode == .singleWord ? spokenStrip.map(\.value) : activeGroup.tiles.map(\.value)
+        return (words + (typingDraft.isEmpty ? [] : [typingDraft])).joined(separator: " ")
+    }
+
+    /// Where the sum being typed starts in the message box: after the sums
+    /// Play has said, and after any finished sum (`1+1=2`) typed before it.
+    /// The math helper works on this one alone.
+    private var questionStart: Int {
+        let words = interactionMode == .singleWord ? spokenStrip : activeGroup.tiles
+        var start = min(lineSums.count, words.count)
+        for i in words.indices where i >= start {
+            let more = i < words.count - 1 || !typingDraft.isEmpty
+            if more, MathHelper.isFinishedStatement(words[i].value) { start = i + 1 }
+        }
+        return start
+    }
+
+    /// The sum being typed, for the math helper: `typingLine` from
+    /// `questionStart` on.
+    var typingQuestion: String {
+        let words = interactionMode == .singleWord ? spokenStrip.map(\.value) : activeGroup.tiles.map(\.value)
+        let tail = Array(words[min(questionStart, words.count)...])
+        return (tail + (typingDraft.isEmpty ? [] : [typingDraft])).joined(separator: " ")
+    }
+
+    /// Put the math helper's answer in: each `?` in `typingQuestion`, by its
+    /// place among them, becomes its edit (an empty edit takes it out). The
+    /// word being typed is committed, so the answered sum is one word, and the
+    /// sum counts as said: the helper said it.
+    func fillTypedQuestions(_ edits: [Int: String]) {
+        let start = questionStart
+        var ordinal = 0
+        func rewrite(_ text: String) -> String {
+            guard text.contains("?") else { return text }
+            var out = ""
+            for ch in text {
+                if ch == "?" { out += edits[ordinal] ?? "?"; ordinal += 1 } else { out.append(ch) }
+            }
+            return out
+        }
+        let words = interactionMode == .singleWord ? spokenStrip : activeGroup.tiles
+        var emptied: [Int] = []
+        for (i, word) in words.enumerated() where i >= start && word.value.contains("?") {
+            let new = rewrite(word.value)
+            if new.isEmpty {
+                emptied.append(i)
+            } else if interactionMode == .singleWord {
+                spokenStrip[i] = .typed(new)
+            } else {
+                activeGroup.tiles[i] = .typed(new)
+            }
+        }
+        for i in emptied.reversed() {
+            if interactionMode == .singleWord { removeStripWord(at: i) } else { removeTile(at: i) }
+        }
+        typingDraft = rewrite(typingDraft)
+        if !typingDraft.isEmpty { commitTypedWord(speaking: false) }
+        markSpoken(from: min(start, lineWords.count))
+    }
+
+    /// Say a line of the math helper's working, as a sum is said.
+    func speakMath(_ text: String) {
+        speak(SpeechNormalizer.line(text))
     }
 
     /// Space: commit the word being typed and say it. With nothing typed,
@@ -1413,14 +1503,107 @@ extension SentenceEngine {
         }
     }
 
-    /// Say the whole line as typed — Play on a typed line. A word still being
+    /// Say the line as typed — Play on a typed line. A word still being
     /// typed is committed first, so what is said is what is shown.
+    ///
+    /// Sums are said once (Mark, 2026-11-20): when what is new since the last
+    /// Play is all sums, Play says just that, so `1+1=2`, Play, `2+2=4`, Play
+    /// says each once; with nothing new it says the last sum again. A line
+    /// with words in it is said whole, as before.
     func speakTypedLine() {
         if !typingDraft.isEmpty { commitTypedWord(speaking: false) }
         guard !activeGroup.tiles.isEmpty else { return }
         isIdleNudge = false
-        speak(SpeechNormalizer.line(activeGroup.tiles.map(\.value).joined(separator: " ")))
+        if !saySumsOnce() {
+            speak(SpeechNormalizer.line(activeGroup.tiles.map(\.value).joined(separator: " ")))
+        }
         startIdleTimers()
+    }
+
+    /// The message box's words: the strip in single-word mode, the line
+    /// otherwise.
+    private var lineWords: [TileSelection] {
+        interactionMode == .singleWord ? spokenStrip : activeGroup.tiles
+    }
+
+    /// What Play has said of the message box's sums.
+    private var lineSums: SpokenSums {
+        get { interactionMode == .singleWord ? stripSpokenSums : activeGroup.spokenSums }
+        set {
+            if interactionMode == .singleWord { stripSpokenSums = newValue } else { activeGroup.spokenSums = newValue }
+        }
+    }
+
+    /// Say the sums typed since the last Play, once; with nothing new, the
+    /// last sum again. False when what is new is not all sums: the caller
+    /// says the line whole, as before.
+    private func saySumsOnce() -> Bool {
+        let words = lineWords
+        let from = min(lineSums.count, words.count)
+        let fresh = words[from...]
+        if !fresh.isEmpty, fresh.allSatisfy(\.isMath) {
+            markSpoken(from: from)
+            speak(SpeechNormalizer.line(fresh.map(\.value).joined(separator: " ")))
+            return true
+        }
+        if fresh.isEmpty, !words.isEmpty, words.allSatisfy(\.isMath), let start = lineSums.starts.last {
+            speak(SpeechNormalizer.line(words[start...].map(\.value).joined(separator: " ")))
+            return true
+        }
+        return false
+    }
+
+    /// The words from `from` on have been said. Each sum among them becomes
+    /// one word — `1`, `+`, `1`, `=`, `2` typed with spaces is `1+1=2` — so it
+    /// is one thing in the message box: drawn as one, said again with one
+    /// tap, taken off with one backspace (Mark, 2026-11-20). A word that is a
+    /// whole sum already ends one.
+    private func markSpoken(from: Int) {
+        let words = lineWords
+        guard from < words.count else { return }
+        var units: [String] = []
+        var piece = ""
+        for word in words[from...] {
+            if MathHelper.isFinishedStatement(word.value) {
+                if !piece.isEmpty { units.append(piece); piece = "" }
+                units.append(word.value)
+            } else {
+                piece += word.value
+            }
+        }
+        if !piece.isEmpty { units.append(piece) }
+        if units.count < words.count - from {
+            let merged = units.map(TileSelection.typed)
+            if interactionMode == .singleWord {
+                spokenStrip.replaceSubrange(from..., with: merged)
+            } else {
+                activeGroup.tiles.replaceSubrange(from..., with: merged)
+                let keep = activeGroup.tiles.count
+                if activeGroup.pageKeys.count > keep {
+                    activeGroup.pageKeys.removeSubrange(keep...)
+                }
+            }
+        }
+        lineSums.said(starts: Array(from..<(from + units.count)), to: from + units.count)
+    }
+
+    /// A tap on a word in the message box. A sum is said again; any other
+    /// word comes off, as it always has.
+    func tapTile(at index: Int) {
+        let words = lineWords
+        guard words.indices.contains(index) else { return }
+        guard words[index].isMath else {
+            if interactionMode == .singleWord { removeStripWord(at: index) } else { removeTile(at: index) }
+            return
+        }
+        isIdleNudge = false
+        let sum = words[lineSums.range(around: index)]
+        if index < lineSums.count, let replay = mathReplayHandler {
+            replay(sum.map(\.value).joined())
+        } else {
+            speak(SpeechNormalizer.line(sum.map(\.value).joined(separator: " ")))
+        }
+        if interactionMode != .singleWord { startIdleTimers() }
     }
 
     /// The keyboard's speak key: commit the word being typed and say the line
@@ -1448,6 +1631,7 @@ extension SentenceEngine {
             repetitionCount = 0
             spokenStrip.append(selection)
             if spokenStrip.count > spokenStripCap {
+                stripSpokenSums.dropFirst(spokenStrip.count - spokenStripCap)
                 spokenStrip.removeFirst(spokenStrip.count - spokenStripCap)
             }
             lastTileKey = selection.key

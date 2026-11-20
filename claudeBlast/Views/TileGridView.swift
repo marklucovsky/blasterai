@@ -335,7 +335,7 @@ struct TileGridView: View {
     /// view for both form factors.
     private var singleWordTray: some View {
             SingleWordTrayView(
-                onRemove: { index in engine.removeStripWord(at: index) },
+                onRemove: { index in engine.tapTile(at: index) },
                 onClear: { engine.clearStrip() },
                 railAlignment: railAlignment,
                 height: isPhoneLandscape ? SingleWordTrayView.shortStripHeight : SingleWordTrayView.stripHeight
@@ -345,7 +345,7 @@ struct TileGridView: View {
 
     private var compactTray: some View {
             CompactTrayStrip(
-                onTileTap: { index in engine.removeTile(at: index) },
+                onTileTap: { index in engine.tapTile(at: index) },
                 onGo: {
                     if recorder.state == .recording { recorder.recordPlay() }
                     engine.triggerGo()
@@ -365,7 +365,7 @@ struct TileGridView: View {
     private var padTray: some View {
             SentenceTrayView(
                 onTileTap: { index in
-                    engine.removeTile(at: index)
+                    engine.tapTile(at: index)
                 },
                 onGo: {
                     if recorder.state == .recording {
@@ -1043,9 +1043,11 @@ struct TileGridView: View {
                 recorder.recordNavigate(pageKey: NavigationCoordinator.backPageKey)
             }
         case .keyboard:
-            let key = activeScene?.isDefault == true ? Self.keyboardPage
-                                                     : TileToken.systemLink(to: Self.keyboardPage)
-            withAnimation(Self.pageChange) { coordinator.navigate(to: key, linkKey: Self.keyboardPage) }
+            // The keyboard chosen in Settings › Keyboard; QWERTY otherwise.
+            let page = UserDefaults.standard.string(forKey: AppSettingsKey.keyboardDefault)
+                .flatMap(KeyboardLayout.init(rawValue:))?.pageKey ?? Self.keyboardPage
+            let key = activeScene?.isDefault == true ? page : TileToken.systemLink(to: page)
+            withAnimation(Self.pageChange) { coordinator.navigate(to: key, linkKey: page) }
             if recorder.state == .recording { recorder.recordNavigate(pageKey: key) }
         case .search:
             showFindWord = true

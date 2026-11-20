@@ -15,6 +15,8 @@ import SwiftUI
 struct KeyboardSurfaceView: View {
     @Environment(SentenceEngine.self) private var engine
     @AppStorage(AppSettingsKey.keyboardHighlightVowels) private var highlightVowels = true
+    @AppStorage(AppSettingsKey.keyboardHighlightSigns) private var highlightSigns = true
+    @AppStorage(AppSettingsKey.keyboardMathHelper) private var mathHelperOn = true
 
     let layout: KeyboardLayout
     /// The grid area this draws in, and the board's gaps.
@@ -26,6 +28,10 @@ struct KeyboardSurfaceView: View {
     enum Shift { case off, once, locked }
     @State private var shift: Shift = .off
     @State private var lastShiftTap: Date = .distantPast
+    /// The numbers page's math helper, in the top row.
+    @State private var math = MathWalkthrough()
+    /// This view, as the owner of the engine's `mathReplayHandler`.
+    @State private var replayOwner = UUID()
 
     /// The prediction row (PR F) and four rows of keys.
     private static let rowCount = 5
@@ -39,8 +45,12 @@ struct KeyboardSurfaceView: View {
         let unit = (size.width - spacing * CGFloat(KeyboardLayout.rowWidth - 1))
             / CGFloat(KeyboardLayout.rowWidth)
         VStack(spacing: spacing) {
-            // Kept for word prediction, so the keys don't move when it lands.
-            Color.clear.frame(height: rowHeight)
+            if layout == .numbers, mathHelperOn {
+                MathHelperPanel(walkthrough: math, height: rowHeight, spacing: spacing)
+            } else {
+                // Kept for word prediction, so the keys don't move when it lands.
+                Color.clear.frame(height: rowHeight)
+            }
             ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
                 HStack(spacing: spacing) {
                     ForEach(row) { key in
@@ -54,11 +64,39 @@ struct KeyboardSurfaceView: View {
             }
         }
         .frame(width: size.width, height: size.height, alignment: .top)
+        // A tap on a said sum replays its working here (`mathReplayHandler`).
+        .task(id: layout == .numbers && mathHelperOn) {
+            if layout == .numbers, mathHelperOn {
+                let math = math, engine = engine
+                engine.mathReplayOwner = replayOwner
+                engine.mathReplayHandler = { [weak engine] sum in
+                    guard let engine else { return }
+                    math.replay(sum, engine: engine)
+                }
+            } else if engine.mathReplayOwner == replayOwner {
+                engine.mathReplayHandler = nil
+                engine.mathReplayOwner = nil
+            }
+        }
+        .onDisappear {
+            guard engine.mathReplayOwner == replayOwner else { return }
+            engine.mathReplayHandler = nil
+            engine.mathReplayOwner = nil
+        }
+        // Clear or Done empties the line: the working goes with it.
+        .onChange(of: engine.typingLine.isEmpty) { _, empty in
+            if empty { math.cancel() }
+        }
     }
 
     // MARK: - Keys
 
     private func press(_ key: KeyboardKey) {
+        // Typing on moves past the working; Speak and Shift leave it up.
+        switch key.action {
+        case .character, .backspace, .deleteWord, .space: math.cancel()
+        default: break
+        }
         switch key.action {
         case .character(let c):
             engine.typeKey(shift == .off ? c : c.uppercased())
@@ -79,7 +117,15 @@ struct KeyboardSurfaceView: View {
         case .space:
             engine.typeSpace()
         case .speakLine:
-            engine.typeSpeakLine()
+            // On the numbers page a line with a `?` in it is a question.
+            if layout == .numbers, mathHelperOn, engine.typingQuestion.contains("?") {
+                math.ask(engine: engine, typing: false)
+            } else {
+                engine.typeSpeakLine()
+            }
+        case .mathHelp:
+            // Off in Settings, `?` is just a key.
+            if mathHelperOn { math.ask(engine: engine, typing: true) } else { engine.typeKey("?") }
         case .switchTo(let page, _):
             onSwitch(page)
         }
@@ -95,13 +141,16 @@ struct KeyboardSurfaceView: View {
         case .space: .text("space")
         case .speakLine: .symbol("speaker.wave.2.fill")
         case .switchTo(_, let label): .text(label)
+        case .mathHelp: .text("?")
         }
     }
 
     private func tint(for key: KeyboardKey) -> KeyCap.Tint {
         switch key.action {
-        case .character: key.isVowel && highlightVowels ? .vowel : .letter
+        case .character:
+            key.isVowel && highlightVowels ? .vowel : key.isSign && highlightSigns ? .sign : .letter
         case .speakLine: .speak
+        case .mathHelp: mathHelperOn ? .help : .letter
         default: .function
         }
     }
@@ -114,7 +163,7 @@ struct KeyboardSurfaceView: View {
 /// One key: a plate and its label, pressed with the touch.
 private struct KeyCap: View {
     enum Label { case text(String), symbol(String) }
-    enum Tint { case letter, vowel, function, speak }
+    enum Tint { case letter, vowel, sign, function, speak, help }
 
     let key: KeyboardKey
     let label: Label
@@ -131,13 +180,16 @@ private struct KeyCap: View {
         // Off the page's own white, so a key reads as a key.
         case .letter: return Color(.systemGray6)
         case .vowel: return Color(red: 1.0, green: 0.88, blue: 0.55)
+        // The vowels' counterpart on the numbers page: a pale blue.
+        case .sign: return Color(red: 0.74, green: 0.86, blue: 1.0)
         case .function: return Color(.systemGray4)
         case .speak: return Color.green.opacity(0.75)
+        case .help: return Color(red: 0.62, green: 0.55, blue: 0.98)
         }
     }
 
     private var ink: Color {
-        isOn ? .white : tint == .vowel ? .black : .primary
+        isOn || tint == .help ? .white : tint == .vowel || tint == .sign ? .black : .primary
     }
 
     var body: some View {
@@ -153,7 +205,7 @@ private struct KeyCap: View {
                     switch label {
                     case .text(let text):
                         Text(text)
-                            .font(.system(size: text.count == 1 ? height * 0.46 : height * 0.2,
+                            .font(.system(size: height * textScale(text),
                                           weight: text.count == 1 ? .regular : .medium))
                             .lineLimit(1)
                             .minimumScaleFactor(0.5)
@@ -172,6 +224,15 @@ private struct KeyCap: View {
         .accessibilityLabel(accessibilityName)
     }
 
+    /// A glyph big, a clock key (`:15`) a step down, and a word key
+    /// (space, delete word, ABC, QWERTY) smaller, all the same size so the
+    /// switch keys read alike.
+    private func textScale(_ text: String) -> CGFloat {
+        if key.action == .mathHelp { return 0.5 }
+        guard case .character = key.action else { return 0.2 }
+        return text.count == 1 ? 0.46 : 0.32
+    }
+
     private var accessibilityName: String {
         switch key.action {
         case .character(let c): SpeechNormalizer.key(c)
@@ -181,6 +242,7 @@ private struct KeyCap: View {
         case .space: "Space"
         case .speakLine: "Speak"
         case .switchTo(_, let label): "\(label) keyboard"
+        case .mathHelp: "Math help"
         }
     }
 }

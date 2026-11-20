@@ -290,6 +290,7 @@ struct SentenceTrayView: View {
             ActiveTrayCard(
                 tiles: engine.activeGroup.tiles,
                 draft: engine.typingDraft,
+                spokenSums: engine.activeGroup.spokenSums,
                 sentence: engine.activeGroup.sentence,
                 isThinking: engine.isThinking,
                 onTileTap: onTileTap,
@@ -374,6 +375,8 @@ private struct ActiveTrayCard: View {
     let tiles: [TileSelection]
     /// The word being typed, drawn red after the chips.
     var draft: String = ""
+    /// What Play has said, of a line of sums (`TileGroup.spokenSums`).
+    var spokenSums = SpokenSums()
     let sentence: String?
     let isThinking: Bool
     let onTileTap: (Int) -> Void
@@ -431,11 +434,16 @@ private struct ActiveTrayCard: View {
         let spacing: CGFloat = showsPictures ? 8 : 5
         // A typed word with no tile is drawn as its word in either mode.
         let chips: CGFloat = tiles.reduce(0) { sum, tile in
-            sum + (showsPictures && !tile.isTyped
+            if tile.isMath {
+            return sum + MathChipView.width(of: tile.value, height: (isFlush ? kCardHeight : kActiveCardHeight) * 0.7)
+        }
+            return sum + (showsPictures && !tile.isTyped
                    ? (isFlush ? kPlainChipWidth : kActiveCardWidth)
                    : Self.wordWidth(of: tile.value))
         }
-        let typing: CGFloat = draft.isEmpty ? 0 : Self.wordWidth(of: draft) + spacing
+        let typing: CGFloat = draft.isEmpty ? 0
+            : (MathHelper.isMathText(draft) ? MathChipView.width(of: draft, height: (isFlush ? kCardHeight : kActiveCardHeight) * 0.7)
+                                            : Self.wordWidth(of: draft)) + spacing
         let total = chips + typing
             + CGFloat(max(0, tiles.count - 1)) * spacing
             + 8   // the chip group's own horizontal padding
@@ -472,7 +480,8 @@ private struct ActiveTrayCard: View {
                 HStack(spacing: showsPictures ? 8 : 5) {
                     ForEach(Array(tiles.enumerated()), id: \.offset) { index, tile in
                         ActiveTileCard(tile: tile, showsPicture: showsPictures,
-                                       side: isFlush ? kCardHeight : nil) {
+                                       side: isFlush ? kCardHeight : nil,
+                                       sumStyle: spokenSums.chipStyle(at: index)) {
                             onTileTap(index)
                         }
                             .transition(.scale.combined(with: .opacity))
@@ -480,7 +489,7 @@ private struct ActiveTrayCard: View {
 
                     // The word being typed, red until Space commits it.
                     if !draft.isEmpty {
-                        TypingDraftView(text: draft, height: kActiveCardHeight)
+                        TypingDraftView(text: draft, height: isFlush ? kCardHeight : kActiveCardHeight)
                     }
 
                     // Sits at the end of the words, where a caret would be.
@@ -785,6 +794,8 @@ private struct ActiveTileCard: View {
     /// A bare picture and its word this tall, on the white tray. Nil draws
     /// the classic chip.
     var side: CGFloat? = nil
+    /// How a sum draws: newest said, older, or not yet said.
+    var sumStyle: MathChipView.Style = .fresh
     let onTap: () -> Void
 
     /// The selection carries the part of speech it was created with, so a chip
@@ -793,11 +804,15 @@ private struct ActiveTileCard: View {
 
     var body: some View {
         Button(action: onTap) {
-            // A typed word with no tile has no picture: it is its word.
-            if showsPicture && !tile.isTyped { picture } else { word }
+            // A typed sum is drawn as its keys; a typed word with no tile
+            // has no picture: it is its word.
+            if tile.isMath {
+                MathChipView(text: tile.value, height: (side ?? kActiveCardHeight) * 0.7,
+                             style: sumStyle)
+            } else if showsPicture && !tile.isTyped { picture } else { word }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Remove \(tile.value)")
+        .accessibilityLabel(tile.isMath ? "Say \(SpeechNormalizer.line(tile.value))" : "Remove \(tile.value)")
     }
 
     /// The word alone — no card, no colour behind it.
@@ -1489,6 +1504,14 @@ struct TypingDraftView: View {
     let height: CGFloat
 
     var body: some View {
+        if MathHelper.isMathText(text) {
+            MathChipView(text: text, height: height * 0.7, style: .draft)
+        } else {
+            word
+        }
+    }
+
+    private var word: some View {
         Text(text)
             .font(.headline)
             .foregroundStyle(Color.red)
