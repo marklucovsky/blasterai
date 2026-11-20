@@ -84,6 +84,45 @@ struct MathHelperTests {
         #expect(try solution("1÷3×3=?").kind == .answer("1"))
     }
 
+    // MARK: - Brackets, powers, roots (the calculator)
+
+    @Test func bracketsGoFirstAndShowWhereTheyAre() throws {
+        let s = try solution("2×(3+4)=?")
+        #expect(s.frames.map { $0.tokens.joined(separator: " ") } == ["2 × ( 3 + 4 ) = ?", "2 × 7 = ?"])
+        #expect(s.frames.first?.highlight == 3..<6)
+        #expect(s.kind == .answer("14"))
+        #expect(s.summary == "2 × (3 + 4) = 14")
+        #expect(try solution("(1+2)×(3+4)=?").steps == ["1 + 2 = 3", "3 + 4 = 7", "3 × 7 = 21"])
+        #expect(try solution("10−(4−1)=?").kind == .answer("7"))
+    }
+
+    @Test func powersAndRoots() throws {
+        let sq = try solution("3²+1=?")
+        #expect(sq.steps == ["3² = 9", "9 + 1 = 10"])
+        #expect(try solution("2^5=?").kind == .answer("32"))
+        #expect(try solution("2^3^2=?").kind == .answer("512"), "powers group to the right")
+        #expect(try solution("2^-1=?").kind == .answer("0.5"))
+        #expect(try solution("(−3)²=?").kind == .answer("9"))
+        let root = try solution("√9+1=?")
+        #expect(root.steps == ["√9 = 3", "3 + 1 = 4"])
+        #expect(try solution("√(9÷4)=?").kind == .answer("1.5"))
+        #expect(try solution("√2=?").steps == ["√2 ≈ 1.414"])
+        #expect(MathHelper.solve("2^0.5=?") == .cannot(.wholePowersOnly))
+        #expect(MathHelper.solve("√(0−4)=?") == .cannot(.noRootOfNegative))
+        #expect(MathHelper.solve("2×(3+4") == .incomplete)
+        #expect(MathHelper.solve("2×(") == .incomplete)
+        #expect(MathHelper.solve("√") == .incomplete)
+        #expect(MathHelper.solve("?²=9") == .cannot(.notMath), "a power over the missing number is past it")
+    }
+
+    @Test func powersAndRootsAreSaid() {
+        #expect(SpeechNormalizer.line("3² = 9") == "3 squared equals 9")
+        #expect(SpeechNormalizer.line("2 ^ 5 = 32") == "2 to the power of 5 equals 32")
+        #expect(SpeechNormalizer.line("√9 = 3") == "the square root of 9 equals 3")
+        #expect(SpeechNormalizer.line("√2 ≈ 1.414") == "the square root of 2 is about 1.414")
+        #expect(MathHelper.isMathText("2×(3+4)") && MathHelper.isMathText("√9") && MathHelper.isMathText("3²"))
+    }
+
     // MARK: - Missing numbers
 
     @Test func theMissingNumberIsFoundByUndoingTheSum() throws {
@@ -117,13 +156,16 @@ struct MathHelperTests {
         let s = try solution("2+2=4?")
         #expect(s.kind == .check(correct: true))
         #expect(s.summary == "Yes! 2 + 2 = 4")
-        #expect(s.edits.isEmpty, "the line stays as typed")
+        #expect(s.edits == [0: ""], "the ? comes off; the sum stands as typed")
     }
 
     @Test func aWrongAnswerIsPutRight() throws {
         let s = try solution("2+2=5?")
         #expect(s.kind == .check(correct: false))
         #expect(s.summary == "Not quite: 2 + 2 = 4")
+        // The line keeps the wrong answer and gains the right one.
+        #expect(s.edits == [0: "→4"])
+        #expect(try solution("3 > 5?").edits == [0: "→3<5"])
         #expect(try solution("3 > 5?").summary == "Not quite: 3 < 5")
         #expect(try solution("3+4>5?").kind == .check(correct: true))
     }
@@ -300,6 +342,20 @@ struct MathHelperTests {
         engine.tapTile(at: 0)
         engine.tapTile(at: 1)
         #expect(replayed == ["1+2+3=6"], "the unsaid sum is not replayed")
+        withExtendedLifetime(container) {}
+    }
+
+    /// A wrong answer checked: the line shows it put right, it is said as
+    /// put right, and it is still one finished sum.
+    @Test func aWrongAnswerIsPutRightInTheLine() throws {
+        let (engine, container) = engineForTyping()
+        type("5+5=9?", into: engine)
+        engine.fillTypedQuestions(try solution(engine.typingQuestion).edits)
+        #expect(engine.selectedTiles.map(\.value) == ["5+5=9→10"])
+        #expect(engine.selectedTiles.first?.isMath == true)
+        #expect(MathHelper.isFinishedStatement("5+5=9→10"))
+        #expect(SpeechNormalizer.line("5+5=9→10") == "5 plus 5 is not 9, it's 10")
+        #expect(SpeechNormalizer.line("3>5→3<5") == "3 is greater than 5, no, 3 is less than 5")
         withExtendedLifetime(container) {}
     }
 

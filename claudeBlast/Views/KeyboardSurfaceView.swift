@@ -33,19 +33,42 @@ struct KeyboardSurfaceView: View {
     /// This view, as the owner of the engine's `mathReplayHandler`.
     @State private var replayOwner = UUID()
 
-    /// The prediction row (PR F) and four rows of keys.
-    private static let rowCount = 5
+    /// A grid this narrow (a phone in portrait) takes the compact layouts.
+    private static let compactWidth: CGFloat = 500
+    /// A key no taller than this many of its widths: past it, keys read as
+    /// thin slats (Mark, 2026-11-20, phone portrait).
+    private static let maxAspect: CGFloat = 1.45
 
     var body: some View {
-        let rowHeight = (size.height - spacing * CGFloat(Self.rowCount - 1)) / CGFloat(Self.rowCount)
-        let rows = layout.rows
+        let compact = size.width < Self.compactWidth
+        let rows = layout.rows(compact: compact)
+        let across = layout.rowWidth(compact: compact)
+        // The top row (helper or prediction) and the rows of keys. The
+        // calculator's display takes more than a row: it is what is read.
+        let rowCount = CGFloat(rows.count) + (layout == .calculator ? 1.6 : 1)
         // A key-width plus its gap is one step, so a key `w` wide spans `w`
         // steps less one gap, and every row — however many keys — ends on the
         // grid's right edge.
-        let unit = (size.width - spacing * CGFloat(KeyboardLayout.rowWidth - 1))
-            / CGFloat(KeyboardLayout.rowWidth)
+        let unit = (size.width - spacing * CGFloat(across - 1)) / CGFloat(across)
+        // The calculator's keys are square, as a calculator's are, leaving
+        // its display the height.
+        let rowHeight = min((size.height - spacing * (rowCount.rounded(.up) - 1)) / rowCount,
+                            unit * (layout == .calculator ? 0.95 : Self.maxAspect))
+        // Letters sized to the key's narrower side, so tall keys don't get
+        // giant letters.
+        let fontBase = min(rowHeight, unit * 1.3)
         VStack(spacing: spacing) {
-            if layout == .numbers, mathHelperOn {
+            if layout == .calculator {
+                // The calculator's display takes all the height the keys leave.
+                CalculatorDisplay(walkthrough: math)
+                    .frame(maxWidth: .infinity, minHeight: rowHeight, maxHeight: .infinity)
+            } else {
+                // Keys sit at the bottom, by the rail; any height to spare is above.
+                Spacer(minLength: 0)
+            }
+            if layout == .calculator {
+                EmptyView()
+            } else if layout == .numbers, mathHelperOn {
                 MathHelperPanel(walkthrough: math, height: rowHeight, spacing: spacing)
             } else {
                 // Kept for word prediction, so the keys don't move when it lands.
@@ -56,7 +79,7 @@ struct KeyboardSurfaceView: View {
                     ForEach(row) { key in
                         let width = unit * CGFloat(key.width) + spacing * CGFloat(key.width - 1)
                         KeyCap(key: key, label: label(for: key), tint: tint(for: key),
-                               isOn: isOn(key), height: rowHeight) { press(key) }
+                               isOn: isOn(key), height: fontBase) { press(key) }
                             .frame(width: width, height: rowHeight)
                     }
                 }
@@ -65,8 +88,8 @@ struct KeyboardSurfaceView: View {
         }
         .frame(width: size.width, height: size.height, alignment: .top)
         // A tap on a said sum replays its working here (`mathReplayHandler`).
-        .task(id: layout == .numbers && mathHelperOn) {
-            if layout == .numbers, mathHelperOn {
+        .task(id: replays) {
+            if replays {
                 let math = math, engine = engine
                 engine.mathReplayOwner = replayOwner
                 engine.mathReplayHandler = { [weak engine] sum in
@@ -87,6 +110,12 @@ struct KeyboardSurfaceView: View {
         .onChange(of: engine.typingLine.isEmpty) { _, empty in
             if empty { math.cancel() }
         }
+    }
+
+    /// Whether a tap on a said sum replays its working here: the numbers
+    /// page and the calculator, with the helper on.
+    private var replays: Bool {
+        (layout == .calculator || layout == .numbers) && mathHelperOn
     }
 
     // MARK: - Keys
@@ -118,7 +147,7 @@ struct KeyboardSurfaceView: View {
             engine.typeSpace()
         case .speakLine:
             // On the numbers page a line with a `?` in it is a question.
-            if layout == .numbers, mathHelperOn, engine.typingQuestion.contains("?") {
+            if replays, engine.typingQuestion.contains("?") {
                 math.ask(engine: engine, typing: false)
             } else {
                 engine.typeSpeakLine()
@@ -134,10 +163,12 @@ struct KeyboardSurfaceView: View {
     /// Key caps show what the key will type: capitals while Shift is on.
     private func label(for key: KeyboardKey) -> KeyCap.Label {
         switch key.action {
-        case .character(let c): .text(shift == .off ? c : c.uppercased())
+        case .character(let c):
+            // The calculator's power keys read as they do on a calculator.
+            .text(c == "²" ? "x²" : c == "^" ? "xʸ" : shift == .off ? c : c.uppercased())
         case .shift: .symbol(shift == .locked ? "capslock.fill" : shift == .once ? "shift.fill" : "shift")
         case .backspace: .symbol("delete.left")
-        case .deleteWord: .text("delete word")
+        case .deleteWord: .text(layout == .calculator ? "C" : "delete word")
         case .space: .text("space")
         case .speakLine: .symbol("speaker.wave.2.fill")
         case .switchTo(_, let label): .text(label)
@@ -147,8 +178,10 @@ struct KeyboardSurfaceView: View {
 
     private func tint(for key: KeyboardKey) -> KeyCap.Tint {
         switch key.action {
-        case .character:
-            key.isVowel && highlightVowels ? .vowel : key.isSign && highlightSigns ? .sign : .letter
+        case .character(let c):
+            // The calculator's left column and brackets: its function keys.
+            layout == .calculator && "()%²√^".contains(c) ? .function
+                : key.isVowel && highlightVowels ? .vowel : key.isSign && highlightSigns ? .sign : .letter
         case .speakLine: .speak
         case .mathHelp: mathHelperOn ? .help : .letter
         default: .function
@@ -205,7 +238,7 @@ private struct KeyCap: View {
                     switch label {
                     case .text(let text):
                         Text(text)
-                            .font(.system(size: height * textScale(text),
+                            .font(.system(size: max(height * textScale(text), 13),
                                           weight: text.count == 1 ? .regular : .medium))
                             .lineLimit(1)
                             .minimumScaleFactor(0.5)
@@ -229,6 +262,9 @@ private struct KeyCap: View {
     /// switch keys read alike.
     private func textScale(_ text: String) -> CGFloat {
         if key.action == .mathHelp { return 0.5 }
+        // A one-glyph label is a glyph, whatever the key: the calculator's
+        // C and =.
+        if text.count == 1 { return 0.46 }
         guard case .character = key.action else { return 0.2 }
         return text.count == 1 ? 0.46 : 0.32
     }

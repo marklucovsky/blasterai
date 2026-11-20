@@ -153,6 +153,11 @@ before + and −. Tests: `MathHelperTests`.
 - **A said sum is one word** (`markSpoken`): typed with spaces, `1 + 1 = 2`
   becomes `1+1=2` once said, so it is one card, one tap to hear again, one
   backspace to take off. Two whole sums stay two.
+- **A checked answer marks the line** (`MathHelper.correction`): right, the
+  `?` comes off; wrong, `5+5=9?` becomes `5+5=9→10`, drawn `5 + 5 = 9̶ 10`
+  (the 9 struck in red, 10 in green, an orange card) and said "5 plus 5 is
+  not 9, it's 10". A sum put right whole is `3>5→3<5`. Tapped, it replays
+  the whole check: the working, then "Not quite" (Mark, 2026-11-20).
 - **A tap on a said sum replays its working** in the helper row, as when it
   was first worked out (`mathReplayHandler`); one that doesn't add up
   replays as checked. Off the numbers page, the tap just says it.
@@ -162,12 +167,43 @@ before + and −. Tests: `MathHelperTests`.
   it is said, freeing the row; or *Key per Character* — a plate per
   character. Either way red while being typed, purple-edged until said.
 
+## Phone layouts and the calculator (E.5)
+
+**Phone portrait** (a grid under 500 pt wide) takes compact layouts
+(`KeyboardLayout.compactRows`, Mark 2026-11-20: 11.5 keys across drew thin,
+tall slats):
+
+- **Letters:** 10 across, as the iPhone's own keyboard: backspace beside
+  z–m; 123, the other letter keyboard, `,` space `.` `?` and Speak on the
+  bottom row. No delete word.
+- **Numbers:** a calculator's pad, 5 across: `789÷⌫`, `456×=`, `123−<`,
+  `0.%+>`, the clock keys and `?`, `$ / :` and space, then the switches
+  and Speak.
+- Keys are never taller than 1.45 of their width; they sit at the bottom
+  by the rail, letters sized to the key's narrower side.
+
+**The calculator** (`KeyboardLayout.calculator`, `sys:calculator`, the
+*Calc* key on the numbers page) is five across at every size, styled as a
+calculator: a dark display (`CalculatorDisplay`) over square keys, the
+display taking the height they leave.
+
+- Keys: `C ( ) % ÷`, `x² 7 8 9 ×`, `√ 4 5 6 −`, `xʸ 1 2 3 +`, `⌫ 0 . =`,
+  then 123, ABC, QWERTY, `?` and Speak. C is delete word.
+- `=` is a plain key, so a child can type `5+5=10` and say it. The purple
+  `?` is the math helper, as on the numbers page; its working shows in
+  place in the display, then the answer (Mark, 2026-11-20: overloading `=`
+  left no way to type a sum's answer yourself).
+- The math engine now takes brackets (`2 × (3 + 4)`), whole-number powers
+  (`3²`, `2^5`, `2^3^2` = 2^9) and square roots (`√9 = 3`; `√2 ≈ 1.414`,
+  to three places). Said as "squared", "to the power of", "the square
+  root of", "is about". A power or root over a missing number is past it.
+
 ## Keyboard settings
 
 Settings › Look, Sound, Feel › Keyboard (Mark, 2026-11-20), all
 device-local (`AppSettingsKey.keyboard*`):
 
-- **Keyboard Button Opens** — QWERTY (default), ABC or Numbers: the page
+- **Keyboard Button Opens** — QWERTY (default), ABC, Numbers or Calculator: the page
   the rail's Keyboard button opens. Each keyboard still switches to the
   others.
 - **Highlight Vowels** (letters) and **Highlight Signs** (numbers: `+ − × ÷

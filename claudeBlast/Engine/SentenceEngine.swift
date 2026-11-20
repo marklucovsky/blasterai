@@ -1467,6 +1467,16 @@ extension SentenceEngine {
         markSpoken(from: min(start, lineWords.count))
     }
 
+    /// The last sum Play or the helper said, as one line: what the
+    /// calculator's display shows when nothing new is typed.
+    var lastSaidSum: String? {
+        let words = lineWords
+        guard let start = lineSums.starts.last, start < words.count else { return nil }
+        let end = min(lineSums.count, words.count)
+        guard start < end else { return nil }
+        return words[start..<end].map(\.value).joined()
+    }
+
     /// Say a line of the math helper's working, as a sum is said.
     func speakMath(_ text: String) {
         speak(SpeechNormalizer.line(text))

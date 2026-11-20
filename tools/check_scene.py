@@ -76,7 +76,7 @@ def inherited_row(scene):
     # The rail's Keyboard opens the keyboard page from anywhere, too, and its
     # ABC and 123 keys open the ABC keyboard and the numbers page
     # (KeyboardLayout, drawn, not tiles).
-    return [e["page"] for e in templates["systemRow"]] + ["keyboard", "keyboard_abc", "numbers"]
+    return [e["page"] for e in templates["systemRow"]] + ["keyboard", "keyboard_abc", "numbers", "calculator"]
 
 
 def check(path, vocab):

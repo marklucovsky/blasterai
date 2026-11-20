@@ -418,6 +418,7 @@ extension AdminView {
                     Text("QWERTY").tag(KeyboardLayout.qwerty.rawValue)
                     Text("ABC").tag(KeyboardLayout.abc.rawValue)
                     Text("Numbers").tag(KeyboardLayout.numbers.rawValue)
+                    Text("Calculator").tag(KeyboardLayout.calculator.rawValue)
                 }
             } footer: {
                 Text("Every keyboard can still switch to the others with its own keys.")

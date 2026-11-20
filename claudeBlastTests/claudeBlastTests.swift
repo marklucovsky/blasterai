@@ -191,7 +191,8 @@ struct claudeBlastTests {
         // 67 -> 68: `keyboard_abc`, the ABC keyboard (session 20,
         // `KeyboardLayout`).
         // 68 -> 69: `numbers`, the numbers and math page (session 20).
-        #expect(result.scene.pages.count == 69)
+        // 69 -> 70: `calculator`, the calculator keyboard (session 20, E.5).
+        #expect(result.scene.pages.count == 70)
         // The bundled scene is tagged as system-defined, which now also means
         // immutable — caregivers edit a clone instead.
         #expect(result.scene.systemSceneKey == "core_first")
