@@ -100,7 +100,8 @@ struct TypingTests {
             type("2 + 2 = 4", into: engine)
             engine.triggerGo()
             #expect(engine.typingDraft == "", "Play commits the word being typed")
-            #expect(engine.selectedTiles.map(\.value) == ["2", "+", "2", "=", "4"])
+            // Said, a sum typed with spaces is one word (`markSpoken`).
+            #expect(engine.selectedTiles.map(\.value) == ["2+2=4"])
             #expect(!engine.isWaiting && !engine.isThinking)
             #expect(engine.generatedSentence == nil)
         }

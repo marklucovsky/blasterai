@@ -27,7 +27,7 @@ struct KeyboardLayoutTests {
     }
 
     /// All 26 letters, once each, and the keys every keyboard needs.
-    @Test(arguments: KeyboardLayout.allCases)
+    @Test(arguments: [KeyboardLayout.qwerty, .abc])
     func everyLetterIsThereOnce(_ layout: KeyboardLayout) {
         let keys = layout.rows.flatMap { $0 }
         let letters = keys.compactMap { key -> String? in
@@ -41,22 +41,63 @@ struct KeyboardLayoutTests {
         #expect(Set(keys.map(\.id)).count == keys.count, "key ids are unique")
     }
 
-    /// QWERTY's switch key opens ABC and back.
+    /// Every keyboard opens the other two from its bottom row.
     @Test func theKeyboardsSwitchToEachOther() {
-        func switchTarget(_ layout: KeyboardLayout) -> String? {
-            layout.rows.flatMap { $0 }.compactMap { key -> String? in
+        func targets(_ layout: KeyboardLayout) -> Set<String> {
+            Set(layout.rows.flatMap { $0 }.compactMap { key -> String? in
                 if case .switchTo(let page, _) = key.action { return page }
                 return nil
-            }.first
+            })
         }
-        #expect(switchTarget(.qwerty) == KeyboardLayout.abc.pageKey)
-        #expect(switchTarget(.abc) == KeyboardLayout.qwerty.pageKey)
+        for layout in KeyboardLayout.allCases {
+            let others = Set(KeyboardLayout.allCases.filter { $0 != layout }.map(\.pageKey))
+            #expect(targets(layout) == others, "\(layout)")
+        }
+    }
+
+    /// The numbers page: the digits, the signs a sum needs, money and the
+    /// clock — and no letters and no Shift.
+    @Test func theNumbersPageIsUncluttered() {
+        let keys = KeyboardLayout.numbers.rows.flatMap { $0 }
+        let typed = keys.compactMap { key -> String? in
+            if case .character(let c) = key.action { return c }
+            return nil
+        }
+        for needed in ["0", "1", "9", "+", "\u{2212}", "×", "÷", "=", "<", ">", "%", "$", ".", "/",
+                       ":00", ":15", ":30", ":45"] {
+            #expect(typed.contains(needed), "lacks \(needed)")
+        }
+        #expect(!typed.contains { $0.count == 1 && $0.first!.isLetter })
+        #expect(!keys.contains { $0.action == .shift })
+        for needed: KeyboardKey.Action in [.backspace, .deleteWord, .space, .speakLine] {
+            #expect(keys.contains { $0.action == needed })
+        }
+    }
+
+    /// The signs are the numbers page's vowels: tinted when Highlight Signs
+    /// is on. Digits, money and the clock are not signs.
+    @Test func theSignsAreMarked() {
+        let keys = KeyboardLayout.numbers.rows.flatMap { $0 }
+        let signs = keys.filter(\.isSign).compactMap { k -> String? in
+            if case .character(let c) = k.action { return c } else { return nil }
+        }
+        #expect(signs == ["+", "\u{2212}", "×", "÷", "=", "<", ">"])
+        #expect(keys.contains { $0.action == .mathHelp })
+    }
+
+    /// Typed on the numbers page, a sum is said as one.
+    @Test func aSumTypedOnTheNumbersPageIsSaid() {
+        #expect(SpeechNormalizer.line("12\u{2212}5=7") == "12 minus 5 equals 7")
+        #expect(SpeechNormalizer.line("3:15") == "3 15")
+        #expect(SpeechNormalizer.line("3:00") == "3 o'clock")
+        #expect(SpeechNormalizer.key(":45") == "forty-five")
     }
 
     @Test func aPageIsAKeyboardByItsKey() {
         #expect(KeyboardLayout.forPage("keyboard") == .qwerty)
         #expect(KeyboardLayout.forPage("<system>:keyboard") == .qwerty)
         #expect(KeyboardLayout.forPage("<system>:keyboard_abc") == .abc)
+        #expect(KeyboardLayout.forPage("<system>:numbers") == .numbers)
         #expect(KeyboardLayout.forPage("home") == nil)
         #expect(KeyboardLayout.forPage("<system>:actions") == nil)
         #expect(KeyboardLayout.forPage("<template>:keyboard") == nil)

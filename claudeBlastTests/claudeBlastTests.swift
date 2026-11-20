@@ -190,7 +190,8 @@ struct claudeBlastTests {
         // (session 15, tools/board_spec/glp_phrases.json).
         // 67 -> 68: `keyboard_abc`, the ABC keyboard (session 20,
         // `KeyboardLayout`).
-        #expect(result.scene.pages.count == 68)
+        // 68 -> 69: `numbers`, the numbers and math page (session 20).
+        #expect(result.scene.pages.count == 69)
         // The bundled scene is tagged as system-defined, which now also means
         // immutable — caregivers edit a clone instead.
         #expect(result.scene.systemSceneKey == "core_first")

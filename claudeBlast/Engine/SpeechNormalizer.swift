@@ -86,6 +86,8 @@ enum SpeechNormalizer {
         }
         s = replace(s, #"\$(\d+)\b"#) { "\($0[1]) \(Int($0[1]) == 1 ? "dollar" : "dollars")" }
         s = replace(s, #"(\d)\s*%"#) { "\($0[1]) percent" }
+        // A mixed number, as the math helper shows one: `3 1/3` is "3 and 1 third".
+        s = replace(s, #"\b(\d+) (\d+)/(\d+)\b"#) { "\($0[1]) and \(fraction($0[2], over: $0[3]))" }
         s = replace(s, #"\b(\d+)/(\d+)\b"#) { fraction($0[1], over: $0[2]) }
         // Operators between numbers, or standing alone between spaces.
         let operand = #"(?:(?<=\d)|(?<=\s)|^)"#

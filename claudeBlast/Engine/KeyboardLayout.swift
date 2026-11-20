@@ -26,6 +26,9 @@ struct KeyboardKey: Hashable, Identifiable {
         case speakLine
         /// Opens another keyboard page of BlasterAI 60, by page key.
         case switchTo(page: String, label: String)
+        /// The numbers page's `?`: types a question mark and, when the line
+        /// asks something, works it out (`MathHelper`).
+        case mathHelp
     }
 
     let action: Action
@@ -33,6 +36,13 @@ struct KeyboardKey: Hashable, Identifiable {
     let width: Double
     /// Position in its layout, so two keys alike are still two keys.
     let id: String
+
+    /// An arithmetic sign: tinted on the numbers page as vowels are on the
+    /// letters (Settings › Keyboard › Highlight Signs).
+    var isSign: Bool {
+        if case .character(let c) = action { return ["+", "\u{2212}", "×", "÷", "=", "<", ">"].contains(c) }
+        return false
+    }
 
     var isVowel: Bool {
         if case .character(let c) = action { return KeyboardLayout.vowels.contains(c.lowercased()) }
@@ -42,6 +52,9 @@ struct KeyboardKey: Hashable, Identifiable {
 
 enum KeyboardLayout: String, CaseIterable {
     case qwerty, abc
+    /// Digits, the arithmetic signs, money and the clock, and nothing else:
+    /// uncluttered, as TouchChat's is (Mark, 2026-11-17).
+    case numbers
 
     /// The BlasterAI 60 page each keyboard is. `sys:keyboard` is QWERTY, the
     /// keyboard the rail's Keyboard button has always opened.
@@ -49,6 +62,7 @@ enum KeyboardLayout: String, CaseIterable {
         switch self {
         case .qwerty: "keyboard"
         case .abc: "keyboard_abc"
+        case .numbers: "numbers"
         }
     }
 
@@ -82,6 +96,21 @@ enum KeyboardLayout: String, CaseIterable {
                 [(.shift, 1.5)] + letters("uvwxyz") + marks(",.?'"),
                 bottom(switchingTo: .qwerty),
             ])
+        case .numbers:
+            // `−` is the minus sign, not a hyphen: it reads as minus wherever
+            // it lands (`SpeechNormalizer`). The clock keys add to the hour
+            // typed before them: 3 then :15 is 3:15. `?` is the math helper.
+            return Self.build([
+                marks("1234567890") + [(.backspace, 1.5)],
+                marks("+\u{2212}×÷=<>%$.") + [(.speakLine, 1.5)],
+                [(.character(":00"), 1.5), (.character(":15"), 1.5), (.character(":30"), 1.5),
+                 (.character(":45"), 1.5), (.character("/"), 1.5), (.character(":"), 1.5),
+                 (.mathHelp, 2.5)],
+                [(.switchTo(page: Self.qwerty.pageKey, label: Self.qwerty.switchLabel), 2),
+                 (.switchTo(page: Self.abc.pageKey, label: Self.abc.switchLabel), 2),
+                 (.space, 5),
+                 (.deleteWord, 2.5)],
+            ])
         }
     }
 
@@ -90,12 +119,16 @@ enum KeyboardLayout: String, CaseIterable {
         switch self {
         case .qwerty: "QWERTY"
         case .abc: "ABC"
+        case .numbers: "123"
         }
     }
 
+    /// A letter keyboard's bottom row: the numbers, the other letter
+    /// keyboard, space, delete word.
     private func bottom(switchingTo other: KeyboardLayout) -> [(KeyboardKey.Action, Double)] {
-        [(.switchTo(page: other.pageKey, label: other.switchLabel), 2),
-         (.space, 7),
+        [(.switchTo(page: Self.numbers.pageKey, label: Self.numbers.switchLabel), 2),
+         (.switchTo(page: other.pageKey, label: other.switchLabel), 2),
+         (.space, 5),
          (.deleteWord, 2.5)]
     }
 

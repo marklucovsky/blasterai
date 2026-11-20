@@ -401,11 +401,53 @@ extension AdminView {
                     Toggle("Haptics", isOn: $hapticsEnabled)
                 }
             }
-            Section("Keyboard") {
-                Toggle("Highlight Vowels", isOn: $keyboardHighlightVowels)
+            Section {
+                NavigationLink("Keyboard") { keyboardSettingsPage }
             }
         }
         .navigationTitle("Look, Sound, Feel")
+    }
+
+    // MARK: Keyboard
+
+    /// The keyboard pages' settings (Mark, 2026-11-20), all device-local.
+    var keyboardSettingsPage: some View {
+        List {
+            Section {
+                Picker("Keyboard Button Opens", selection: $keyboardDefault) {
+                    Text("QWERTY").tag(KeyboardLayout.qwerty.rawValue)
+                    Text("ABC").tag(KeyboardLayout.abc.rawValue)
+                    Text("Numbers").tag(KeyboardLayout.numbers.rawValue)
+                }
+            } footer: {
+                Text("Every keyboard can still switch to the others with its own keys.")
+            }
+            Section("Letters") {
+                Toggle("Highlight Vowels", isOn: $keyboardHighlightVowels)
+            }
+            Section {
+                Toggle("Highlight Signs", isOn: $keyboardHighlightSigns)
+                Toggle("Math Helper", isOn: $keyboardMathHelper)
+                if keyboardMathHelper {
+                    Toggle("Show the Working", isOn: $keyboardShowWorking)
+                }
+            } header: {
+                Text("Numbers")
+            } footer: {
+                Text("With the math helper on, ? works out the sum typed before it, a step at a time. Off, ? is just a key.")
+            }
+            Section {
+                Picker("Sums in the Message Box", selection: $keyboardSumStyle) {
+                    ForEach(SumStyle.allCases, id: \.rawValue) { Text($0.title).tag($0.rawValue) }
+                }
+                if keyboardSumStyle == SumStyle.cards.rawValue {
+                    Toggle("Older Sums Smaller", isOn: $keyboardShrinkOldSums)
+                }
+            } header: {
+                Text("Experiments")
+            }
+        }
+        .navigationTitle("Keyboard")
     }
 
     // MARK: Advanced

@@ -58,6 +58,12 @@ struct AdminView: View {
     @AppStorage(AppSettingsKey.tileSpeechEnabled) var tileSpeechEnabled: Bool = true
     @AppStorage(AppSettingsKey.hapticsEnabled) var hapticsEnabled: Bool = true
     @AppStorage(AppSettingsKey.keyboardHighlightVowels) var keyboardHighlightVowels: Bool = true
+    @AppStorage(AppSettingsKey.keyboardSumStyle) var keyboardSumStyle: String = SumStyle.cards.rawValue
+    @AppStorage(AppSettingsKey.keyboardShrinkOldSums) var keyboardShrinkOldSums: Bool = true
+    @AppStorage(AppSettingsKey.keyboardShowWorking) var keyboardShowWorking: Bool = true
+    @AppStorage(AppSettingsKey.keyboardDefault) var keyboardDefault: String = KeyboardLayout.qwerty.rawValue
+    @AppStorage(AppSettingsKey.keyboardHighlightSigns) var keyboardHighlightSigns: Bool = true
+    @AppStorage(AppSettingsKey.keyboardMathHelper) var keyboardMathHelper: Bool = true
     @AppStorage(AppSettingsKey.speechVoiceIdentifier) var voiceIdentifier: String = ""
     @AppStorage(AppSettingsKey.boardLayout) var boardLayoutRaw: String =
         BoardLayout.current().rawValue

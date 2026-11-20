@@ -95,8 +95,87 @@ own page of that name is just a page. Tests: `KeyboardLayoutTests`.
   generated sentence (`typeSpeakLine`).
 - Vowels are tinted unless Settings › Look, Sound, Feel › Keyboard ›
   Highlight Vowels is off (device-local).
-- The numbers key arrives with the numbers page (PR E). The phone's iOS
-  keyboard path is its own PR; a phone shows the same surface, smaller.
+- The phone's iOS keyboard path is its own PR; a phone shows the same
+  surface, smaller.
+
+## Numbers page (PR E)
+
+`KeyboardLayout.numbers`, at `sys:numbers`: digits and backspace; `+ − × ÷ =
+< > % $ .` and Speak; the clock keys `:00 :15 :30 :45`, `/` and `:`; then
+QWERTY, ABC, space and delete word. No letters, no Shift. Both letter
+keyboards open it with a `123` key.
+
+- `−` is the minus sign (U+2212), which `SpeechNormalizer` reads as minus
+  wherever it lands; a hyphen is minus only between digits.
+- A clock key adds to the hour typed before it: `3` then `:15` is `3:15`,
+  said "3 15"; `3` then `:00` is "3 o'clock". Pressed, `:45` says
+  "forty-five".
+- A sum typed without spaces is one word in the message box (`2+2=4`) and is
+  said as a sum.
+
+## Math helper (PR E)
+
+The numbers page's purple `?` key (Mark, 2026-11-20). `MathHelper` solves;
+`MathWalkthrough` (`MathHelperPanel.swift`) paces it in the page's top row,
+in **one card that changes in place** (Mark, 2026-11-20): the sum shrinks a
+pair at a time — `1 + 2 + 3 + 4`, `3 + 3 + 4`, `6 + 4` — the pair being
+worked out on yellow, then, as it collapses, the number it made on green.
+Each step is said before the next (`MathHelper.Frame`). A missing number is
+shown as the equation turned round: `3 + ? = 7` becomes `? = 7 − 3`. Then
+the answer goes in the line, the sum is said whole, and a star marks it. No AI: exact fractions, × and ÷
+before + and −. Tests: `MathHelperTests`.
+
+| typed, then `?` | working | line becomes |
+|---|---|---|
+| `1+2+3+4=` | 1 + 2 = 3, 3 + 3 = 6, 6 + 4 = 10 | `1+2+3+4=10` |
+| `1+2+3+4` | the same | `1+2+3+4=10` |
+| `3+?=7` | 7 − 3 = 4 | `3+4=7` |
+| `2+2=5` | "Not quite: 2 + 2 = 4" | as typed |
+| `3?5` | "3 < 5" | `3<5` |
+
+- A `?` typed where a number goes (`3+?`) is the number to find; the helper
+  waits for the rest. Speak on a line with a `?` in it asks too.
+- Answers: whole, negative (`−2`), a decimal that ends within three places
+  (`3.5`), else a fraction (`3 1/3`, said "3 and 1 third").
+- What it can't do it says: dividing by zero, a sum with words or money in
+  it, two `?`s, numbers too big.
+- Typing on clears the working; Clear does too. The hint row shows
+  `2 + 3 = ?` until then.
+- A one-step sum (`3×4?`) shows only its answer: its one step *is* the
+  answer, and showing both said it twice (Mark, 2026-11-20).
+- **Each sum is said once** (`SpokenSums`, on the line and on the strip).
+  Play says what was typed since the last Play when it is all sums, so
+  `1+1=2`, Play, `2+2=4`, Play says each once; with nothing new it says the
+  last sum again. A tap on a sum says it again (any other word still comes
+  off on a tap). A line with words in it is said whole, as before. The
+  helper works on the newest sum alone, after a finished one (`1+1=2`) even
+  without a Play between.
+- **A said sum is one word** (`markSpoken`): typed with spaces, `1 + 1 = 2`
+  becomes `1+1=2` once said, so it is one card, one tap to hear again, one
+  backspace to take off. Two whole sums stay two.
+- **A tap on a said sum replays its working** in the helper row, as when it
+  was first worked out (`mathReplayHandler`); one that doesn't add up
+  replays as checked. Off the numbers page, the tap just says it.
+- **How sums draw** is an experiment setting (`SumStyle`): *One Card per
+  Sum* (default) — the newest said sum green with a star, older ones grey
+  and smaller, and the helper's answer moves up into the message box when
+  it is said, freeing the row; or *Key per Character* — a plate per
+  character. Either way red while being typed, purple-edged until said.
+
+## Keyboard settings
+
+Settings › Look, Sound, Feel › Keyboard (Mark, 2026-11-20), all
+device-local (`AppSettingsKey.keyboard*`):
+
+- **Keyboard Button Opens** — QWERTY (default), ABC or Numbers: the page
+  the rail's Keyboard button opens. Each keyboard still switches to the
+  others.
+- **Highlight Vowels** (letters) and **Highlight Signs** (numbers: `+ − × ÷
+  = < >` in pale blue).
+- **Math Helper** — off, `?` is just a key and the hint row is empty;
+  **Show the Working** — off, `?` goes straight to the answer.
+- **Experiments** — Sums in the Message Box (cards or keys), Older Sums
+  Smaller.
 
 ## Speech: `SpeechNormalizer`
 

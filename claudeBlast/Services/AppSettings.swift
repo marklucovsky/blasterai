@@ -104,6 +104,22 @@ nonisolated enum AppSettingsKey {
     /// Tint the vowel keys on the keyboard pages, as TouchChat and Avaz
     /// offer. On unless turned off. Device-local.
     static let keyboardHighlightVowels = "keyboard_highlight_vowels"
+    /// Experiments for the numbers page (Mark, 2026-11-20), device-local:
+    /// how a typed sum is drawn in the message box (`SumStyle`), whether
+    /// older sums there draw smaller, and whether the `?` helper shows its
+    /// working or only the answer.
+    static let keyboardSumStyle      = "keyboard_sum_style"
+    /// `KeyboardLayout.rawValue` the rail's Keyboard button opens. QWERTY
+    /// unless chosen. Device-local.
+    static let keyboardDefault       = "keyboard_default"
+    /// Tint the sign keys (+ − × ÷ = < >) on the numbers page, as vowels
+    /// are tinted on the letters. On unless turned off. Device-local.
+    static let keyboardHighlightSigns = "keyboard_highlight_signs"
+    /// The numbers page's `?` math helper. Off, `?` is just a key. On unless
+    /// turned off. Device-local.
+    static let keyboardMathHelper    = "keyboard_math_helper"
+    static let keyboardShrinkOldSums = "keyboard_shrink_old_sums"
+    static let keyboardShowWorking   = "keyboard_show_working"
     /// Child mode on a caregiver device: the board shows the child's rail
     /// until the Admin gate turns it off (`RailProfile`). Device-local.
     static let railChildLock         = "rail_child_lock"
@@ -213,5 +229,25 @@ func setModelContainer(icloudEnabled: Bool) -> ModelContainer {
                                   configurations: [localConfig, syncedLocalConfig])
     } catch {
         fatalError("Could not create ModelContainer: \(error)")
+    }
+}
+
+/// How a typed sum is drawn in the message box (`AppSettingsKey.keyboardSumStyle`).
+enum SumStyle: String, CaseIterable {
+    /// One card per sum: the newest green, older ones grey. The helper's
+    /// answer moves into the message box as one.
+    case cards
+    /// A plate per character, like the keys that typed it.
+    case keys
+
+    var title: String {
+        switch self {
+        case .cards: "One Card per Sum"
+        case .keys: "Key per Character"
+        }
+    }
+
+    static var current: SumStyle {
+        UserDefaults.standard.string(forKey: AppSettingsKey.keyboardSumStyle).flatMap(SumStyle.init) ?? .cards
     }
 }

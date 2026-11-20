@@ -137,7 +137,8 @@ struct SingleWordTrayView: View {
                         ForEach(Array(strip.enumerated()), id: \.offset) { idx, tile in
                             WordChip(tile: tile,
                                      showsPicture: engine.trayShowsPictures,
-                                     side: isFlush ? height : nil) {
+                                     side: isFlush ? height : nil,
+                                     sumStyle: engine.stripSpokenSums.chipStyle(at: idx)) {
                                 onRemove(idx)
                             }
                                 .overlay(alignment: .topTrailing) {
@@ -151,7 +152,7 @@ struct SingleWordTrayView: View {
 
                         // The word being typed, red until Space.
                         if !engine.typingDraft.isEmpty {
-                            TypingDraftView(text: engine.typingDraft, height: 56)
+                            TypingDraftView(text: engine.typingDraft, height: isFlush ? height : 56)
                                 .id("draft")
                         }
 
@@ -228,6 +229,8 @@ private struct WordChip: View {
     /// A bare picture and its word this tall, on the white strip. Nil draws
     /// the classic chip.
     var side: CGFloat? = nil
+    /// How a sum draws: newest said, older, or not yet said.
+    var sumStyle: MathChipView.Style = .fresh
     let onTap: () -> Void
 
     /// The card's square picture area — unchanged, so the strip did not have to
@@ -241,8 +244,11 @@ private struct WordChip: View {
 
     var body: some View {
         Button(action: onTap) {
-            // A typed word with no tile has no picture: it is its word.
-            if showsPicture && !tile.isTyped { card } else { word }
+            // A typed sum is drawn as its keys; a typed word with no tile
+            // has no picture: it is its word.
+            if tile.isMath {
+                MathChipView(text: tile.value, height: (side ?? size) * 0.7, style: sumStyle)
+            } else if showsPicture && !tile.isTyped { card } else { word }
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Remove \(tile.value)")
