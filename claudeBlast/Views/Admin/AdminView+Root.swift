@@ -423,8 +423,13 @@ extension AdminView {
             } footer: {
                 Text("Every keyboard can still switch to the others with its own keys.")
             }
-            Section("Letters") {
+            Section {
                 Toggle("Highlight Vowels", isOn: $keyboardHighlightVowels)
+                Toggle("Word Prediction", isOn: $keyboardPrediction)
+            } header: {
+                Text("Letters")
+            } footer: {
+                Text("Words to finish the one being typed, with their pictures, once a word is started.")
             }
             Section {
                 Toggle("Highlight Signs", isOn: $keyboardHighlightSigns)
@@ -443,6 +448,11 @@ extension AdminView {
                 }
                 if keyboardSumStyle == SumStyle.cards.rawValue {
                     Toggle("Older Sums Smaller", isOn: $keyboardShrinkOldSums)
+                }
+                if keyboardPrediction {
+                    Picker("Prediction Order", selection: $keyboardPredictionOrder) {
+                        ForEach(WordPredictor.Order.allCases, id: \.rawValue) { Text($0.title).tag($0.rawValue) }
+                    }
                 }
             } header: {
                 Text("Experiments")

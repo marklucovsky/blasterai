@@ -1467,6 +1467,21 @@ extension SentenceEngine {
         markSpoken(from: min(start, lineWords.count))
     }
 
+    /// A word from the prediction bar: it takes the place of the word being
+    /// typed, and is committed and said as if typed in full.
+    func choosePrediction(_ word: String) {
+        caregiverEditing = false
+        typingDraft = word
+        commitTypedWord()
+    }
+
+    /// The last word in the message box, for next-word prediction: nil when
+    /// there is none, or it is a sum.
+    var lastTypedLineWord: String? {
+        guard let last = lineWords.last, !last.isMath else { return nil }
+        return last.value
+    }
+
     /// The last sum Play or the helper said, as one line: what the
     /// calculator's display shows when nothing new is typed.
     var lastSaidSum: String? {

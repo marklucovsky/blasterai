@@ -11,12 +11,20 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct KeyboardSurfaceView: View {
     @Environment(SentenceEngine.self) private var engine
     @AppStorage(AppSettingsKey.keyboardHighlightVowels) private var highlightVowels = true
     @AppStorage(AppSettingsKey.keyboardHighlightSigns) private var highlightSigns = true
     @AppStorage(AppSettingsKey.keyboardMathHelper) private var mathHelperOn = true
+    @AppStorage(AppSettingsKey.keyboardPrediction) private var predictionOn = true
+    @AppStorage(AppSettingsKey.keyboardPredictionOrder) private var predictionOrder =
+        WordPredictor.Order.alphabetical.rawValue
+    @Environment(\.modelContext) private var modelContext
+    /// The letter keyboards' predictions, built from the vocabulary and the
+    /// utterance log when a letter keyboard opens.
+    @State private var predictor = WordPredictor()
 
     let layout: KeyboardLayout
     /// The grid area this draws in, and the board's gaps.
@@ -70,8 +78,15 @@ struct KeyboardSurfaceView: View {
                 EmptyView()
             } else if layout == .numbers, mathHelperOn {
                 MathHelperPanel(walkthrough: math, height: rowHeight, spacing: spacing)
+            } else if predictionOn, layout == .qwerty || layout == .abc {
+                PredictionBar(predictions: predictor.predict(
+                                  prefix: engine.typingDraft, after: engine.lastTypedLineWord,
+                                  order: WordPredictor.Order(rawValue: predictionOrder) ?? .alphabetical),
+                              height: rowHeight, spacing: spacing) { word in
+                    math.cancel()
+                    engine.choosePrediction(word)
+                }
             } else {
-                // Kept for word prediction, so the keys don't move when it lands.
                 Color.clear.frame(height: rowHeight)
             }
             ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
@@ -87,6 +102,10 @@ struct KeyboardSurfaceView: View {
             }
         }
         .frame(width: size.width, height: size.height, alignment: .top)
+        .task(id: layout) {
+            guard layout == .qwerty || layout == .abc else { return }
+            predictor = Self.buildPredictor(modelContext)
+        }
         // A tap on a said sum replays its working here (`mathReplayHandler`).
         .task(id: replays) {
             if replays {
@@ -116,6 +135,16 @@ struct KeyboardSurfaceView: View {
     /// page and the calculator, with the helper on.
     private var replays: Bool {
         (layout == .calculator || layout == .numbers) && mathHelperOn
+    }
+
+    /// The vocabulary and the last few thousand utterances: enough history
+    /// to rank by, small enough to build as the keyboard opens.
+    private static func buildPredictor(_ context: ModelContext) -> WordPredictor {
+        let tiles = (try? context.fetch(FetchDescriptor<TileModel>())) ?? []
+        var recent = FetchDescriptor<LoggedUtterance>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
+        recent.fetchLimit = 3000
+        let history = ((try? context.fetch(recent)) ?? []).reversed().map(\.tileKeys)
+        return WordPredictor(tiles: tiles, history: history)
     }
 
     // MARK: - Keys
