@@ -198,6 +198,28 @@ display taking the height they leave.
   to three places). Said as "squared", "to the power of", "the square
   root of", "is about". A power or root over a missing number is past it.
 
+## Word prediction (PR F)
+
+The letter keyboards' top row is the prediction bar (`PredictionBar`, over
+`WordPredictor`), built from the vocabulary and the last 3,000 utterances
+when a letter keyboard opens. Nothing leaves the device.
+
+- **Typing:** words starting with what is typed — our words (a picture
+  chip) and words typed before that we don't have (a text chip) — ranked by
+  what has followed the last word, then the person's own use, then words
+  with pictures, then shorter. Hidden
+  words, folders, the Letters pack and sums are never offered.
+- **Only once a word is started** (Mark, 2026-11-20): with nothing typed
+  the bar is empty. While typing, words that have followed the last word in
+  the line (from their own history) rank first.
+- **Order** is an experiment setting (`WordPredictor.Order`):
+  *Alphabetical* (default) keeps the same letters showing the same words in
+  the same places, so a person learns how many letters it takes — fixed
+  positions are what AAC motor planning rests on (Mark, 2026-11-20);
+  *Most Used* ranks as above.
+- A tap types the word in full and commits it, as Space would. More than
+  fit, an arrow pages. Settings › Keyboard › Word Prediction turns it off.
+
 ## Keyboard settings
 
 Settings › Look, Sound, Feel › Keyboard (Mark, 2026-11-20), all
@@ -206,7 +228,7 @@ device-local (`AppSettingsKey.keyboard*`):
 - **Keyboard Button Opens** — QWERTY (default), ABC, Numbers or Calculator: the page
   the rail's Keyboard button opens. Each keyboard still switches to the
   others.
-- **Highlight Vowels** (letters) and **Highlight Signs** (numbers: `+ − × ÷
+- **Word Prediction** (letters), **Highlight Vowels** and **Highlight Signs** (numbers: `+ − × ÷
   = < >` in pale blue).
 - **Math Helper** — off, `?` is just a key and the hint row is empty;
   **Show the Working** — off, `?` goes straight to the answer.

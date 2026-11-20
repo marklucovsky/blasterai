@@ -64,6 +64,9 @@ struct AdminView: View {
     @AppStorage(AppSettingsKey.keyboardDefault) var keyboardDefault: String = KeyboardLayout.qwerty.rawValue
     @AppStorage(AppSettingsKey.keyboardHighlightSigns) var keyboardHighlightSigns: Bool = true
     @AppStorage(AppSettingsKey.keyboardMathHelper) var keyboardMathHelper: Bool = true
+    @AppStorage(AppSettingsKey.keyboardPrediction) var keyboardPrediction: Bool = true
+    @AppStorage(AppSettingsKey.keyboardPredictionOrder) var keyboardPredictionOrder: String =
+        WordPredictor.Order.alphabetical.rawValue
     @AppStorage(AppSettingsKey.speechVoiceIdentifier) var voiceIdentifier: String = ""
     @AppStorage(AppSettingsKey.boardLayout) var boardLayoutRaw: String =
         BoardLayout.current().rawValue

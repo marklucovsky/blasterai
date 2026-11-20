@@ -118,6 +118,11 @@ nonisolated enum AppSettingsKey {
     /// The numbers page's `?` math helper. Off, `?` is just a key. On unless
     /// turned off. Device-local.
     static let keyboardMathHelper    = "keyboard_math_helper"
+    /// The letter keyboards' prediction bar (PR F). On unless turned off.
+    /// Device-local.
+    static let keyboardPrediction    = "keyboard_prediction"
+    /// `WordPredictor.Order.rawValue`: alphabetical unless chosen.
+    static let keyboardPredictionOrder = "keyboard_prediction_order"
     static let keyboardShrinkOldSums = "keyboard_shrink_old_sums"
     static let keyboardShowWorking   = "keyboard_show_working"
     /// Child mode on a caregiver device: the board shows the child's rail
