@@ -203,6 +203,33 @@ enum KeyboardLayout: String, CaseIterable {
         }
     }
 
+    /// The keyboard the rail's Keyboard button opens: the one chosen in
+    /// Settings, unless the board's navigation bar already links to it — a
+    /// second way to the same place is a wasted button — when it becomes the
+    /// next of Calculator, Numbers, QWERTY, ABC the bar doesn't have (Mark,
+    /// 2026-11-20: Brandi's board has Keyboard in its bar).
+    static func railTarget(preferred: KeyboardLayout, inBar: Set<KeyboardLayout>) -> KeyboardLayout {
+        [preferred, .calculator, .numbers, .qwerty, .abc].first { !inBar.contains($0) } ?? preferred
+    }
+
+    /// The rail button's face when it opens this keyboard.
+    var railTitle: String {
+        switch self {
+        case .qwerty: "Keyboard"
+        case .abc: "ABC"
+        case .numbers: "Numbers"
+        case .calculator: "Calculator"
+        }
+    }
+
+    var railImage: String {
+        switch self {
+        case .qwerty, .abc: "keyboard"
+        case .numbers: "textformat.123"
+        case .calculator: "plus.forwardslash.minus"
+        }
+    }
+
     /// The name on the key that switches to this keyboard.
     var switchLabel: String {
         switch self {

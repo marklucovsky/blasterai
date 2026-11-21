@@ -184,6 +184,26 @@ struct ChooserTests {
                     .map(\.board) == ["BlasterAI 60"])
     }
 
+    /// Every keyboard is offered as a page to link to: a navigation bar can
+    /// anchor `sys:keyboard`, `sys:keyboard_abc`, `sys:numbers` and
+    /// `sys:calculator` (session 20, PR G).
+    @Test func theKeyboardsAreLinkTargets() {
+        let ctx = TestStore.freshContainer().mainContext
+        let system = BootstrapLoader.loadDefaultVocabulary(context: ctx).scene
+        let scene = BlasterScene(name: "Zoo", homePageKey: "home")
+        scene.pages = [PageSpec(key: "home", tiles: [])]
+        let groups = PageChoice.linkTargets(scene: scene,
+                                            chain: TemplateChain(scene: scene, templates: [], system: system))
+        let offered = Dictionary(groups.flatMap(\.options).map { ($0.value, $0.title) },
+                                 uniquingKeysWith: { a, _ in a })
+        for layout in KeyboardLayout.allCases {
+            let link = TileToken.systemLink(to: layout.pageKey)
+            #expect(offered[link] != nil, "\(link) is not offered")
+            #expect(KeyboardLayout.forPage(link) == layout, "\(link) opens its keyboard")
+        }
+        #expect(offered[TileToken.systemLink(to: "calculator")] == "Calculator")
+    }
+
     /// Link targets: the scene's own pages by key, then BlasterAI 60's as
     /// system links.
     @Test func linkTargetsAreOwnThenSystem() {

@@ -137,59 +137,43 @@ New in This Version" will need.
 > Features**. Most of this needs no key, and that is the
 > configuration most families will run.
 >
-> ### What's new in build 12
+> ### What's new in build 13
 >
-> **Some words changed.** A *scene* is now a **board**. The device modes are
-> **Talk mode** (for the person using the board to talk) and **Setup mode**
-> (for you). The tray is the **message box**, and the top row is the
-> **navigation bar**. Image sets are now **Tile Styles**.
+> **A keyboard.** The Keyboard button on the rail opens it, and so does
+> any sys:keyboard link you put in a navigation bar.
 >
-> - **Settings is one short list:** Profile, Current Board, Message Box, Look,
->   Sound, Feel, Boards and Vocabulary, Activity, AI, Help, About, Advanced.
->   On an iPad it opens on the current profile and Quick Settings.
-> - **Each profile has its own message settings:** Single Words or
->   Sentences, words per message (4 to 8), and pictures in the message box.
->   The stage you pick only sets where they start.
-> - **Help is in the app.** Settings › Help opens the blasterai.app guides,
->   and any guide you've opened before still opens offline.
-> - **Boards and Vocabulary** has a search field, a filter (All · Mine ·
->   Built-in · Topics) and a **+** menu for new and imported boards.
-> - **The board editor** puts Pages first. Artwork shows what each tile
->   style still needs, and asks before any run that costs money, with an
->   estimate.
-> - **The Me page has rules.** **Always** shows a word every time. **Pinned**
->   puts a tile in a cell you choose. **Includes** brings in another Me page:
->   one "Room 4" page reaches every student who includes it. **Preview**
->   shows where each added tile lands and why. My Topics is always the first
->   cell.
-> - **Share a Me page** along with its topic boards.
-> - **Choosing a word or a page.** One word chooser: search, plus a chip for
->   each kind of word in its colour. Pages are listed by folder, the way you
->   reach them on the board. A search also finds a page by a word on it. In
->   the page editor, type **>** and tap **Browse** to pick a folder's page.
-> - **Sharing keeps every tile setting,** including folder colours and labels.
->   Board files are now `.blasterboard`; older `.blasterscene` files still
->   open.
-> - **Word packs stay put.** An app update used to hide the words of any
->   pack you had added, leaving a Tide Pools board with only *fish*. They
->   stay now, and words an update hid come back on first launch.
-> - **A board made with New Board** has the navigation bar like every other
->   board, so it can be one of the user's topics.
+> - **QWERTY and ABC keyboards.** Each key is said as it's pressed, and
+>   Space says the word. The word being typed shows in red in the message
+>   box. A word we have becomes its tile, picture and all. A typed line is
+>   said as typed and never sent for a sentence.
+> - **Word prediction.** Once a word is started, the row above the keys
+>   offers words with their pictures. Tap one to type it.
+> - **Numbers.** The **123** key opens digits, signs, money and the clock
+>   (:15, :30). Sums are said as sums: 12÷4 is "12 divided by 4".
+> - **The ? key works sums out.** Type 1+2+3+4= and press **?**: the sum
+>   shrinks a pair at a time, each step said, and the answer goes in the
+>   message box. It finds missing numbers (3+?=7), checks answers
+>   (5+5=9? comes back "not 9, it's 10") and picks signs (3?5).
+> - **A calculator.** **Calc** on the numbers page: brackets, squares,
+>   roots and powers, with its own display.
+> - **Each sum is said once.** Type and play sums one after another; tap
+>   one to hear its working again.
+> - **On a phone** the keyboards are laid out for portrait.
+> - **Settings › Look, Sound, Feel › Keyboard:** which keyboard the button
+>   opens, vowel and sign tints, prediction, and the math helper.
+> - **Also:** Search is full size on the Talk rail, Find Word searches the
+>   whole board, received word packs offer to install, and older boards
+>   offer the standard layout.
 >
-> ### What to test in build 12
+> ### What to test in build 13
 >
-> - **Find your way around Settings** without the guides. Change the voice,
->   switch between Single Words and Sentences, and try another Tile Style.
->   Was anything not where you expected?
-> - **Build a Me page.** Settings › Profile › Me Page. Add a word that
->   always shows, pin one to a cell, then open **Preview**. Does it explain
->   where each tile went?
-> - **If you work with several users:** make one Me page for the group,
->   include it from two profiles, and share one of them to another device.
-> - **Link a folder by browsing.** In the page editor, type **>** in a cell
->   and tap **Browse**. Is that easier than remembering the page's name?
-> - **The new words.** Do *user*, *Talk mode*, *Setup mode* and *board* read
->   right to you, and to the families you work with?
+> - **Type a few words** on QWERTY, then on ABC. Are the keys big enough,
+>   and is each one said the way you'd want?
+> - **Use prediction:** type two letters and pick a word. Is the word you
+>   wanted there, and in the same place each time?
+> - **Do some sums** with a learner who does maths: type 5+5=10 and
+>   play it, then try **?** on one. Does the working help or get in the way?
+> - **Try the calculator on a phone.**
 >
 <!-- pdf-only -->
 > ---
@@ -280,6 +264,45 @@ New in This Version" will need.
 > 15. **Go back to Activity.** It should now show the sentences, and what they
 >     cost.
 > ### Earlier builds
+>
+> ### What's new in build 12
+>
+> **Some words changed.** A *scene* is now a **board**. The device modes are
+> **Talk mode** (for the person using the board to talk) and **Setup mode**
+> (for you). The tray is the **message box**, and the top row is the
+> **navigation bar**. Image sets are now **Tile Styles**.
+>
+> - **Settings is one short list:** Profile, Current Board, Message Box, Look,
+>   Sound, Feel, Boards and Vocabulary, Activity, AI, Help, About, Advanced.
+>   On an iPad it opens on the current profile and Quick Settings.
+> - **Each profile has its own message settings:** Single Words or
+>   Sentences, words per message (4 to 8), and pictures in the message box.
+>   The stage you pick only sets where they start.
+> - **Help is in the app.** Settings › Help opens the blasterai.app guides,
+>   and any guide you've opened before still opens offline.
+> - **Boards and Vocabulary** has a search field, a filter (All · Mine ·
+>   Built-in · Topics) and a **+** menu for new and imported boards.
+> - **The board editor** puts Pages first. Artwork shows what each tile
+>   style still needs, and asks before any run that costs money, with an
+>   estimate.
+> - **The Me page has rules.** **Always** shows a word every time. **Pinned**
+>   puts a tile in a cell you choose. **Includes** brings in another Me page:
+>   one "Room 4" page reaches every student who includes it. **Preview**
+>   shows where each added tile lands and why. My Topics is always the first
+>   cell.
+> - **Share a Me page** along with its topic boards.
+> - **Choosing a word or a page.** One word chooser: search, plus a chip for
+>   each kind of word in its colour. Pages are listed by folder, the way you
+>   reach them on the board. A search also finds a page by a word on it. In
+>   the page editor, type **>** and tap **Browse** to pick a folder's page.
+> - **Sharing keeps every tile setting,** including folder colours and labels.
+>   Board files are now `.blasterboard`; older `.blasterscene` files still
+>   open.
+> - **Word packs stay put.** An app update used to hide the words of any
+>   pack you had added, leaving a Tide Pools board with only *fish*. They
+>   stay now, and words an update hid come back on first launch.
+> - **A board made with New Board** has the navigation bar like every other
+>   board, so it can be one of the user's topics.
 >
 > ### What's new in build 10
 >

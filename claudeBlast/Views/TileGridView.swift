@@ -155,7 +155,16 @@ struct TileGridView: View {
         case sentence
     }
 
+    /// Settings › Keyboard › Keyboard Button Opens.
+    @AppStorage(AppSettingsKey.keyboardDefault) private var keyboardDefault = KeyboardLayout.qwerty.rawValue
     private var activeScene: BlasterScene? { activeScenes.first }
+
+    /// What the rail's Keyboard opens (`KeyboardLayout.railTarget`).
+    private var railKeyboard: KeyboardLayout {
+        let preferred = KeyboardLayout(rawValue: keyboardDefault) ?? .qwerty
+        return KeyboardLayout.railTarget(preferred: preferred,
+                                         inBar: activeScene.map(BoardChrome.barKeyboards) ?? [])
+    }
     private var systemScene: BlasterScene? { systemScenes.first }
 
     /// The board's levels and the templates it is built on (`TemplateChain`).
@@ -1013,7 +1022,8 @@ struct TileGridView: View {
                            menu: { caregiverMenuContent },
                            isEditMenuOpen: $showEditMenu,
                            editMenu: { editMenuContent(withLevel: compact) },
-                           level: railLevel)
+                           level: railLevel,
+                           keyboard: railKeyboard)
     }
 
     private func isRailEnabled(_ item: RailItem) -> Bool {
@@ -1043,9 +1053,9 @@ struct TileGridView: View {
                 recorder.recordNavigate(pageKey: NavigationCoordinator.backPageKey)
             }
         case .keyboard:
-            // The keyboard chosen in Settings › Keyboard; QWERTY otherwise.
-            let page = UserDefaults.standard.string(forKey: AppSettingsKey.keyboardDefault)
-                .flatMap(KeyboardLayout.init(rawValue:))?.pageKey ?? Self.keyboardPage
+            // The keyboard chosen in Settings › Keyboard, or the next one when
+            // the board's navigation bar already has it.
+            let page = railKeyboard.pageKey
             let key = activeScene?.isDefault == true ? page : TileToken.systemLink(to: page)
             withAnimation(Self.pageChange) { coordinator.navigate(to: key, linkKey: page) }
             if recorder.state == .recording { recorder.recordNavigate(pageKey: key) }

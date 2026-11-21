@@ -220,6 +220,15 @@ when a letter keyboard opens. Nothing leaves the device.
 - A tap types the word in full and commits it, as Space would. More than
   fit, an arrow pages. Settings › Keyboard › Word Prediction turns it off.
 
+## The rail's Keyboard button
+
+It opens the keyboard chosen in Settings, unless the board's navigation bar
+already links to that one: a second way to the same place is a wasted
+button. Then it opens the next of Calculator, Numbers, QWERTY, ABC the bar
+doesn't have, and its face says which (`KeyboardLayout.railTarget`,
+`BoardChrome.barKeyboards`). Brandi's board has Keyboard in its bar, so its
+rail shows Calculator (Mark, 2026-11-20).
+
 ## Keyboard settings
 
 Settings › Look, Sound, Feel › Keyboard (Mark, 2026-11-20), all
