@@ -12,6 +12,7 @@ Start with the first one; the vocabulary in it is assumed by all the others.
 | **[Board layout](board-layout.md)** | The three fixed grids, why a word stays put, boards that declare their grid, and printing from it. |
 | **[Editing a board](editing-a-board.md)** | The board and page editors, typing words and links into cells, copies of BlasterAI 60, the navigation bar, templates. |
 | **[The Me page](the-me-page.md)** | Each profile's own page: rules that change with where the user came from, pages that include others, topics, and sharing one to a family. |
+| **[The keyboard](the-keyboard.md)** | Typing with spoken keys and word prediction, numbers, the ? key that works sums out, and the calculator. |
 | **[Building a board in a spreadsheet](spreadsheet-boards.md)** | Writing a whole board in Google Sheets, Excel or Numbers, and bringing it in. |
 | **[Adding vocabulary](adding-vocabulary.md)** | New words, pasted lists, what word class does, and what the moderation flags mean. |
 | **[Single words and sentences](ai-sentences-and-single-words.md)** | Single Words and Sentences, what the AI does and doesn't do, and how to correct it. |

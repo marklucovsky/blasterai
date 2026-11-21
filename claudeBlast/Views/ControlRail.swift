@@ -136,6 +136,8 @@ struct ControlRail<Menu: View, EditMenu: View>: View {
     @Binding var isEditMenuOpen: Bool
     @ViewBuilder let editMenu: () -> EditMenu
     var level: RailLevel?
+    /// The keyboard the Keyboard button opens, which sets its face.
+    var keyboard: KeyboardLayout = .qwerty
 
     var body: some View {
         let layout = vertical ? AnyLayout(VStackLayout(spacing: spacing))
@@ -193,6 +195,8 @@ struct ControlRail<Menu: View, EditMenu: View>: View {
         } else {
             RailButton(item: item, half: half, slot: side, isEnabled: isEnabled(item),
                        isBadged: isBadged(item),
+                       title: item == .keyboard ? keyboard.railTitle : nil,
+                       image: item == .keyboard ? keyboard.railImage : nil,
                        action: { action(item) })
         }
     }
@@ -206,10 +210,17 @@ private struct RailButton: View {
     let slot: CGFloat
     let isEnabled: Bool
     var isBadged = false
+    /// A face other than the item's own: the Keyboard button opening the
+    /// calculator says so.
+    var title: String? = nil
+    var image: String? = nil
     let action: () -> Void
     var onLongPress: (() -> Void)?
 
     @State private var isPressed = false
+
+    private var shownTitle: String { title ?? item.title }
+    private var shownImage: String { image ?? item.systemImage }
 
     private var glyph: CGFloat { slot * (half ? 0.2 : 0.3) }
     private var font: CGFloat { max(10, slot * (half ? 0.11 : 0.13)) }
@@ -219,7 +230,7 @@ private struct RailButton: View {
             RoundedRectangle(cornerRadius: TileLayout.cornerRadius, style: .continuous)
                 .fill(Color.railPlate)
                 .overlay {
-                    let label = Label(item.title, systemImage: item.systemImage)
+                    let label = Label(shownTitle, systemImage: shownImage)
                         .font(.system(size: font, weight: .medium))
                         .foregroundStyle(.white)
                     if half {
@@ -230,9 +241,9 @@ private struct RailButton: View {
                             .padding(.horizontal, 4)
                     } else {
                         VStack(spacing: slot * 0.06) {
-                            Image(systemName: item.systemImage)
+                            Image(systemName: shownImage)
                                 .font(.system(size: glyph, weight: .semibold))
-                            Text(item.title)
+                            Text(shownTitle)
                                 .font(.system(size: font, weight: .medium))
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.7)
@@ -259,7 +270,7 @@ private struct RailButton: View {
             LongPressGesture(minimumDuration: 0.5).onEnded { _ in onLongPress?() },
             including: onLongPress == nil ? .subviews : .all
         )
-        .accessibilityLabel(item.title)
+        .accessibilityLabel(shownTitle)
         .accessibilityValue(isBadged ? "Topics for this page" : "")
     }
 }

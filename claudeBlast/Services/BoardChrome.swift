@@ -144,6 +144,16 @@ enum BoardChrome {
     /// The rail's Keyboard opens BlasterAI 60's keyboard page from every page.
     static let keyboardPage = "keyboard"
 
+    /// The keyboards `scene`'s own navigation bar links to (shown at its
+    /// level), so the rail's Keyboard can open another (`KeyboardLayout.railTarget`).
+    static func barKeyboards(of scene: BlasterScene) -> Set<KeyboardLayout> {
+        guard let own = ownRow(of: scene) else { return [] }
+        let level = scene.effectiveRevealLevel
+        return Set(own.tiles.filter { !$0.isAboveLevel(level) }.compactMap { tile in
+            TileToken.systemPageKey(tile.link) == nil ? nil : KeyboardLayout.forPage(tile.link)
+        })
+    }
+
     /// The pages among `scene`'s own that every page opens: on BlasterAI 60,
     /// the row's folders and the rail's keyboard. Another scene's row opens
     /// BlasterAI 60's pages, not its own, so there are none. A folder above

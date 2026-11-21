@@ -119,6 +119,29 @@ struct KeyboardLayoutTests {
         #expect(KeyboardLayout.forPage("<system>:calculator") == .calculator)
     }
 
+    /// The rail's Keyboard skips a keyboard the navigation bar already has:
+    /// Brandi's board has Keyboard in its bar, so the rail opens the
+    /// calculator (Mark, 2026-11-20).
+    @Test func theRailOpensAKeyboardTheBarDoesNotHave() {
+        #expect(KeyboardLayout.railTarget(preferred: .qwerty, inBar: []) == .qwerty)
+        #expect(KeyboardLayout.railTarget(preferred: .qwerty, inBar: [.qwerty]) == .calculator)
+        #expect(KeyboardLayout.railTarget(preferred: .qwerty, inBar: [.qwerty, .calculator]) == .numbers)
+        #expect(KeyboardLayout.railTarget(preferred: .abc, inBar: [.qwerty]) == .abc)
+        #expect(KeyboardLayout.railTarget(preferred: .qwerty, inBar: Set(KeyboardLayout.allCases)) == .qwerty,
+                "every one in the bar: the rail keeps the preferred")
+        #expect(KeyboardLayout.calculator.railTitle == "Calculator")
+
+        let scene = BlasterScene(name: "Brandi", homePageKey: "home")
+        scene.designedFor = "ipad-10x6"
+        scene.pages = [PageSpec(key: "home", tiles: [])]
+        #expect(BoardChrome.barKeyboards(of: scene).isEmpty)
+        scene.ownRow = PageSpec(key: BlasterScene.rowPageKey, tiles: [
+            TileEntry(key: "people", link: TileToken.systemLink(to: "people"), isAudible: false),
+            TileEntry(key: "keyboard", link: TileToken.systemLink(to: "keyboard"), isAudible: false),
+        ])
+        #expect(BoardChrome.barKeyboards(of: scene) == [.qwerty])
+    }
+
     /// The signs are the numbers page's vowels: tinted when Highlight Signs
     /// is on. Digits, money and the clock are not signs.
     @Test func theSignsAreMarked() {
